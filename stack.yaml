@@ -1,3 +1,7 @@
 resolver: lts-19.32
 packages:
 - twentyfortyeight
+system-ghc: true
+nix:
+  enable: false
+with-hpack: hpack

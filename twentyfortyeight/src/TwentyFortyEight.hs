@@ -7,6 +7,7 @@ module TwentyFortyEight
   )
 where
 
+import Brick
 import Control.Monad.IO.Class
 import Control.Monad.ST
 import Control.Monad.State
@@ -62,7 +63,9 @@ renderPower = \case
 powerValue :: Power -> Word
 powerValue = (2 ^) . unPower
 
-type GameT m a = StateT StdGen m a
+type GameT m a = StateT GameState m a
+
+type GameState = StdGen
 
 genTileIx :: Monad m => GameT m TileIx
 genTileIx = TileIx <$> state (randomR (0, 15))
@@ -80,9 +83,16 @@ generateStartingBoard = do
 
   pure $ boardSetTile firstTile (Power 1) $ boardSetTile secondTile (Power 1) emptyBoard
 
+data ResourceName = ResourceName
+  deriving (Show, Eq, Ord)
+
+twentyFortyEightApp :: App GameState e ResourceName
+twentyFortyEightApp = undefined
+
 run2048 :: IO ()
 run2048 = do
   let initState = mkStdGen 42
   flip evalStateT initState $ do
     b <- generateStartingBoard
     liftIO $ putStrLn $ renderBoard b
+  void $ Brick.defaultMain twentyFortyEightApp
