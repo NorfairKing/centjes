@@ -4,21 +4,21 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           twentyfortyeight
+name:           centjes
 version:        0.0.0.0
-homepage:       https://github.com/NorfairKing/twentyfortyeight#readme
-bug-reports:    https://github.com/NorfairKing/twentyfortyeight/issues
+homepage:       https://github.com/NorfairKing/centjes#readme
+bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 
 source-repository head
   type: git
-  location: https://github.com/NorfairKing/twentyfortyeight
+  location: https://github.com/NorfairKing/centjes
 
 library
   exposed-modules:
-      TwentyFortyEight
+      Centjes
   other-modules:
-      Paths_twentyfortyeight
+      Paths_centjes
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
@@ -30,27 +30,28 @@ library
     , vector
   default-language: Haskell2010
 
-executable twentyfortyeight
+executable centjes
   main-is: Main.hs
   other-modules:
-      Paths_twentyfortyeight
+      Paths_centjes
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , twentyfortyeight
+    , centjes
   default-language: Haskell2010
 
-test-suite twentyfortyeight-test
+test-suite centjes-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_twentyfortyeight
+      Paths_centjes
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , twentyfortyeight
+    , centjes
+    , sydtest
   default-language: Haskell2010

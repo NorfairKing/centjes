@@ -3,16 +3,16 @@ with final.lib;
 with final.haskell.lib;
 {
 
-  twentyfortyeight = justStaticExecutables final.haskellPackages.twentyfortyeight;
+  centjes = justStaticExecutables final.haskellPackages.centjes;
 
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (
       self: super: {
-        twentyfortyeight = generateOptparseApplicativeCompletion "twentyfortyeight" (
+        centjes = self.generateOptparseApplicativeCompletions [ "centjes" ] (
           buildFromSdist (overrideCabal
             (
               self.callPackage
-                ../twentyfortyeight
+                ../centjes
                 { }
             )
             (old: {

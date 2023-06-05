@@ -1,14 +1,30 @@
 {
-  description = "twentyfortyeight";
+  description = "centjes";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-22.11";
+    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-23.05";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    validity.url = "github:NorfairKing/validity";
+    validity.flake = false;
+    autodocodec.url = "github:NorfairKing/autodocodec";
+    autodocodec.flake = false;
+    safe-coloured-text.url = "github:NorfairKing/safe-coloured-text";
+    safe-coloured-text.flake = false;
+    sydtest.url = "github:NorfairKing/sydtest";
+    sydtest.flake = false;
+    really-safe-money.url = "github:NorfairKing/really-safe-money";
+    really-safe-money.flake = false;
   };
 
   outputs =
     { self
     , nixpkgs
     , pre-commit-hooks
+    , validity
+    , safe-coloured-text
+    , sydtest
+    , autodocodec
+    , really-safe-money
+
     }:
     let
       system = "x86_64-linux";
@@ -16,6 +32,11 @@
         inherit system;
         config.allowUnfree = true;
         overlays = [
+          (import (validity + "/nix/overlay.nix"))
+          (import (safe-coloured-text + "/nix/overlay.nix"))
+          (import (sydtest + "/nix/overlay.nix"))
+          (import (autodocodec + "/nix/overlay.nix"))
+          (import (really-safe-money + "/nix/overlay.nix"))
           self.overlays.${system}
         ];
       };
@@ -24,7 +45,7 @@
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
-      packages.${system}.default = pkgs.twentyfortyeight;
+      packages.${system}.default = pkgs.centjes;
       checks.${system} = {
         package = self.packages.${system}.default;
         shell = self.devShells.${system}.default;
@@ -41,12 +62,11 @@
         };
       };
       devShells.${system}.default = pkgs.haskellPackages.shellFor {
-        name = "twentyfortyeight-shell";
-        packages = p: [ p.twentyfortyeight ];
+        name = "centjes-shell";
+        packages = p: [ p.centjes ];
         withHoogle = true;
         doBenchmark = true;
         buildInputs = (with pkgs; [
-          niv
           zlib
           cabal-install
         ]) ++ (with pre-commit-hooks.packages.${system};
@@ -60,4 +80,5 @@
         shellHook = self.checks.${system}.pre-commit.shellHook;
       };
     };
+
 }

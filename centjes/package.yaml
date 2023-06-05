@@ -1,6 +1,6 @@
-name: twentyfortyeight
+name: centjes
 version: 0.0.0.0
-github: "NorfairKing/twentyfortyeight"
+github: "NorfairKing/centjes"
 
 dependencies:
 - base >= 4.7 && < 5
@@ -25,7 +25,7 @@ library:
   - vector
 
 executables:
-  twentyfortyeight:
+  centjes:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -33,10 +33,10 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - twentyfortyeight
+    - centjes
 
 tests:
-  twentyfortyeight-test:
+  centjes-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -44,4 +44,5 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - twentyfortyeight
+    - centjes
+    - sydtest

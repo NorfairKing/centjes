@@ -1,6 +1,6 @@
 module Main (main) where
 
-import TwentyFortyEight
+import Centjes
 
 main :: IO ()
-main = run2048
+main = runCentjes
