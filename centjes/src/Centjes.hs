@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 
@@ -17,8 +18,21 @@ import Data.Vector.Mutable (MVector)
 import qualified Data.Vector.Mutable as MV
 import Data.Word
 import GHC.Generics (Generic)
+import qualified Money.Account as Account
+import qualified Money.Account as Money (Account)
 import System.Random
 import Text.Printf
 
 runCentjes :: IO ()
 runCentjes = pure ()
+
+data Transaction = Transaction {transactionPostings :: [Posting]}
+  deriving stock (Show, Eq, Generic)
+
+data Posting = Posting
+  { postingAccountName :: AccountName,
+    postingAmount :: Money.Account
+  }
+  deriving stock (Show, Eq, Generic)
+
+type AccountName = String

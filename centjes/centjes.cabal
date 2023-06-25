@@ -27,6 +27,7 @@ library
     , brick
     , mtl
     , random
+    , really-safe-money
     , vector
   default-language: Haskell2010
 
