@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Centjes
   ( runCentjes,
@@ -12,6 +13,7 @@ import Brick
 import Control.Monad.IO.Class
 import Control.Monad.ST
 import Control.Monad.State
+import Data.Maybe
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Data.Vector.Mutable (MVector)
@@ -24,7 +26,21 @@ import System.Random
 import Text.Printf
 
 runCentjes :: IO ()
-runCentjes = pure ()
+runCentjes = do
+  let exampleTransaction =
+        Transaction
+          { transactionPostings =
+              [ Posting
+                  { postingAccountName = "expenses:food",
+                    postingAmount = fromJust $ Account.fromMinimalQuantisations 100
+                  },
+                Posting
+                  { postingAccountName = "assets:cash",
+                    postingAmount = fromJust $ Account.fromMinimalQuantisations (-100)
+                  }
+              ]
+          }
+  print $ balanceTransaction exampleTransaction
 
 data Transaction = Transaction {transactionPostings :: [Posting]}
   deriving stock (Show, Eq, Generic)
@@ -36,3 +52,19 @@ data Posting = Posting
   deriving stock (Show, Eq, Generic)
 
 type AccountName = String
+
+data Balancing
+  = Balanced
+  | OffBalanceBy !Money.Account
+  | CouldNotBalance
+  deriving stock (Show, Eq, Generic)
+
+balanceTransaction :: Transaction -> Balancing
+balanceTransaction Transaction {..} =
+  let actualSum = Account.sum (map postingAmount transactionPostings)
+   in case actualSum of
+        Nothing -> CouldNotBalance
+        Just s ->
+          if s == Account.zero
+            then Balanced
+            else OffBalanceBy s
