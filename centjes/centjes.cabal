@@ -17,17 +17,25 @@ source-repository head
 library
   exposed-modules:
       Centjes
+      Centjes.Alex
+      Centjes.Happy
+      Centjes.Module
   other-modules:
       Paths_centjes
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-tools:
+      alex
+    , happy
   build-depends:
-      base >=4.7 && <5
+      array
+    , base >=4.7 && <5
     , brick
     , mtl
     , random
     , really-safe-money
+    , text
     , vector
   default-language: Haskell2010
 

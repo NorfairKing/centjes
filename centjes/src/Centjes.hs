@@ -10,6 +10,7 @@ module Centjes
 where
 
 import Brick
+import Centjes.Module
 import Control.Monad.IO.Class
 import Control.Monad.ST
 import Control.Monad.State
@@ -41,17 +42,6 @@ runCentjes = do
               ]
           }
   print $ balanceTransaction exampleTransaction
-
-data Transaction = Transaction {transactionPostings :: [Posting]}
-  deriving stock (Show, Eq, Generic)
-
-data Posting = Posting
-  { postingAccountName :: AccountName,
-    postingAmount :: Money.Account
-  }
-  deriving stock (Show, Eq, Generic)
-
-type AccountName = String
 
 data Balancing
   = Balanced

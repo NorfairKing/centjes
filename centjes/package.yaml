@@ -18,11 +18,16 @@ ghc-options:
 
 library:
   source-dirs: src
+  build-tools:
+  - alex
+  - happy
   dependencies:
+  - array
   - brick
   - mtl
   - random
   - really-safe-money
+  - text
   - vector
 
 executables:
