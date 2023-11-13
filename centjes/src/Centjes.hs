@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -9,12 +8,12 @@ module Centjes
   )
 where
 
-import Brick
 import Centjes.Module
 import Control.Monad.IO.Class
 import Control.Monad.ST
 import Control.Monad.State
 import Data.Maybe
+import Data.Time
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Data.Vector.Mutable (MVector)
@@ -30,7 +29,8 @@ runCentjes :: IO ()
 runCentjes = do
   let exampleTransaction =
         Transaction
-          { transactionPostings =
+          { transactionTimestamp = fromGregorian 2013 11 13,
+            transactionPostings =
               [ Posting
                   { postingAccountName = "expenses:food",
                     postingAmount = fromJust $ Account.fromMinimalQuantisations 100

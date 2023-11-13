@@ -1,5 +1,7 @@
 - ignore:
     name: "Redundant lambda"
+- ignore:
+    name: "Use newtype instead of data"
 
 
 # Functions that we dissallow.
@@ -30,13 +32,6 @@
     - Smos.Report.TimeBlock
 
   - {name: Data.Foldable.foldl, within: []} # Lazy. Use foldl' instead.
-
-  # This is no longer an issue as of GHC 9.0.1
-  # https://gitlab.haskell.org/ghc/ghc/-/merge_requests/4675
-  # but we still use an older version of GHC.
-  # As soon as we upgrade the LTS, we can replace the usages of `foldl' (+) 0` in the code
-  - {name: sum, within: []} # Lazy accumulator
-  - {name: product, within: []} # Lazy accumulator
 
   # Don't use strings to interact with files
   - {name: System.IO.readFile, within: []}

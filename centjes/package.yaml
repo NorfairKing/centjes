@@ -11,7 +11,6 @@ ghc-options:
 - -Widentities
 - -Wincomplete-record-updates
 - -Wincomplete-uni-patterns
-- -Wmissing-export-lists
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
@@ -23,11 +22,11 @@ library:
   - happy
   dependencies:
   - array
-  - brick
   - mtl
   - random
   - really-safe-money
   - text
+  - time
   - vector
 
 executables:
