@@ -33,7 +33,9 @@ library
   build-depends:
       array
     , base >=4.7 && <5
+    , deepseq
     , mtl
+    , prettyprinter
     , random
     , really-safe-money
     , text
@@ -70,7 +72,8 @@ test-suite centjes-test
   build-tool-depends:
       sydtest-discover:sydtest-discover
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , centjes
     , genvalidity
     , genvalidity-sydtest

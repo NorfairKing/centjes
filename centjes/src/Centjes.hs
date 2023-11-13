@@ -23,11 +23,11 @@ runCentjes = do
           { transactionTimestamp = fromGregorian 2013 11 13,
             transactionPostings =
               [ Posting
-                  { postingAccountName = "expenses:food",
+                  { postingAccountName = AccountName "expenses:food",
                     postingAmount = fromJust $ Account.fromMinimalQuantisations 100
                   },
                 Posting
-                  { postingAccountName = "assets:cash",
+                  { postingAccountName = AccountName "assets:cash",
                     postingAmount = fromJust $ Account.fromMinimalQuantisations (-100)
                   }
               ]

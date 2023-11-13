@@ -6,6 +6,9 @@ module Centjes.Happy
   , parseDeclaration
   , parseTransaction
   , parsePosting
+  , parseAccountName
+  , parseAccount
+  , parseAmount
   ) where
 
 import Centjes.Alex
@@ -13,7 +16,10 @@ import Centjes.Module
 import Data.List
 import Data.Text(Text)
 import Debug.Trace
+import Money.Amount as Money (Amount)
+import qualified Money.Amount as Amount
 import Money.Account as Money (Account)
+import qualified Money.Account as Account
 import qualified Data.Text as T
 
 }
@@ -25,6 +31,9 @@ import qualified Data.Text as T
 %name declarationParser declaration
 %name transactionParser transaction
 %name postingParser posting
+%name accountNameParser account_name
+%name accountParser account
+%name amountParser amount
 
 %tokentype { Token }
 %monad { Alex }
@@ -39,7 +48,6 @@ import qualified Data.Text as T
       comment         { Token _ (TokenComment $$) }
       string          { Token _ (TokenString $$) }
       int             { Token _ (TokenInt $$) }
-      float           { Token _ (TokenFloat $$) }
       emptyline       { Token _ TokenEmptyLine }
 
 
@@ -60,21 +68,25 @@ transaction
   :: { Transaction }
   : timestamp many(posting) { Transaction $1 $2 }
 
-posting
-  :: { Posting }
-  : account_name account { Posting $1 $2 }
-
 timestamp
   :: { Timestamp }
   : string { undefined }
 
+posting
+  :: { Posting }
+  : account_name account { Posting $1 $2 }
+
 account_name
   :: { AccountName }
-  : string { $1 }
+  : string { AccountName $1 }
 
 account
   :: { Money.Account }
-  : int { undefined }
+  : int {% maybeParser "account" Account.fromMinimalQuantisations $1 }
+
+amount
+  :: { Money.Amount }
+  : int { Amount.fromMinimalQuantisations (fromIntegral $1) } -- TODO fromIntegral is wrong.
 
 -- Helpers
 -- Nonempty list with separator
@@ -105,6 +117,12 @@ happyError :: Token -> Alex a
 happyError (Token p t) =
   alexError' p ("parse error at token '" ++ unLex t ++ "'")
 
+maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
+maybeParser name func b = 
+  case func b of
+    Nothing -> parseError $ "Failed to parse " <> name <> " from " <> show b
+    Just a -> pure a
+
 parseError = alexError
 
 parseModule :: FilePath -> Text -> Either String Module
@@ -118,4 +136,13 @@ parseTransaction fp = runAlex' transactionParser fp . T.unpack
 
 parsePosting :: FilePath -> Text -> Either String Posting
 parsePosting fp = runAlex' postingParser fp . T.unpack
+
+parseAccountName :: FilePath -> Text -> Either String AccountName
+parseAccountName fp = runAlex' accountNameParser fp . T.unpack
+
+parseAccount :: FilePath -> Text -> Either String Money.Account
+parseAccount fp = runAlex' accountParser fp . T.unpack
+
+parseAmount :: FilePath -> Text -> Either String Money.Amount
+parseAmount fp = runAlex' amountParser fp . T.unpack
 }

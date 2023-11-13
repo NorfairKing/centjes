@@ -14,6 +14,7 @@ module Centjes.Alex
   ) where
 
 import Prelude hiding (lex)
+import Debug.Trace
 import Control.Monad ( liftM )
 import Data.List
 import Data.List.NonEmpty (NonEmpty(..))
@@ -34,27 +35,17 @@ $white_no_nl = $whitechar
 $tab         = \t
 
 -- Values
-$digit = 0-9
+$digit = [0-9]
 $alpha = [A-Za-z]
-$binit = 0-1
-$octit = 0-7
-$hexit = [$digit A-F a-f]
 
-@numspc = _*  -- Numeric underscores
-
-@negative = \-
-
-@decimal = $digit(@numspc $digit)*
-@integer = @decimal
-
-@exponent = @numspc [eE] [\-\+]? @decimal
-
-@floating_point
-  = @numspc @decimal \. @decimal @exponent?
-  | @numspc @decimal @exponent
+@decimal = $digit+
+@integer = 
+  = \+ @decimal
+  | \- @decimal
+  | @decimal
 
 
-@string = $alpha [$alpha $digit \_ \']*
+@string = $alpha [$alpha $digit \_ :]*
 @comment = "-- " .*
 
 tokens :-
@@ -64,8 +55,7 @@ $white_no_nl+ ;
 
 
 @string                               { lex (TokenString . T.pack) }
-@integer                              { lex (TokenInt . read . filter (/= '_')) }
-@floating_point                       { lex (TokenFloat . read) }
+@integer                              { lex (TokenInt . read . traceShowId) }
 @comment \n                           { lexComment }
 
 {

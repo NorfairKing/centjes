@@ -3,11 +3,17 @@ module Centjes.Parse
     parseDeclaration,
     parseTransaction,
     parsePosting,
+    parseAccountName,
+    parseAccount,
+    parseAmount,
   )
 where
 
 import Centjes.Happy
-  ( parseDeclaration,
+  ( parseAccount,
+    parseAccountName,
+    parseAmount,
+    parseDeclaration,
     parseModule,
     parsePosting,
     parseTransaction,

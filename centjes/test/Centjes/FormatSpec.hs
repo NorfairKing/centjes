@@ -16,6 +16,9 @@ spec = do
     it "can format any module" $
       producesValid formatModule
 
+    parseFormatRoundtrip "amount" parseAmount formatAmount
+    parseFormatRoundtrip "account" parseAccount formatAccount
+    parseFormatRoundtrip "account name" parseAccountName formatAccountName
     parseFormatRoundtrip "posting" parsePosting formatPosting
     parseFormatRoundtrip "transaction" parseTransaction formatTransaction
     parseFormatRoundtrip "declaration" parseDeclaration formatDeclaration
@@ -34,7 +37,7 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
     it "roundtrips" $
       forAllValid $ \expected -> do
         let rendered = formatter (expected :: a)
-        context (show rendered) $
+        context (unlines ["Rendered:", show rendered]) $
           case parser "test-input" rendered of
             Left err -> expectationFailure $ unlines ["Failed to parse:", err]
             Right actual -> (actual :: a) `shouldBe` expected

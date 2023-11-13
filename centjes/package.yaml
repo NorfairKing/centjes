@@ -22,7 +22,9 @@ library:
   - happy
   dependencies:
   - array
+  - deepseq
   - mtl
+  - prettyprinter
   - random
   - really-safe-money
   - text
@@ -53,6 +55,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - QuickCheck
     - centjes
     - genvalidity
     - genvalidity-sydtest
