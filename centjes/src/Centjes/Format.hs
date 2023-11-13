@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -13,6 +14,7 @@ module Centjes.Format
 where
 
 import Centjes.Module
+import Data.List (intersperse)
 import Data.Text (Text)
 import Money.Account as Money (Account)
 import qualified Money.Account as Account
@@ -22,13 +24,13 @@ import Prettyprinter
 import Prettyprinter.Render.Text
 
 formatModule :: Module -> Text
-formatModule _ = ""
+formatModule = renderDocText . moduleDoc
 
 formatDeclaration :: Declaration -> Text
-formatDeclaration _ = ""
+formatDeclaration = renderDocText . declarationDoc
 
 formatTransaction :: Transaction -> Text
-formatTransaction _ = ""
+formatTransaction = renderDocText . transactionDoc
 
 formatPosting :: Posting -> Text
 formatPosting = renderDocText . postingDoc
@@ -46,6 +48,22 @@ renderDocText :: Doc ann -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions
   where
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
+
+moduleDoc :: Module -> Doc ann
+moduleDoc Module {..} = vcat $ intersperse "\n" $ map declarationDoc moduleDeclarations
+
+declarationDoc :: Declaration -> Doc ann
+declarationDoc = \case
+  DeclarationTransaction t -> transactionDoc t
+
+transactionDoc :: Transaction -> Doc ann
+transactionDoc Transaction {..} =
+  vsep $
+    timestampDoc transactionTimestamp
+      : map (("  " <>) . postingDoc) transactionPostings
+
+timestampDoc :: Timestamp -> Doc ann
+timestampDoc = pretty . show
 
 postingDoc :: Posting -> Doc ann
 postingDoc Posting {..} = accountNameDoc postingAccountName <+> accountDoc postingAmount

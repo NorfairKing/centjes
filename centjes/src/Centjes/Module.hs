@@ -15,7 +15,7 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 
-data Module = Module {moduleTransactions :: ![Declaration]}
+data Module = Module {moduleDeclarations :: ![Declaration]}
   deriving stock (Show, Eq, Generic)
 
 instance Validity Module

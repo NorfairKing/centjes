@@ -33,6 +33,8 @@ $nl          = [\n\r\f]
 $whitechar   = [\v\t\ ]
 $white_no_nl = $whitechar
 $tab         = \t
+@newline     = $nl
+@emptyline   = @newline @newline+
 
 -- Values
 $digit = [0-9]
@@ -46,6 +48,10 @@ $alpha = [A-Za-z]
 
 
 @string = $alpha [$alpha $digit \_ :]*
+@year = $digit $digit $digit $digit
+@month_of_year = $digit $digit
+@day_of_month = $digit $digit
+@day = @year \- @month_of_year \- @day_of_month
 @comment = "-- " .*
 
 tokens :-
@@ -53,9 +59,11 @@ tokens :-
 -- Skip non-newline whitespace everywhere
 $white_no_nl+ ;
 
-
+@day                                  { lex TokenDay }
 @string                               { lex (TokenString . T.pack) }
-@integer                              { lex (TokenInt . read . traceShowId) }
+@integer                              { lex (TokenInt . read) }
+@emptyline                            { lex' TokenEmptyLine }
+@newline                              { lex' TokenNewLine }
 @comment \n                           { lexComment }
 
 {
@@ -87,19 +95,23 @@ data Token = Token AlexPosn TokenClass
 
 data TokenClass
   = TokenComment Text
+  | TokenDay String
   | TokenString Text
   | TokenInt Integer
   | TokenFloat Double
   | TokenEmptyLine
+  | TokenNewLine
   | TokenEOF
   deriving ( Show )
 
 -- For nice parser error messages.
 unLex :: TokenClass -> String
 unLex (TokenComment t) = "-- " <> show t
+unLex (TokenDay s) = s
 unLex (TokenString t) = show t
 unLex (TokenInt i) = show i
 unLex (TokenFloat d) = show d
+unLex TokenNewLine = "<\\n>"
 unLex TokenEmptyLine = "<empty line>"
 unLex TokenEOF = "<EOF>"
 

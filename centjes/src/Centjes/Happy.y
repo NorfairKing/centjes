@@ -14,7 +14,8 @@ module Centjes.Happy
 import Centjes.Alex
 import Centjes.Module
 import Data.List
-import Data.Text(Text)
+import Data.Text (Text)
+import Data.Time
 import Debug.Trace
 import Money.Amount as Money (Amount)
 import qualified Money.Amount as Amount
@@ -46,9 +47,11 @@ import qualified Data.Text as T
 
 %token 
       comment         { Token _ (TokenComment $$) }
+      day             { Token _ (TokenDay $$) }
       string          { Token _ (TokenString $$) }
       int             { Token _ (TokenInt $$) }
       emptyline       { Token _ TokenEmptyLine }
+      newline         { Token _ TokenNewLine }
 
 
 %right arrow
@@ -66,11 +69,12 @@ declaration
 
 transaction
   :: { Transaction }
-  : timestamp many(posting) { Transaction $1 $2 }
+  : timestamp newline manySep(newline, posting) { Transaction $1 $3 }
+  | timestamp { Transaction $1 [] }
 
 timestamp
   :: { Timestamp }
-  : string { undefined }
+  : day {% timeParser "%F" $1 }
 
 posting
   :: { Posting }
@@ -78,7 +82,7 @@ posting
 
 account_name
   :: { AccountName }
-  : string { AccountName $1 }
+  : string { AccountName $1 } -- TODO do actual paring
 
 account
   :: { Money.Account }
@@ -104,11 +108,11 @@ many(p)
 -- list with separator
 manySep(sep, p)
   : manySep_rev(sep, p) { reverse $1 }
+  | {- empty -} { [] }
 
 manySep_rev(sep, p)
   : manySep_rev(sep, p) sep p { $3 : $1 }
   | p { [$1] }                      
-  | {- empty -} { [] }
 {
 lexwrap :: (Token -> Alex a) -> Alex a
 lexwrap = (alexMonadScan' >>=)
@@ -116,6 +120,11 @@ lexwrap = (alexMonadScan' >>=)
 happyError :: Token -> Alex a
 happyError (Token p t) =
   alexError' p ("parse error at token '" ++ unLex t ++ "'")
+
+timeParser :: ParseTime t => String -> String -> Alex t
+timeParser formatString s = case parseTimeM False defaultTimeLocale formatString s of
+  Nothing -> parseError $ "Failed to parse time value: " <> formatString
+  Just t -> pure t
 
 maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
 maybeParser name func b = 

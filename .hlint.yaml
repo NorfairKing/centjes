@@ -57,7 +57,7 @@
   # It's also Lazy IO.
   # See https://www.snoyman.com/blog/2016/12/beware-of-readfile/ for more info.
   - {name: System.IO.readFile, within: []}
-  - {name: Data.Text.IO.readFile, within: []}
+  - {name: Data.Text.IO.readFile, within: [ "Centjes.FormatSpec" ]}
   - {name: Data.Text.IO.Lazy.readFile, within: []}
 
   - {name: Prelude.read, within: []} # Partial, use `Text.Read.readMaybe` instead.
@@ -66,18 +66,18 @@
 
 
   # Still to add
-  # - {name: decodeUtf8, within: []} # Partial, use decodeUtf8' instead.
-  # - {name: Prelude.putStrLn, within: []}
+  - {name: decodeUtf8, within: []} # Partial, use decodeUtf8' instead.
+  - {name: Prelude.putStrLn, within: []}
 
-  # # We don't disallow 'undefined' because of the undefined trick.
-  # # It wolud be nice if there was a way to automatically check that all usages of undefined were because of the undefined trick...
-  # # - {name: 'error', within: []} # Purposely fails
+  # We don't disallow 'undefined' because of the undefined trick.
+  # It wolud be nice if there was a way to automatically check that all usages of undefined were because of the undefined trick...
+  - {name: 'error', within: []} # Purposely fails
 
-  # # Does unexpected things, see
-  # # https://github.com/NorfairKing/haskell-WAT#real-double
-  # - {name: realToFrac, within: []}
+  # Does unexpected things, see
+  # https://github.com/NorfairKing/haskell-WAT#real-double
+  - {name: realToFrac, within: []}
 
-  # # Does silent truncation:
-  # # > fromIntegral (300 :: Word) :: Word8
-  # # 44
-  # - {name: fromIntegral, within: []}
+  # Does silent truncation:
+  # > fromIntegral (300 :: Word) :: Word8
+  # 44
+  - {name: fromIntegral, within: []}

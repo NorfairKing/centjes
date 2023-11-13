@@ -8,13 +8,8 @@ with final.haskell.lib;
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (
       self: super: {
-        centjes = self.generateOptparseApplicativeCompletions [ "centjes" ] (
-          buildFromSdist (overrideCabal
-            (
-              self.callPackage
-                ../centjes
-                { }
-            )
+        centjes = buildFromSdist
+          (overrideCabal (self.callPackage ../centjes { })
             (old: {
               doBenchmark = true;
               doHaddock = true;
@@ -38,7 +33,7 @@ with final.haskell.lib;
                 "--ghc-options=-Werror"
                 "--ghc-options=-optP-Wno-nonportable-include-path" # For macos
               ];
-            })));
+            }));
       }
     );
   });
