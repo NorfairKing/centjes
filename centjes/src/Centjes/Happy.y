@@ -3,14 +3,18 @@
 {-# OPTIONS -w #-}
 module Centjes.Happy
   ( parseModule
+  , parseDeclaration
+  , parseTransaction
+  , parsePosting
   ) where
 
-import Debug.Trace
-import Data.List
-import qualified Data.Text as T
-import Centjes.Module
 import Centjes.Alex
+import Centjes.Module
+import Data.List
+import Data.Text(Text)
+import Debug.Trace
 import Money.Account as Money (Account)
+import qualified Data.Text as T
 
 }
 
@@ -18,6 +22,9 @@ import Money.Account as Money (Account)
 -- https://gitlab.haskell.org/ghc/ghc/-/blob/e2520df3fffa0cf22fb19c5fb872832d11c07d35/compiler/GHC/Parser.y
 
 %name moduleParser module
+%name declarationParser declaration
+%name transactionParser transaction
+%name postingParser posting
 
 %tokentype { Token }
 %monad { Alex }
@@ -100,6 +107,15 @@ happyError (Token p t) =
 
 parseError = alexError
 
-parseModule :: FilePath -> String -> Either String Module
-parseModule = runAlex' moduleParser
+parseModule :: FilePath -> Text -> Either String Module
+parseModule fp = runAlex' moduleParser fp . T.unpack
+
+parseDeclaration :: FilePath -> Text -> Either String Declaration
+parseDeclaration fp = runAlex' declarationParser fp . T.unpack
+
+parseTransaction :: FilePath -> Text -> Either String Transaction
+parseTransaction fp = runAlex' transactionParser fp . T.unpack
+
+parsePosting :: FilePath -> Text -> Either String Posting
+parsePosting fp = runAlex' postingParser fp . T.unpack
 }

@@ -60,3 +60,4 @@ tests:
     - genvalidity-time
     - really-safe-money-gen
     - sydtest
+    - text

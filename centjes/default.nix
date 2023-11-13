@@ -18,7 +18,7 @@ mkDerivation {
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
     base genvalidity genvalidity-sydtest genvalidity-text
-    genvalidity-time really-safe-money-gen sydtest
+    genvalidity-time really-safe-money-gen sydtest text
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";
