@@ -27,12 +27,15 @@ library:
   - really-safe-money
   - text
   - time
+  - validity
+  - validity-text
+  - validity-time
   - vector
 
 executables:
   centjes:
-    main:                Main.hs
-    source-dirs:         app
+    main: Main.hs
+    source-dirs: app
     ghc-options:
     - -threaded
     - -rtsopts
@@ -42,12 +45,18 @@ executables:
 
 tests:
   centjes-test:
-    main:                Spec.hs
-    source-dirs:         test
+    main: Spec.hs
+    source-dirs: test
+    build-tools: sydtest-discover
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
     - centjes
+    - genvalidity
+    - genvalidity-sydtest
+    - genvalidity-text
+    - genvalidity-time
+    - really-safe-money-gen
     - sydtest

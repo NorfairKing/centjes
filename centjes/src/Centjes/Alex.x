@@ -17,7 +17,9 @@ import Prelude hiding (lex)
 import Control.Monad ( liftM )
 import Data.List
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Text(Text)
 import qualified Data.List.NonEmpty as NE
+import qualified Data.Text as T
 }
 
 %wrapper "monadUserState"
@@ -61,7 +63,7 @@ tokens :-
 $white_no_nl+ ;
 
 
-@string                               { lex  TokenString }
+@string                               { lex (TokenString . T.pack) }
 @integer                              { lex (TokenInt . read . filter (/= '_')) }
 @floating_point                       { lex (TokenFloat . read) }
 @comment \n                           { lexComment }
@@ -70,7 +72,7 @@ $white_no_nl+ ;
 
 -- Count a comment as a newline
 lexComment :: AlexInput -> Int -> Alex Token
-lexComment inp len = lex (TokenComment . drop 3 . init) inp len
+lexComment inp len = lex (TokenComment . T.pack . drop 3 . init) inp len
 
 
 -- To improve error messages, We keep the path of the file we are
@@ -94,8 +96,8 @@ data Token = Token AlexPosn TokenClass
   deriving ( Show )
 
 data TokenClass
-  = TokenComment String
-  | TokenString String
+  = TokenComment Text
+  | TokenString Text
   | TokenInt Integer
   | TokenFloat Double
   | TokenEmptyLine
@@ -104,8 +106,8 @@ data TokenClass
 
 -- For nice parser error messages.
 unLex :: TokenClass -> String
-unLex (TokenComment s) = "-- " <> s
-unLex (TokenString s) = s
+unLex (TokenComment t) = "-- " <> show t
+unLex (TokenString t) = show t
 unLex (TokenInt i) = show i
 unLex (TokenFloat d) = show d
 unLex TokenEmptyLine = "<empty line>"

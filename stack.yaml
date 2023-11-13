@@ -2,54 +2,63 @@ resolver: lts-20.25
 packages:
 - centjes
 - ../really-safe-money/really-safe-money
+- ../really-safe-money/really-safe-money-autodocodec
 - ../really-safe-money/really-safe-money-gen
+
 extra-deps:
+  # - github: NorfairKing/really-safe-money
+  #   commit: 2dc42e258dacc620f830cfe85e600655e93d46b6
+  #   subdirs:
+  #   - really-safe-money
+  #   - really-safe-money-autodocodec
+  #   - really-safe-money-gen
+
 - github: NorfairKing/validity
   commit: 657cf4bdc2731387abea6e707b88d381d5218616
   subdirs:
-    - genvalidity
-    - genvalidity-aeson
-    - genvalidity-bytestring
-    - genvalidity-case-insensitive
-    - genvalidity-containers
-    - genvalidity-criterion
-    - genvalidity-hspec
-    - genvalidity-hspec-aeson
-    - genvalidity-hspec-binary
-    - genvalidity-hspec-cereal
-    - genvalidity-hspec-hashable
-    - genvalidity-hspec-optics
-    - genvalidity-hspec-persistent
-    - genvalidity-network-uri
-    - genvalidity-path
-    - genvalidity-persistent
-    - genvalidity-property
-    - genvalidity-scientific
-    - genvalidity-sydtest
-    - genvalidity-sydtest-aeson
-    - genvalidity-sydtest-hashable
-    - genvalidity-sydtest-lens
-    - genvalidity-sydtest-persistent
-    - genvalidity-text
-    - genvalidity-time
-    - genvalidity-unordered-containers
-    - genvalidity-uuid
-    - genvalidity-vector
-    - validity
-    - validity-aeson
-    - validity-bytestring
-    - validity-case-insensitive
-    - validity-containers
-    - validity-network-uri
-    - validity-path
-    - validity-persistent
-    - validity-primitive
-    - validity-scientific
-    - validity-text
-    - validity-time
-    - validity-unordered-containers
-    - validity-uuid
-    - validity-vector
+  - genvalidity
+  - genvalidity-aeson
+  - genvalidity-bytestring
+  - genvalidity-case-insensitive
+  - genvalidity-containers
+  - genvalidity-criterion
+  - genvalidity-hspec
+  - genvalidity-hspec-aeson
+  - genvalidity-hspec-binary
+  - genvalidity-hspec-cereal
+  - genvalidity-hspec-hashable
+  - genvalidity-hspec-optics
+  - genvalidity-hspec-persistent
+  - genvalidity-network-uri
+  - genvalidity-path
+  - genvalidity-persistent
+  - genvalidity-property
+  - genvalidity-scientific
+  - genvalidity-sydtest
+  - genvalidity-sydtest-aeson
+  - genvalidity-sydtest-hashable
+  - genvalidity-sydtest-lens
+  - genvalidity-sydtest-persistent
+  - genvalidity-text
+  - genvalidity-time
+  - genvalidity-unordered-containers
+  - genvalidity-uuid
+  - genvalidity-vector
+  - validity
+  - validity-aeson
+  - validity-bytestring
+  - validity-case-insensitive
+  - validity-containers
+  - validity-network-uri
+  - validity-path
+  - validity-persistent
+  - validity-primitive
+  - validity-scientific
+  - validity-text
+  - validity-time
+  - validity-unordered-containers
+  - validity-uuid
+  - validity-vector
 
 system-ghc: true
 nix:
