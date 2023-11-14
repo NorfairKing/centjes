@@ -25,17 +25,25 @@ library:
   - happy
   dependencies:
   - array
+  - autodocodec
+  - autodocodec-yaml
   - deepseq
+  - envparse
   - mtl
+  - optparse-applicative
+  - path
+  - path-io
   - prettyprinter
   - random
   - really-safe-money
+  - safe-coloured-text
   - text
   - time
   - validity
   - validity-text
   - validity-time
   - vector
+  - yaml
 
 executables:
   centjes:

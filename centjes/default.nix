@@ -1,8 +1,10 @@
-{ mkDerivation, alex, array, base, deepseq, genvalidity
-, genvalidity-sydtest, genvalidity-text, genvalidity-time, happy
-, lib, mtl, prettyprinter, QuickCheck, random, really-safe-money
-, really-safe-money-gen, sydtest, sydtest-discover, text, time
-, validity, validity-text, validity-time, vector
+{ mkDerivation, alex, array, autodocodec, autodocodec-yaml, base
+, deepseq, envparse, genvalidity, genvalidity-sydtest
+, genvalidity-text, genvalidity-time, happy, lib, mtl
+, optparse-applicative, path, path-io, prettyprinter, QuickCheck
+, random, really-safe-money, really-safe-money-gen
+, safe-coloured-text, sydtest, sydtest-discover, text, time
+, validity, validity-text, validity-time, vector, yaml
 }:
 mkDerivation {
   pname = "centjes";
@@ -11,8 +13,10 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    array base deepseq mtl prettyprinter random really-safe-money text
-    time validity validity-text validity-time vector
+    array autodocodec autodocodec-yaml base deepseq envparse mtl
+    optparse-applicative path path-io prettyprinter random
+    really-safe-money safe-coloured-text text time validity
+    validity-text validity-time vector yaml
   ];
   libraryToolDepends = [ alex happy ];
   executableHaskellDepends = [ base ];

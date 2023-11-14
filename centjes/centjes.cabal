@@ -29,6 +29,7 @@ library
       Centjes.Format
       Centjes.Happy
       Centjes.Module
+      Centjes.OptParse
       Centjes.Parse
   other-modules:
       Paths_centjes
@@ -40,18 +41,26 @@ library
     , happy
   build-depends:
       array
+    , autodocodec
+    , autodocodec-yaml
     , base >=4.7 && <5
     , deepseq
+    , envparse
     , mtl
+    , optparse-applicative
+    , path
+    , path-io
     , prettyprinter
     , random
     , really-safe-money
+    , safe-coloured-text
     , text
     , time
     , validity
     , validity-text
     , validity-time
     , vector
+    , yaml
   default-language: Haskell2010
 
 executable centjes

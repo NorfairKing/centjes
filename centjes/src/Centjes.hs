@@ -10,6 +10,7 @@ module Centjes
 where
 
 import Centjes.Module
+import Centjes.OptParse
 import Data.Maybe
 import Data.Time
 import GHC.Generics (Generic)
@@ -18,6 +19,7 @@ import qualified Money.Account as Money (Account)
 
 runCentjes :: IO ()
 runCentjes = do
+  Instructions (DispatchFormat FormatSettings) Settings <- getInstructions
   let exampleTransaction =
         Transaction
           { transactionTimestamp = fromGregorian 2013 11 13,
