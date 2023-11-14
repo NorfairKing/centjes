@@ -37,6 +37,8 @@ data Dispatch
   deriving (Show, Eq, Generic)
 
 data FormatSettings = FormatSettings
+  { formatSettingFileOrDir :: !(Maybe (Either (Path Abs File) (Path Abs Dir)))
+  }
   deriving (Show, Eq, Generic)
 
 combineToInstructions :: Arguments -> Environment -> Maybe Configuration -> IO Instructions
@@ -44,8 +46,12 @@ combineToInstructions (Arguments cmd Flags {}) Environment {} _ = do
   let sets = Settings
   disp <-
     case cmd of
-      CommandFormat FormatArgs -> do
-        pure $ DispatchFormat FormatSettings
+      CommandFormat FormatArgs {..} -> do
+        formatSettingFileOrDir <- case (formatArgFile, formatArgDir) of
+          (Just fp, _) -> Just . Left <$> resolveFile' fp
+          (Nothing, Just d) -> Just . Right <$> resolveDir' d
+          (Nothing, Nothing) -> pure Nothing
+        pure $ DispatchFormat FormatSettings {..}
   pure $ Instructions disp sets
 
 data Configuration = Configuration
@@ -130,13 +136,35 @@ parseCommand =
       ]
 
 data FormatArgs = FormatArgs
+  { formatArgFile :: !(Maybe FilePath),
+    formatArgDir :: !(Maybe FilePath)
+  }
   deriving (Show, Eq, Generic)
 
 parseCommandFormat :: OptParse.ParserInfo FormatArgs
 parseCommandFormat = OptParse.info parser modifier
   where
     modifier = OptParse.fullDesc <> OptParse.progDesc "Format centjes files"
-    parser = pure FormatArgs
+    parser =
+      FormatArgs
+        <$> optional
+          ( strOption
+              ( mconcat
+                  [ short 'f',
+                    long "file",
+                    help "Path to file to format"
+                  ]
+              )
+          )
+        <*> optional
+          ( strOption
+              ( mconcat
+                  [ short 'd',
+                    long "directory",
+                    help "Path to directory to format"
+                  ]
+              )
+          )
 
 data Flags = Flags
   { flagConfigFile :: !(Maybe FilePath)

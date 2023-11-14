@@ -62,7 +62,11 @@ import qualified Data.Text as T
 
 module
   :: { Module }
-  : manySep(some(newline), declaration) { Module $1 }
+  : many(declaration_with_newlines) { Module $1 }
+
+declaration_with_newlines
+  :: { Declaration }
+  : declaration many(newline) { $1 }
 
 declaration
   :: { Declaration }

@@ -44,8 +44,10 @@ library
     , autodocodec
     , autodocodec-yaml
     , base >=4.7 && <5
+    , bytestring
     , deepseq
     , envparse
+    , monad-logger
     , mtl
     , optparse-applicative
     , path
