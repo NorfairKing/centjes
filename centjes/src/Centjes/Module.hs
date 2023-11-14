@@ -31,6 +31,7 @@ instance NFData Declaration
 
 data Transaction = Transaction
   { transactionTimestamp :: !Timestamp,
+    transactionDescription :: !Description,
     transactionPostings :: ![Posting]
   }
   deriving stock (Show, Eq, Generic)
@@ -38,6 +39,30 @@ data Transaction = Transaction
 instance Validity Transaction
 
 instance NFData Transaction
+
+newtype Description = Description {unDescription :: Text}
+  deriving (Show, Eq, Generic)
+
+instance Validity Description where
+  validate an@(Description t) =
+    mconcat
+      [ genericValidate an,
+        decorateText t validateDescriptionChar
+      ]
+
+validateDescriptionChar :: Char -> Validation
+validateDescriptionChar = \c -> declare "The character is not a newline, and not a control character" $
+  case c of
+    '\n' -> False
+    '\r' -> False
+    _
+      | Char.isControl c -> False
+      | otherwise -> True
+
+instance NFData Description
+
+nullDescription :: Description -> Bool
+nullDescription = T.null . unDescription
 
 data Posting = Posting
   { postingAccountName :: !AccountName,

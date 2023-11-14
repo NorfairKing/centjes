@@ -58,15 +58,27 @@ declarationDoc = \case
 
 transactionDoc :: Transaction -> Doc ann
 transactionDoc Transaction {..} =
-  vsep $
-    timestampDoc transactionTimestamp
-      : map (("  " <>) . postingDoc) transactionPostings
+  mconcat $
+    concat
+      [ [timestampDoc transactionTimestamp <> "\n"],
+        [ mconcat
+            [ "  | ",
+              descriptionDoc transactionDescription,
+              "\n"
+            ]
+          | not (nullDescription transactionDescription)
+        ],
+        map (("  " <>) . postingDoc) transactionPostings
+      ]
 
 timestampDoc :: Timestamp -> Doc ann
 timestampDoc = pretty . show
 
+descriptionDoc :: Description -> Doc ann
+descriptionDoc = pretty . unDescription
+
 postingDoc :: Posting -> Doc ann
-postingDoc Posting {..} = accountNameDoc postingAccountName <+> accountDoc postingAmount
+postingDoc Posting {..} = "*" <+> accountNameDoc postingAccountName <+> accountDoc postingAmount <> "\n"
 
 accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . unAccountName

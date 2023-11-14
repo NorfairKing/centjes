@@ -1,2 +1,4 @@
 2023-11-13
-  expenses:coffee 5
+  | Coffee
+  * expenses:coffee 5
+  * assets:coffee -5

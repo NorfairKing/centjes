@@ -5,12 +5,12 @@ module Centjes.Alex
   ( Token(..)
   , AlexPosn(..)
   , TokenClass(..)
-  , unLex
   , Alex(..)
   , runAlex'
   , alexMonadScan'
   , alexError'
   , alexError
+  , scanMany
   ) where
 
 import Prelude hiding (lex)
@@ -34,7 +34,6 @@ $whitechar   = [\v\t\ ]
 $white_no_nl = $whitechar
 $tab         = \t
 @newline     = $nl
-@emptyline   = @newline @newline+
 
 -- Values
 $digit = [0-9]
@@ -47,12 +46,17 @@ $alpha = [A-Za-z]
   | @decimal
 
 
-@string = $alpha [$alpha $digit \_ :]*
+@var = $alpha [$alpha $digit \_ :]*
 @year = $digit $digit $digit $digit
 @month_of_year = $digit $digit
 @day_of_month = $digit $digit
 @day = @year \- @month_of_year \- @day_of_month
-@comment = "-- " .*
+
+@star = \*
+
+@comment = "-- " .* \n
+
+@description = "| " .* \n
 
 tokens :-
 
@@ -60,11 +64,12 @@ tokens :-
 $white_no_nl+ ;
 
 @day                                  { lex TokenDay }
-@string                               { lex (TokenString . T.pack) }
+@var                                  { lex (TokenVar . T.pack) }
 @integer                              { lex (TokenInt . read) }
-@emptyline                            { lex' TokenEmptyLine }
+@star                                 { lex' TokenStar}
 @newline                              { lex' TokenNewLine }
-@comment \n                           { lexComment }
+@comment                              { lexComment }
+@description                          { lex (TokenDescription . T.pack . drop 2 . init) }
 
 {
 
@@ -94,26 +99,17 @@ data Token = Token AlexPosn TokenClass
   deriving ( Show )
 
 data TokenClass
-  = TokenComment Text
+  = 
+    TokenComment Text
   | TokenDay String
-  | TokenString Text
+  | TokenVar Text
+  | TokenDescription Text
   | TokenInt Integer
   | TokenFloat Double
-  | TokenEmptyLine
+  | TokenStar
   | TokenNewLine
   | TokenEOF
-  deriving ( Show )
-
--- For nice parser error messages.
-unLex :: TokenClass -> String
-unLex (TokenComment t) = "-- " <> show t
-unLex (TokenDay s) = s
-unLex (TokenString t) = show t
-unLex (TokenInt i) = show i
-unLex (TokenFloat d) = show d
-unLex TokenNewLine = "<\\n>"
-unLex TokenEmptyLine = "<empty line>"
-unLex TokenEOF = "<EOF>"
+  deriving ( Show, Eq )
 
 alexEOF :: Alex Token
 alexEOF = do
@@ -138,8 +134,11 @@ alexMonadScan' = do
   sc <- alexGetStartCode
   case alexScan inp sc of
     AlexEOF -> alexEOF
-    AlexError (p, _, _, s) ->
-        alexError' p ("lexical error at character '" ++ take 1 s ++ "'")
+    AlexError (p, _, _, s) -> do
+        let desc = case s of
+              [] -> "<empty>"
+              (c:_) -> show c
+        alexError' p ("lexical error at character '" ++ desc ++ "'")
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'
@@ -157,4 +156,13 @@ alexError' (AlexPn _ l c) msg = do
 runAlex' :: Alex a -> FilePath -> String -> Either String a
 runAlex' a fp input = runAlex input (setSourceFilePath fp >> a)
 
+
+scanMany :: String -> Either String [Token]
+scanMany input = runAlex input go
+  where
+    go = do
+      token@(Token _ c) <- alexMonadScan'
+      if c == TokenEOF
+        then pure [token]
+        else (token :) <$> go
 }

@@ -16,6 +16,12 @@ instance GenValid Declaration
 
 instance GenValid Transaction
 
+instance GenValid Description where
+  genValid =
+    fmap Description $
+      genTextBy $
+        genValid `suchThat` (validationIsValid . validateDescriptionChar)
+
 instance GenValid Posting
 
 instance GenValid AccountName where

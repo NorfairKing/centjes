@@ -48,9 +48,10 @@ import qualified Data.Text as T
 %token 
       comment         { Token _ (TokenComment $$) }
       day             { Token _ (TokenDay $$) }
-      string          { Token _ (TokenString $$) }
+      var             { Token _ (TokenVar $$) }
+      pipetext        { Token _ (TokenDescription $$) }
       int             { Token _ (TokenInt $$) }
-      emptyline       { Token _ TokenEmptyLine }
+      star            { Token _ TokenStar }
       newline         { Token _ TokenNewLine }
 
 
@@ -61,7 +62,7 @@ import qualified Data.Text as T
 
 module
   :: { Module }
-  : manySep(emptyline, declaration) { Module $1 }
+  : manySep(some(newline), declaration) { Module $1 }
 
 declaration
   :: { Declaration }
@@ -69,20 +70,25 @@ declaration
 
 transaction
   :: { Transaction }
-  : timestamp newline manySep(newline, posting) { Transaction $1 $3 }
-  | timestamp { Transaction $1 [] }
+  : timestamp newline description many(posting) { Transaction $1 $3 $4 }
+  | timestamp %shift { Transaction $1 (Description "") [] }
 
 timestamp
   :: { Timestamp }
   : day {% timeParser "%F" $1 }
 
+description
+  :: { Description }
+  : pipetext { Description $1 } -- TODO actual parsing
+  | {- empty -} { Description "" }
+
 posting
   :: { Posting }
-  : account_name account { Posting $1 $2 }
+  : star account_name account newline { Posting $2 $3 }
 
 account_name
   :: { AccountName }
-  : string { AccountName $1 } -- TODO do actual paring
+  : var { AccountName $1 } -- TODO do actual paring
 
 account
   :: { Money.Account }
@@ -93,17 +99,17 @@ amount
   : int { Amount.fromMinimalQuantisations (fromIntegral $1) } -- TODO fromIntegral is wrong.
 
 -- Helpers
--- Nonempty list with separator
 optional(p)
   :   { Nothing }
   | p { Just $1 }
 
+-- list
+many(p)
+  : many_rev(p) { reverse $1 }
+
 many_rev(p)
   : {- empty -}   { [] }
   | many_rev(p) p { $2 : $1 }
-
-many(p)
-  : many_rev(p) { reverse $1 }
 
 -- list with separator
 manySep(sep, p)
@@ -113,13 +119,21 @@ manySep(sep, p)
 manySep_rev(sep, p)
   : manySep_rev(sep, p) sep p { $3 : $1 }
   | p { [$1] }                      
+
+-- Nonempty list
+some(p)
+  : some_rev(p) { reverse $1 }
+
+some_rev(p)
+  : some_rev(p) p { $2 : $1 }
+  | p { [$1] }
 {
 lexwrap :: (Token -> Alex a) -> Alex a
 lexwrap = (alexMonadScan' >>=)
                                     
 happyError :: Token -> Alex a
 happyError (Token p t) =
-  alexError' p ("parse error at token '" ++ unLex t ++ "'")
+  alexError' p ("parse error at token '" ++ show t ++ "'")
 
 timeParser :: ParseTime t => String -> String -> Alex t
 timeParser formatString s = case parseTimeM False defaultTimeLocale formatString s of

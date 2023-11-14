@@ -1,4 +1,6 @@
 - ignore:
+    name: "Use ++"
+- ignore:
     name: "Redundant lambda"
 - ignore:
     name: "Use newtype instead of data"

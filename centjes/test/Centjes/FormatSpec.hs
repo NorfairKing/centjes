@@ -2,6 +2,7 @@
 
 module Centjes.FormatSpec (spec) where
 
+import Centjes.Alex
 import Centjes.Format
 import Centjes.Module.Gen ()
 import Centjes.Parse
@@ -14,17 +15,18 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  let parseFormatRoundtrip' n p = parseFormatRoundtrip n (\fp t -> p fp (T.strip t))
+  parseFormatRoundtrip' "amount" parseAmount formatAmount
+  parseFormatRoundtrip' "account" parseAccount formatAccount
+  parseFormatRoundtrip' "account-name" parseAccountName formatAccountName
+  parseFormatRoundtrip "posting" parsePosting formatPosting
+  parseFormatRoundtrip "transaction" parseTransaction formatTransaction
+  parseFormatRoundtrip "declaration" parseDeclaration formatDeclaration
+  parseFormatRoundtrip "module" parseModule formatModule
+
   describe "formatModule" $ do
     it "can format any module" $
       producesValid formatModule
-
-    parseFormatRoundtrip "amount" parseAmount formatAmount
-    parseFormatRoundtrip "account" parseAccount formatAccount
-    parseFormatRoundtrip "account-name" parseAccountName formatAccountName
-    parseFormatRoundtrip "posting" parsePosting formatPosting
-    parseFormatRoundtrip "transaction" parseTransaction formatTransaction
-    parseFormatRoundtrip "declaration" parseDeclaration formatDeclaration
-    parseFormatRoundtrip "module" parseModule formatModule
 
 parseFormatRoundtrip ::
   forall a.
@@ -38,23 +40,36 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
   describe name $ do
     describe "can parse the examples" $
       scenarioDir ("test_resources/" <> name) $ \fp ->
-        it ("can parse " <> fp <> "and roundtrip it") $ do
-          contents <- T.strip <$> T.readFile fp
-          case parser fp contents of
-            Left err -> expectationFailure $ unlines ["Failed to parse:", err]
-            Right expected -> do
-              shouldBeValid expected
-              context (show expected) $ do
-                let rendered = formatter (expected :: a)
-                context (unlines ["Rendered:", show rendered]) $
-                  case parser "test-input" rendered of
-                    Left err -> expectationFailure $ unlines ["Failed to parse:", err]
-                    Right actual -> (actual :: a) `shouldBe` expected
+        it (unwords ["can parse", fp, "and roundtrip it"]) $ do
+          contents <- T.readFile fp
+          expected <- shouldParse parser fp contents
+          shouldBeValid expected
+          context (show expected) $ do
+            let rendered = formatter (expected :: a)
+            context (unlines ["Rendered:", T.unpack rendered]) $ do
+              actual <- shouldParse parser "test-input" rendered
+              (actual :: a) `shouldBe` expected
 
     it "roundtrips" $
       forAllValid $ \expected -> do
         let rendered = formatter (expected :: a)
-        context (unlines ["Rendered:", show rendered]) $
-          case parser "test-input" rendered of
-            Left err -> expectationFailure $ unlines ["Failed to parse:", err]
-            Right actual -> (actual :: a) `shouldBe` expected
+        context (unlines ["Rendered:", T.unpack rendered]) $ do
+          actual <- shouldParse parser "test-input" rendered
+          (actual :: a) `shouldBe` expected
+
+shouldParse :: (FilePath -> Text -> Either String a) -> FilePath -> Text -> IO a
+shouldParse parser fp contents =
+  case parser fp contents of
+    Left err -> do
+      expectationFailure $
+        unlines $
+          concat
+            [ [ "Failed to parse:",
+                err
+              ],
+              [ "",
+                "tokens:",
+                ppShow (scanMany (T.unpack contents))
+              ]
+            ]
+    Right m -> pure m

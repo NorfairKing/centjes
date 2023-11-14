@@ -21,6 +21,7 @@ runCentjes = do
   let exampleTransaction =
         Transaction
           { transactionTimestamp = fromGregorian 2013 11 13,
+            transactionDescription = Description "Example",
             transactionPostings =
               [ Posting
                   { postingAccountName = AccountName "expenses:food",
