@@ -78,7 +78,7 @@ descriptionDoc :: Description -> Doc ann
 descriptionDoc = pretty . unDescription
 
 postingDoc :: Posting -> Doc ann
-postingDoc Posting {..} = "*" <+> accountNameDoc postingAccountName <+> accountDoc postingAmount <> "\n"
+postingDoc Posting {..} = "*" <+> accountNameDoc postingAccountName <+> accountDoc postingAccount <> "\n"
 
 accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . unAccountName

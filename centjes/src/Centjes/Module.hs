@@ -16,14 +16,14 @@ import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 
 data Module = Module {moduleDeclarations :: ![Declaration]}
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Module
 
 instance NFData Module
 
 data Declaration = DeclarationTransaction !Transaction
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Declaration
 
@@ -34,14 +34,14 @@ data Transaction = Transaction
     transactionDescription :: !Description,
     transactionPostings :: ![Posting]
   }
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Transaction
 
 instance NFData Transaction
 
 newtype Description = Description {unDescription :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity Description where
   validate an@(Description t) =
@@ -66,9 +66,9 @@ nullDescription = T.null . unDescription
 
 data Posting = Posting
   { postingAccountName :: !AccountName,
-    postingAmount :: !Money.Account
+    postingAccount :: !Money.Account
   }
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Posting
 
@@ -77,7 +77,7 @@ instance NFData Posting
 type Timestamp = Day
 
 newtype AccountName = AccountName {unAccountName :: Text}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance Validity AccountName where
   validate an@(AccountName t) =

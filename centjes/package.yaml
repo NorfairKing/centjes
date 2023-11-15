@@ -29,6 +29,7 @@ library:
   - autodocodec
   - autodocodec-yaml
   - bytestring
+  - containers
   - deepseq
   - envparse
   - monad-logger
@@ -40,6 +41,8 @@ library:
   - random
   - really-safe-money
   - safe-coloured-text
+  - safe-coloured-text-layout
+  - safe-coloured-text-terminfo
   - text
   - time
   - validity

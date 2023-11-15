@@ -34,6 +34,7 @@ library
       Centjes.Module
       Centjes.OptParse
       Centjes.Parse
+      Centjes.Validation
   other-modules:
       Paths_centjes
   hs-source-dirs:
@@ -50,6 +51,7 @@ library
     , autodocodec-yaml
     , base >=4.7 && <5
     , bytestring
+    , containers
     , deepseq
     , envparse
     , monad-logger
@@ -61,6 +63,8 @@ library
     , random
     , really-safe-money
     , safe-coloured-text
+    , safe-coloured-text-layout
+    , safe-coloured-text-terminfo
     , text
     , time
     , validity
