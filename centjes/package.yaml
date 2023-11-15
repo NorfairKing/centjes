@@ -23,6 +23,7 @@ library:
   build-tools:
   - alex
   - happy
+  - autoexporter
   dependencies:
   - array
   - autodocodec

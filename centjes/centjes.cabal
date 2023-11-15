@@ -26,6 +26,9 @@ library
   exposed-modules:
       Centjes
       Centjes.Alex
+      Centjes.Command
+      Centjes.Command.Balance
+      Centjes.Command.Format
       Centjes.Format
       Centjes.Happy
       Centjes.Module
@@ -39,6 +42,8 @@ library
   build-tools:
       alex
     , happy
+  build-tool-depends:
+      autoexporter:autoexporter
   build-depends:
       array
     , autodocodec

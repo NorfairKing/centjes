@@ -1,10 +1,11 @@
-{ mkDerivation, alex, array, autodocodec, autodocodec-yaml, base
-, bytestring, deepseq, envparse, genvalidity, genvalidity-sydtest
-, genvalidity-text, genvalidity-time, happy, lib, monad-logger, mtl
-, optparse-applicative, path, path-io, prettyprinter, QuickCheck
-, random, really-safe-money, really-safe-money-gen
-, safe-coloured-text, sydtest, sydtest-discover, text, time
-, validity, validity-text, validity-time, vector, yaml
+{ mkDerivation, alex, array, autodocodec, autodocodec-yaml
+, autoexporter, base, bytestring, deepseq, envparse, genvalidity
+, genvalidity-sydtest, genvalidity-text, genvalidity-time, happy
+, lib, monad-logger, mtl, optparse-applicative, path, path-io
+, prettyprinter, QuickCheck, random, really-safe-money
+, really-safe-money-gen, safe-coloured-text, sydtest
+, sydtest-discover, text, time, validity, validity-text
+, validity-time, vector, yaml
 }:
 mkDerivation {
   pname = "centjes";
@@ -18,7 +19,7 @@ mkDerivation {
     random really-safe-money safe-coloured-text text time validity
     validity-text validity-time vector yaml
   ];
-  libraryToolDepends = [ alex happy ];
+  libraryToolDepends = [ alex autoexporter happy ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
     base genvalidity genvalidity-sydtest genvalidity-text
