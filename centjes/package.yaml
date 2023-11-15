@@ -46,8 +46,10 @@ library:
   - text
   - time
   - validity
+  - validity-path
   - validity-text
   - validity-time
+  - validity-vector
   - vector
   - yaml
 
@@ -75,9 +77,11 @@ tests:
     - QuickCheck
     - centjes
     - genvalidity
+    - genvalidity-path
     - genvalidity-sydtest
     - genvalidity-text
     - genvalidity-time
+    - genvalidity-vector
     - really-safe-money-gen
     - sydtest
     - text

@@ -53,6 +53,7 @@ $alpha = [A-Za-z]
 @day = @year \- @month_of_year \- @day_of_month
 
 @star = \*
+@import = "import " .* \n
 
 @comment = "-- " .* \n
 
@@ -63,19 +64,20 @@ tokens :-
 -- Skip non-newline whitespace everywhere
 $white_no_nl+ ;
 
-@day                                  { lex TokenDay }
-@var                                  { lex (TokenVar . T.pack) }
-@integer                              { lex (TokenInt . read) }
-@star                                 { lex' TokenStar}
-@newline                              { lex' TokenNewLine }
-@comment                              { lexComment }
-@description                          { lex (TokenDescription . T.pack . drop 2 . init) }
+@import        { lex (TokenImport . drop (length "import ") . init) }
+@day           { lex TokenDay }
+@comment       { lexComment }
+@var           { lex (TokenVar . T.pack) }
+@integer       { lex (TokenInt . read) }
+@star          { lex' TokenStar}
+@description   { lex (TokenDescription . T.pack . drop (length "| ") . init) }
+@newline       { lex' TokenNewLine }
 
 {
 
 -- Count a comment as a newline
 lexComment :: AlexInput -> Int -> Alex Token
-lexComment inp len = lex (TokenComment . T.pack . drop 3 . init) inp len
+lexComment inp len = lex (TokenComment . T.pack . drop (length "-- ") . init) inp len
 
 
 -- To improve error messages, We keep the path of the file we are
@@ -99,14 +101,14 @@ data Token = Token AlexPosn TokenClass
   deriving ( Show )
 
 data TokenClass
-  = 
-    TokenComment Text
-  | TokenDay String
-  | TokenVar Text
-  | TokenDescription Text
-  | TokenInt Integer
-  | TokenFloat Double
+  = TokenComment !Text
+  | TokenDay !String
+  | TokenVar !Text
+  | TokenDescription !Text
+  | TokenInt !Integer
+  | TokenFloat !Double
   | TokenStar
+  | TokenImport !FilePath
   | TokenNewLine
   | TokenEOF
   deriving ( Show, Eq )

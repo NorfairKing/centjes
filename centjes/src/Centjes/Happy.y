@@ -4,6 +4,7 @@
 module Centjes.Happy
   ( parseModule
   , parseDeclaration
+  , parseImport
   , parseTransaction
   , parsePosting
   , parseAccountName
@@ -14,13 +15,15 @@ module Centjes.Happy
 import Centjes.Alex
 import Centjes.Module
 import Data.List
+import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.Time
 import Debug.Trace
-import Money.Amount as Money (Amount)
-import qualified Money.Amount as Amount
 import Money.Account as Money (Account)
 import qualified Money.Account as Account
+import Money.Amount as Money (Amount)
+import qualified Money.Amount as Amount
+import Path (parseRelFile)
 import qualified Data.Text as T
 
 }
@@ -30,7 +33,8 @@ import qualified Data.Text as T
 
 %name moduleParser module
 %name declarationParser declaration
-%name transactionParser transaction
+%name importParser import_dec
+%name transactionParser transaction_dec
 %name postingParser posting
 %name accountNameParser account_name
 %name accountParser account
@@ -52,6 +56,7 @@ import qualified Data.Text as T
       pipetext        { Token _ (TokenDescription $$) }
       int             { Token _ (TokenInt $$) }
       star            { Token _ TokenStar }
+      import          { Token _ (TokenImport $$ )}
       newline         { Token _ TokenNewLine }
 
 
@@ -70,9 +75,14 @@ declaration_with_newlines
 
 declaration
   :: { Declaration }
-  : transaction { DeclarationTransaction $1 }
+  : import_dec { DeclarationImport $1 }
+  | transaction_dec { DeclarationTransaction $1 }
 
-transaction
+import_dec
+  :: { Import }
+  : import { Import (fromJust (parseRelFile $1)) } -- TODO actual parsing
+
+transaction_dec
   :: { Transaction }
   : timestamp newline description many(posting) { Transaction $1 $3 $4 }
   | timestamp %shift { Transaction $1 (Description "") [] }
@@ -157,6 +167,9 @@ parseModule fp = runAlex' moduleParser fp . T.unpack
 
 parseDeclaration :: FilePath -> Text -> Either String Declaration
 parseDeclaration fp = runAlex' declarationParser fp . T.unpack
+
+parseImport :: FilePath -> Text -> Either String Import
+parseImport fp = runAlex' importParser fp . T.unpack
 
 parseTransaction :: FilePath -> Text -> Either String Transaction
 parseTransaction fp = runAlex' transactionParser fp . T.unpack

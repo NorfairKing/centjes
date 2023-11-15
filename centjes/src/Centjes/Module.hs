@@ -10,24 +10,35 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
 import Data.Validity
+import Data.Validity.Path ()
 import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
+import Path
 
-data Module = Module {moduleDeclarations :: ![Declaration]}
+newtype Module = Module {moduleDeclarations :: [Declaration]}
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Module
 
 instance NFData Module
 
-data Declaration = DeclarationTransaction !Transaction
+data Declaration
+  = DeclarationImport !Import
+  | DeclarationTransaction !Transaction
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Declaration
 
 instance NFData Declaration
+
+newtype Import = Import {importFile :: Path Rel File}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Import
+
+instance NFData Import
 
 data Transaction = Transaction
   { transactionTimestamp :: !Timestamp,

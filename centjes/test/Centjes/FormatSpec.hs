@@ -21,6 +21,7 @@ spec = do
   parseFormatRoundtrip' "account-name" parseAccountName formatAccountName
   parseFormatRoundtrip "posting" parsePosting formatPosting
   parseFormatRoundtrip "transaction" parseTransaction formatTransaction
+  parseFormatRoundtrip "import" parseImport formatImport
   parseFormatRoundtrip "declaration" parseDeclaration formatDeclaration
   parseFormatRoundtrip "module" parseModule formatModule
 

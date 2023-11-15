@@ -4,6 +4,7 @@ module Centjes.Module.Gen where
 
 import Centjes.Module
 import Data.GenValidity
+import Data.GenValidity.Path ()
 import Data.GenValidity.Text
 import Data.GenValidity.Time ()
 import qualified Data.Text as T
@@ -13,6 +14,8 @@ import Test.QuickCheck
 instance GenValid Module
 
 instance GenValid Declaration
+
+instance GenValid Import
 
 instance GenValid Transaction
 

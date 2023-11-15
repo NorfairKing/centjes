@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Compile where
@@ -5,11 +6,19 @@ module Centjes.Compile where
 import Centjes.Ledger as Ledger
 import Centjes.Module as Module
 import Data.List (sort)
+import Data.Maybe
+import qualified Data.Vector as V
 
 compileModule :: Module -> Ledger
 compileModule m =
-  let transactions = map (\(DeclarationTransaction t) -> t) (moduleDeclarations m)
-      ledgerTransactions = sort $ map compileTransaction transactions
+  let transactions =
+        mapMaybe
+          ( \case
+              DeclarationTransaction t -> Just t
+              _ -> Nothing
+          )
+          (moduleDeclarations m)
+      ledgerTransactions = V.fromList $ sort $ map compileTransaction transactions
    in Ledger {..}
 
 compileTransaction :: Module.Transaction -> Ledger.Transaction
