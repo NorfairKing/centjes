@@ -6,7 +6,8 @@
 
 module Centjes.Command.Balance (runCentjesBalance) where
 
-import Centjes.Module
+import Centjes.Compile
+import Centjes.Ledger
 import Centjes.OptParse
 import Centjes.Parse
 import Centjes.Validation
@@ -54,7 +55,7 @@ runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
                     err
                   ]
           Right m -> pure m
-  liftIO $ case balanceModule mainModule of
+  liftIO $ case balanceLedger (compileModule mainModule) of
     Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
     Success accs -> do
       terminalCapabilities <- getTerminalCapabilitiesFromEnv
@@ -83,8 +84,8 @@ accountChunk a =
     . show
     $ Account.toMinimalQuantisations a
 
-balanceModule :: Module -> Validation BalanceError (Map AccountName Money.Account)
-balanceModule m = do
+balanceLedger :: Ledger -> Validation BalanceError (Map AccountName Money.Account)
+balanceLedger m = do
   let incorporateAccounts :: Map AccountName Money.Account -> Map AccountName Money.Account -> Validation BalanceError (Map AccountName Money.Account)
       incorporateAccounts totals current =
         traverse
@@ -102,7 +103,7 @@ balanceModule m = do
             )
             (M.map Right totals)
             (M.map Right current)
-  mapM (\(DeclarationTransaction t) -> balanceTransaction t) (moduleDeclarations m) >>= foldM incorporateAccounts M.empty
+  mapM balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
 
 balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName Money.Account)
 balanceTransaction t@Transaction {..} = do

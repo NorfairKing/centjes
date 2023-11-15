@@ -2,9 +2,17 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Centjes.Ledger where
+module Centjes.Ledger
+  ( Ledger (..),
+    Transaction (..),
+    Description (..),
+    Posting (..),
+    AccountName (..),
+    Timestamp,
+  )
+where
 
-import Centjes.Module (AccountName, Description, Timestamp)
+import Centjes.Module (AccountName (..), Description (..), Timestamp)
 import Control.DeepSeq
 import Data.List (sort)
 import Data.Validity
