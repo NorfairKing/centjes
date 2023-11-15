@@ -9,6 +9,7 @@ module Centjes.OptParse where
 import Autodocodec
 import Autodocodec.Yaml
 import Control.Applicative
+import Data.Maybe
 import qualified Data.Text as T
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
@@ -30,6 +31,8 @@ getInstructions = do
   combineToInstructions args env config
 
 data Settings = Settings
+  { settingLedgerFile :: !(Path Abs File)
+  }
   deriving (Show, Eq, Generic)
 
 data Dispatch
@@ -46,8 +49,8 @@ data BalanceSettings = BalanceSettings
   deriving (Show, Eq, Generic)
 
 combineToInstructions :: Arguments -> Environment -> Maybe Configuration -> IO Instructions
-combineToInstructions (Arguments cmd Flags {}) Environment {} _ = do
-  let sets = Settings
+combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
+  settingLedgerFile <- resolveFile' $ fromMaybe "ledger.cent" $ flagLedgerFile <|> envLedgerFile <|> (mConf >>= configLedgerFile)
   disp <-
     case cmd of
       CommandBalance BalanceArgs -> do
@@ -58,15 +61,20 @@ combineToInstructions (Arguments cmd Flags {}) Environment {} _ = do
           (Nothing, Just d) -> Just . Right <$> resolveDir' d
           (Nothing, Nothing) -> pure Nothing
         pure $ DispatchFormat FormatSettings {..}
-  pure $ Instructions disp sets
+  pure $ Instructions disp Settings {..}
 
 data Configuration = Configuration
+  { configLedgerFile :: !(Maybe FilePath)
+  }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Configuration)
 
 instance HasCodec Configuration where
   codec =
-    object "Configuration" $ pure Configuration
+    object "Configuration" $
+      Configuration
+        <$> optionalField "ledger" "path to the main ledger file"
+          .= configLedgerFile
 
 getConfiguration :: Flags -> Environment -> IO (Maybe Configuration)
 getConfiguration Flags {..} Environment {..} =
@@ -80,7 +88,8 @@ defaultConfigFile :: IO (Path Abs File)
 defaultConfigFile = resolveFile' "centjes.yaml"
 
 data Environment = Environment
-  { envConfigFile :: !(Maybe FilePath)
+  { envConfigFile :: !(Maybe FilePath),
+    envLedgerFile :: !(Maybe FilePath)
   }
   deriving (Show, Eq, Generic)
 
@@ -92,6 +101,7 @@ environmentParser =
   Env.prefixed "CENTJES_" $
     Environment
       <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
+      <*> optional (Env.var Env.str "LEDGER" (Env.help "Ledger file"))
 
 data Arguments
   = Arguments !Command !Flags
@@ -184,7 +194,8 @@ parseCommandFormat = OptParse.info parser modifier
           )
 
 data Flags = Flags
-  { flagConfigFile :: !(Maybe FilePath)
+  { flagConfigFile :: !(Maybe FilePath),
+    flagLedgerFile :: !(Maybe FilePath)
   }
   deriving (Show, Eq, Generic)
 
@@ -196,6 +207,16 @@ parseFlags =
           ( mconcat
               [ long "config-file",
                 help "Path to an altenative config file",
+                metavar "FILEPATH"
+              ]
+          )
+      )
+    <*> optional
+      ( strOption
+          ( mconcat
+              [ long "ledger",
+                short 'l',
+                help "Path to the main ledger file",
                 metavar "FILEPATH"
               ]
           )

@@ -7,33 +7,45 @@ module Centjes.Command.Balance (runCentjesBalance) where
 
 import Centjes.Module
 import Centjes.OptParse
-import Data.Maybe
-import Data.Time
+import Centjes.Parse
+import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Logger
+import qualified Data.ByteString as SB
+import qualified Data.Text.Encoding as TE
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import Path
+import System.Exit
 
-runCentjesBalance :: BalanceSettings -> IO ()
-runCentjesBalance BalanceSettings = doExample
-
-doExample :: IO ()
-doExample = do
-  let exampleTransaction =
-        Transaction
-          { transactionTimestamp = fromGregorian 2013 11 13,
-            transactionDescription = Description "Example",
-            transactionPostings =
-              [ Posting
-                  { postingAccountName = AccountName "expenses:food",
-                    postingAmount = fromJust $ Account.fromMinimalQuantisations 100
-                  },
-                Posting
-                  { postingAccountName = AccountName "assets:cash",
-                    postingAmount = fromJust $ Account.fromMinimalQuantisations (-100)
-                  }
+runCentjesBalance :: Settings -> BalanceSettings -> IO ()
+runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
+  let fp = settingLedgerFile
+  mainModule <- do
+    contents <- liftIO $ SB.readFile (fromAbsFile fp)
+    case TE.decodeUtf8' contents of
+      Left err ->
+        liftIO $
+          die $
+            unlines
+              [ "Could not read file because it does not look like Utf-8: ",
+                show fp,
+                show err
               ]
-          }
-  print $ balanceTransaction exampleTransaction
+      Right textContents -> do
+        case parseModule (fromAbsFile fp) textContents of
+          Left err ->
+            liftIO $
+              die $
+                unlines
+                  [ "Cannot parse file: ",
+                    show fp,
+                    err
+                  ]
+          Right m -> pure m
+  liftIO $ forM_ (moduleDeclarations mainModule) $ \(DeclarationTransaction transaction) -> do
+    print (balanceTransaction transaction)
 
 data Balancing
   = Balanced

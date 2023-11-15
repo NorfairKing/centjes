@@ -15,11 +15,11 @@ import Path
 import Path.IO
 import System.Exit
 
-runCentjesFormat :: FormatSettings -> IO ()
-runCentjesFormat FormatSettings {..} = do
+runCentjesFormat :: Settings -> FormatSettings -> IO ()
+runCentjesFormat Settings {..} FormatSettings {..} = do
   runStderrLoggingT $ do
     case formatSettingFileOrDir of
-      Nothing -> getCurrentDir >>= formatDir
+      Nothing -> formatDir (parent settingLedgerFile)
       Just (Right dir) -> formatDir dir
       Just (Left file) -> formatFile file
 

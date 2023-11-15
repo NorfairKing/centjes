@@ -8,7 +8,7 @@ import Centjes.OptParse
 
 runCentjes :: IO ()
 runCentjes = do
-  Instructions d Settings <- getInstructions
+  Instructions d settings <- getInstructions
   case d of
-    DispatchBalance cs -> runCentjesBalance cs
-    DispatchFormat cs -> runCentjesFormat cs
+    DispatchBalance cs -> runCentjesBalance settings cs
+    DispatchFormat cs -> runCentjesFormat settings cs
