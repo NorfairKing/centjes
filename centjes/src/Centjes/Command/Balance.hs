@@ -27,6 +27,7 @@ import System.Exit
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
+import Text.Printf
 
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
@@ -71,10 +72,16 @@ renderBalances =
     . M.toList
 
 accountNameChunk :: AccountName -> Chunk
-accountNameChunk = chunk . unAccountName
+accountNameChunk = fore yellow . chunk . unAccountName
 
 accountChunk :: Money.Account -> Chunk
-accountChunk = chunk . T.pack . show
+accountChunk a =
+  fore (if a >= Account.zero then green else red)
+    . chunk
+    . T.pack
+    . printf "%20s"
+    . show
+    $ Account.toMinimalQuantisations a
 
 balanceModule :: Module -> Validation BalanceError (Map AccountName Money.Account)
 balanceModule m = do
