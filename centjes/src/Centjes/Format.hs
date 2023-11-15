@@ -15,7 +15,6 @@ module Centjes.Format
 where
 
 import Centjes.Module
-import Data.List (intersperse)
 import Data.String
 import Data.Text (Text)
 import Money.Account as Money (Account)
@@ -56,7 +55,7 @@ renderDocText = renderStrict . layoutPretty layoutOptions
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
 
 moduleDoc :: Module -> Doc ann
-moduleDoc Module {..} = vcat $ intersperse "\n" $ map declarationDoc moduleDeclarations
+moduleDoc Module {..} = vcat $ map declarationDoc moduleDeclarations
 
 declarationDoc :: Declaration -> Doc ann
 declarationDoc = \case

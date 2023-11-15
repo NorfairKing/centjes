@@ -8,22 +8,19 @@ module Centjes.Command.Balance (runCentjesBalance) where
 
 import Centjes.Compile
 import Centjes.Ledger
+import Centjes.Load
 import Centjes.OptParse
-import Centjes.Parse
 import Centjes.Validation
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
-import qualified Data.ByteString as SB
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
-import Path
 import System.Exit
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
@@ -32,30 +29,8 @@ import Text.Printf
 
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
-  let fp = settingLedgerFile
-  mainModule <- do
-    contents <- liftIO $ SB.readFile (fromAbsFile fp)
-    case TE.decodeUtf8' contents of
-      Left err ->
-        liftIO $
-          die $
-            unlines
-              [ "Could not read file because it does not look like Utf-8: ",
-                show fp,
-                show err
-              ]
-      Right textContents -> do
-        case parseModule (fromAbsFile fp) textContents of
-          Left err ->
-            liftIO $
-              die $
-                unlines
-                  [ "Cannot parse file: ",
-                    show fp,
-                    err
-                  ]
-          Right m -> pure m
-  liftIO $ case balanceLedger (compileModule mainModule) of
+  combinedModule <- loadModules settingLedgerFile
+  liftIO $ case balanceLedger (compileModule combinedModule) of
     Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
     Success accs -> do
       terminalCapabilities <- getTerminalCapabilitiesFromEnv

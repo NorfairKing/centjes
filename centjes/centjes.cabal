@@ -33,6 +33,7 @@ library
       Centjes.Format
       Centjes.Happy
       Centjes.Ledger
+      Centjes.Load
       Centjes.Module
       Centjes.OptParse
       Centjes.Parse

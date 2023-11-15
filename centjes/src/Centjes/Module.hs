@@ -17,8 +17,10 @@ import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 import Path
 
+-- TODO roundtrip comments.
 newtype Module = Module {moduleDeclarations :: [Declaration]}
   deriving stock (Show, Eq, Ord, Generic)
+  deriving (Semigroup, Monoid) via [Declaration]
 
 instance Validity Module
 
