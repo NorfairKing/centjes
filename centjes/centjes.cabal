@@ -29,6 +29,7 @@ library
       Centjes.Command
       Centjes.Command.Balance
       Centjes.Command.Format
+      Centjes.Compile
       Centjes.Format
       Centjes.Happy
       Centjes.Ledger
