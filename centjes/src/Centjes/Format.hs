@@ -62,12 +62,22 @@ moduleDoc Module {..} =
         map declarationDoc moduleDeclarations
       ]
 
-declarationDoc :: Declaration -> Doc ann
-declarationDoc = \case
-  DeclarationTransaction t -> transactionDoc t
-
 importDoc :: Import -> Doc ann
 importDoc (Import fp) = "import" <+> fromString (fromRelFile fp) <> "\n"
+
+declarationDoc :: Declaration -> Doc ann
+declarationDoc = \case
+  DeclarationCurrency cd -> currencyDeclarationDoc cd
+  DeclarationTransaction t -> transactionDoc t
+
+currencyDeclarationDoc :: CurrencyDeclaration -> Doc ann
+currencyDeclarationDoc CurrencyDeclaration {..} =
+  "currency"
+    <+> currencySymbolDoc currencyDeclarationSymbol
+    <+> pretty (show currencyDeclarationFactor) <> "\n"
+
+currencySymbolDoc :: CurrencySymbol -> Doc ann
+currencySymbolDoc = pretty . unCurrencySymbol
 
 transactionDoc :: Transaction -> Doc ann
 transactionDoc Transaction {..} =
@@ -91,7 +101,10 @@ descriptionDoc :: Description -> Doc ann
 descriptionDoc = pretty . unDescription
 
 postingDoc :: Posting -> Doc ann
-postingDoc Posting {..} = "*" <+> accountNameDoc postingAccountName <+> accountDoc postingAccount <> "\n"
+postingDoc Posting {..} =
+  "*"
+    <+> accountNameDoc postingAccountName
+    <+> accountDoc postingAccount <> "\n"
 
 accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . unAccountName

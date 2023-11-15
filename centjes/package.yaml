@@ -46,6 +46,7 @@ library:
   - text
   - time
   - validity
+  - validity-containers
   - validity-path
   - validity-text
   - validity-time
@@ -77,6 +78,7 @@ tests:
     - QuickCheck
     - centjes
     - genvalidity
+    - genvalidity-containers
     - genvalidity-path
     - genvalidity-sydtest
     - genvalidity-text

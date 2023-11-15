@@ -17,6 +17,14 @@ instance GenValid Declaration
 
 instance GenValid Import
 
+instance GenValid CurrencyDeclaration
+
+instance GenValid CurrencySymbol where
+  genValid =
+    fmap CurrencySymbol $ do
+      let genChar = choose ('A', 'Z')
+      T.cons <$> genChar <*> genTextBy genChar
+
 instance GenValid Transaction
 
 instance GenValid Description where

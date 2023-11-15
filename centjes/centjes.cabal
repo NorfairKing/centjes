@@ -71,6 +71,7 @@ library
     , text
     , time
     , validity
+    , validity-containers
     , validity-path
     , validity-text
     , validity-time
@@ -109,6 +110,7 @@ test-suite centjes-test
     , base >=4.7 && <5
     , centjes
     , genvalidity
+    , genvalidity-containers
     , genvalidity-path
     , genvalidity-sydtest
     , genvalidity-text

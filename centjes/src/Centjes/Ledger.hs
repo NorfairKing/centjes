@@ -4,6 +4,7 @@
 
 module Centjes.Ledger
   ( Ledger (..),
+    CurrencySymbol (..),
     Transaction (..),
     Description (..),
     Posting (..),
@@ -12,17 +13,23 @@ module Centjes.Ledger
   )
 where
 
-import Centjes.Module (AccountName (..), Description (..), Timestamp)
+import Centjes.Module (AccountName (..), CurrencySymbol (..), Description (..), Timestamp)
 import Control.DeepSeq
 import Data.List (sort)
+import Data.Map (Map)
 import Data.Validity
+import Data.Validity.Map ()
 import Data.Validity.Vector ()
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import Data.Word
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 
-newtype Ledger = Ledger {ledgerTransactions :: Vector Transaction}
+data Ledger = Ledger
+  { ledgerCurrencies :: Map CurrencySymbol Word32,
+    ledgerTransactions :: Vector Transaction
+  }
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Ledger where

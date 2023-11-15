@@ -5,7 +5,7 @@
 module Centjes.Module where
 
 import Control.DeepSeq
-import Data.Char as Char
+import qualified Data.Char as Char
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -13,6 +13,7 @@ import Data.Validity
 import Data.Validity.Path ()
 import Data.Validity.Text
 import Data.Validity.Time ()
+import Data.Word
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 import Path
@@ -28,7 +29,9 @@ instance Validity Module
 
 instance NFData Module
 
-newtype Declaration = DeclarationTransaction Transaction
+data Declaration
+  = DeclarationCurrency CurrencyDeclaration
+  | DeclarationTransaction Transaction
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Declaration
@@ -41,6 +44,35 @@ newtype Import = Import {importFile :: Path Rel File}
 instance Validity Import
 
 instance NFData Import
+
+data CurrencyDeclaration = CurrencyDeclaration
+  { currencyDeclarationSymbol :: CurrencySymbol,
+    currencyDeclarationFactor :: Word32
+  }
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity CurrencyDeclaration
+
+instance NFData CurrencyDeclaration
+
+newtype CurrencySymbol = CurrencySymbol {unCurrencySymbol :: Text}
+  deriving (Show, Eq, Ord, Generic)
+
+instance Validity CurrencySymbol where
+  validate an@(CurrencySymbol t) =
+    mconcat
+      [ genericValidate an,
+        declare "The currency symbol is not empty" $ not (T.null t),
+        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character or _ or :" $
+          case c of
+            ':' -> True
+            '_' -> True
+            _
+              | Char.isLatin1 c && Char.isAlphaNum c -> True
+              | otherwise -> False
+      ]
+
+instance NFData CurrencySymbol
 
 data Transaction = Transaction
   { transactionTimestamp :: !Timestamp,

@@ -57,6 +57,7 @@ import qualified Data.Text as T
       int             { Token _ (TokenInt $$) }
       star            { Token _ TokenStar }
       import          { Token _ (TokenImport $$ )}
+      currency        { Token _ TokenCurrency}
       newline         { Token _ TokenNewLine }
 
 
@@ -83,7 +84,16 @@ declaration_with_newlines
 
 declaration
   :: { Declaration }
-  : transaction_dec { DeclarationTransaction $1 }
+  : currency_dec { DeclarationCurrency $1 }
+  | transaction_dec { DeclarationTransaction $1 }
+
+currency_dec
+  :: { CurrencyDeclaration }
+  : currency currency_symbol int newline { CurrencyDeclaration $2 (fromIntegral $3) } -- TODO actual parsing
+
+currency_symbol
+  :: { CurrencySymbol }
+  : var { CurrencySymbol $1 } -- TODO actual parsing
 
 transaction_dec
   :: { Transaction }
