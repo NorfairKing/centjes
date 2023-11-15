@@ -13,7 +13,8 @@ extra-source-files:
     test_resources/account-name/example.cent
     test_resources/account/example.cent
     test_resources/amount/example.cent
-    test_resources/declaration/example.cent
+    test_resources/declaration/currency.cent
+    test_resources/declaration/transaction.cent
     test_resources/module/example.cent
     test_resources/posting/example.cent
     test_resources/transaction/example.cent
@@ -68,6 +69,7 @@ library
     , safe-coloured-text
     , safe-coloured-text-layout
     , safe-coloured-text-terminfo
+    , scientific
     , text
     , time
     , validity

@@ -104,7 +104,9 @@ postingDoc :: Posting -> Doc ann
 postingDoc Posting {..} =
   "*"
     <+> accountNameDoc postingAccountName
-    <+> accountDoc postingAccount <> "\n"
+    <+> " "
+    <+> accountDoc postingAccount
+    <+> currencySymbolDoc postingCurrencySymbol <> "\n"
 
 accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . unAccountName

@@ -53,6 +53,7 @@ $alpha = [A-Za-z]
 @day = @year \- @month_of_year \- @day_of_month
 
 @star = \*
+@dot = \.
 @import = "import " .* \n
 @currency = "currency "
 
@@ -69,6 +70,7 @@ $white_no_nl+ ;
 @day           { lex TokenDay }
 @comment       { lexComment }
 @integer       { lex (TokenInt . read) }
+@dot           { lex' TokenDot}
 @star          { lex' TokenStar}
 @currency      { lex' TokenCurrency}
 @description   { lex (TokenDescription . T.pack . drop (length "| ") . init) }
@@ -110,6 +112,7 @@ data TokenClass
   | TokenInt !Integer
   | TokenFloat !Double
   | TokenStar
+  | TokenDot
   | TokenCurrency
   | TokenImport !FilePath
   | TokenNewLine

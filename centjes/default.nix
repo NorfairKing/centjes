@@ -6,9 +6,10 @@
 , optparse-applicative, path, path-io, prettyprinter, QuickCheck
 , random, really-safe-money, really-safe-money-gen
 , safe-coloured-text, safe-coloured-text-layout
-, safe-coloured-text-terminfo, sydtest, sydtest-discover, text
-, time, validity, validity-containers, validity-path, validity-text
-, validity-time, validity-vector, vector, yaml
+, safe-coloured-text-terminfo, scientific, sydtest
+, sydtest-discover, text, time, validity, validity-containers
+, validity-path, validity-text, validity-time, validity-vector
+, vector, yaml
 }:
 mkDerivation {
   pname = "centjes";
@@ -20,8 +21,8 @@ mkDerivation {
     array autodocodec autodocodec-yaml base bytestring containers
     deepseq envparse monad-logger mtl optparse-applicative path path-io
     prettyprinter random really-safe-money safe-coloured-text
-    safe-coloured-text-layout safe-coloured-text-terminfo text time
-    validity validity-containers validity-path validity-text
+    safe-coloured-text-layout safe-coloured-text-terminfo scientific
+    text time validity validity-containers validity-path validity-text
     validity-time validity-vector vector yaml
   ];
   libraryToolDepends = [ alex autoexporter happy ];

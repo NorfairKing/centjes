@@ -43,6 +43,7 @@ library:
   - safe-coloured-text
   - safe-coloured-text-layout
   - safe-coloured-text-terminfo
+  - scientific
   - text
   - time
   - validity

@@ -56,6 +56,7 @@ import qualified Data.Text as T
       pipetext        { Token _ (TokenDescription $$) }
       int             { Token _ (TokenInt $$) }
       star            { Token _ TokenStar }
+      dot             { Token _ TokenDot }
       import          { Token _ (TokenImport $$ )}
       currency        { Token _ TokenCurrency}
       newline         { Token _ TokenNewLine }
@@ -111,7 +112,7 @@ description
 
 posting
   :: { Posting }
-  : star account_name account newline { Posting $2 $3 }
+  : star account_name account currency_symbol newline { Posting $2 $3 $4 }
 
 account_name
   :: { AccountName }

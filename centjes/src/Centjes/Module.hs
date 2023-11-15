@@ -111,7 +111,8 @@ nullDescription = T.null . unDescription
 
 data Posting = Posting
   { postingAccountName :: !AccountName,
-    postingAccount :: !Money.Account
+    postingAccount :: !Money.Account,
+    postingCurrencySymbol :: !CurrencySymbol
   }
   deriving stock (Show, Eq, Ord, Generic)
 
