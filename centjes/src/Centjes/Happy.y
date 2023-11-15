@@ -67,7 +67,15 @@ import qualified Data.Text as T
 
 module
   :: { Module }
-  : many(declaration_with_newlines) { Module $1 }
+  : many(import_with_newlines) many(declaration_with_newlines) { Module $1 $2 }
+
+import_with_newlines
+  :: { Import }
+  : import_dec many(newline) { $1 }
+
+import_dec
+  :: { Import }
+  : import { Import (fromJust (parseRelFile $1)) } -- TODO actual parsing
 
 declaration_with_newlines
   :: { Declaration }
@@ -75,12 +83,7 @@ declaration_with_newlines
 
 declaration
   :: { Declaration }
-  : import_dec { DeclarationImport $1 }
-  | transaction_dec { DeclarationTransaction $1 }
-
-import_dec
-  :: { Import }
-  : import { Import (fromJust (parseRelFile $1)) } -- TODO actual parsing
+  : transaction_dec { DeclarationTransaction $1 }
 
 transaction_dec
   :: { Transaction }

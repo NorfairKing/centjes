@@ -18,17 +18,17 @@ import qualified Money.Account as Money (Account)
 import Path
 
 -- TODO roundtrip comments.
-newtype Module = Module {moduleDeclarations :: [Declaration]}
+data Module = Module
+  { moduleImports :: [Import],
+    moduleDeclarations :: [Declaration]
+  }
   deriving stock (Show, Eq, Ord, Generic)
-  deriving (Semigroup, Monoid) via [Declaration]
 
 instance Validity Module
 
 instance NFData Module
 
-data Declaration
-  = DeclarationImport !Import
-  | DeclarationTransaction !Transaction
+newtype Declaration = DeclarationTransaction Transaction
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity Declaration

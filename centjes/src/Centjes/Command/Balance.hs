@@ -29,8 +29,8 @@ import Text.Printf
 
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
-  combinedModule <- loadModules settingLedgerFile
-  liftIO $ case balanceLedger (compileModule combinedModule) of
+  declarations <- loadModules settingLedgerFile
+  liftIO $ case balanceLedger (compileDeclarations declarations) of
     Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
     Success accs -> do
       terminalCapabilities <- getTerminalCapabilitiesFromEnv

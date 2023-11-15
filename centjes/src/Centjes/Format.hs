@@ -55,11 +55,15 @@ renderDocText = renderStrict . layoutPretty layoutOptions
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
 
 moduleDoc :: Module -> Doc ann
-moduleDoc Module {..} = vcat $ map declarationDoc moduleDeclarations
+moduleDoc Module {..} =
+  vcat $
+    concat
+      [ map importDoc moduleImports,
+        map declarationDoc moduleDeclarations
+      ]
 
 declarationDoc :: Declaration -> Doc ann
 declarationDoc = \case
-  DeclarationImport i -> importDoc i
   DeclarationTransaction t -> transactionDoc t
 
 importDoc :: Import -> Doc ann
