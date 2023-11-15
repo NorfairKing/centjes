@@ -69,7 +69,7 @@ import qualified Data.Text as T
 
 module
   :: { Module }
-  : many(import_with_newlines) many(declaration_with_newlines) { Module $1 $2 }
+  : many(newline) many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
 
 import_with_newlines
   :: { Import }

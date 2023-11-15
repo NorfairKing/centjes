@@ -8,6 +8,7 @@ module Centjes.Ledger
     Transaction (..),
     Description (..),
     Posting (..),
+    Currency (..),
     AccountName (..),
     Timestamp,
   )
@@ -64,6 +65,7 @@ instance NFData Transaction
 
 data Posting = Posting
   { postingAccountName :: !AccountName,
+    postingCurrency :: !Currency,
     postingAccount :: !Money.Account
   }
   deriving stock (Show, Eq, Ord, Generic)
@@ -71,3 +73,13 @@ data Posting = Posting
 instance Validity Posting
 
 instance NFData Posting
+
+data Currency = Currency
+  { currencySymbol :: !CurrencySymbol,
+    currencyFactor :: !Word32
+  }
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Currency
+
+instance NFData Currency

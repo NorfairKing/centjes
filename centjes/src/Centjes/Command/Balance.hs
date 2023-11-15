@@ -21,6 +21,8 @@ import qualified Data.Text as T
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import qualified Money.MultiAccount as Money (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 import System.Exit
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
@@ -37,18 +39,28 @@ runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
       let t = table (renderBalances accs)
       putChunksLocaleWith terminalCapabilities $ renderTable t
 
-renderBalances :: Map AccountName Money.Account -> [[Chunk]]
+renderBalances :: Map AccountName (Money.MultiAccount CurrencySymbol) -> [[Chunk]]
 renderBalances =
-  map
+  concatMap
     ( \(an, acc) ->
-        [ accountNameChunk an,
-          accountChunk acc
-        ]
+        case multiAccountChunks acc of
+          [] -> []
+          (firstChunks : rest) ->
+            (accountNameChunk an : firstChunks)
+              : map (chunk " " :) rest
     )
     . M.toList
 
 accountNameChunk :: AccountName -> Chunk
 accountNameChunk = fore yellow . chunk . unAccountName
+
+multiAccountChunks :: Money.MultiAccount CurrencySymbol -> [[Chunk]]
+multiAccountChunks ma =
+  let accounts = MultiAccount.unMultiAccount ma
+   in map (\(cs, acc) -> [accountChunk acc, currencySymbolChunk cs]) (M.toList accounts)
+
+currencySymbolChunk :: CurrencySymbol -> Chunk
+currencySymbolChunk = fore blue . chunk . unCurrencySymbol
 
 accountChunk :: Money.Account -> Chunk
 accountChunk a =
@@ -59,9 +71,12 @@ accountChunk a =
     . show
     $ Account.toMinimalQuantisations a
 
-balanceLedger :: Ledger -> Validation BalanceError (Map AccountName Money.Account)
+balanceLedger :: Ledger -> Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
 balanceLedger m = do
-  let incorporateAccounts :: Map AccountName Money.Account -> Map AccountName Money.Account -> Validation BalanceError (Map AccountName Money.Account)
+  let incorporateAccounts ::
+        Map AccountName (Money.MultiAccount CurrencySymbol) ->
+        Map AccountName (Money.MultiAccount CurrencySymbol) ->
+        Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
       incorporateAccounts totals current =
         traverse
           ( \case
@@ -72,7 +87,7 @@ balanceLedger m = do
             ( \ea1 ea2 -> do
                 a1 <- ea1
                 a2 <- ea2
-                case Account.add a1 a2 of
+                case MultiAccount.add a1 a2 of
                   Nothing -> Left (a1, a2)
                   Just a -> Right a
             )
@@ -80,26 +95,31 @@ balanceLedger m = do
             (M.map Right current)
   mapM balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
 
-balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName Money.Account)
+balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
 balanceTransaction t@Transaction {..} = do
-  let incorporatePosting :: Map AccountName Money.Account -> Posting -> Validation BalanceError (Map AccountName Money.Account)
-      incorporatePosting m (Posting an acc) = case M.lookup an m of
-        Nothing -> pure $ M.insert an acc m
-        Just acc' -> case Account.add acc acc' of
-          Nothing -> validationFailure $ BalanceErrorCouldNotAdd acc acc'
-          Just acc'' -> pure $ M.insert an acc'' m
+  let incorporatePosting ::
+        Map AccountName (Money.MultiAccount CurrencySymbol) ->
+        Posting ->
+        Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
+      incorporatePosting m (Posting an currency account) =
+        let acc = MultiAccount.fromAccount (currencySymbol currency) account
+         in case M.lookup an m of
+              Nothing -> pure $ M.insert an acc m
+              Just acc' -> case MultiAccount.add acc acc' of
+                Nothing -> validationFailure $ BalanceErrorCouldNotAdd acc acc'
+                Just acc'' -> pure $ M.insert an acc'' m
   m <- foldM incorporatePosting M.empty transactionPostings
   let as = M.elems m
-  case Account.sum as of
+  case MultiAccount.sum as of
     Nothing -> validationFailure $ BalanceErrorCouldNotSum as
     Just d
-      | d == Account.zero -> pure m
+      | d == MultiAccount.zero -> pure m
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance t d
 
 data BalanceError
-  = BalanceErrorCouldNotAdd !Money.Account !Money.Account
-  | BalanceErrorCouldNotSum ![Money.Account]
-  | BalanceErrorTransactionOffBalance !Transaction !Money.Account
+  = BalanceErrorCouldNotAdd !(Money.MultiAccount CurrencySymbol) !(Money.MultiAccount CurrencySymbol)
+  | BalanceErrorCouldNotSum ![Money.MultiAccount CurrencySymbol]
+  | BalanceErrorTransactionOffBalance !Transaction !(Money.MultiAccount CurrencySymbol)
   deriving stock (Show, Eq, Generic)
 
 renderBalanceError :: BalanceError -> String

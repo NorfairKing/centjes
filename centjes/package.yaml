@@ -49,6 +49,7 @@ library:
   - validity
   - validity-containers
   - validity-path
+  - validity-scientific
   - validity-text
   - validity-time
   - validity-vector

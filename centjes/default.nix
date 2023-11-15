@@ -8,8 +8,8 @@
 , safe-coloured-text, safe-coloured-text-layout
 , safe-coloured-text-terminfo, scientific, sydtest
 , sydtest-discover, text, time, validity, validity-containers
-, validity-path, validity-text, validity-time, validity-vector
-, vector, yaml
+, validity-path, validity-scientific, validity-text, validity-time
+, validity-vector, vector, yaml
 }:
 mkDerivation {
   pname = "centjes";
@@ -22,8 +22,9 @@ mkDerivation {
     deepseq envparse monad-logger mtl optparse-applicative path path-io
     prettyprinter random really-safe-money safe-coloured-text
     safe-coloured-text-layout safe-coloured-text-terminfo scientific
-    text time validity validity-containers validity-path validity-text
-    validity-time validity-vector vector yaml
+    text time validity validity-containers validity-path
+    validity-scientific validity-text validity-time validity-vector
+    vector yaml
   ];
   libraryToolDepends = [ alex autoexporter happy ];
   executableHaskellDepends = [ base ];
