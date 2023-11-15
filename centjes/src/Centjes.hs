@@ -30,13 +30,15 @@ import System.Exit
 
 runCentjes :: IO ()
 runCentjes = do
-  Instructions (DispatchFormat FormatSettings {..}) Settings <- getInstructions
-  runStderrLoggingT $ do
-    case formatSettingFileOrDir of
-      Nothing -> getCurrentDir >>= formatDir
-      Just (Right d) -> formatDir d
-      Just (Left f) -> formatFile f
-  doExample
+  Instructions d Settings <- getInstructions
+  case d of
+    DispatchBalance BalanceSettings -> doExample
+    DispatchFormat FormatSettings {..} -> do
+      runStderrLoggingT $ do
+        case formatSettingFileOrDir of
+          Nothing -> getCurrentDir >>= formatDir
+          Just (Right dir) -> formatDir dir
+          Just (Left file) -> formatFile file
 
 formatDir :: Path Abs Dir -> LoggingT IO ()
 formatDir = walkDir $ \_ _ files -> do

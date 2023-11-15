@@ -33,7 +33,8 @@ data Settings = Settings
   deriving (Show, Eq, Generic)
 
 data Dispatch
-  = DispatchFormat !FormatSettings
+  = DispatchBalance !BalanceSettings
+  | DispatchFormat !FormatSettings
   deriving (Show, Eq, Generic)
 
 data FormatSettings = FormatSettings
@@ -41,11 +42,16 @@ data FormatSettings = FormatSettings
   }
   deriving (Show, Eq, Generic)
 
+data BalanceSettings = BalanceSettings
+  deriving (Show, Eq, Generic)
+
 combineToInstructions :: Arguments -> Environment -> Maybe Configuration -> IO Instructions
 combineToInstructions (Arguments cmd Flags {}) Environment {} _ = do
   let sets = Settings
   disp <-
     case cmd of
+      CommandBalance BalanceArgs -> do
+        pure $ DispatchBalance BalanceSettings
       CommandFormat FormatArgs {..} -> do
         formatSettingFileOrDir <- case (formatArgFile, formatArgDir) of
           (Just fp, _) -> Just . Left <$> resolveFile' fp
@@ -125,15 +131,26 @@ parseArgs = Arguments <$> parseCommand <*> parseFlags
 
 -- | A sum type for the commands and their specific arguments
 data Command
-  = CommandFormat !FormatArgs
+  = CommandBalance !BalanceArgs
+  | CommandFormat !FormatArgs
   deriving (Show, Eq, Generic)
 
 parseCommand :: OptParse.Parser Command
 parseCommand =
   OptParse.hsubparser $
     mconcat
-      [ OptParse.command "format" $ CommandFormat <$> parseCommandFormat
+      [ OptParse.command "balance" $ CommandBalance <$> parseCommandBalance,
+        OptParse.command "format" $ CommandFormat <$> parseCommandFormat
       ]
+
+data BalanceArgs = BalanceArgs
+  deriving (Show, Eq, Generic)
+
+parseCommandBalance :: OptParse.ParserInfo BalanceArgs
+parseCommandBalance = OptParse.info parser modifier
+  where
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Show a balance of accounts"
+    parser = pure BalanceArgs
 
 data FormatArgs = FormatArgs
   { formatArgFile :: !(Maybe FilePath),
