@@ -6,6 +6,8 @@ module Centjes.Module where
 
 import Control.DeepSeq
 import qualified Data.Char as Char
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -84,6 +86,9 @@ data Transaction = Transaction
 instance Validity Transaction
 
 instance NFData Transaction
+
+transactionCurrencySymbols :: Transaction -> Set CurrencySymbol
+transactionCurrencySymbols = S.fromList . map postingCurrencySymbol . transactionPostings
 
 newtype Description = Description {unDescription :: Text}
   deriving (Show, Eq, Ord, Generic)

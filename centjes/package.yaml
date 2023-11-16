@@ -79,6 +79,7 @@ tests:
     dependencies:
     - QuickCheck
     - centjes
+    - containers
     - genvalidity
     - genvalidity-containers
     - genvalidity-path

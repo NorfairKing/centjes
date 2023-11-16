@@ -11,6 +11,7 @@ import Centjes.Ledger
 import Centjes.Load
 import Centjes.OptParse
 import Centjes.Validation
+import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
@@ -32,12 +33,15 @@ import Text.Printf
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
   declarations <- loadModules settingLedgerFile
-  liftIO $ case balanceLedger (compileDeclarations declarations) of
-    Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
-    Success accs -> do
-      terminalCapabilities <- getTerminalCapabilitiesFromEnv
-      let t = table (renderBalances accs)
-      putChunksLocaleWith terminalCapabilities $ renderTable t
+  liftIO $ case compileDeclarations declarations of
+    Failure errs -> die $ unlines $ "Compilation failure: " : map displayException (NE.toList errs)
+    Success ledger ->
+      case balanceLedger ledger of
+        Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
+        Success accs -> do
+          terminalCapabilities <- getTerminalCapabilitiesFromEnv
+          let t = table (renderBalances accs)
+          putChunksLocaleWith terminalCapabilities $ renderTable t
 
 renderBalances :: Map AccountName (Money.MultiAccount CurrencySymbol) -> [[Chunk]]
 renderBalances =

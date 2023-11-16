@@ -29,7 +29,7 @@ mkDerivation {
   libraryToolDepends = [ alex autoexporter happy ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
-    base genvalidity genvalidity-containers genvalidity-path
+    base containers genvalidity genvalidity-containers genvalidity-path
     genvalidity-sydtest genvalidity-text genvalidity-time
     genvalidity-vector QuickCheck really-safe-money-gen sydtest text
   ];

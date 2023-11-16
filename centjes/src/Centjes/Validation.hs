@@ -4,12 +4,15 @@ module Centjes.Validation where
 
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Validity (Validity (..))
 import GHC.Generics
 
 data Validation e a
   = Failure (NonEmpty e)
   | Success a
   deriving (Eq, Generic, Ord, Show)
+
+instance (Validity e, Validity a) => Validity (Validation e a)
 
 instance Functor (Validation e) where
   fmap _ (Failure e) = Failure e
