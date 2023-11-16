@@ -12,19 +12,22 @@ module Centjes.Happy
   ) where
 
 import Centjes.Alex
+import Centjes.DecimalLiteral
 import Centjes.Module
 import Data.List
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.Time
 import Debug.Trace
-import Money.QuantisationFactor as Money
 import Money.Account as Money (Account)
-import qualified Money.Account as Account
 import Money.Amount as Money (Amount)
-import qualified Money.Amount as Amount
+import Money.QuantisationFactor as Money
 import Path (parseRelFile)
+import Text.ParserCombinators.ReadP
+import qualified Centjes.DecimalLiteral as DecimalLiteral
 import qualified Data.Text as T
+import qualified Money.Account as Account
+import qualified Money.Amount as Amount
 
 }
 
@@ -53,8 +56,7 @@ import qualified Data.Text as T
       day             { Token _ (TokenDay $$) }
       var             { Token _ (TokenVar $$) }
       pipetext        { Token _ (TokenDescription $$) }
-      natural         { Token _ (TokenNatural $$) }
-      account         { Token _ (TokenAccount $$) }
+      decimal_literal { Token _ (TokenDecimalLiteral $$) }
       star            { Token _ TokenStar }
       dot             { Token _ TokenDot }
       import          { Token _ (TokenImport $$ )}
@@ -97,8 +99,8 @@ currency_symbol
   : var { CurrencySymbol $1 } -- TODO actual parsing
 
 quantisation_factor
-  :: { Money.QuantisationFactor }
-  : natural { QuantisationFactor (fromIntegral $1) } -- TODO actual parsing
+  :: { DecimalLiteral }
+  : decimal_literal { $1 }
 
 transaction_dec
   :: { Transaction }
@@ -123,8 +125,8 @@ account_name
   : var { AccountName $1 } -- TODO do actual paring
 
 account_exp
-  :: { Rational }
-  : account { $1 } -- TODO do actual paring
+  :: { DecimalLiteral }
+  : decimal_literal { $1 } -- TODO do actual parsing
 
 -- Helpers
 optional(p)
@@ -178,6 +180,6 @@ parsePosting fp = runAlex' postingParser fp . T.unpack
 parseAccountName :: FilePath -> Text -> Either String AccountName
 parseAccountName fp = runAlex' accountNameParser fp . T.unpack
 
-parseAccount :: FilePath -> Text -> Either String Rational
+parseAccount :: FilePath -> Text -> Either String DecimalLiteral
 parseAccount fp = runAlex' accountParser fp . T.unpack
 }

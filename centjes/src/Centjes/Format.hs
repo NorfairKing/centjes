@@ -13,6 +13,7 @@ module Centjes.Format
   )
 where
 
+import Centjes.DecimalLiteral as DecimalLiteral
 import Centjes.Module
 import Data.String
 import Data.Text (Text)
@@ -38,7 +39,7 @@ formatPosting = renderDocText . postingDoc
 formatAccountName :: AccountName -> Text
 formatAccountName = renderDocText . accountNameDoc
 
-formatAccount :: Rational -> Text
+formatAccount :: DecimalLiteral -> Text
 formatAccount = renderDocText . accountDoc
 
 renderDocText :: Doc ann -> Text
@@ -66,7 +67,7 @@ currencyDeclarationDoc :: CurrencyDeclaration -> Doc ann
 currencyDeclarationDoc CurrencyDeclaration {..} =
   "currency"
     <+> currencySymbolDoc currencyDeclarationSymbol
-    <+> pretty (show currencyDeclarationFactor) <> "\n"
+    <+> decimalLiteralDoc currencyDeclarationQuantisationFactor <> "\n"
 
 currencySymbolDoc :: CurrencySymbol -> Doc ann
 currencySymbolDoc = pretty . unCurrencySymbol
@@ -103,5 +104,8 @@ postingDoc Posting {..} =
 accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . unAccountName
 
-accountDoc :: Rational -> Doc ann
-accountDoc = pretty . show -- TODO
+accountDoc :: DecimalLiteral -> Doc ann
+accountDoc = decimalLiteralDoc
+
+decimalLiteralDoc :: DecimalLiteral -> Doc ann
+decimalLiteralDoc = pretty . renderDecimalLiteral

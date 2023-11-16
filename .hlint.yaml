@@ -3,7 +3,11 @@
 - ignore:
     name: "Redundant lambda"
 - ignore:
+    name: "Redundant if"
+- ignore:
     name: "Use newtype instead of data"
+- ignore:
+    name: "Use underscore"
 
 
 # Functions that we dissallow.
@@ -82,4 +86,7 @@
   # Does silent truncation:
   # > fromIntegral (300 :: Word) :: Word8
   # 44
-  - {name: fromIntegral, within: []}
+  - name: fromIntegral
+    within:
+      - Centjes.DecimalLiteral
+      - Centjes.DecimalLiteral.Gen

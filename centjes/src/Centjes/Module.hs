@@ -4,6 +4,7 @@
 
 module Centjes.Module where
 
+import Centjes.DecimalLiteral
 import Control.DeepSeq
 import qualified Data.Char as Char
 import Data.Set (Set)
@@ -16,7 +17,6 @@ import Data.Validity.Path ()
 import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
-import Money.QuantisationFactor
 import Path
 
 -- TODO roundtrip comments.
@@ -48,7 +48,7 @@ instance NFData Import
 
 data CurrencyDeclaration = CurrencyDeclaration
   { currencyDeclarationSymbol :: CurrencySymbol,
-    currencyDeclarationFactor :: QuantisationFactor
+    currencyDeclarationQuantisationFactor :: DecimalLiteral
   }
   deriving stock (Show, Eq, Ord, Generic)
 
@@ -115,7 +115,7 @@ nullDescription = T.null . unDescription
 
 data Posting = Posting
   { postingAccountName :: !AccountName,
-    postingAccount :: !Rational,
+    postingAccount :: !DecimalLiteral,
     postingCurrencySymbol :: !CurrencySymbol
   }
   deriving stock (Show, Eq, Ord, Generic)

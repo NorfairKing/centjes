@@ -5,7 +5,7 @@ module Centjes.CompileSpec (spec) where
 import Centjes.Compile
 import qualified Centjes.Module as Module
 import Centjes.Module.Gen ()
-import Centjes.Validation.TestUtils
+import Centjes.Validation
 import Data.GenValidity.Map ()
 import qualified Data.Map.Strict as M
 import Test.QuickCheck (forAll)
@@ -25,8 +25,9 @@ spec = do
     it "produces valid ledger transactions if all the currencies are known" $
       forAllValid $ \transaction ->
         forAll (sequence (M.fromSet (const genValid) (Module.transactionCurrencySymbols transaction))) $ \currencies -> do
-          t <- shouldValidate $ compileTransaction currencies transaction
-          shouldBeValid t
+          case compileTransaction currencies transaction of
+            Failure _ -> pure ()
+            Success t -> shouldBeValid t
 
   describe "compilePosting" $ do
     it "produces valid ledgers" $
@@ -34,6 +35,7 @@ spec = do
 
     it "produces valid ledger postings if the currency is known" $
       forAllValid $ \posting ->
-        forAllValid $ \factor -> do
-          p <- shouldValidate $ compilePosting (M.singleton (Module.postingCurrencySymbol posting) factor) posting
-          shouldBeValid p
+        forAllValid $ \factor ->
+          case compilePosting (M.singleton (Module.postingCurrencySymbol posting) factor) posting of
+            Failure _ -> pure ()
+            Success p -> shouldBeValid p

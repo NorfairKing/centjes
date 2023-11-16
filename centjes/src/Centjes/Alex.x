@@ -13,13 +13,18 @@ module Centjes.Alex
   , scanMany
   ) where
 
+import Centjes.DecimalLiteral
 import Control.Monad ( liftM )
 import Data.List
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Maybe
+import Data.Ratio
 import Data.Text(Text)
 import Debug.Trace
+import Numeric (readFloat, readSigned)
 import Numeric.Natural
 import Prelude hiding (lex)
+import Text.ParserCombinators.ReadP
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 }
@@ -44,11 +49,13 @@ $alpha = [A-Za-z]
 
 @natural = @decimal
 
-@account =
-    \+? @decimal
-  | \+? @decimal \. @decimal
-  | \- @decimal
-  | \- @decimal \. @decimal
+@unsigned_scientific =
+    @decimal
+  | @decimal \. @decimal
+
+@scientific =
+    \+? @unsigned_scientific
+  | \- @unsigned_scientific
 
 @var = $alpha [$alpha $digit \_ :]*
 @year = $digit $digit $digit $digit
@@ -70,17 +77,16 @@ tokens :-
 -- Skip non-newline whitespace everywhere
 $white_no_nl+ ;
 
-@import        { lex (TokenImport . drop (length "import ") . init) }
-@day           { lex TokenDay }
-@comment       { lexComment }
-@natural       { lex (TokenNatural . read) }
-@account       { lex (TokenAccount . read) }
-@dot           { lex' TokenDot}
-@star          { lex' TokenStar}
-@currency      { lex' TokenCurrency}
-@description   { lex (TokenDescription . T.pack . drop (length "| ") . init) }
-@newline       { lex' TokenNewLine }
-@var           { lex (TokenVar . T.pack) }
+@import             { lex (TokenImport . drop (length "import ") . init) }
+@day                { lex TokenDay }
+@comment            { lexComment }
+@scientific         { lex (TokenDecimalLiteral . fromJust . parseDecimalLiteral) } -- TODO get rid of fromJust
+@dot                { lex' TokenDot}
+@star               { lex' TokenStar}
+@currency           { lex' TokenCurrency}
+@description        { lex (TokenDescription . T.pack . drop (length "| ") . init) }
+@newline            { lex' TokenNewLine }
+@var                { lex (TokenVar . T.pack) }
 
 {
 
@@ -114,8 +120,7 @@ data TokenClass
   | TokenDay !String
   | TokenVar !Text
   | TokenDescription !Text
-  | TokenNatural !Natural
-  | TokenAccount !Rational
+  | TokenDecimalLiteral !DecimalLiteral
   | TokenFloat !Double
   | TokenStar
   | TokenDot

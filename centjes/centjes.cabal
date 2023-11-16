@@ -11,7 +11,9 @@ bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
     test_resources/account-name/example.cent
+    test_resources/account/cent.cent
     test_resources/account/example.cent
+    test_resources/account/rappen.cent
     test_resources/declaration/currency.cent
     test_resources/declaration/transaction.cent
     test_resources/module/example.cent
@@ -30,6 +32,7 @@ library
       Centjes.Command.Balance
       Centjes.Command.Format
       Centjes.Compile
+      Centjes.DecimalLiteral
       Centjes.Format
       Centjes.Happy
       Centjes.Ledger
@@ -63,6 +66,7 @@ library
     , path
     , path-io
     , prettyprinter
+    , primitive
     , random
     , really-safe-money
     , safe-coloured-text
@@ -99,6 +103,8 @@ test-suite centjes-test
   main-is: Spec.hs
   other-modules:
       Centjes.CompileSpec
+      Centjes.DecimalLiteral.Gen
+      Centjes.DecimalLiteralSpec
       Centjes.FormatSpec
       Centjes.Module.Gen
       Centjes.ModuleSpec
@@ -117,11 +123,14 @@ test-suite centjes-test
     , genvalidity
     , genvalidity-containers
     , genvalidity-path
+    , genvalidity-scientific
     , genvalidity-sydtest
     , genvalidity-text
     , genvalidity-time
     , genvalidity-vector
+    , really-safe-money
     , really-safe-money-gen
+    , scientific
     , sydtest
     , text
   default-language: Haskell2010

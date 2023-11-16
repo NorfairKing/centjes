@@ -10,6 +10,7 @@ module Centjes.Compile
   )
 where
 
+import Centjes.DecimalLiteral as DecimalLiteral
 import Centjes.Ledger as Ledger
 import Centjes.Module as Module
 import Centjes.Validation
@@ -21,44 +22,53 @@ import Data.Maybe
 import Data.Validity (Validity)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
-import qualified Money.Account as Account
 import Money.QuantisationFactor
 
 data CompileError
-  = CompileErrorMissingCurrency !CurrencySymbol
-  | CompileErrorUnparseableAmount !Rational !QuantisationFactor
+  = CompileErrorInvalidQuantisationFactor !CurrencySymbol !DecimalLiteral
+  | CompileErrorUnparseableAmount !QuantisationFactor !DecimalLiteral
+  | CompileErrorMissingCurrency !CurrencySymbol
   deriving (Show, Eq, Generic)
 
 instance Validity CompileError
 
 instance Exception CompileError where
   displayException = \case
+    CompileErrorInvalidQuantisationFactor sym dl ->
+      unwords
+        [ "Could not parse decimal literal as quantisation factor:",
+          renderDecimalLiteral dl,
+          "for currency with symbol",
+          show sym
+        ]
+    CompileErrorUnparseableAmount qf dl ->
+      unwords
+        [ "Could not parse decimal literal as amount:",
+          renderDecimalLiteral dl,
+          "with quantisation factor",
+          show qf
+        ]
     CompileErrorMissingCurrency symbol ->
       unwords
         [ "Undeclared currency:",
           show symbol
         ]
-    CompileErrorUnparseableAmount r qf ->
-      unwords
-        [ "Could not parse rational as amount:",
-          show r,
-          "with quantisation factor",
-          show qf
-        ]
 
 compileDeclarations :: [Declaration] -> Validation CompileError Ledger
 compileDeclarations declarations = do
-  let ledgerCurrencies =
-        M.fromList $
-          map (\CurrencyDeclaration {..} -> (currencyDeclarationSymbol, currencyDeclarationFactor)) $
-            mapMaybe
-              ( \case
-                  DeclarationCurrency cd -> Just cd
-                  _ -> Nothing
-              )
-              declarations
-      -- TODO check for duplicate currencies
-      transactions =
+  -- TODO check for duplicate currencies
+  ledgerCurrencies <-
+    M.fromList
+      <$> mapM
+        compileCurrency
+        ( mapMaybe
+            ( \case
+                DeclarationCurrency cd -> Just cd
+                _ -> Nothing
+            )
+            declarations
+        )
+  let transactions =
         mapMaybe
           ( \case
               DeclarationTransaction t -> Just t
@@ -67,6 +77,15 @@ compileDeclarations declarations = do
           declarations
   ledgerTransactions <- V.fromList . sort <$> traverse (compileTransaction ledgerCurrencies) transactions
   pure Ledger {..}
+
+compileCurrency :: CurrencyDeclaration -> Validation CompileError (CurrencySymbol, QuantisationFactor)
+compileCurrency CurrencyDeclaration {..} = do
+  let symbol = currencyDeclarationSymbol
+  let dl = currencyDeclarationQuantisationFactor
+  qf <- case DecimalLiteral.toQuantisationFactor dl of
+    Nothing -> validationFailure $ CompileErrorInvalidQuantisationFactor currencyDeclarationSymbol dl
+    Just qf -> pure qf
+  pure (symbol, qf)
 
 compileTransaction ::
   Map CurrencySymbol QuantisationFactor ->
@@ -88,9 +107,9 @@ compilePosting currencies mp = do
   postingCurrency <- case M.lookup symbol currencies of
     Nothing -> validationFailure $ CompileErrorMissingCurrency symbol
     Just factor -> pure $ Currency {currencySymbol = symbol, currencyFactor = factor}
-  let r = Module.postingAccount mp
+  let df = Module.postingAccount mp
   let qf = currencyFactor postingCurrency
-  postingAccount <- case Account.fromRational qf r of
-    Nothing -> validationFailure $ CompileErrorUnparseableAmount r qf
+  postingAccount <- case DecimalLiteral.toAccount qf df of
+    Nothing -> validationFailure $ CompileErrorUnparseableAmount qf df
     Just a -> pure a
   pure Ledger.Posting {..}
