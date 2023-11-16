@@ -20,17 +20,31 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Validity (Validity)
 import qualified Data.Vector as V
-import Data.Word
 import GHC.Generics (Generic)
+import qualified Money.Account as Account
+import Money.QuantisationFactor
 
-data CompileError = CompileErrorMissingCurrency CurrencySymbol
+data CompileError
+  = CompileErrorMissingCurrency !CurrencySymbol
+  | CompileErrorUnparseableAmount !Rational !QuantisationFactor
   deriving (Show, Eq, Generic)
 
 instance Validity CompileError
 
 instance Exception CompileError where
   displayException = \case
-    CompileErrorMissingCurrency symbol -> unwords ["Undeclared currency:", show symbol]
+    CompileErrorMissingCurrency symbol ->
+      unwords
+        [ "Undeclared currency:",
+          show symbol
+        ]
+    CompileErrorUnparseableAmount r qf ->
+      unwords
+        [ "Could not parse rational as amount:",
+          show r,
+          "with quantisation factor",
+          show qf
+        ]
 
 compileDeclarations :: [Declaration] -> Validation CompileError Ledger
 compileDeclarations declarations = do
@@ -54,19 +68,29 @@ compileDeclarations declarations = do
   ledgerTransactions <- V.fromList . sort <$> traverse (compileTransaction ledgerCurrencies) transactions
   pure Ledger {..}
 
-compileTransaction :: Map CurrencySymbol Word32 -> Module.Transaction -> Validation CompileError Ledger.Transaction
+compileTransaction ::
+  Map CurrencySymbol QuantisationFactor ->
+  Module.Transaction ->
+  Validation CompileError Ledger.Transaction
 compileTransaction currencies mt = do
   let transactionTimestamp = Module.transactionTimestamp mt
       transactionDescription = Module.transactionDescription mt
   transactionPostings <- traverse (compilePosting currencies) (Module.transactionPostings mt)
   pure Ledger.Transaction {..}
 
-compilePosting :: Map CurrencySymbol Word32 -> Module.Posting -> Validation CompileError Ledger.Posting
+compilePosting ::
+  Map CurrencySymbol QuantisationFactor ->
+  Module.Posting ->
+  Validation CompileError Ledger.Posting
 compilePosting currencies mp = do
   let postingAccountName = Module.postingAccountName mp
-      postingAccount = Module.postingAccount mp
       symbol = Module.postingCurrencySymbol mp
   postingCurrency <- case M.lookup symbol currencies of
     Nothing -> validationFailure $ CompileErrorMissingCurrency symbol
     Just factor -> pure $ Currency {currencySymbol = symbol, currencyFactor = factor}
+  let r = Module.postingAccount mp
+  let qf = currencyFactor postingCurrency
+  postingAccount <- case Account.fromRational qf r of
+    Nothing -> validationFailure $ CompileErrorUnparseableAmount r qf
+    Just a -> pure a
   pure Ledger.Posting {..}

@@ -6,14 +6,12 @@ module Centjes.Parse
     parsePosting,
     parseAccountName,
     parseAccount,
-    parseAmount,
   )
 where
 
 import Centjes.Happy
   ( parseAccount,
     parseAccountName,
-    parseAmount,
     parseDeclaration,
     parseImport,
     parseModule,

@@ -12,7 +12,6 @@ build-type:     Simple
 extra-source-files:
     test_resources/account-name/example.cent
     test_resources/account/example.cent
-    test_resources/amount/example.cent
     test_resources/declaration/currency.cent
     test_resources/declaration/transaction.cent
     test_resources/module/example.cent

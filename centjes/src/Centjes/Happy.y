@@ -9,7 +9,6 @@ module Centjes.Happy
   , parsePosting
   , parseAccountName
   , parseAccount
-  , parseAmount
   ) where
 
 import Centjes.Alex
@@ -19,6 +18,7 @@ import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.Time
 import Debug.Trace
+import Money.QuantisationFactor as Money
 import Money.Account as Money (Account)
 import qualified Money.Account as Account
 import Money.Amount as Money (Amount)
@@ -37,8 +37,7 @@ import qualified Data.Text as T
 %name transactionParser transaction_dec
 %name postingParser posting
 %name accountNameParser account_name
-%name accountParser account
-%name amountParser amount
+%name accountParser account_exp
 
 %tokentype { Token }
 %monad { Alex }
@@ -54,7 +53,8 @@ import qualified Data.Text as T
       day             { Token _ (TokenDay $$) }
       var             { Token _ (TokenVar $$) }
       pipetext        { Token _ (TokenDescription $$) }
-      int             { Token _ (TokenInt $$) }
+      natural         { Token _ (TokenNatural $$) }
+      account         { Token _ (TokenAccount $$) }
       star            { Token _ TokenStar }
       dot             { Token _ TokenDot }
       import          { Token _ (TokenImport $$ )}
@@ -77,7 +77,7 @@ import_with_newlines
 
 import_dec
   :: { Import }
-  : import { Import (fromJust (parseRelFile $1)) } -- TODO actual parsing
+  : import {% fmap Import $ maybeParser "relfile path" parseRelFile $1 }
 
 declaration_with_newlines
   :: { Declaration }
@@ -90,11 +90,15 @@ declaration
 
 currency_dec
   :: { CurrencyDeclaration }
-  : currency currency_symbol int newline { CurrencyDeclaration $2 (fromIntegral $3) } -- TODO actual parsing
+  : currency currency_symbol quantisation_factor newline { CurrencyDeclaration $2 $3 } -- TODO actual parsing
 
 currency_symbol
   :: { CurrencySymbol }
   : var { CurrencySymbol $1 } -- TODO actual parsing
+
+quantisation_factor
+  :: { Money.QuantisationFactor }
+  : natural { QuantisationFactor (fromIntegral $1) } -- TODO actual parsing
 
 transaction_dec
   :: { Transaction }
@@ -112,19 +116,15 @@ description
 
 posting
   :: { Posting }
-  : star account_name account currency_symbol newline { Posting $2 $3 $4 }
+  : star account_name account_exp currency_symbol newline { Posting $2 $3 $4 }
 
 account_name
   :: { AccountName }
   : var { AccountName $1 } -- TODO do actual paring
 
-account
-  :: { Money.Account }
-  : int {% maybeParser "account" Account.fromMinimalQuantisations $1 }
-
-amount
-  :: { Money.Amount }
-  : int { Amount.fromMinimalQuantisations (fromIntegral $1) } -- TODO fromIntegral is wrong.
+account_exp
+  :: { Rational }
+  : account { $1 } -- TODO do actual paring
 
 -- Helpers
 optional(p)
@@ -139,22 +139,6 @@ many_rev(p)
   : {- empty -}   { [] }
   | many_rev(p) p { $2 : $1 }
 
--- list with separator
-manySep(sep, p)
-  : manySep_rev(sep, p) { reverse $1 }
-  | {- empty -} { [] }
-
-manySep_rev(sep, p)
-  : manySep_rev(sep, p) sep p { $3 : $1 }
-  | p { [$1] }                      
-
--- Nonempty list
-some(p)
-  : some_rev(p) { reverse $1 }
-
-some_rev(p)
-  : some_rev(p) p { $2 : $1 }
-  | p { [$1] }
 {
 lexwrap :: (Token -> Alex a) -> Alex a
 lexwrap = (alexMonadScan' >>=)
@@ -194,9 +178,6 @@ parsePosting fp = runAlex' postingParser fp . T.unpack
 parseAccountName :: FilePath -> Text -> Either String AccountName
 parseAccountName fp = runAlex' accountNameParser fp . T.unpack
 
-parseAccount :: FilePath -> Text -> Either String Money.Account
+parseAccount :: FilePath -> Text -> Either String Rational
 parseAccount fp = runAlex' accountParser fp . T.unpack
-
-parseAmount :: FilePath -> Text -> Either String Money.Amount
-parseAmount fp = runAlex' amountParser fp . T.unpack
 }

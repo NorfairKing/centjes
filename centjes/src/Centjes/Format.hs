@@ -10,17 +10,12 @@ module Centjes.Format
     formatPosting,
     formatAccountName,
     formatAccount,
-    formatAmount,
   )
 where
 
 import Centjes.Module
 import Data.String
 import Data.Text (Text)
-import Money.Account as Money (Account)
-import qualified Money.Account as Account
-import Money.Amount as Money (Amount)
-import qualified Money.Amount as Amount
 import Path
 import Prettyprinter
 import Prettyprinter.Render.Text
@@ -43,11 +38,8 @@ formatPosting = renderDocText . postingDoc
 formatAccountName :: AccountName -> Text
 formatAccountName = renderDocText . accountNameDoc
 
-formatAccount :: Money.Account -> Text
+formatAccount :: Rational -> Text
 formatAccount = renderDocText . accountDoc
-
-formatAmount :: Money.Amount -> Text
-formatAmount = renderDocText . amountDoc
 
 renderDocText :: Doc ann -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions
@@ -111,8 +103,5 @@ postingDoc Posting {..} =
 accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . unAccountName
 
-accountDoc :: Money.Account -> Doc ann
-accountDoc = pretty . Account.toMinimalQuantisations
-
-amountDoc :: Money.Amount -> Doc ann
-amountDoc = pretty . Amount.toMinimalQuantisations
+accountDoc :: Rational -> Doc ann
+accountDoc = pretty . show -- TODO

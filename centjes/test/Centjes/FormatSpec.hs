@@ -16,7 +16,6 @@ import Test.Syd.Validity
 spec :: Spec
 spec = do
   let parseFormatRoundtrip' n p = parseFormatRoundtrip n (\fp t -> p fp (T.strip t))
-  parseFormatRoundtrip' "amount" parseAmount formatAmount
   parseFormatRoundtrip' "account" parseAccount formatAccount
   parseFormatRoundtrip' "account-name" parseAccountName formatAccountName
   parseFormatRoundtrip "posting" parsePosting formatPosting

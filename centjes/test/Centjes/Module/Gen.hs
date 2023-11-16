@@ -9,6 +9,7 @@ import Data.GenValidity.Text
 import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import Money.Account.Gen ()
+import Money.QuantisationFactor.Gen ()
 import Test.QuickCheck
 
 instance GenValid Module

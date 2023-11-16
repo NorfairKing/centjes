@@ -15,9 +15,8 @@ import Data.Validity
 import Data.Validity.Path ()
 import Data.Validity.Text
 import Data.Validity.Time ()
-import Data.Word
 import GHC.Generics (Generic)
-import qualified Money.Account as Money (Account)
+import Money.QuantisationFactor
 import Path
 
 -- TODO roundtrip comments.
@@ -49,7 +48,7 @@ instance NFData Import
 
 data CurrencyDeclaration = CurrencyDeclaration
   { currencyDeclarationSymbol :: CurrencySymbol,
-    currencyDeclarationFactor :: Word32
+    currencyDeclarationFactor :: QuantisationFactor
   }
   deriving stock (Show, Eq, Ord, Generic)
 
@@ -116,7 +115,7 @@ nullDescription = T.null . unDescription
 
 data Posting = Posting
   { postingAccountName :: !AccountName,
-    postingAccount :: !Money.Account,
+    postingAccount :: !Rational,
     postingCurrencySymbol :: !CurrencySymbol
   }
   deriving stock (Show, Eq, Ord, Generic)

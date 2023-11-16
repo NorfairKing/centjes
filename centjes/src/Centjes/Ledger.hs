@@ -23,12 +23,12 @@ import Data.Validity.Map ()
 import Data.Validity.Vector ()
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Data.Word
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
+import Money.QuantisationFactor
 
 data Ledger = Ledger
-  { ledgerCurrencies :: Map CurrencySymbol Word32,
+  { ledgerCurrencies :: Map CurrencySymbol QuantisationFactor,
     ledgerTransactions :: Vector Transaction
   }
   deriving stock (Show, Eq, Ord, Generic)
@@ -76,7 +76,7 @@ instance NFData Posting
 
 data Currency = Currency
   { currencySymbol :: !CurrencySymbol,
-    currencyFactor :: !Word32
+    currencyFactor :: !QuantisationFactor
   }
   deriving stock (Show, Eq, Ord, Generic)
 

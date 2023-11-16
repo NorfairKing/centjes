@@ -13,12 +13,13 @@ module Centjes.Alex
   , scanMany
   ) where
 
-import Prelude hiding (lex)
-import Debug.Trace
 import Control.Monad ( liftM )
 import Data.List
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text(Text)
+import Debug.Trace
+import Numeric.Natural
+import Prelude hiding (lex)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 }
@@ -40,11 +41,14 @@ $digit = [0-9]
 $alpha = [A-Za-z]
 
 @decimal = $digit+
-@integer = 
-  = \+ @decimal
-  | \- @decimal
-  | @decimal
 
+@natural = @decimal
+
+@account =
+    \+? @decimal
+  | \+? @decimal \. @decimal
+  | \- @decimal
+  | \- @decimal \. @decimal
 
 @var = $alpha [$alpha $digit \_ :]*
 @year = $digit $digit $digit $digit
@@ -69,7 +73,8 @@ $white_no_nl+ ;
 @import        { lex (TokenImport . drop (length "import ") . init) }
 @day           { lex TokenDay }
 @comment       { lexComment }
-@integer       { lex (TokenInt . read) }
+@natural       { lex (TokenNatural . read) }
+@account       { lex (TokenAccount . read) }
 @dot           { lex' TokenDot}
 @star          { lex' TokenStar}
 @currency      { lex' TokenCurrency}
@@ -109,7 +114,8 @@ data TokenClass
   | TokenDay !String
   | TokenVar !Text
   | TokenDescription !Text
-  | TokenInt !Integer
+  | TokenNatural !Natural
+  | TokenAccount !Rational
   | TokenFloat !Double
   | TokenStar
   | TokenDot
