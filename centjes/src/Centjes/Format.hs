@@ -95,9 +95,12 @@ descriptionDoc = pretty . unDescription
 
 postingDoc :: Posting -> Doc ann
 postingDoc Posting {..} =
-  "*"
-    <+> accountNameDoc postingAccountName
-    <+> " "
+  fill
+    60
+    ( "*"
+        <+> accountNameDoc postingAccountName
+        <+> " "
+    )
     <+> accountDoc postingAccount
     <+> currencySymbolDoc postingCurrencySymbol <> "\n"
 
