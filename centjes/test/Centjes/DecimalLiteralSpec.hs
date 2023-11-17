@@ -17,9 +17,15 @@ import Test.Syd.Validity
 spec :: Spec
 spec = do
   genValidSpec @DecimalLiteral
-  describe "renderDecimalLiteral" $
+  describe "renderDecimalLiteral" $ do
     it "can render any decimal literal" $
       producesValid renderDecimalLiteral
+
+    it "can render 1 without a decimal point" $
+      renderDecimalLiteral (DecimalLiteral (scientific 1 0)) `shouldBe` "1"
+
+    it "can render 0.5 with a decimal point" $
+      renderDecimalLiteral (DecimalLiteral (scientific 5 (-1))) `shouldBe` "0.5"
 
   describe "parseDecimalLiteral" $ do
     it "can parse 1" $

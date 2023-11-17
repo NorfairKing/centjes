@@ -38,7 +38,9 @@ instance Validity DecimalLiteral where
 instance NFData DecimalLiteral
 
 renderDecimalLiteral :: DecimalLiteral -> String
-renderDecimalLiteral = formatScientific Fixed Nothing . unDecimalLiteral
+renderDecimalLiteral (DecimalLiteral s) = case floatingOrInteger s :: Either Double Integer of
+  Right i -> show (i :: Integer)
+  Left _ -> formatScientific Fixed Nothing s
 
 parseDecimalLiteral :: String -> Maybe DecimalLiteral
 parseDecimalLiteral = fmap (DecimalLiteral . fst) . find (null . snd) . readP_to_S scientificP
