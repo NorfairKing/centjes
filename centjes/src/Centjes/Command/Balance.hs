@@ -24,6 +24,7 @@ import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
+import Money.QuantisationFactor
 import System.Exit
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
@@ -40,14 +41,14 @@ runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
         Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
         Success accs -> do
           terminalCapabilities <- getTerminalCapabilitiesFromEnv
-          let t = table (renderBalances accs)
+          let t = table (renderBalances (ledgerCurrencies ledger) accs)
           putChunksLocaleWith terminalCapabilities $ renderTable t
 
-renderBalances :: Map AccountName (Money.MultiAccount CurrencySymbol) -> [[Chunk]]
-renderBalances =
+renderBalances :: Map CurrencySymbol QuantisationFactor -> Map AccountName (Money.MultiAccount CurrencySymbol) -> [[Chunk]]
+renderBalances currencies =
   concatMap
     ( \(an, acc) ->
-        case multiAccountChunks acc of
+        case multiAccountChunks currencies acc of
           [] -> []
           (firstChunks : rest) ->
             (accountNameChunk an : firstChunks)
@@ -58,22 +59,29 @@ renderBalances =
 accountNameChunk :: AccountName -> Chunk
 accountNameChunk = fore yellow . chunk . unAccountName
 
-multiAccountChunks :: Money.MultiAccount CurrencySymbol -> [[Chunk]]
-multiAccountChunks ma =
+multiAccountChunks :: Map CurrencySymbol QuantisationFactor -> Money.MultiAccount CurrencySymbol -> [[Chunk]]
+multiAccountChunks currencies ma =
   let accounts = MultiAccount.unMultiAccount ma
-   in map (\(cs, acc) -> [accountChunk acc, currencySymbolChunk cs]) (M.toList accounts)
+   in map
+        ( \(cs, acc) ->
+            [ case M.lookup cs currencies of
+                Nothing -> "Currency not defined:"
+                Just qf -> accountChunk qf acc,
+              currencySymbolChunk cs
+            ]
+        )
+        (M.toList accounts)
 
 currencySymbolChunk :: CurrencySymbol -> Chunk
 currencySymbolChunk = fore blue . chunk . unCurrencySymbol
 
-accountChunk :: Money.Account -> Chunk
-accountChunk a =
+accountChunk :: QuantisationFactor -> Money.Account -> Chunk
+accountChunk qf a =
   fore (if a >= Account.zero then green else red)
     . chunk
     . T.pack
-    . printf "%20s"
-    . show
-    $ Account.toMinimalQuantisations a
+    . printf "%10s"
+    $ Account.format qf a
 
 balanceLedger :: Ledger -> Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
 balanceLedger m = do
