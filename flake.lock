@@ -144,11 +144,11 @@
     "really-safe-money": {
       "flake": false,
       "locked": {
-        "lastModified": 1685977378,
-        "narHash": "sha256-5XbEzkRqMnTtuIV8re6FX/4+dtYhGC61TlGctBwTL9M=",
+        "lastModified": 1700128758,
+        "narHash": "sha256-K177vFfdwUyBgcDCC4ZZ9WTiFAGb3XRHMihUNXnwac4=",
         "owner": "NorfairKing",
         "repo": "really-safe-money",
-        "rev": "2499dc6a6bc4fdee4e61eb1fe3fda81eb8c6d297",
+        "rev": "6562d04dd22688484bdde3cbd520d6ae94402f09",
         "type": "github"
       },
       "original": {
