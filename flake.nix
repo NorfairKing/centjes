@@ -1,5 +1,10 @@
 {
   description = "centjes";
+  nixConfig = {
+    extra-substituters = "https://centjes.cachix.org";
+    extra-trusted-public-keys = "centjes.cachix.org-1:H+Tih/7xFeUwTTWGFxgvaT8wUgracW4hPLzCAMgIiws=";
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-23.05";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
@@ -78,6 +83,10 @@
             cabal2nix
           ]);
         shellHook = self.checks.${system}.pre-commit.shellHook;
+      };
+      nix-ci.cachix = {
+        name = "centjes";
+        public-key = "centjes.cachix.org-1:H+Tih/7xFeUwTTWGFxgvaT8wUgracW4hPLzCAMgIiws=";
       };
     };
 
