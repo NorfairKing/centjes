@@ -43,8 +43,8 @@ parseSpec name parser = withFrozenCallStack $ do
 
     scenarioDir ("test_resources/" <> name <> "/invalid") $ \fp -> do
       af <- liftIO $ resolveFile' fp
-      errFile <- liftIO $ replaceExtension ".error" af
-      when (fileExtension af == Just ".cent") $
+      when (fileExtension af == Just ".cent") $ do
+        errFile <- liftIO $ replaceExtension ".error" af
         it (unwords ["fails to parse", fp, "with the right error"]) $
           goldenStringFile (fromAbsFile errFile) $ do
             contents <- T.readFile fp

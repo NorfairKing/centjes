@@ -10,18 +10,31 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
+    test_resources/account-name/formatted/example.cent
     test_resources/account-name/valid/example.cent
+    test_resources/account/formatted/cent.cent
+    test_resources/account/formatted/example.cent
+    test_resources/account/formatted/rappen.cent
     test_resources/account/valid/cent.cent
     test_resources/account/valid/example.cent
     test_resources/account/valid/rappen.cent
+    test_resources/declaration/formatted/currency.cent
+    test_resources/declaration/formatted/signed.cent
+    test_resources/declaration/formatted/transaction.cent
     test_resources/declaration/valid/currency.cent
+    test_resources/declaration/valid/signed.cent
     test_resources/declaration/valid/transaction.cent
+    test_resources/import/formatted/with-extension.cent
+    test_resources/import/formatted/without-extension.cent
     test_resources/import/invalid/wrong-etension.cent
     test_resources/import/invalid/wrong-etension.error
     test_resources/import/valid/with-extension.cent
     test_resources/import/valid/without-extension.cent
+    test_resources/module/formatted/example.cent
     test_resources/module/valid/example.cent
+    test_resources/posting/formatted/example.cent
     test_resources/posting/valid/example.cent
+    test_resources/transaction/formatted/example.cent
     test_resources/transaction/valid/example.cent
 
 source-repository head
