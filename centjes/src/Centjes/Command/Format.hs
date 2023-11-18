@@ -1,19 +1,29 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Command.Format (runCentjesFormat) where
 
+import Centjes.Compile
+import Centjes.DecimalLiteral
 import Centjes.Format
+import Centjes.Load
 import Centjes.Module
 import Centjes.OptParse
 import Centjes.Parse
+import Centjes.Validation
+import Control.Arrow (second)
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import Data.Either
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Map as M
+import Data.Map.Strict (Map)
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import Money.QuantisationFactor
 import Path
 import Path.IO
 import System.Exit
@@ -23,12 +33,29 @@ runCentjesFormat :: Settings -> FormatSettings -> IO ()
 runCentjesFormat Settings {..} FormatSettings {..} = do
   runStderrLoggingT $ do
     case formatSettingFileOrDir of
-      Nothing -> formatDir (parent settingLedgerFile)
-      Just (Right dir) -> formatDir dir
+      Nothing -> formatFromLedger settingLedgerFile
+      Just (Right dir) -> formatDir M.empty dir
       Just (Left file) -> formatSingleFile file
 
-formatDir :: Path Abs Dir -> LoggingT IO ()
-formatDir d = do
+formatFromLedger :: Path Abs File -> LoggingT IO ()
+formatFromLedger l = do
+  -- TODO find a way to not read and parse every file twice (worst-case)
+  currencies <- do
+    ds <- loadModules l
+    case compileCurrencies ds of
+      Failure errs -> do
+        logWarnN $
+          T.pack $
+            unlines $
+              "Could not compile currency declarations:"
+                : map displayException (NE.toList errs)
+        pure M.empty
+      Success m -> pure m
+  logDebugN $ T.pack $ unlines $ "Compiled currencies:" : map show (M.toList currencies)
+  formatDir currencies (parent l)
+
+formatDir :: Map CurrencySymbol QuantisationFactor -> Path Abs Dir -> LoggingT IO ()
+formatDir currencies d = do
   files <- snd <$> listDirRecur d
 
   let pen :: (a, Either b c) -> Either (a, b) (a, c)
@@ -37,7 +64,7 @@ formatDir d = do
 
   parsedFiles <- fmap catMaybes $ forConcurrently files $ \fp ->
     if fileExtension fp == Just ".cent"
-      then Just . pen . (,) fp <$> parseFile fp
+      then Just . pen . (,) fp . fmap (second (fillInDigits currencies)) <$> parseFile fp
       else pure Nothing
 
   parsedModules <- case partitionEithers parsedFiles of
@@ -135,3 +162,17 @@ idempotenceTest fp m = do
                 "After:",
                 show m'
               ]
+
+fillInDigits :: Map CurrencySymbol QuantisationFactor -> Module -> Module
+fillInDigits currencies m = m {moduleDeclarations = map goDeclaration (moduleDeclarations m)}
+  where
+    goDeclaration :: Declaration -> Declaration
+    goDeclaration = \case
+      DeclarationTransaction t -> DeclarationTransaction $ goTransaction t
+      d -> d
+    goTransaction :: Transaction -> Transaction
+    goTransaction t = t {transactionPostings = map goPosting (transactionPostings t)}
+    goPosting :: Posting -> Posting
+    goPosting p = case M.lookup (postingCurrencySymbol p) currencies of
+      Nothing -> p
+      Just qf -> p {postingAccount = (postingAccount p) {decimalLiteralDigits = quantisationFactorDigits qf}}

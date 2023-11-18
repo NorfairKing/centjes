@@ -11,6 +11,7 @@ module Centjes.DecimalLiteral
     fromQuantisationFactor,
     toAccount,
     fromAccount,
+    quantisationFactorDigits,
   )
 where
 
