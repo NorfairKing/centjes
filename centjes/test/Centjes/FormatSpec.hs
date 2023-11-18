@@ -2,10 +2,10 @@
 
 module Centjes.FormatSpec (spec) where
 
-import Centjes.Alex
 import Centjes.Format
 import Centjes.Module.Gen ()
 import Centjes.Parse
+import Centjes.Parse.Alex
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T

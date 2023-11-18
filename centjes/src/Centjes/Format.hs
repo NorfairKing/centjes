@@ -15,7 +15,6 @@ where
 
 import Centjes.DecimalLiteral as DecimalLiteral
 import Centjes.Module
-import Data.String
 import Data.Text (Text)
 import Path
 import Prettyprinter
@@ -56,7 +55,11 @@ moduleDoc Module {..} =
       ]
 
 importDoc :: Import -> Doc ann
-importDoc (Import fp) = "import" <+> fromString (fromRelFile fp) <> "\n"
+importDoc (Import fp) =
+  let pString = fromRelFile $ case splitExtension fp of
+        Just (rest, ".cent") -> rest
+        _ -> fp
+   in "import" <+> pretty pString <> "\n"
 
 declarationDoc :: Declaration -> Doc ann
 declarationDoc = \case

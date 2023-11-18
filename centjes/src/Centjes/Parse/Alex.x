@@ -1,7 +1,7 @@
 {
 {-# OPTIONS -w  #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-} -- Because the comments in the generated code said so.
-module Centjes.Alex
+module Centjes.Parse.Alex
   ( Token(..)
   , AlexPosn(..)
   , TokenClass(..)

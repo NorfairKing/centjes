@@ -31,8 +31,8 @@ mkDerivation {
   testHaskellDepends = [
     base containers genvalidity genvalidity-containers genvalidity-path
     genvalidity-scientific genvalidity-sydtest genvalidity-text
-    genvalidity-time genvalidity-vector QuickCheck really-safe-money
-    really-safe-money-gen scientific sydtest text
+    genvalidity-time genvalidity-vector path QuickCheck
+    really-safe-money really-safe-money-gen scientific sydtest text
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

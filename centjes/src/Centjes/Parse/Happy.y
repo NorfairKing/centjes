@@ -1,7 +1,7 @@
 {
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS -w #-}
-module Centjes.Happy
+module Centjes.Parse.Happy
   ( parseModule
   , parseDeclaration
   , parseImport
@@ -11,9 +11,10 @@ module Centjes.Happy
   , parseAccount
   ) where
 
-import Centjes.Alex
 import Centjes.DecimalLiteral
 import Centjes.Module
+import Centjes.Parse.Alex
+import Centjes.Parse.Utils
 import Data.List
 import Data.Maybe (fromJust)
 import Data.Text (Text)
@@ -79,7 +80,7 @@ import_with_newlines
 
 import_dec
   :: { Import }
-  : import {% fmap Import $ maybeParser "relfile path" parseRelFile $1 }
+  : import {% parseImportFrom $1 }
 
 declaration_with_newlines
   :: { Declaration }
@@ -148,19 +149,6 @@ lexwrap = (alexMonadScan' >>=)
 happyError :: Token -> Alex a
 happyError (Token p t) =
   alexError' p ("parse error at token '" ++ show t ++ "'")
-
-timeParser :: ParseTime t => String -> String -> Alex t
-timeParser formatString s = case parseTimeM False defaultTimeLocale formatString s of
-  Nothing -> parseError $ "Failed to parse time value: " <> formatString
-  Just t -> pure t
-
-maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
-maybeParser name func b = 
-  case func b of
-    Nothing -> parseError $ "Failed to parse " <> name <> " from " <> show b
-    Just a -> pure a
-
-parseError = alexError
 
 parseModule :: FilePath -> Text -> Either String Module
 parseModule fp = runAlex' moduleParser fp . T.unpack

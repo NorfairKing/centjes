@@ -12,13 +12,16 @@ import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import Money.Account.Gen ()
 import Money.QuantisationFactor.Gen ()
+import Path
 import Test.QuickCheck
 
 instance GenValid Module
 
 instance GenValid Declaration
 
-instance GenValid Import
+instance GenValid Import where
+  genValid = genValid `suchThatMap` (fmap Import . replaceExtension ".cent")
+  shrinkValid _ = []
 
 instance GenValid CurrencyDeclaration
 

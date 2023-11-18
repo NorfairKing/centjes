@@ -9,7 +9,7 @@ module Centjes.Parse
   )
 where
 
-import Centjes.Happy
+import Centjes.Parse.Happy
   ( parseAccount,
     parseAccountName,
     parseDeclaration,

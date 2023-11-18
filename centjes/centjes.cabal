@@ -27,19 +27,20 @@ source-repository head
 library
   exposed-modules:
       Centjes
-      Centjes.Alex
       Centjes.Command
       Centjes.Command.Balance
       Centjes.Command.Format
       Centjes.Compile
       Centjes.DecimalLiteral
       Centjes.Format
-      Centjes.Happy
       Centjes.Ledger
       Centjes.Load
       Centjes.Module
       Centjes.OptParse
       Centjes.Parse
+      Centjes.Parse.Alex
+      Centjes.Parse.Happy
+      Centjes.Parse.Utils
       Centjes.Validation
   other-modules:
       Paths_centjes
@@ -128,6 +129,7 @@ test-suite centjes-test
     , genvalidity-text
     , genvalidity-time
     , genvalidity-vector
+    , path
     , really-safe-money
     , really-safe-money-gen
     , scientific
