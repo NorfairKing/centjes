@@ -40,6 +40,9 @@ spec = do
     it "can parse 12.00045" $
       parseDecimalLiteral "12.00045" `shouldBe` Just (DecimalLiteral (scientific 1200045 (-5)))
 
+    it "fails to parse a number in scientific notation" $
+      parseDecimalLiteral "1E0" `shouldBe` Nothing
+
     it "can parse any rendered decimal literal" $
       forAllValid $ \decimalLiteral -> do
         let rendered = renderDecimalLiteral decimalLiteral

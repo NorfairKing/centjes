@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE UnboxedTuples #-}
 
@@ -13,6 +14,8 @@ module Centjes.DecimalLiteral
 where
 
 import Control.DeepSeq
+import Control.Monad
+import qualified Data.Char as Char
 import Data.List (find)
 import Data.Ratio
 import Data.Scientific
@@ -23,7 +26,8 @@ import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import Money.QuantisationFactor
-import Text.ParserCombinators.ReadP (readP_to_S)
+import Text.ParserCombinators.ReadP (ReadP, readP_to_S)
+import qualified Text.ParserCombinators.ReadP as ReadP
 
 newtype DecimalLiteral = DecimalLiteral {unDecimalLiteral :: Scientific}
   deriving (Show, Eq, Ord, Generic)
@@ -44,7 +48,59 @@ renderDecimalLiteral (DecimalLiteral s) =
     Left _ -> formatScientific Fixed Nothing s
 
 parseDecimalLiteral :: String -> Maybe DecimalLiteral
-parseDecimalLiteral = fmap (DecimalLiteral . fst) . find (null . snd) . readP_to_S scientificP
+parseDecimalLiteral = fmap fst . find (null . snd) . readP_to_S decimalLiteralP
+
+decimalLiteralP :: ReadP DecimalLiteral
+decimalLiteralP = do
+  let positive = (('+' ==) <$> ReadP.satisfy isSign) `mplus` return True
+  pos <- positive
+
+  let step :: Integer -> Int -> Integer
+      step a digit = a * 10 + fromIntegral digit
+      {-# INLINE step #-}
+
+  n <- foldDigits step 0
+
+  let s = SP n 0
+      fractional =
+        foldDigits
+          ( \(SP a e) digit ->
+              SP (step a digit) (e - 1)
+          )
+          s
+
+  SP coeff expnt <-
+    (ReadP.satisfy (== '.') >> fractional)
+      ReadP.<++ return s
+
+  let signedCoeff
+        | pos = coeff
+        | otherwise = (-coeff)
+
+  return $ DecimalLiteral $ scientific signedCoeff expnt
+
+-- A strict pair
+data SP = SP !Integer {-# UNPACK #-} !Int
+
+foldDigits :: (a -> Int -> a) -> a -> ReadP a
+foldDigits f z = do
+  c <- ReadP.satisfy Char.isDigit
+  let digit = Char.ord c - 48
+      a = f z digit
+
+  ReadP.look >>= go a
+  where
+    go !a [] = return a
+    go !a (c : cs)
+      | Char.isDigit c = do
+          _ <- ReadP.get
+          let digit = Char.ord c - 48
+          go (f a digit) cs
+      | otherwise = return a
+
+isSign :: Char -> Bool
+isSign c = c == '-' || c == '+'
+{-# INLINE isSign #-}
 
 decimalLiteralToRational :: DecimalLiteral -> Rational
 decimalLiteralToRational = toRational . unDecimalLiteral -- This is safe because we use small decimal literals
