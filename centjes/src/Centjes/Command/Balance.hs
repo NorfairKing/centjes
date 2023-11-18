@@ -41,14 +41,14 @@ runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
         Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
         Success accs -> do
           terminalCapabilities <- getTerminalCapabilitiesFromEnv
-          let t = table (renderBalances (ledgerCurrencies ledger) accs)
+          let t = table (renderBalances accs)
           putChunksLocaleWith terminalCapabilities $ renderTable t
 
-renderBalances :: Map CurrencySymbol QuantisationFactor -> Map AccountName (Money.MultiAccount CurrencySymbol) -> [[Chunk]]
-renderBalances currencies =
+renderBalances :: Map AccountName (Money.MultiAccount Currency) -> [[Chunk]]
+renderBalances =
   concatMap
     ( \(an, acc) ->
-        case multiAccountChunks currencies acc of
+        case multiAccountChunks acc of
           [] -> []
           (firstChunks : rest) ->
             (accountNameChunk an : firstChunks)
@@ -59,15 +59,13 @@ renderBalances currencies =
 accountNameChunk :: AccountName -> Chunk
 accountNameChunk = fore yellow . chunk . unAccountName
 
-multiAccountChunks :: Map CurrencySymbol QuantisationFactor -> Money.MultiAccount CurrencySymbol -> [[Chunk]]
-multiAccountChunks currencies ma =
+multiAccountChunks :: Money.MultiAccount Currency -> [[Chunk]]
+multiAccountChunks ma =
   let accounts = MultiAccount.unMultiAccount ma
    in map
-        ( \(cs, acc) ->
-            [ case M.lookup cs currencies of
-                Nothing -> "Currency not defined:"
-                Just qf -> accountChunk qf acc,
-              currencySymbolChunk cs
+        ( \(c, acc) ->
+            [ accountChunk (currencyFactor c) acc,
+              currencySymbolChunk (currencySymbol c)
             ]
         )
         (M.toList accounts)
@@ -83,12 +81,12 @@ accountChunk qf a =
     . printf "%10s"
     $ Account.format qf a
 
-balanceLedger :: Ledger -> Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
+balanceLedger :: Ledger -> Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
 balanceLedger m = do
   let incorporateAccounts ::
-        Map AccountName (Money.MultiAccount CurrencySymbol) ->
-        Map AccountName (Money.MultiAccount CurrencySymbol) ->
-        Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
+        Map AccountName (Money.MultiAccount Currency) ->
+        Map AccountName (Money.MultiAccount Currency) ->
+        Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
       incorporateAccounts totals current =
         traverse
           ( \case
@@ -107,14 +105,14 @@ balanceLedger m = do
             (M.map Right current)
   mapM balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
 
-balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
+balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
 balanceTransaction t@Transaction {..} = do
   let incorporatePosting ::
-        Map AccountName (Money.MultiAccount CurrencySymbol) ->
+        Map AccountName (Money.MultiAccount Currency) ->
         Posting ->
-        Validation BalanceError (Map AccountName (Money.MultiAccount CurrencySymbol))
+        Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
       incorporatePosting m (Posting an currency account) =
-        let acc = MultiAccount.fromAccount (currencySymbol currency) account
+        let acc = MultiAccount.fromAccount currency account
          in case M.lookup an m of
               Nothing -> pure $ M.insert an acc m
               Just acc' -> case MultiAccount.add acc acc' of
@@ -129,9 +127,9 @@ balanceTransaction t@Transaction {..} = do
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance t d
 
 data BalanceError
-  = BalanceErrorCouldNotAdd !(Money.MultiAccount CurrencySymbol) !(Money.MultiAccount CurrencySymbol)
-  | BalanceErrorCouldNotSum ![Money.MultiAccount CurrencySymbol]
-  | BalanceErrorTransactionOffBalance !Transaction !(Money.MultiAccount CurrencySymbol)
+  = BalanceErrorCouldNotAdd !(Money.MultiAccount Currency) !(Money.MultiAccount Currency)
+  | BalanceErrorCouldNotSum ![Money.MultiAccount Currency]
+  | BalanceErrorTransactionOffBalance !Transaction !(Money.MultiAccount Currency)
   deriving stock (Show, Eq, Generic)
 
 renderBalanceError :: BalanceError -> String

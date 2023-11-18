@@ -49,6 +49,7 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
                 [ "Should have failed to parse, but got",
                   ppShow a
                 ]
+
     scenarioDir ("test_resources/" <> name <> "/valid") $ \fp ->
       it (unwords ["can parse", fp, "and roundtrip it"]) $ do
         contents <- T.readFile fp
@@ -61,7 +62,7 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
             -- TODO make this a golden test
             (actual :: a) `shouldBe` expected
 
-    it "roundtrips" $
+    it "roundtrips valid values" $
       forAllValid $ \expected -> do
         let rendered = formatter (expected :: a)
         context (unlines ["Rendered:", T.unpack rendered]) $ do
