@@ -9,7 +9,6 @@ import Centjes.Module.Gen ()
 import Centjes.OptParse
 import Centjes.Parse
 import qualified Data.ByteString as SB
-import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as T
 import Path

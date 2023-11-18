@@ -6,7 +6,6 @@ import Centjes.Format
 import Centjes.Module
 import Centjes.OptParse
 import Centjes.Parse
-import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
@@ -18,6 +17,7 @@ import qualified Data.Text.Encoding as TE
 import Path
 import Path.IO
 import System.Exit
+import UnliftIO
 
 runCentjesFormat :: Settings -> FormatSettings -> IO ()
 runCentjesFormat Settings {..} FormatSettings {..} = do
@@ -35,7 +35,7 @@ formatDir d = do
       pen (a, Left b) = Left (a, b)
       pen (a, Right c) = Right (a, c)
 
-  parsedFiles <- fmap catMaybes $ forM files $ \fp ->
+  parsedFiles <- fmap catMaybes $ forConcurrently files $ \fp ->
     if fileExtension fp == Just ".cent"
       then Just . pen . (,) fp <$> parseFile fp
       else pure Nothing
@@ -70,7 +70,7 @@ formatDir d = do
                 ]
       liftIO $ die "At least one file failed the idempotence test. Not continuing to formatting them."
 
-  forM_ readyToFormatModules $ \((fp, textContents), newTextContents) -> do
+  forConcurrently_ readyToFormatModules $ \((fp, textContents), newTextContents) -> do
     formatFile fp textContents newTextContents
 
 -- Format a single file on its own.
