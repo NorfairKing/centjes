@@ -93,6 +93,7 @@ library
     , scientific
     , text
     , time
+    , unliftio
     , validity
     , validity-containers
     , validity-path

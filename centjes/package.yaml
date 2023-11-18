@@ -37,7 +37,6 @@ library:
   - optparse-applicative
   - path
   - path-io
-  - scientific
   - prettyprinter
   - primitive
   - random
@@ -45,8 +44,10 @@ library:
   - safe-coloured-text
   - safe-coloured-text-layout
   - safe-coloured-text-terminfo
+  - scientific
   - text
   - time
+  - unliftio
   - validity
   - validity-containers
   - validity-path

@@ -7,8 +7,8 @@
 , primitive, QuickCheck, random, really-safe-money
 , really-safe-money-gen, safe-coloured-text
 , safe-coloured-text-layout, safe-coloured-text-terminfo
-, scientific, sydtest, sydtest-discover, text, time, validity
-, validity-containers, validity-path, validity-scientific
+, scientific, sydtest, sydtest-discover, text, time, unliftio
+, validity, validity-containers, validity-path, validity-scientific
 , validity-text, validity-time, validity-vector, vector, yaml
 }:
 mkDerivation {
@@ -22,7 +22,7 @@ mkDerivation {
     deepseq envparse monad-logger mtl optparse-applicative path path-io
     prettyprinter primitive random really-safe-money safe-coloured-text
     safe-coloured-text-layout safe-coloured-text-terminfo scientific
-    text time validity validity-containers validity-path
+    text time unliftio validity validity-containers validity-path
     validity-scientific validity-text validity-time validity-vector
     vector yaml
   ];
