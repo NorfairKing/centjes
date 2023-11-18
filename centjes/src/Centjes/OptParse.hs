@@ -9,7 +9,6 @@ module Centjes.OptParse where
 import Autodocodec
 import Autodocodec.Yaml
 import Control.Applicative
-import Data.Maybe
 import qualified Data.Text as T
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
@@ -18,6 +17,7 @@ import Options.Applicative as OptParse
 import qualified Options.Applicative.Help as OptParse (string)
 import Path
 import Path.IO
+import System.Exit
 
 data Instructions
   = Instructions !Dispatch !Settings
@@ -50,7 +50,27 @@ data BalanceSettings = BalanceSettings
 
 combineToInstructions :: Arguments -> Environment -> Maybe Configuration -> IO Instructions
 combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
-  settingLedgerFile <- resolveFile' $ fromMaybe "ledger.cent" $ flagLedgerFile <|> envLedgerFile <|> (mConf >>= configLedgerFile)
+  let mLedgerFileOrDir = flagLedgerFile <|> envLedgerFile <|> (mConf >>= configLedgerFile)
+  let defaultFilePath = "ledger.cent"
+  settingLedgerFile <- case mLedgerFileOrDir of
+    Nothing -> resolveFile' defaultFilePath
+    Just fod -> do
+      f <- resolveFile' fod
+      fileExists <- doesFileExist f
+      if fileExists
+        then pure f
+        else do
+          d <- resolveDir' fod
+          dirExists <- doesDirExist d
+          if dirExists
+            then resolveFile d defaultFilePath
+            else
+              die $
+                unwords
+                  [ "Ledger does not exist at:",
+                    fod
+                  ]
+
   disp <-
     case cmd of
       CommandBalance BalanceArgs -> do
