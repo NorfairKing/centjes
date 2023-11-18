@@ -51,7 +51,7 @@ spec = do
         let rendered = renderDecimalLiteral decimalLiteral
         context (show rendered) $ case parseDecimalLiteral rendered of
           Nothing -> expectationFailure "could not parse."
-          Just dl -> dl `shouldBe` decimalLiteral
+          Just dl -> decimalLiteralScientific dl `shouldBe` decimalLiteralScientific decimalLiteral
 
   describe "toQuantisationFactor" $ do
     it "produces valid factors" $

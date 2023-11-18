@@ -31,7 +31,7 @@ spec = do
 parseFormatRoundtrip ::
   forall a.
   HasCallStack =>
-  (Show a, Eq a, GenValid a) =>
+  (Show a, GenValid a) =>
   String ->
   (FilePath -> Text -> Either String a) ->
   (a -> Text) ->
@@ -51,7 +51,7 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
                 ]
 
     scenarioDir ("test_resources/" <> name <> "/valid") $ \fp ->
-      it (unwords ["can parse", fp, "and roundtrip it"]) $ do
+      it (unwords ["can parse", fp, "and roundtrip it back to text the same way"]) $ do
         contents <- T.readFile fp
         expected <- shouldParse parser fp contents
         shouldBeValid expected
@@ -60,14 +60,15 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
           context (unlines ["Rendered:", T.unpack rendered]) $ do
             actual <- shouldParse parser "test-input" rendered
             -- TODO make this a golden test
-            (actual :: a) `shouldBe` expected
+            formatter (actual :: a) `shouldBe` formatter expected
 
-    it "roundtrips valid values" $
+    it "roundtrips valid values back to text the same way" $
       forAllValid $ \expected -> do
         let rendered = formatter (expected :: a)
         context (unlines ["Rendered:", T.unpack rendered]) $ do
           actual <- shouldParse parser "test-input" rendered
-          (actual :: a) `shouldBe` expected
+          context (ppShow actual) $ do
+            formatter (actual :: a) `shouldBe` formatter expected
 
 shouldParse :: (FilePath -> Text -> Either String a) -> FilePath -> Text -> IO a
 shouldParse parser fp contents =

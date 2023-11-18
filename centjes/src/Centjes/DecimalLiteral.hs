@@ -33,12 +33,7 @@ data DecimalLiteral = DecimalLiteral
     decimalLiteralSign :: Bool,
     decimalLiteralScientific :: Scientific
   }
-  deriving (Show, Generic)
-
-instance Eq DecimalLiteral where
-  (==) (DecimalLiteral sign1 scientific1) (DecimalLiteral sign2 scientific2) =
-    let signEqual = scientific1 == scientific2
-     in signEqual && (if scientific1 >= 0 then sign1 == sign2 else True)
+  deriving (Show, Eq, Generic)
 
 instance Validity DecimalLiteral where
   validate dl@(DecimalLiteral _ s) =
