@@ -31,7 +31,7 @@ mkDerivation {
   testHaskellDepends = [
     base containers genvalidity genvalidity-containers genvalidity-path
     genvalidity-scientific genvalidity-sydtest genvalidity-text
-    genvalidity-time genvalidity-vector path QuickCheck
+    genvalidity-time genvalidity-vector path path-io QuickCheck
     really-safe-money really-safe-money-gen scientific sydtest text
   ];
   testToolDepends = [ sydtest-discover ];

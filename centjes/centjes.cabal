@@ -17,6 +17,7 @@ extra-source-files:
     test_resources/declaration/valid/currency.cent
     test_resources/declaration/valid/transaction.cent
     test_resources/import/invalid/wrong-etension.cent
+    test_resources/import/invalid/wrong-etension.error
     test_resources/import/valid/with-extension.cent
     test_resources/import/valid/without-extension.cent
     test_resources/module/valid/example.cent
@@ -135,6 +136,7 @@ test-suite centjes-test
     , genvalidity-time
     , genvalidity-vector
     , path
+    , path-io
     , really-safe-money
     , really-safe-money-gen
     , scientific
