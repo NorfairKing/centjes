@@ -54,10 +54,23 @@ formatDir d = do
                 ]
       liftIO $ die "Could not parse all files. Not continuing to formatting them."
 
-  forM_ parsedModules $ \(fp, (textContents, m)) -> do
-    newTextContents <- case idempotenceTest fp m of
-      Left err -> liftIO $ die err
-      Right ft -> pure ft
+  let checkedModules = map (\(fp, (textContents, m)) -> pen ((fp, textContents), idempotenceTest fp m)) parsedModules
+
+  readyToFormatModules <- case partitionEithers checkedModules of
+    ([], ms) -> pure ms
+    (errs, _) -> do
+      logErrorN $
+        T.pack $
+          unlines $
+            flip map errs $ \((fp, _), err) ->
+              concat
+                [ unwords ["Idempotence test failed for", fromAbsFile fp],
+                  "\n",
+                  err
+                ]
+      liftIO $ die "At least one file failed the idempotence test. Not continuing to formatting them."
+
+  forM_ readyToFormatModules $ \((fp, textContents), newTextContents) -> do
     formatFile fp textContents newTextContents
 
 -- Format a single file on its own.
