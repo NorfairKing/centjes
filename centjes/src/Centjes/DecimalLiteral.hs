@@ -29,7 +29,7 @@ import Money.QuantisationFactor
 import Text.ParserCombinators.ReadP (ReadP, readP_to_S)
 import qualified Text.ParserCombinators.ReadP as ReadP
 
-newtype DecimalLiteral = DecimalLiteral {unDecimalLiteral :: Scientific}
+data DecimalLiteral = DecimalLiteral {decimalLiteralScientific :: Scientific}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity DecimalLiteral where
@@ -103,7 +103,7 @@ isSign c = c == '-' || c == '+'
 {-# INLINE isSign #-}
 
 decimalLiteralToRational :: DecimalLiteral -> Rational
-decimalLiteralToRational = toRational . unDecimalLiteral -- This is safe because we use small decimal literals
+decimalLiteralToRational = toRational . decimalLiteralScientific -- This is safe because we use small decimal literals
 
 toQuantisationFactor :: DecimalLiteral -> Maybe QuantisationFactor
 toQuantisationFactor dl = do
