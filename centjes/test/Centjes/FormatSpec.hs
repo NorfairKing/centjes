@@ -38,17 +38,28 @@ parseFormatRoundtrip ::
   Spec
 parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
   describe name $ do
-    describe "can parse the examples" $
-      scenarioDir ("test_resources/" <> name) $ \fp ->
-        it (unwords ["can parse", fp, "and roundtrip it"]) $ do
-          contents <- T.readFile fp
-          expected <- shouldParse parser fp contents
-          shouldBeValid expected
-          context (show expected) $ do
-            let rendered = formatter (expected :: a)
-            context (unlines ["Rendered:", T.unpack rendered]) $ do
-              actual <- shouldParse parser "test-input" rendered
-              (actual :: a) `shouldBe` expected
+    scenarioDir ("test_resources/" <> name <> "/invalid") $ \fp ->
+      it (unwords ["fails to parse", fp]) $ do
+        contents <- T.readFile fp
+        case parser fp contents of
+          Left _ -> pure () -- TODO make this a golden test so we can get good errors
+          Right a ->
+            expectationFailure $
+              unlines
+                [ "Should have failed to parse, but got",
+                  ppShow a
+                ]
+    scenarioDir ("test_resources/" <> name <> "/valid") $ \fp ->
+      it (unwords ["can parse", fp, "and roundtrip it"]) $ do
+        contents <- T.readFile fp
+        expected <- shouldParse parser fp contents
+        shouldBeValid expected
+        context (show expected) $ do
+          let rendered = formatter (expected :: a)
+          context (unlines ["Rendered:", T.unpack rendered]) $ do
+            actual <- shouldParse parser "test-input" rendered
+            -- TODO make this a golden test
+            (actual :: a) `shouldBe` expected
 
     it "roundtrips" $
       forAllValid $ \expected -> do
