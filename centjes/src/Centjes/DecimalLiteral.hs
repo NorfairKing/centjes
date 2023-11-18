@@ -14,7 +14,6 @@ module Centjes.DecimalLiteral
 where
 
 import Control.DeepSeq
-import Control.Monad
 import qualified Data.Char as Char
 import Data.List (find)
 import Data.Ratio
@@ -29,11 +28,20 @@ import Money.QuantisationFactor
 import Text.ParserCombinators.ReadP (ReadP, readP_to_S)
 import qualified Text.ParserCombinators.ReadP as ReadP
 
-data DecimalLiteral = DecimalLiteral {decimalLiteralScientific :: Scientific}
-  deriving (Show, Eq, Ord, Generic)
+data DecimalLiteral = DecimalLiteral
+  { -- Whether a sign should be present when rendering a positive number.
+    decimalLiteralSign :: Bool,
+    decimalLiteralScientific :: Scientific
+  }
+  deriving (Show, Generic)
+
+instance Eq DecimalLiteral where
+  (==) (DecimalLiteral sign1 scientific1) (DecimalLiteral sign2 scientific2) =
+    let signEqual = scientific1 == scientific2
+     in signEqual && (if scientific1 >= 0 then sign1 == sign2 else True)
 
 instance Validity DecimalLiteral where
-  validate dl@(DecimalLiteral s) =
+  validate dl@(DecimalLiteral _ s) =
     mconcat
       [ genericValidate dl,
         declare "The scientific is small in absolute value" $ base10Exponent s < 128
@@ -42,18 +50,20 @@ instance Validity DecimalLiteral where
 instance NFData DecimalLiteral
 
 renderDecimalLiteral :: DecimalLiteral -> String
-renderDecimalLiteral (DecimalLiteral s) =
-  case floatingOrInteger s :: Either Double Integer of
-    Right i -> show (i :: Integer)
-    Left _ -> formatScientific Fixed Nothing s
+renderDecimalLiteral (DecimalLiteral useSign s) =
+  (if s >= 0 && useSign then ('+' :) else id) $
+    case floatingOrInteger s :: Either Double Integer of
+      Right i -> show (i :: Integer)
+      Left _ -> formatScientific Fixed Nothing s
 
 parseDecimalLiteral :: String -> Maybe DecimalLiteral
 parseDecimalLiteral = fmap fst . find (null . snd) . readP_to_S decimalLiteralP
 
 decimalLiteralP :: ReadP DecimalLiteral
 decimalLiteralP = do
-  let positive = (('+' ==) <$> ReadP.satisfy isSign) `mplus` return True
-  pos <- positive
+  (useSign, pos) <- ReadP.option (False, True) $ do
+    signChar <- ReadP.satisfy isSign
+    pure (True, signChar == '+')
 
   let step :: Integer -> Int -> Integer
       step a digit = a * 10 + fromIntegral digit
@@ -77,7 +87,7 @@ decimalLiteralP = do
         | pos = coeff
         | otherwise = (-coeff)
 
-  return $ DecimalLiteral $ scientific signedCoeff expnt
+  return $ DecimalLiteral useSign $ scientific signedCoeff expnt
 
 -- A strict pair
 data SP = SP !Integer {-# UNPACK #-} !Int
@@ -134,7 +144,7 @@ fromQuantisationFactor (QuantisationFactor qfw) =
    in -- We set a limit for safety reasons.
       case fromRationalRepetend (Just 128) r of
         Left _ -> Nothing
-        Right (s, Nothing) -> Just $ DecimalLiteral s
+        Right (s, Nothing) -> Just $ DecimalLiteral False s
         Right (_, Just _) -> Nothing
 
 toAccount :: QuantisationFactor -> DecimalLiteral -> Maybe Money.Account
@@ -146,5 +156,5 @@ fromAccount qf acc =
    in -- We set a limit for safety reasons.
       case fromRationalRepetend (Just 128) r of
         Left _ -> Nothing
-        Right (s, Nothing) -> Just $ DecimalLiteral s
+        Right (s, Nothing) -> Just $ DecimalLiteral True s
         Right (_, Just _) -> Nothing

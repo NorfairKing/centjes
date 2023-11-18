@@ -64,7 +64,7 @@ formatFile fp =
                           T.unpack newTextContents
                         ]
                 Right m' ->
-                  when (m /= m') $
+                  when (newTextContents /= formatModule m') $
                     liftIO $
                       die $
                         unlines

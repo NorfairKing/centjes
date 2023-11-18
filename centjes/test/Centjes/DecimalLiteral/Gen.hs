@@ -11,4 +11,4 @@ import Test.QuickCheck
 
 instance GenValid DecimalLiteral where
   -- We only generate small (in absolute value) Scientific values
-  genValid = DecimalLiteral <$> (scientific <$> genValid <*> ((fromIntegral :: Int8 -> Int) <$> (genValid :: Gen Int8)))
+  genValid = DecimalLiteral <$> genValid <*> (scientific <$> genValid <*> ((fromIntegral :: Int8 -> Int) <$> (genValid :: Gen Int8)))

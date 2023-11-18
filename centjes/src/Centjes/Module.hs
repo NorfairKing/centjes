@@ -24,7 +24,7 @@ data Module = Module
   { moduleImports :: [Import],
     moduleDeclarations :: [Declaration]
   }
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity Module
 
@@ -33,14 +33,14 @@ instance NFData Module
 data Declaration
   = DeclarationCurrency CurrencyDeclaration
   | DeclarationTransaction Transaction
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity Declaration
 
 instance NFData Declaration
 
 newtype Import = Import {importFile :: Path Rel File}
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity Import
 
@@ -50,7 +50,7 @@ data CurrencyDeclaration = CurrencyDeclaration
   { currencyDeclarationSymbol :: CurrencySymbol,
     currencyDeclarationQuantisationFactor :: DecimalLiteral
   }
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity CurrencyDeclaration
 
@@ -80,7 +80,7 @@ data Transaction = Transaction
     transactionDescription :: !Description,
     transactionPostings :: ![Posting]
   }
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity Transaction
 
@@ -118,7 +118,7 @@ data Posting = Posting
     postingAccount :: !DecimalLiteral,
     postingCurrencySymbol :: !CurrencySymbol
   }
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity Posting
 

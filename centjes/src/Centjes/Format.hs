@@ -70,10 +70,13 @@ currencyDeclarationDoc :: CurrencyDeclaration -> Doc ann
 currencyDeclarationDoc CurrencyDeclaration {..} =
   "currency"
     <+> currencySymbolDoc currencyDeclarationSymbol
-    <+> decimalLiteralDoc currencyDeclarationQuantisationFactor <> "\n"
+    <+> quantisationFactorDoc currencyDeclarationQuantisationFactor <> "\n"
 
 currencySymbolDoc :: CurrencySymbol -> Doc ann
 currencySymbolDoc = pretty . unCurrencySymbol
+
+quantisationFactorDoc :: DecimalLiteral -> Doc ann
+quantisationFactorDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = False})
 
 transactionDoc :: Transaction -> Doc ann
 transactionDoc Transaction {..} =
@@ -111,7 +114,7 @@ accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . unAccountName
 
 accountDoc :: DecimalLiteral -> Doc ann
-accountDoc = decimalLiteralDoc
+accountDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = True})
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . renderDecimalLiteral
