@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples #-}
 
 module Centjes.DecimalLiteral
@@ -30,13 +31,14 @@ import qualified Text.ParserCombinators.ReadP as ReadP
 
 data DecimalLiteral = DecimalLiteral
   { -- Whether a sign should be present when rendering a positive number.
-    decimalLiteralSign :: Bool,
-    decimalLiteralScientific :: Scientific
+    decimalLiteralSign :: !Bool,
+    decimalLiteralDigits :: !Word8, -- (Minimum) number of digits after the dot.
+    decimalLiteralScientific :: !Scientific
   }
   deriving (Show, Eq, Generic)
 
 instance Validity DecimalLiteral where
-  validate dl@(DecimalLiteral _ s) =
+  validate dl@(DecimalLiteral _ _ s) =
     mconcat
       [ genericValidate dl,
         declare "The scientific is small in absolute value" $ base10Exponent s < 128
@@ -45,11 +47,10 @@ instance Validity DecimalLiteral where
 instance NFData DecimalLiteral
 
 renderDecimalLiteral :: DecimalLiteral -> String
-renderDecimalLiteral (DecimalLiteral useSign s) =
+renderDecimalLiteral (DecimalLiteral useSign digits s) =
   (if s >= 0 && useSign then ('+' :) else id) $
-    case floatingOrInteger s :: Either Double Integer of
-      Right i -> show (i :: Integer)
-      Left _ -> formatScientific Fixed Nothing s
+    let d = max (fromIntegral digits) (-(base10Exponent s))
+     in formatScientific Fixed (Just d) s
 
 parseDecimalLiteral :: String -> Maybe DecimalLiteral
 parseDecimalLiteral = fmap fst . find (null . snd) . readP_to_S decimalLiteralP
@@ -66,15 +67,15 @@ decimalLiteralP = do
 
   n <- foldDigits step 0
 
-  let s = SP n 0
+  let s = SP n 0 0
       fractional =
         foldDigits
-          ( \(SP a e) digit ->
-              SP (step a digit) (e - 1)
+          ( \(SP a e w) digit ->
+              SP (step a digit) (pred e) (succ w)
           )
           s
 
-  SP coeff expnt <-
+  SP coeff expnt digits <-
     (ReadP.satisfy (== '.') >> fractional)
       ReadP.<++ return s
 
@@ -82,10 +83,10 @@ decimalLiteralP = do
         | pos = coeff
         | otherwise = (-coeff)
 
-  return $ DecimalLiteral useSign $ scientific signedCoeff expnt
+  return $ DecimalLiteral useSign digits $ scientific signedCoeff expnt
 
 -- A strict pair
-data SP = SP !Integer {-# UNPACK #-} !Int
+data SP = SP !Integer {-# UNPACK #-} !Int !Word8
 
 foldDigits :: (a -> Int -> a) -> a -> ReadP a
 foldDigits f z = do
@@ -134,12 +135,12 @@ toQuantisationFactor dl = do
     else Nothing
 
 fromQuantisationFactor :: QuantisationFactor -> Maybe DecimalLiteral
-fromQuantisationFactor (QuantisationFactor qfw) =
+fromQuantisationFactor qf@(QuantisationFactor qfw) =
   let r = 1 % fromIntegral qfw
    in -- We set a limit for safety reasons.
       case fromRationalRepetend (Just 128) r of
         Left _ -> Nothing
-        Right (s, Nothing) -> Just $ DecimalLiteral False s
+        Right (s, Nothing) -> Just $ DecimalLiteral False (quantisationFactorDigits qf) s
         Right (_, Just _) -> Nothing
 
 toAccount :: QuantisationFactor -> DecimalLiteral -> Maybe Money.Account
@@ -151,5 +152,8 @@ fromAccount qf acc =
    in -- We set a limit for safety reasons.
       case fromRationalRepetend (Just 128) r of
         Left _ -> Nothing
-        Right (s, Nothing) -> Just $ DecimalLiteral True s
+        Right (s, Nothing) -> Just $ DecimalLiteral True (quantisationFactorDigits qf) s
         Right (_, Just _) -> Nothing
+
+quantisationFactorDigits :: QuantisationFactor -> Word8
+quantisationFactorDigits qf = ceiling (logBase 10 $ fromIntegral $ unQuantisationFactor qf :: Float)
