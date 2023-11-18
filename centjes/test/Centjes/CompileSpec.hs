@@ -18,6 +18,14 @@ spec = do
     it "produces valid ledgers" $
       producesValid compileDeclarations
 
+  describe "compileCurrencies" $ do
+    it "produces valid ledgers" $
+      producesValid compileCurrencies
+
+  describe "compileCurrency" $ do
+    it "produces valid ledgers" $
+      producesValid compileCurrency
+
   describe "compileTransaction" $ do
     it "produces valid ledgers" $
       producesValid2 compileTransaction

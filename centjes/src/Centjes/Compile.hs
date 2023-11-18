@@ -5,6 +5,8 @@
 module Centjes.Compile
   ( CompileError (..),
     compileDeclarations,
+    compileCurrencies,
+    compileCurrency,
     compileTransaction,
     compilePosting,
   )
@@ -56,18 +58,7 @@ instance Exception CompileError where
 
 compileDeclarations :: [Declaration] -> Validation CompileError Ledger
 compileDeclarations declarations = do
-  -- TODO check for duplicate currencies
-  ledgerCurrencies <-
-    M.fromList
-      <$> mapM
-        compileCurrency
-        ( mapMaybe
-            ( \case
-                DeclarationCurrency cd -> Just cd
-                _ -> Nothing
-            )
-            declarations
-        )
+  ledgerCurrencies <- compileCurrencies declarations
   let transactions =
         mapMaybe
           ( \case
@@ -77,6 +68,20 @@ compileDeclarations declarations = do
           declarations
   ledgerTransactions <- V.fromList . sort <$> traverse (compileTransaction ledgerCurrencies) transactions
   pure Ledger {..}
+
+compileCurrencies :: [Declaration] -> Validation CompileError (Map CurrencySymbol QuantisationFactor)
+compileCurrencies declarations =
+  -- TODO check for duplicate currencies
+  M.fromList
+    <$> mapM
+      compileCurrency
+      ( mapMaybe
+          ( \case
+              DeclarationCurrency cd -> Just cd
+              _ -> Nothing
+          )
+          declarations
+      )
 
 compileCurrency :: CurrencyDeclaration -> Validation CompileError (CurrencySymbol, QuantisationFactor)
 compileCurrency CurrencyDeclaration {..} = do
