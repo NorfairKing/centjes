@@ -8,6 +8,8 @@
     name: "Use newtype instead of data"
 - ignore:
     name: "Use underscore"
+- ignore:
+    name: "Use tuple-section"
 
 
 # Functions that we dissallow.

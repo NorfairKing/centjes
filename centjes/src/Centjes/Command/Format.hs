@@ -10,6 +10,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
+import Data.Either
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -29,15 +30,31 @@ runCentjesFormat Settings {..} FormatSettings {..} = do
 formatDir :: Path Abs Dir -> LoggingT IO ()
 formatDir d = do
   files <- snd <$> listDirRecur d
+
+  let pen :: (a, Either b c) -> Either (a, b) (a, c)
+      pen (a, Left b) = Left (a, b)
+      pen (a, Right c) = Right (a, c)
+
   parsedFiles <- fmap catMaybes $ forM files $ \fp ->
     if fileExtension fp == Just ".cent"
-      then do
-        errOrModule <- parseFile fp
-        case errOrModule of
-          Left err -> liftIO $ die err
-          Right (t, m) -> pure $ Just (fp, (t, m))
+      then Just . pen . (,) fp <$> parseFile fp
       else pure Nothing
-  forM_ parsedFiles $ \(fp, (textContents, m)) -> do
+
+  parsedModules <- case partitionEithers parsedFiles of
+    ([], ms) -> pure ms
+    (errs, _) -> do
+      logErrorN $
+        T.pack $
+          unlines $
+            flip map errs $ \(fp, err) ->
+              concat
+                [ unwords ["Failed to parse", fromAbsFile fp],
+                  "\n",
+                  err
+                ]
+      liftIO $ die "Could not parse all files. Not continuing to formatting them."
+
+  forM_ parsedModules $ \(fp, (textContents, m)) -> do
     newTextContents <- case idempotenceTest fp m of
       Left err -> liftIO $ die err
       Right ft -> pure ft

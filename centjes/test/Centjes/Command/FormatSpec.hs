@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Centjes.Command.FormatSpec (spec) where
 
 import Centjes.Command.Format
@@ -11,6 +14,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as T
 import Path
 import Path.IO
+import System.Exit
 import Test.Syd
 import Test.Syd.Path
 import Test.Syd.Validity
@@ -38,6 +42,17 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
         runCentjesFormat settings formatSettings
         assertFormatted testFile1
         assertFormatted testFile2
+
+  it "Does not format anything if any file fails to parse" $ \tdir -> do
+    testFile1 <- resolveFile tdir "foo.cent"
+    testFile2 <- resolveFile tdir "bar.cent"
+    T.writeFile (fromAbsFile testFile1) "#invalid file"
+    let unformatted = "import   foo.cent\n" -- Valid but unformatted
+    T.writeFile (fromAbsFile testFile2) unformatted
+    let settings = Settings {settingLedgerFile = testFile1}
+    let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
+    runCentjesFormat settings formatSettings `shouldThrow` (\(_ :: ExitCode) -> True)
+    T.readFile (fromAbsFile testFile2) `shouldReturn` unformatted
 
 assertFormatted :: Path Abs File -> IO ()
 assertFormatted fp = do
