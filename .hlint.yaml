@@ -63,7 +63,11 @@
   # It's also Lazy IO.
   # See https://www.snoyman.com/blog/2016/12/beware-of-readfile/ for more info.
   - {name: System.IO.readFile, within: []}
-  - {name: Data.Text.IO.readFile, within: [ "Centjes.FormatSpec" ]}
+  - name: Data.Text.IO.readFile, 
+    within:
+    - "Centjes.FormatSpec"
+    - "Centjes.ParseSpec"
+
   - {name: Data.Text.IO.Lazy.readFile, within: []}
 
   - {name: Prelude.read, within: []} # Partial, use `Text.Read.readMaybe` instead.
