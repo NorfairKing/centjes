@@ -112,6 +112,7 @@ test-suite centjes-test
       Centjes.FormatSpec
       Centjes.Module.Gen
       Centjes.ModuleSpec
+      Centjes.Parse.TestUtils
       Centjes.Validation.TestUtils
       Paths_centjes
   hs-source-dirs:

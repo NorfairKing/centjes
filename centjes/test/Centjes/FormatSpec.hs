@@ -5,7 +5,7 @@ module Centjes.FormatSpec (spec) where
 import Centjes.Format
 import Centjes.Module.Gen ()
 import Centjes.Parse
-import Centjes.Parse.Alex
+import Centjes.Parse.TestUtils
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -69,20 +69,3 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
           actual <- shouldParse parser "test-input" rendered
           context (ppShow actual) $ do
             formatter (actual :: a) `shouldBe` formatter expected
-
-shouldParse :: (FilePath -> Text -> Either String a) -> FilePath -> Text -> IO a
-shouldParse parser fp contents =
-  case parser fp contents of
-    Left err -> do
-      expectationFailure $
-        unlines $
-          concat
-            [ [ "Failed to parse:",
-                err
-              ],
-              [ "",
-                "tokens:",
-                ppShow (scanMany (T.unpack contents))
-              ]
-            ]
-    Right m -> pure m
