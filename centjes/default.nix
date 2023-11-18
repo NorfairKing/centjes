@@ -29,10 +29,11 @@ mkDerivation {
   libraryToolDepends = [ alex autoexporter happy ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
-    base containers genvalidity genvalidity-containers genvalidity-path
-    genvalidity-scientific genvalidity-sydtest genvalidity-text
-    genvalidity-time genvalidity-vector path path-io QuickCheck
-    really-safe-money really-safe-money-gen scientific sydtest text
+    base bytestring containers genvalidity genvalidity-containers
+    genvalidity-path genvalidity-scientific genvalidity-sydtest
+    genvalidity-text genvalidity-time genvalidity-vector path path-io
+    QuickCheck really-safe-money really-safe-money-gen scientific
+    sydtest text
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

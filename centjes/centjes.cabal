@@ -121,6 +121,7 @@ test-suite centjes-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Centjes.Command.FormatSpec
       Centjes.CompileSpec
       Centjes.DecimalLiteral.Gen
       Centjes.DecimalLiteralSpec
@@ -139,6 +140,7 @@ test-suite centjes-test
   build-depends:
       QuickCheck
     , base >=4.7 && <5
+    , bytestring
     , centjes
     , containers
     , genvalidity

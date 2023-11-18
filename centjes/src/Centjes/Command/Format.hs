@@ -10,6 +10,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -26,16 +27,24 @@ runCentjesFormat Settings {..} FormatSettings {..} = do
       Just (Left file) -> formatSingleFile file
 
 formatDir :: Path Abs Dir -> LoggingT IO ()
-formatDir = walkDir $ \_ _ files -> do
-  mapM_ formatFile files
-  pure $ WalkExclude [] -- Exclude hidden dirs and files?
+formatDir d = do
+  files <- snd <$> listDirRecur d
+  parsedFiles <- fmap catMaybes $ forM files $ \fp ->
+    if fileExtension fp == Just ".cent"
+      then do
+        errOrModule <- parseFile fp
+        case errOrModule of
+          Left err -> liftIO $ die err
+          Right (t, m) -> pure $ Just (fp, (t, m))
+      else pure Nothing
+  forM_ parsedFiles $ \(fp, (textContents, m)) -> do
+    newTextContents <- case idempotenceTest fp m of
+      Left err -> liftIO $ die err
+      Right ft -> pure ft
+    formatFile fp textContents newTextContents
 
-formatFile :: Path Abs File -> LoggingT IO ()
-formatFile fp =
-  case fileExtension fp of
-    Just ".cent" -> formatSingleFile fp
-    _ -> pure ()
-
+-- Format a single file on its own.
+-- This ignores any declarations.
 formatSingleFile :: Path Abs File -> LoggingT IO ()
 formatSingleFile fp = do
   errOrModule <- parseFile fp
@@ -49,32 +58,10 @@ formatSingleFile fp = do
               show err
             ]
     Right (textContents, m) -> do
-      let newTextContents = formatModule m
-      case parseModule "idempotence-test" newTextContents of
-        Left err ->
-          liftIO $
-            die $
-              unlines
-                [ "Formatted file could not be parsed, this indicates a bug:",
-                  err,
-                  T.unpack newTextContents
-                ]
-        Right m' ->
-          when (newTextContents /= formatModule m') $
-            liftIO $
-              die $
-                unlines
-                  [ "Formatting was not idempotent.",
-                    "Before:",
-                    show m,
-                    "After:",
-                    show m'
-                  ]
-      when (newTextContents /= textContents) $
-        liftIO $
-          SB.writeFile (fromAbsFile fp) $
-            TE.encodeUtf8 newTextContents
-      logInfoN $ T.pack $ unwords ["Formatted", fromAbsFile fp]
+      newTextContents <- case idempotenceTest fp m of
+        Left err -> liftIO $ die err
+        Right ft -> pure ft
+      formatFile fp textContents newTextContents
 
 parseFile :: Path Abs File -> LoggingT IO (Either String (Text, Module))
 parseFile fp = do
@@ -85,3 +72,36 @@ parseFile fp = do
       pure $ case parseModule (fromAbsFile fp) textContents of
         Left err -> Left err
         Right m -> Right (textContents, m)
+
+formatFile :: Path Abs File -> Text -> Text -> LoggingT IO ()
+formatFile fp textContents newTextContents =
+  if newTextContents == textContents
+    then logDebugN $ T.pack $ unwords ["Did not format because nothing changed:", fromAbsFile fp]
+    else do
+      liftIO $ SB.writeFile (fromAbsFile fp) $ TE.encodeUtf8 newTextContents
+      logInfoN $ T.pack $ unwords ["Formatted", fromAbsFile fp]
+
+idempotenceTest :: Path Abs File -> Module -> Either String Text
+idempotenceTest fp m = do
+  let newTextContents = formatModule m
+  case parseModule "idempotence-test" newTextContents of
+    Left err ->
+      Left $
+        unlines
+          [ "Formatted file could not be parsed, this indicates a bug:",
+            err,
+            T.unpack newTextContents
+          ]
+    Right m' ->
+      if newTextContents == formatModule m'
+        then Right newTextContents
+        else
+          Left $
+            unlines
+              [ "Formatting was not idempotent.",
+                fromAbsFile fp,
+                "Before:",
+                show m,
+                "After:",
+                show m'
+              ]

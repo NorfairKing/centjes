@@ -80,6 +80,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - QuickCheck
+    - bytestring
     - centjes
     - containers
     - genvalidity
