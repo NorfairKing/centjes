@@ -19,6 +19,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import qualified Data.Text as T
+import Data.Validity (Validity (..))
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
@@ -41,8 +42,11 @@ runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
         Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
         Success accs -> do
           terminalCapabilities <- getTerminalCapabilitiesFromEnv
-          let t = table (renderBalances accs)
+          let t = table (renderBalanceReport accs)
           putChunksLocaleWith terminalCapabilities $ renderTable t
+
+renderBalanceReport :: BalanceReport -> [[Chunk]]
+renderBalanceReport = renderBalances . unBalanceReport
 
 renderBalances :: Map AccountName (Money.MultiAccount Currency) -> [[Chunk]]
 renderBalances =
@@ -81,7 +85,22 @@ accountChunk qf a =
     . printf "%10s"
     $ Account.format qf a
 
-balanceLedger :: Ledger -> Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
+newtype BalanceReport = BalanceReport
+  {unBalanceReport :: Map AccountName (Money.MultiAccount Currency)}
+  deriving (Show, Eq, Generic)
+
+instance Validity BalanceReport
+
+data BalanceError
+  = BalanceErrorCouldNotAdd !(Money.MultiAccount Currency) !(Money.MultiAccount Currency)
+  | BalanceErrorCouldNotSum ![Money.MultiAccount Currency]
+  | BalanceErrorTransactionOffBalance !Transaction !(Money.MultiAccount Currency)
+  deriving stock (Show, Eq, Generic)
+
+renderBalanceError :: BalanceError -> String
+renderBalanceError = show
+
+balanceLedger :: Ledger -> Validation BalanceError BalanceReport
 balanceLedger m = do
   let incorporateAccounts ::
         Map AccountName (Money.MultiAccount Currency) ->
@@ -103,7 +122,7 @@ balanceLedger m = do
             )
             (M.map Right totals)
             (M.map Right current)
-  mapM balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
+  fmap BalanceReport $ mapM balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
 
 balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
 balanceTransaction t@Transaction {..} = do
@@ -125,12 +144,3 @@ balanceTransaction t@Transaction {..} = do
     Just d
       | d == MultiAccount.zero -> pure m
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance t d
-
-data BalanceError
-  = BalanceErrorCouldNotAdd !(Money.MultiAccount Currency) !(Money.MultiAccount Currency)
-  | BalanceErrorCouldNotSum ![Money.MultiAccount Currency]
-  | BalanceErrorTransactionOffBalance !Transaction !(Money.MultiAccount Currency)
-  deriving stock (Show, Eq, Generic)
-
-renderBalanceError :: BalanceError -> String
-renderBalanceError = show
