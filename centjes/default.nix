@@ -33,7 +33,7 @@ mkDerivation {
     genvalidity-path genvalidity-scientific genvalidity-sydtest
     genvalidity-text genvalidity-time genvalidity-vector path path-io
     QuickCheck really-safe-money really-safe-money-gen scientific
-    sydtest text
+    sydtest text vector
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

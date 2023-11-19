@@ -12,6 +12,7 @@ where
 
 import Centjes.Ledger
 import Centjes.Validation
+import Control.DeepSeq
 import Control.Exception
 import Control.Monad
 import qualified Data.Map as M
@@ -32,6 +33,10 @@ data BalanceError
   | BalanceErrorCouldNotSum ![Money.MultiAccount Currency]
   | BalanceErrorTransactionOffBalance !Transaction !(Money.MultiAccount Currency)
   deriving stock (Show, Eq, Generic)
+
+instance Validity BalanceError
+
+instance NFData BalanceError
 
 instance Exception BalanceError where
   displayException = show -- TODO
@@ -58,7 +63,7 @@ produceBalanceReport m = do
             )
             (M.map Right totals)
             (M.map Right current)
-  fmap BalanceReport $ mapM balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
+  fmap BalanceReport $ traverse balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
 
 balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
 balanceTransaction t@Transaction {..} = do

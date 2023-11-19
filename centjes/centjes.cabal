@@ -129,10 +129,12 @@ test-suite centjes-test
       Centjes.DecimalLiteral.Gen
       Centjes.DecimalLiteralSpec
       Centjes.FormatSpec
+      Centjes.Ledger.Gen
       Centjes.Module.Gen
       Centjes.ModuleSpec
       Centjes.Parse.TestUtils
       Centjes.ParseSpec
+      Centjes.Report.BalanceSpec
       Centjes.Validation.TestUtils
       Paths_centjes
   hs-source-dirs:
@@ -161,4 +163,5 @@ test-suite centjes-test
     , scientific
     , sydtest
     , text
+    , vector
   default-language: Haskell2010

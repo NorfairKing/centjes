@@ -98,3 +98,4 @@ tests:
     - scientific
     - sydtest
     - text
+    - vector
