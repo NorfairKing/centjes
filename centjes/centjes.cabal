@@ -46,6 +46,7 @@ library
       Centjes
       Centjes.Command
       Centjes.Command.Balance
+      Centjes.Command.Check
       Centjes.Command.Format
       Centjes.Compile
       Centjes.DecimalLiteral
@@ -122,6 +123,7 @@ test-suite centjes-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Centjes.Command.CheckSpec
       Centjes.Command.FormatSpec
       Centjes.CompileSpec
       Centjes.DecimalLiteral.Gen

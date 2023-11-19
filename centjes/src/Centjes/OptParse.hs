@@ -36,16 +36,20 @@ data Settings = Settings
   deriving (Show, Eq, Generic)
 
 data Dispatch
-  = DispatchBalance !BalanceSettings
+  = DispatchCheck !CheckSettings
+  | DispatchBalance !BalanceSettings
   | DispatchFormat !FormatSettings
+  deriving (Show, Eq, Generic)
+
+data CheckSettings = CheckSettings
+  deriving (Show, Eq, Generic)
+
+data BalanceSettings = BalanceSettings
   deriving (Show, Eq, Generic)
 
 data FormatSettings = FormatSettings
   { formatSettingFileOrDir :: !(Maybe (Either (Path Abs File) (Path Abs Dir)))
   }
-  deriving (Show, Eq, Generic)
-
-data BalanceSettings = BalanceSettings
   deriving (Show, Eq, Generic)
 
 combineToInstructions :: Arguments -> Environment -> Maybe Configuration -> IO Instructions
@@ -73,6 +77,8 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
 
   disp <-
     case cmd of
+      CommandCheck CheckArgs -> do
+        pure $ DispatchCheck CheckSettings
       CommandBalance BalanceArgs -> do
         pure $ DispatchBalance BalanceSettings
       CommandFormat FormatArgs {..} -> do
@@ -161,7 +167,8 @@ parseArgs = Arguments <$> parseCommand <*> parseFlags
 
 -- | A sum type for the commands and their specific arguments
 data Command
-  = CommandBalance !BalanceArgs
+  = CommandCheck !CheckArgs
+  | CommandBalance !BalanceArgs
   | CommandFormat !FormatArgs
   deriving (Show, Eq, Generic)
 
@@ -169,9 +176,19 @@ parseCommand :: OptParse.Parser Command
 parseCommand =
   OptParse.hsubparser $
     mconcat
-      [ OptParse.command "balance" $ CommandBalance <$> parseCommandBalance,
+      [ OptParse.command "check" $ CommandCheck <$> parseCommandCheck,
+        OptParse.command "balance" $ CommandBalance <$> parseCommandBalance,
         OptParse.command "format" $ CommandFormat <$> parseCommandFormat
       ]
+
+data CheckArgs = CheckArgs
+  deriving (Show, Eq, Generic)
+
+parseCommandCheck :: OptParse.ParserInfo CheckArgs
+parseCommandCheck = OptParse.info parser modifier
+  where
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Show a check of accounts"
+    parser = pure CheckArgs
 
 data BalanceArgs = BalanceArgs
   deriving (Show, Eq, Generic)

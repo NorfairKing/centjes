@@ -10,5 +10,6 @@ runCentjes :: IO ()
 runCentjes = do
   Instructions d settings <- getInstructions
   case d of
+    DispatchCheck cs -> runCentjesCheck settings cs
     DispatchBalance cs -> runCentjesBalance settings cs
     DispatchFormat cs -> runCentjesFormat settings cs
