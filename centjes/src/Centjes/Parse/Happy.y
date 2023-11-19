@@ -61,7 +61,8 @@ import qualified Money.Amount as Amount
       star            { Token _ TokenStar }
       dot             { Token _ TokenDot }
       import          { Token _ (TokenImport $$ )}
-      currency        { Token _ TokenCurrency}
+      currency_tok    { Token _ TokenCurrency}
+      account_tok     { Token _ TokenAccount}
       newline         { Token _ TokenNewLine }
 
 
@@ -89,11 +90,12 @@ declaration_with_newlines
 declaration
   :: { Declaration }
   : currency_dec { DeclarationCurrency $1 }
+  | account_dec { DeclarationAccount $1 }
   | transaction_dec { DeclarationTransaction $1 }
 
 currency_dec
   :: { CurrencyDeclaration }
-  : currency currency_symbol quantisation_factor newline { CurrencyDeclaration $2 $3 } -- TODO actual parsing
+  : currency_tok currency_symbol quantisation_factor newline { CurrencyDeclaration $2 $3 } -- TODO actual parsing
 
 currency_symbol
   :: { CurrencySymbol }
@@ -102,6 +104,10 @@ currency_symbol
 quantisation_factor
   :: { DecimalLiteral }
   : decimal_literal { $1 }
+
+account_dec
+  :: { AccountDeclaration }
+  : account_tok account_name { AccountDeclaration $2 }
 
 transaction_dec
   :: { Transaction }

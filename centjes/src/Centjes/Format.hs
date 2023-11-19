@@ -64,6 +64,7 @@ importDoc (Import fp) =
 declarationDoc :: Declaration -> Doc ann
 declarationDoc = \case
   DeclarationCurrency cd -> currencyDeclarationDoc cd
+  DeclarationAccount ad -> accountDeclarationDoc ad
   DeclarationTransaction t -> transactionDoc t
 
 currencyDeclarationDoc :: CurrencyDeclaration -> Doc ann
@@ -77,6 +78,11 @@ currencySymbolDoc = pretty . unCurrencySymbol
 
 quantisationFactorDoc :: DecimalLiteral -> Doc ann
 quantisationFactorDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = False})
+
+accountDeclarationDoc :: AccountDeclaration -> Doc ann
+accountDeclarationDoc AccountDeclaration {..} =
+  "account"
+    <+> accountNameDoc accountDeclarationName
 
 transactionDoc :: Transaction -> Doc ann
 transactionDoc Transaction {..} =

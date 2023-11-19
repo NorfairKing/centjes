@@ -31,8 +31,9 @@ instance Validity Module
 instance NFData Module
 
 data Declaration
-  = DeclarationCurrency CurrencyDeclaration
-  | DeclarationTransaction Transaction
+  = DeclarationCurrency !CurrencyDeclaration
+  | DeclarationAccount !AccountDeclaration
+  | DeclarationTransaction !Transaction
   deriving stock (Show, Eq, Generic)
 
 instance Validity Declaration
@@ -55,6 +56,15 @@ data CurrencyDeclaration = CurrencyDeclaration
 instance Validity CurrencyDeclaration
 
 instance NFData CurrencyDeclaration
+
+newtype AccountDeclaration = AccountDeclaration
+  { accountDeclarationName :: AccountName
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity AccountDeclaration
+
+instance NFData AccountDeclaration
 
 newtype CurrencySymbol = CurrencySymbol {unCurrencySymbol :: Text}
   deriving (Show, Eq, Ord, Generic)

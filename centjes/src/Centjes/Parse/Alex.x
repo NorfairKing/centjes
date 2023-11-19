@@ -67,6 +67,7 @@ $alpha = [A-Za-z]
 @dot = \.
 @import = "import " .* \n
 @currency = "currency "
+@account = "account "
 
 @comment = "-- " .* \n
 
@@ -84,6 +85,7 @@ $white_no_nl+ ;
 @dot                { lex' TokenDot}
 @star               { lex' TokenStar}
 @currency           { lex' TokenCurrency}
+@account            { lex' TokenAccount}
 @description        { lex (TokenDescription . T.pack . drop (length "| ") . init) }
 @newline            { lex' TokenNewLine }
 @var                { lex (TokenVar . T.pack) }
@@ -125,6 +127,7 @@ data TokenClass
   | TokenStar
   | TokenDot
   | TokenCurrency
+  | TokenAccount
   | TokenImport !FilePath
   | TokenNewLine
   | TokenEOF

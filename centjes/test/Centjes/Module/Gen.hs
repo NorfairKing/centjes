@@ -31,6 +31,8 @@ instance GenValid CurrencySymbol where
       let genChar = choose ('A', 'Z')
       T.cons <$> genChar <*> genTextBy genChar
 
+instance GenValid AccountDeclaration
+
 instance GenValid Transaction
 
 instance GenValid Description where
