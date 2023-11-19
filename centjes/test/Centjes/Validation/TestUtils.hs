@@ -2,17 +2,29 @@
 
 module Centjes.Validation.TestUtils
   ( shouldValidate,
+    shouldFail,
   )
 where
 
 import Centjes.Validation
 import Control.Exception
+import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Test.Syd
 
 shouldValidate :: Exception e => Validation e a -> IO a
 shouldValidate = \case
+  Success a -> pure a
   Failure errs ->
     expectationFailure $
       unlines ("Failed:" : map displayException (NE.toList errs))
-  Success a -> pure a
+
+shouldFail :: Show a => Validation e a -> IO (NonEmpty e)
+shouldFail = \case
+  Failure errs -> pure errs
+  Success a ->
+    expectationFailure $
+      unlines
+        [ "Should have failed, but resulted in",
+          ppShow a
+        ]
