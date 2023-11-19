@@ -58,6 +58,7 @@ library
       Centjes.Parse.Alex
       Centjes.Parse.Happy
       Centjes.Parse.Utils
+      Centjes.Report.Balance
       Centjes.Validation
   other-modules:
       Paths_centjes

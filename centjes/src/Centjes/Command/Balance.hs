@@ -1,6 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -10,17 +8,15 @@ import Centjes.Compile
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.OptParse
+import Centjes.Report.Balance
 import Centjes.Validation
 import Control.Exception
-import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import qualified Data.Text as T
-import Data.Validity (Validity (..))
-import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
@@ -38,8 +34,8 @@ runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
   liftIO $ case compileDeclarations declarations of
     Failure errs -> die $ unlines $ "Compilation failure: " : map displayException (NE.toList errs)
     Success ledger ->
-      case balanceLedger ledger of
-        Failure errs -> die $ unlines $ "Balance failure:" : map renderBalanceError (NE.toList errs)
+      case produceBalanceReport ledger of
+        Failure errs -> die $ unlines $ "Balance failure:" : map displayException (NE.toList errs)
         Success accs -> do
           terminalCapabilities <- getTerminalCapabilitiesFromEnv
           let t = table (renderBalanceReport accs)
@@ -84,63 +80,3 @@ accountChunk qf a =
     . T.pack
     . printf "%10s"
     $ Account.format qf a
-
-newtype BalanceReport = BalanceReport
-  {unBalanceReport :: Map AccountName (Money.MultiAccount Currency)}
-  deriving (Show, Eq, Generic)
-
-instance Validity BalanceReport
-
-data BalanceError
-  = BalanceErrorCouldNotAdd !(Money.MultiAccount Currency) !(Money.MultiAccount Currency)
-  | BalanceErrorCouldNotSum ![Money.MultiAccount Currency]
-  | BalanceErrorTransactionOffBalance !Transaction !(Money.MultiAccount Currency)
-  deriving stock (Show, Eq, Generic)
-
-renderBalanceError :: BalanceError -> String
-renderBalanceError = show
-
-balanceLedger :: Ledger -> Validation BalanceError BalanceReport
-balanceLedger m = do
-  let incorporateAccounts ::
-        Map AccountName (Money.MultiAccount Currency) ->
-        Map AccountName (Money.MultiAccount Currency) ->
-        Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
-      incorporateAccounts totals current =
-        traverse
-          ( \case
-              Left (a1, a2) -> validationFailure $ BalanceErrorCouldNotAdd a1 a2
-              Right a -> pure a
-          )
-          $ M.unionWith
-            ( \ea1 ea2 -> do
-                a1 <- ea1
-                a2 <- ea2
-                case MultiAccount.add a1 a2 of
-                  Nothing -> Left (a1, a2)
-                  Just a -> Right a
-            )
-            (M.map Right totals)
-            (M.map Right current)
-  fmap BalanceReport $ mapM balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
-
-balanceTransaction :: Transaction -> Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
-balanceTransaction t@Transaction {..} = do
-  let incorporatePosting ::
-        Map AccountName (Money.MultiAccount Currency) ->
-        Posting ->
-        Validation BalanceError (Map AccountName (Money.MultiAccount Currency))
-      incorporatePosting m (Posting an currency account) =
-        let acc = MultiAccount.fromAccount currency account
-         in case M.lookup an m of
-              Nothing -> pure $ M.insert an acc m
-              Just acc' -> case MultiAccount.add acc acc' of
-                Nothing -> validationFailure $ BalanceErrorCouldNotAdd acc acc'
-                Just acc'' -> pure $ M.insert an acc'' m
-  m <- foldM incorporatePosting M.empty transactionPostings
-  let as = M.elems m
-  case MultiAccount.sum as of
-    Nothing -> validationFailure $ BalanceErrorCouldNotSum as
-    Just d
-      | d == MultiAccount.zero -> pure m
-      | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance t d
