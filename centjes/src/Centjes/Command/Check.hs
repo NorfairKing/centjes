@@ -20,6 +20,7 @@ import Centjes.Ledger
 import Centjes.Load
 import Centjes.Module as Module
 import Centjes.OptParse
+import Centjes.Report.Balance
 import Centjes.Validation
 import Control.DeepSeq
 import Control.Exception
@@ -53,6 +54,7 @@ data CheckError
   = CheckErrorAccountDeclaredTwice !AccountName
   | CheckErrorUndeclaredAccount !AccountName
   | CheckErrorCompileError !CompileError
+  | CheckErrorBalanceError !BalanceError
   deriving (Show, Eq, Generic)
 
 instance Validity CheckError
@@ -72,6 +74,7 @@ instance Exception CheckError where
           show (unAccountName an)
         ]
     CheckErrorCompileError err -> displayException err
+    CheckErrorBalanceError err -> displayException err
 
 checkDeclarations :: [Declaration] -> Validation CheckError ()
 checkDeclarations ds = do
@@ -118,4 +121,6 @@ validateUniquesSet errFunc = foldM go S.empty
         else pure $ S.insert a s
 
 checkLedger :: Ledger -> Validation CheckError ()
-checkLedger _ = pure ()
+checkLedger l = do
+  _ <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport l
+  pure ()
