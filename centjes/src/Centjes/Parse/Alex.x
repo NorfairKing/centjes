@@ -57,7 +57,7 @@ $alpha = [A-Za-z]
     \+? @unsigned_scientific
   | \- @unsigned_scientific
 
-@var = $alpha [$alpha $digit \_ :]*
+@var = $alpha [$alpha $digit \_ \- :]*
 @year = $digit $digit $digit $digit
 @month_of_year = $digit $digit
 @day_of_month = $digit $digit

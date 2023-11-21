@@ -15,8 +15,10 @@ module Centjes.Command.Check
   )
 where
 
+import Centjes.Compile
+import Centjes.Ledger
 import Centjes.Load
-import Centjes.Module
+import Centjes.Module as Module
 import Centjes.OptParse
 import Centjes.Validation
 import Control.DeepSeq
@@ -36,13 +38,21 @@ import System.Exit
 runCentjesCheck :: Settings -> CheckSettings -> IO ()
 runCentjesCheck Settings {..} CheckSettings = runStderrLoggingT $ do
   declarations <- loadModules settingLedgerFile
-  case checkDeclarations declarations of
+  case doCompleteCheck declarations of
+    Failure errs ->
+      liftIO $ die $ unlines $ map displayException (NE.toList errs)
     Success () -> pure ()
-    Failure errs -> liftIO $ die $ unlines $ map displayException (NE.toList errs)
+
+doCompleteCheck :: [Declaration] -> Validation CheckError ()
+doCompleteCheck declarations = do
+  () <- checkDeclarations declarations
+  ledger <- mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
+  checkLedger ledger
 
 data CheckError
   = CheckErrorAccountDeclaredTwice !AccountName
   | CheckErrorUndeclaredAccount !AccountName
+  | CheckErrorCompileError !CompileError
   deriving (Show, Eq, Generic)
 
 instance Validity CheckError
@@ -61,6 +71,7 @@ instance Exception CheckError where
         [ "Account has not been declared:",
           show (unAccountName an)
         ]
+    CheckErrorCompileError err -> displayException err
 
 checkDeclarations :: [Declaration] -> Validation CheckError ()
 checkDeclarations ds = do
@@ -86,8 +97,8 @@ checkAccountsDeclared :: Set AccountName -> [Declaration] -> Validation CheckErr
 checkAccountsDeclared as = traverse_ $ \case
   DeclarationCurrency _ -> pure ()
   DeclarationAccount _ -> pure ()
-  DeclarationTransaction t -> for_ (transactionPostings t) $ \p ->
-    let an = postingAccountName p
+  DeclarationTransaction t -> for_ (Module.transactionPostings t) $ \p ->
+    let an = Module.postingAccountName p
      in if S.member an as
           then pure ()
           else validationFailure $ CheckErrorUndeclaredAccount an
@@ -105,3 +116,6 @@ validateUniquesSet errFunc = foldM go S.empty
       if S.member a s
         then validationFailure (errFunc a)
         else pure $ S.insert a s
+
+checkLedger :: Ledger -> Validation CheckError ()
+checkLedger _ = pure ()

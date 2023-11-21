@@ -1,11 +1,14 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Centjes.Validation where
 
+import Control.Exception
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Validity (Validity (..))
 import GHC.Generics
+import System.Exit
 
 data Validation e a
   = Failure (NonEmpty e)
@@ -36,3 +39,14 @@ validationFailure e = Failure (e :| [])
 
 validationSuccess :: a -> Validation e a
 validationSuccess = Success
+
+mapValidationFailure :: (e1 -> e2) -> Validation e1 a -> Validation e2 a
+mapValidationFailure f = \case
+  Success a -> Success a
+  Failure errs -> Failure $ NE.map f errs
+
+checkValidation :: Exception e => Validation e a -> IO a
+checkValidation = \case
+  Failure errs ->
+    die $ unlines $ map displayException (NE.toList errs)
+  Success a -> pure a

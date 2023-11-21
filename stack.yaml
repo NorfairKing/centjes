@@ -13,6 +13,13 @@ extra-deps:
   #   - really-safe-money-autodocodec
   #   - really-safe-money-gen
 
+- github: NorfairKing/autodocodec
+  commit: 0e48f4dd464b87471008b74fba2b997b80729fc2
+  subdirs:  
+    - autodocodec
+    - autodocodec-yaml
+    - autodocodec-schema
+
 - github: NorfairKing/validity
   commit: 657cf4bdc2731387abea6e707b88d381d5218616
   subdirs:

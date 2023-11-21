@@ -5,6 +5,45 @@
 
 packages:
 - completed:
+    name: autodocodec
+    pantry-tree:
+      sha256: 43e9568b96fd2eb0942d08c9d47f69fb4a0fba859458c312cdab51434d852df6
+      size: 912
+    sha256: 1350492dcb91897be1326d6c9158de8e7035d9853b4119b4360a11190f25ce01
+    size: 80362
+    subdir: autodocodec
+    url: https://github.com/NorfairKing/autodocodec/archive/0e48f4dd464b87471008b74fba2b997b80729fc2.tar.gz
+    version: 0.2.2.0
+  original:
+    subdir: autodocodec
+    url: https://github.com/NorfairKing/autodocodec/archive/0e48f4dd464b87471008b74fba2b997b80729fc2.tar.gz
+- completed:
+    name: autodocodec-yaml
+    pantry-tree:
+      sha256: a0bfe70f6c81b54cf6de6924df774d16e4132f37d69c77dfeef7660530a50d26
+      size: 591
+    sha256: 1350492dcb91897be1326d6c9158de8e7035d9853b4119b4360a11190f25ce01
+    size: 80362
+    subdir: autodocodec-yaml
+    url: https://github.com/NorfairKing/autodocodec/archive/0e48f4dd464b87471008b74fba2b997b80729fc2.tar.gz
+    version: 0.2.0.3
+  original:
+    subdir: autodocodec-yaml
+    url: https://github.com/NorfairKing/autodocodec/archive/0e48f4dd464b87471008b74fba2b997b80729fc2.tar.gz
+- completed:
+    name: autodocodec-schema
+    pantry-tree:
+      sha256: de7f401fc1f895fe94b5c21ce81f048c3d395d701da3006ed70706819189d32c
+      size: 387
+    sha256: 1350492dcb91897be1326d6c9158de8e7035d9853b4119b4360a11190f25ce01
+    size: 80362
+    subdir: autodocodec-schema
+    url: https://github.com/NorfairKing/autodocodec/archive/0e48f4dd464b87471008b74fba2b997b80729fc2.tar.gz
+    version: 0.1.0.3
+  original:
+    subdir: autodocodec-schema
+    url: https://github.com/NorfairKing/autodocodec/archive/0e48f4dd464b87471008b74fba2b997b80729fc2.tar.gz
+- completed:
     name: genvalidity
     pantry-tree:
       sha256: a793070e3cfed63fcad552416e952d7b53957e4d4830d60e0f7f76fb380d2114

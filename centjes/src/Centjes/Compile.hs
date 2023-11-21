@@ -16,6 +16,7 @@ import Centjes.DecimalLiteral as DecimalLiteral
 import Centjes.Ledger as Ledger
 import Centjes.Module as Module
 import Centjes.Validation
+import Control.DeepSeq
 import Control.Exception
 import Data.List (sort)
 import Data.Map.Strict (Map)
@@ -33,6 +34,8 @@ data CompileError
   deriving (Show, Eq, Generic)
 
 instance Validity CompileError
+
+instance NFData CompileError
 
 instance Exception CompileError where
   displayException = \case

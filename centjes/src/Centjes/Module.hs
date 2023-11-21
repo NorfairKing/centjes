@@ -74,9 +74,10 @@ instance Validity CurrencySymbol where
     mconcat
       [ genericValidate an,
         declare "The currency symbol is not empty" $ not (T.null t),
-        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character or _ or :" $
+        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character, or _, or -, or :" $
           case c of
             ':' -> True
+            '-' -> True
             '_' -> True
             _
               | Char.isLatin1 c && Char.isAlphaNum c -> True

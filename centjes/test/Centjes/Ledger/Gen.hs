@@ -8,15 +8,9 @@ import Centjes.Ledger
 import Centjes.Module.Gen ()
 import Data.GenValidity
 import Data.GenValidity.Map ()
-import Data.GenValidity.Text
 import Data.GenValidity.Vector ()
-import Data.List
-import qualified Data.Text as T
+import Data.List (sort)
 import qualified Data.Vector as V
-import Money.Account.Gen ()
-import Money.QuantisationFactor.Gen ()
-import Path
-import Test.QuickCheck
 
 instance GenValid Ledger where
   genValid = do
@@ -26,7 +20,7 @@ instance GenValid Ledger where
   shrinkValid l =
     filter (/= l)
       -- TODO sort the vector directly?
-      . map (\l -> l {ledgerTransactions = V.fromList (sort (V.toList (ledgerTransactions l)))})
+      . map (\l' -> l' {ledgerTransactions = V.fromList (sort (V.toList (ledgerTransactions l')))})
       $ shrinkValidStructurally l
 
 instance GenValid Transaction
