@@ -28,21 +28,16 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Data.Foldable
-import qualified Data.List.NonEmpty as NE
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Validity (Validity)
 import GHC.Generics (Generic)
-import System.Exit
 
 runCentjesCheck :: Settings -> CheckSettings -> IO ()
 runCentjesCheck Settings {..} CheckSettings = runStderrLoggingT $ do
   declarations <- loadModules settingLedgerFile
-  case doCompleteCheck declarations of
-    Failure errs ->
-      liftIO $ die $ unlines $ map displayException (NE.toList errs)
-    Success () -> pure ()
+  liftIO $ checkValidation $ doCompleteCheck declarations
 
 doCompleteCheck :: [Declaration] -> Validation CheckError ()
 doCompleteCheck declarations = do

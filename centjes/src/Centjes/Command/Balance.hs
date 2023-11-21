@@ -10,10 +10,8 @@ import Centjes.Load
 import Centjes.OptParse
 import Centjes.Report.Balance
 import Centjes.Validation
-import Control.Exception
 import Control.Monad.IO.Class
 import Control.Monad.Logger
-import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import qualified Data.Text as T
@@ -22,7 +20,6 @@ import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import Money.QuantisationFactor
-import System.Exit
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
@@ -31,15 +28,11 @@ import Text.Printf
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
   declarations <- loadModules settingLedgerFile
-  liftIO $ case compileDeclarations declarations of
-    Failure errs -> die $ unlines $ "Compilation failure: " : map displayException (NE.toList errs)
-    Success ledger ->
-      case produceBalanceReport ledger of
-        Failure errs -> die $ unlines $ "Balance failure:" : map displayException (NE.toList errs)
-        Success accs -> do
-          terminalCapabilities <- getTerminalCapabilitiesFromEnv
-          let t = table (renderBalanceReport accs)
-          putChunksLocaleWith terminalCapabilities $ renderTable t
+  ledger <- liftIO $ checkValidation $ compileDeclarations declarations
+  accs <- liftIO $ checkValidation $ produceBalanceReport ledger
+  terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
+  let t = table (renderBalanceReport accs)
+  liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
 
 renderBalanceReport :: BalanceReport -> [[Chunk]]
 renderBalanceReport = renderBalances . unBalanceReport
