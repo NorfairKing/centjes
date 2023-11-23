@@ -5,26 +5,27 @@ module Centjes.Ledger.Gen where
 
 import Centjes.DecimalLiteral.Gen ()
 import Centjes.Ledger
+import Centjes.Location
 import Centjes.Module.Gen ()
 import Data.GenValidity
 import Data.GenValidity.Map ()
 import Data.GenValidity.Vector ()
-import Data.List (sort)
+import Data.List (sortOn)
 import qualified Data.Vector as V
 
-instance GenValid Ledger where
+instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
   genValid = do
     ledgerCurrencies <- genValid
-    ledgerTransactions <- V.fromList . sort <$> genValid
+    ledgerTransactions <- V.fromList . sortOn (locatedValue . transactionTimestamp . locatedValue) <$> genValid
     pure Ledger {..}
   shrinkValid l =
     filter (/= l)
       -- TODO sort the vector directly?
-      . map (\l' -> l' {ledgerTransactions = V.fromList (sort (V.toList (ledgerTransactions l')))})
+      . map (\l' -> l' {ledgerTransactions = V.fromList (sortOn (locatedValue . transactionTimestamp . locatedValue) (V.toList (ledgerTransactions l')))})
       $ shrinkValidStructurally l
 
-instance GenValid Transaction
+instance GenValid ann => GenValid (Transaction ann)
 
-instance GenValid Posting
+instance GenValid ann => GenValid (Posting ann)
 
-instance GenValid Currency
+instance GenValid ann => GenValid (Currency ann)

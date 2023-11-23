@@ -31,6 +31,7 @@ library:
   - bytestring
   - containers
   - deepseq
+  - diagnose
   - envparse
   - monad-logger
   - mtl
@@ -38,6 +39,7 @@ library:
   - path
   - path-io
   - prettyprinter
+  - prettyprinter-ansi-terminal
   - primitive
   - random
   - really-safe-money
@@ -91,6 +93,7 @@ tests:
     - genvalidity-text
     - genvalidity-time
     - genvalidity-vector
+    - monad-logger
     - path
     - path-io
     - really-safe-money
@@ -98,4 +101,5 @@ tests:
     - scientific
     - sydtest
     - text
+    - time
     - vector

@@ -1,31 +1,28 @@
 {
-{-# OPTIONS -w  #-}
+{-# OPTIONS -w -Wunused-imports #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-} -- Because the comments in the generated code said so.
 module Centjes.Parse.Alex
   ( Token(..)
   , AlexPosn(..)
   , TokenClass(..)
   , Alex(..)
+  , AlexState(..)
   , runAlex'
   , alexMonadScan'
   , alexError'
   , alexError
   , scanMany
+  , getSourceFilePath
+  , getsAlex
   ) where
 
 import Centjes.DecimalLiteral
-import Control.Monad ( liftM )
+import Centjes.Location
+import Control.Monad (liftM)
 import Data.List
-import Data.List.NonEmpty (NonEmpty(..))
-import Data.Maybe
-import Data.Ratio
-import Data.Text(Text)
-import Debug.Trace
-import Numeric (readFloat, readSigned)
-import Numeric.Natural
+import Data.Maybe (fromJust)
+import Data.Text (Text)
 import Prelude hiding (lex)
-import Text.ParserCombinators.ReadP
-import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 }
 
@@ -80,7 +77,7 @@ $white_no_nl+ ;
 
 @import             { lex (TokenImport . drop (length "import ") . init) }
 @day                { lex TokenDay }
-@comment            { lexComment }
+@comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
 @scientific         { lex (TokenDecimalLiteral . fromJust . parseDecimalLiteral) } -- TODO get rid of fromJust
 @dot                { lex' TokenDot}
 @star               { lex' TokenStar}
@@ -92,30 +89,24 @@ $white_no_nl+ ;
 
 {
 
--- Count a comment as a newline
-lexComment :: AlexInput -> Int -> Alex Token
-lexComment inp len = lex (TokenComment . T.pack . drop (length "-- ") . init) inp len
-
-
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
 data AlexUserState = AlexUserState
-  { sourceFilePath :: Maybe FilePath
+  { sourceFilePath :: FilePath
   }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState Nothing
+alexInitUserState = AlexUserState ""
 
-getSourceFilePath :: Alex (Maybe FilePath)
+getSourceFilePath :: Alex FilePath
 getSourceFilePath = liftM sourceFilePath alexGetUserState
 
 setSourceFilePath :: FilePath -> Alex ()
-setSourceFilePath = alexSetUserState . AlexUserState . Just
+setSourceFilePath = alexSetUserState . AlexUserState
 
 
 -- The token type, consisting of the source code position and a token class.
-data Token = Token AlexPosn TokenClass
-  deriving ( Show )
+type Token = GenLocated SourceSpan TokenClass
 
 data TokenClass
   = TokenComment !Text
@@ -133,22 +124,50 @@ data TokenClass
   | TokenEOF
   deriving ( Show, Eq )
 
+spanFromSingle :: AlexPosn -> Alex SourceSpan
+spanFromSingle posn = spanFromBeginEnd posn posn
+
+spanFromBeginEnd :: AlexPosn -> AlexPosn -> Alex SourceSpan
+spanFromBeginEnd beginPos endPos = do
+  path <- getSourceFilePath
+  pure SourceSpan
+        { sourceSpanFile = path
+        , sourceSpanBegin =alexSourcePosition beginPos
+        , sourceSpanEnd = alexSourcePosition endPos
+        }
+
+alexSourcePosition :: AlexPosn -> SourcePosition
+alexSourcePosition (AlexPn _ l c) =
+  SourcePosition
+    { sourcePositionLine = l
+    , sourcePositionColumn = c
+    }
+
 alexEOF :: Alex Token
 alexEOF = do
   (p,_,_,_) <- alexGetInput
-  return $ Token p TokenEOF
+  s <- spanFromSingle p
+  return $ Located s TokenEOF
 
 
 -- Unfortunately, we have to extract the matching bit of string
 -- ourselves...
 lex :: (String -> TokenClass) -> AlexAction Token
-lex f = \(p,_,_,s) i -> return $ Token p (f (take i s))
+lex f = \(p,_,_,s) i -> do
+  let begin = alexSourcePosition p
+  let end = begin { sourcePositionColumn = sourcePositionColumn begin + i}
+  path <- getSourceFilePath
+  let span = SourceSpan
+        { sourceSpanFile = path
+        , sourceSpanBegin = begin
+        , sourceSpanEnd = end
+        }
+  return $ Located span (f (take i s))
 
 -- For constructing tokens that do not depend on
 -- the input
 lex' :: TokenClass -> AlexAction Token
 lex' = lex . const
-
 
 alexMonadScan' :: Alex Token
 alexMonadScan' = do
@@ -160,7 +179,8 @@ alexMonadScan' = do
         let desc = case s of
               [] -> "<empty>"
               (c:_) -> show c
-        alexError' p ("lexical error at character '" ++ desc ++ "'")
+        span <- spanFromSingle p
+        alexError' span ("lexical error at character '" ++ desc ++ "'")
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'
@@ -169,22 +189,27 @@ alexMonadScan' = do
         action (ignorePendingBytes inp) len
 
 -- Signal an error, including a commonly accepted source code position.
-alexError' :: AlexPosn -> String -> Alex a
-alexError' (AlexPn _ l c) msg = do
-  mfp <- getSourceFilePath
-  alexError (maybe "" (++ ":") mfp ++ show l ++ ":" ++ show c ++ ": " ++ msg)
+alexError' :: SourceSpan -> String -> Alex a
+alexError' (SourceSpan _ begin _) msg = do
+  let l = sourcePositionLine begin
+  let c = sourcePositionColumn begin
+  fp <- getSourceFilePath
+  alexError (fp ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
 
 -- A variant of runAlex, keeping track of the path of the file we are lexing.
 runAlex' :: Alex a -> FilePath -> String -> Either String a
 runAlex' a fp input = runAlex input (setSourceFilePath fp >> a)
 
-
 scanMany :: String -> Either String [Token]
 scanMany input = runAlex input go
   where
     go = do
-      token@(Token _ c) <- alexMonadScan'
+      token@(Located _ c) <- alexMonadScan'
       if c == TokenEOF
         then pure [token]
         else (token :) <$> go
+
+getsAlex :: (AlexState -> a) -> Alex a
+getsAlex func = Alex (\as -> Right (as, func as))
 }
+

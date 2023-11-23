@@ -9,7 +9,7 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
-  genValidSpec @Posting
-  genValidSpec @Transaction
-  genValidSpec @Declaration
-  genValidSpec @Module
+  genValidSpec @(Posting ())
+  genValidSpec @(Transaction ())
+  genValidSpec @(Declaration ())
+  genValidSpec @(Module ())

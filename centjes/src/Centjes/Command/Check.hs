@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -7,6 +8,7 @@
 
 module Centjes.Command.Check
   ( runCentjesCheck,
+    doCompleteCheck,
     CheckError (..),
     checkDeclarations,
     checkAccounts,
@@ -18,104 +20,120 @@ where
 import Centjes.Compile
 import Centjes.Ledger
 import Centjes.Load
+import Centjes.Location
 import Centjes.Module as Module
 import Centjes.OptParse
 import Centjes.Report.Balance
 import Centjes.Validation
 import Control.DeepSeq
-import Control.Exception
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Data.Foldable
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Maybe
-import Data.Set (Set)
-import qualified Data.Set as S
 import Data.Validity (Validity)
+import Error.Diagnose
 import GHC.Generics (Generic)
 
 runCentjesCheck :: Settings -> CheckSettings -> IO ()
 runCentjesCheck Settings {..} CheckSettings = runStderrLoggingT $ do
-  declarations <- loadModules settingLedgerFile
-  liftIO $ checkValidation $ doCompleteCheck declarations
+  (declarations, diag) <- loadModules settingLedgerFile
+  liftIO $ checkValidation diag $ doCompleteCheck declarations
 
-doCompleteCheck :: [Declaration] -> Validation CheckError ()
+doCompleteCheck :: Ord ann => [Declaration ann] -> Validation (CheckError ann) ()
 doCompleteCheck declarations = do
   () <- checkDeclarations declarations
   ledger <- mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
   checkLedger ledger
 
-data CheckError
-  = CheckErrorAccountDeclaredTwice !AccountName
-  | CheckErrorUndeclaredAccount !AccountName
-  | CheckErrorCompileError !CompileError
-  | CheckErrorBalanceError !BalanceError
+data CheckError ann
+  = CheckErrorAccountDeclaredTwice !ann !ann !AccountName
+  | CheckErrorUndeclaredAccount !ann !ann !(GenLocated ann AccountName)
+  | CheckErrorCompileError !(CompileError ann)
+  | CheckErrorBalanceError !(BalanceError ann)
   deriving (Show, Eq, Generic)
 
-instance Validity CheckError
+instance (Validity ann, Show ann, Ord ann) => Validity (CheckError ann)
 
-instance NFData CheckError
+instance NFData ann => NFData (CheckError ann)
 
-instance Exception CheckError where
-  displayException = \case
-    CheckErrorAccountDeclaredTwice an ->
-      unwords
-        [ "Account has been declared twice:",
-          show (unAccountName an)
+instance ToReport (CheckError SourceSpan) where
+  toReport = \case
+    CheckErrorAccountDeclaredTwice adl1 adl2 an ->
+      Err
+        (Just "CE_DUPLICATE_ACCOUNT")
+        ( unwords
+            [ "Account has been declared twice:",
+              show (unAccountName an)
+            ]
+        )
+        [ (toDiagnosePosition adl1, This "This account has been declared here first"),
+          (toDiagnosePosition adl2, Where "While trying to check this declaration")
         ]
-    CheckErrorUndeclaredAccount an ->
-      unwords
-        [ "Account has not been declared:",
-          show (unAccountName an)
+        []
+    CheckErrorUndeclaredAccount tl pl (Located al an) ->
+      Err
+        (Just "CE_UNDECLARED_ACCOUNT")
+        ( unwords
+            [ "Account has not been declared:",
+              show (unAccountName an)
+            ]
+        )
+        [ (toDiagnosePosition tl, Where "While trying to check this transaction"),
+          (toDiagnosePosition al, This "This account has not been declared"),
+          (toDiagnosePosition pl, Where "While trying to check this posting")
         ]
-    CheckErrorCompileError err -> displayException err
-    CheckErrorBalanceError err -> displayException err
+        []
+    CheckErrorCompileError ce -> toReport ce
+    CheckErrorBalanceError be -> toReport be
 
-checkDeclarations :: [Declaration] -> Validation CheckError ()
+checkDeclarations :: [Declaration ann] -> Validation (CheckError ann) ()
 checkDeclarations ds = do
   checkAccounts ds
   pure ()
 
-checkAccounts :: [Declaration] -> Validation CheckError ()
+checkAccounts :: [Declaration ann] -> Validation (CheckError ann) ()
 checkAccounts ds = do
   as <- checkAccountsUnique ds
   checkAccountsDeclared as ds
 
-checkAccountsUnique :: [Declaration] -> Validation CheckError (Set AccountName)
+checkAccountsUnique :: [Declaration ann] -> Validation (CheckError ann) (Map AccountName ann)
 checkAccountsUnique ds =
-  validateUniquesSet CheckErrorAccountDeclaredTwice $
+  validateUniquesMap CheckErrorAccountDeclaredTwice $
     mapMaybe
       ( \case
-          DeclarationAccount AccountDeclaration {..} -> Just accountDeclarationName
+          DeclarationAccount (Located l AccountDeclaration {..}) -> Just (locatedValue accountDeclarationName, l)
           _ -> Nothing
       )
       ds
 
-checkAccountsDeclared :: Set AccountName -> [Declaration] -> Validation CheckError ()
+checkAccountsDeclared :: Map AccountName ann -> [Declaration ann] -> Validation (CheckError ann) ()
 checkAccountsDeclared as = traverse_ $ \case
+  DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
   DeclarationAccount _ -> pure ()
-  DeclarationTransaction t -> for_ (Module.transactionPostings t) $ \p ->
-    let an = Module.postingAccountName p
-     in if S.member an as
-          then pure ()
-          else validationFailure $ CheckErrorUndeclaredAccount an
+  DeclarationTransaction (Located tl t) -> for_ (Module.transactionPostings t) $ \(Located pl p) ->
+    let Located _ an = Module.postingAccountName p
+     in case M.lookup an as of
+          Just _ -> pure ()
+          Nothing -> validationFailure $ CheckErrorUndeclaredAccount tl pl (Module.postingAccountName p)
 
-validateUniquesSet ::
-  forall a e.
+validateUniquesMap ::
+  forall a l e.
   Ord a =>
-  (a -> e) ->
-  [a] ->
-  Validation e (Set a)
-validateUniquesSet errFunc = foldM go S.empty
+  (l -> l -> a -> e) ->
+  [(a, l)] ->
+  Validation e (Map a l)
+validateUniquesMap errFunc = foldM go M.empty
   where
-    go :: Set a -> a -> Validation e (Set a)
-    go s a =
-      if S.member a s
-        then validationFailure (errFunc a)
-        else pure $ S.insert a s
+    go :: Map a l -> (a, l) -> Validation e (Map a l)
+    go m (a, l) = case M.lookup a m of
+      Nothing -> pure $ M.insert a l m
+      Just l' -> validationFailure $ errFunc l' l a
 
-checkLedger :: Ledger -> Validation CheckError ()
+checkLedger :: Ord ann => Ledger ann -> Validation (CheckError ann) ()
 checkLedger l = do
   _ <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport l
   pure ()

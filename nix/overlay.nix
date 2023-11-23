@@ -8,6 +8,12 @@ with final.haskell.lib;
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (
       self: super: {
+        diagnose = self.callCabal2nix "diagnose"
+          (builtins.fetchGit {
+            url = "https://github.com/Mesabloo/diagnose";
+            rev = "0f17c071d0b00f56a5aabe06f756863d0baca13f";
+          })
+          { };
         centjes = buildFromSdist
           (overrideCabal (self.callPackage ../centjes { })
             (old: {

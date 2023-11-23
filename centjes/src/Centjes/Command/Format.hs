@@ -7,6 +7,7 @@ import Centjes.Compile
 import Centjes.DecimalLiteral
 import Centjes.Format
 import Centjes.Load
+import Centjes.Location
 import Centjes.Module
 import Centjes.OptParse
 import Centjes.Parse
@@ -16,7 +17,6 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import Data.Either
-import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Maybe
@@ -41,20 +41,12 @@ formatFromLedger :: Path Abs File -> LoggingT IO ()
 formatFromLedger l = do
   -- TODO find a way to not read and parse every file twice (worst-case)
   currencies <- do
-    ds <- loadModules l
-    case compileCurrencies ds of
-      Failure errs -> do
-        logWarnN $
-          T.pack $
-            unlines $
-              "Could not compile currency declarations:"
-                : map displayException (NE.toList errs)
-        pure M.empty
-      Success m -> pure m
+    (ds, diag) <- loadModules l
+    liftIO $ checkValidation diag $ compileCurrencies ds
   logDebugN $ T.pack $ unlines $ "Compiled currencies:" : map show (M.toList currencies)
   formatDir currencies (parent l)
 
-formatDir :: Map CurrencySymbol QuantisationFactor -> Path Abs Dir -> LoggingT IO ()
+formatDir :: Map CurrencySymbol (GenLocated ann QuantisationFactor) -> Path Abs Dir -> LoggingT IO ()
 formatDir currencies d = do
   files <- snd <$> listDirRecur d
 
@@ -120,7 +112,7 @@ formatSingleFile fp = do
         Right ft -> pure ft
       formatFile fp textContents newTextContents
 
-parseFile :: Path Abs File -> LoggingT IO (Either String (Text, Module))
+parseFile :: Path Abs File -> LoggingT IO (Either String (Text, LModule))
 parseFile fp = do
   contents <- liftIO $ SB.readFile (fromAbsFile fp)
   case TE.decodeUtf8' contents of
@@ -138,7 +130,7 @@ formatFile fp textContents newTextContents =
       liftIO $ SB.writeFile (fromAbsFile fp) $ TE.encodeUtf8 newTextContents
       logInfoN $ T.pack $ unwords ["Formatted", fromAbsFile fp]
 
-idempotenceTest :: Path Abs File -> Module -> Either String Text
+idempotenceTest :: Path Abs File -> LModule -> Either String Text
 idempotenceTest fp m = do
   let newTextContents = formatModule m
   case parseModule "idempotence-test" newTextContents of
@@ -163,16 +155,20 @@ idempotenceTest fp m = do
                 show m'
               ]
 
-fillInDigits :: Map CurrencySymbol QuantisationFactor -> Module -> Module
+fillInDigits :: Map CurrencySymbol (GenLocated ann QuantisationFactor) -> LModule -> LModule
 fillInDigits currencies m = m {moduleDeclarations = map goDeclaration (moduleDeclarations m)}
   where
-    goDeclaration :: Declaration -> Declaration
+    goDeclaration :: Declaration ann -> Declaration ann
     goDeclaration = \case
-      DeclarationTransaction t -> DeclarationTransaction $ goTransaction t
+      DeclarationTransaction t -> DeclarationTransaction $ goTransaction <$> t
       d -> d
-    goTransaction :: Transaction -> Transaction
-    goTransaction t = t {transactionPostings = map goPosting (transactionPostings t)}
-    goPosting :: Posting -> Posting
-    goPosting p = case M.lookup (postingCurrencySymbol p) currencies of
-      Nothing -> p
-      Just qf -> p {postingAccount = (postingAccount p) {decimalLiteralDigits = quantisationFactorDigits qf}}
+    goTransaction :: Transaction ann -> Transaction ann
+    goTransaction t = t {transactionPostings = map (fmap goPosting) (transactionPostings t)}
+    goPosting :: Posting ann -> Posting ann
+    goPosting p =
+      let Located _ symbol = postingCurrencySymbol p
+       in case M.lookup symbol currencies of
+            Nothing -> p
+            Just (Located _ qf) ->
+              let Located l account = postingAccount p
+               in p {postingAccount = Located l $ account {decimalLiteralDigits = quantisationFactorDigits qf}}

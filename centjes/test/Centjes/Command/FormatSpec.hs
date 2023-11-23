@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Centjes.Command.FormatSpec (spec) where
 
@@ -23,7 +24,7 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
   it "can format a given single file" $ \tdir ->
     forAllValid $ \m -> do
       testFile <- resolveFile tdir "test.foobar"
-      T.writeFile (fromAbsFile testFile) (formatModule m)
+      T.writeFile (fromAbsFile testFile) (formatModule @() m)
       let settings = Settings {settingLedgerFile = testFile}
       let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Left testFile)}
       runCentjesFormat settings formatSettings
@@ -34,8 +35,8 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
       forAllValid $ \m2 -> do
         testFile1 <- resolveFile tdir "foo.cent"
         testFile2 <- resolveFile tdir "bar.cent"
-        T.writeFile (fromAbsFile testFile1) (formatModule m1)
-        T.writeFile (fromAbsFile testFile2) (formatModule m2)
+        T.writeFile (fromAbsFile testFile1) (formatModule @() m1)
+        T.writeFile (fromAbsFile testFile2) (formatModule @() m2)
         let settings = Settings {settingLedgerFile = testFile1}
         let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
         runCentjesFormat settings formatSettings

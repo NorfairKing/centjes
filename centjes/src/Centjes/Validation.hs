@@ -3,11 +3,16 @@
 
 module Centjes.Validation where
 
-import Control.Exception
+import Data.Foldable
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Validity (Validity (..))
+import Error.Diagnose
 import GHC.Generics
+import Prettyprinter
+import Prettyprinter.Render.Terminal (AnsiStyle, renderStrict)
 import System.Exit
 
 data Validation e a
@@ -45,8 +50,40 @@ mapValidationFailure f = \case
   Success a -> Success a
   Failure errs -> Failure $ NE.map f errs
 
-checkValidation :: Exception e => Validation e a -> IO a
-checkValidation = \case
-  Failure errs ->
-    die $ unlines $ map displayException (NE.toList errs)
-  Success a -> pure a
+checkValidation :: ToReport e => Diagnostic String -> Validation e a -> IO a
+checkValidation diag v =
+  case checkValidationPure diag v of
+    Right a -> pure a
+    Left e ->
+      -- TODO make this faster
+      -- Maybe we could use something faster than die and unpack
+      -- The prettyprinter lib can render directly to stderr
+      die $ T.unpack e
+
+checkValidationPure :: ToReport e => Diagnostic String -> Validation e a -> Either Text a
+checkValidationPure diag = \case
+  Success a -> Right a
+  Failure errs -> Left $ renderValidationErrors diag errs
+
+renderValidationErrors :: ToReport e => Diagnostic String -> NonEmpty e -> Text
+renderValidationErrors diag errs =
+  let diag' :: Diagnostic String
+      diag' = foldl' addReport diag (map toReport (NE.toList errs))
+      doc :: Doc AnsiStyle
+      doc = defaultStyle <$> prettyDiagnostic WithUnicode (TabSize 2) diag'
+   in renderStrict $ layoutPretty defaultLayoutOptions doc
+
+class ToReport e where
+  toReport :: e -> Report String
+
+exampleReport :: Report String
+exampleReport =
+  Err
+    -- vv  OPTIONAL ERROR CODE
+    Nothing
+    -- vv  ERROR MESSAGE
+    "This is my first error report"
+    -- vv  MARKERS
+    [(Position (1, 3) (1, 8) "some_test.txt", This "Some text under the marker")]
+    -- vv  HINTS
+    []

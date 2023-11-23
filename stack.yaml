@@ -1,17 +1,19 @@
 resolver: lts-20.25
 packages:
 - centjes
-- ../really-safe-money/really-safe-money
-- ../really-safe-money/really-safe-money-autodocodec
-- ../really-safe-money/really-safe-money-gen
+# - ../really-safe-money/really-safe-money
+# - ../really-safe-money/really-safe-money-autodocodec
+# - ../really-safe-money/really-safe-money-gen
 
 extra-deps:
-  # - github: NorfairKing/really-safe-money
-  #   commit: 2dc42e258dacc620f830cfe85e600655e93d46b6
-  #   subdirs:
-  #   - really-safe-money
-  #   - really-safe-money-autodocodec
-  #   - really-safe-money-gen
+- diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
+
+- github: NorfairKing/really-safe-money
+  commit: f87bf1a37330c9b01774a96c170a09679ba71224
+  subdirs:
+  - really-safe-money
+  - really-safe-money-autodocodec
+  - really-safe-money-gen
 
 - github: NorfairKing/autodocodec
   commit: 0e48f4dd464b87471008b74fba2b997b80729fc2

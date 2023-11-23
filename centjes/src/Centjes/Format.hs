@@ -5,48 +5,36 @@
 module Centjes.Format
   ( formatModule,
     formatDeclaration,
-    formatImport,
     formatTransaction,
-    formatPosting,
-    formatAccountName,
-    formatAccount,
   )
 where
 
 import Centjes.DecimalLiteral as DecimalLiteral
+import Centjes.Location
 import Centjes.Module
+import Data.Maybe
 import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Time
 import Path
 import Prettyprinter
 import Prettyprinter.Render.Text
 
-formatModule :: Module -> Text
+formatModule :: Module l -> Text
 formatModule = renderDocText . moduleDoc
 
-formatDeclaration :: Declaration -> Text
+formatDeclaration :: Declaration l -> Text
 formatDeclaration = renderDocText . declarationDoc
 
-formatImport :: Import -> Text
-formatImport = renderDocText . importDoc
-
-formatTransaction :: Transaction -> Text
+formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
-
-formatPosting :: Posting -> Text
-formatPosting = renderDocText . postingDoc
-
-formatAccountName :: AccountName -> Text
-formatAccountName = renderDocText . accountNameDoc
-
-formatAccount :: DecimalLiteral -> Text
-formatAccount = renderDocText . accountDoc
 
 renderDocText :: Doc ann -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions
   where
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
 
-moduleDoc :: Module -> Doc ann
+moduleDoc :: Module l -> Doc ann
 moduleDoc Module {..} =
   vcat $
     concat
@@ -61,51 +49,61 @@ importDoc (Import fp) =
         _ -> fp
    in "import" <+> pretty pString <> "\n"
 
-declarationDoc :: Declaration -> Doc ann
+declarationDoc :: Declaration l -> Doc ann
 declarationDoc = \case
+  DeclarationComment t -> commentDoc t
   DeclarationCurrency cd -> currencyDeclarationDoc cd
   DeclarationAccount ad -> accountDeclarationDoc ad
-  DeclarationTransaction t -> transactionDoc t
+  DeclarationTransaction t -> transactionDecDoc t
 
-currencyDeclarationDoc :: CurrencyDeclaration -> Doc ann
-currencyDeclarationDoc CurrencyDeclaration {..} =
+commentDoc :: GenLocated l Text -> Doc ann
+commentDoc (Located _ "") = "-- \n"
+commentDoc (Located _ t) =
+  let ls = T.lines t
+   in mconcat $ map ((<> "\n") . ("--" <+>) . pretty) ls
+
+currencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc ann
+currencyDeclarationDoc (Located _ CurrencyDeclaration {..}) =
   "currency"
     <+> currencySymbolDoc currencyDeclarationSymbol
     <+> quantisationFactorDoc currencyDeclarationQuantisationFactor <> "\n"
 
-currencySymbolDoc :: CurrencySymbol -> Doc ann
-currencySymbolDoc = pretty . unCurrencySymbol
+currencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
+currencySymbolDoc = pretty . unCurrencySymbol . locatedValue
 
-quantisationFactorDoc :: DecimalLiteral -> Doc ann
-quantisationFactorDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = False})
+quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc ann
+quantisationFactorDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = False}) . locatedValue
 
-accountDeclarationDoc :: AccountDeclaration -> Doc ann
-accountDeclarationDoc AccountDeclaration {..} =
+accountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
+accountDeclarationDoc (Located _ AccountDeclaration {..}) =
   "account"
     <+> accountNameDoc accountDeclarationName
 
-transactionDoc :: Transaction -> Doc ann
+transactionDecDoc :: GenLocated l (Transaction l) -> Doc ann
+transactionDecDoc = transactionDoc . locatedValue
+
+transactionDoc :: Transaction l -> Doc ann
 transactionDoc Transaction {..} =
   mconcat $
     concat
       [ [timestampDoc transactionTimestamp <> "\n"],
         [ mconcat
             [ "  | ",
-              descriptionDoc transactionDescription,
+              descriptionDoc d,
               "\n"
             ]
-          | not (nullDescription transactionDescription)
+          | d <- maybeToList transactionDescription
         ],
-        map (("  " <>) . postingDoc) transactionPostings
+        map (("  " <>) . postingDoc . locatedValue) transactionPostings
       ]
 
-timestampDoc :: Timestamp -> Doc ann
-timestampDoc = pretty . show
+timestampDoc :: GenLocated l Timestamp -> Doc ann
+timestampDoc = pretty . formatTime defaultTimeLocale "%F" . timestampDay . locatedValue
 
-descriptionDoc :: Description -> Doc ann
-descriptionDoc = pretty . unDescription
+descriptionDoc :: GenLocated l Description -> Doc ann
+descriptionDoc = pretty . unDescription . locatedValue
 
-postingDoc :: Posting -> Doc ann
+postingDoc :: Posting l -> Doc ann
 postingDoc Posting {..} =
   fill
     60
@@ -116,11 +114,11 @@ postingDoc Posting {..} =
     <+> accountDoc postingAccount
     <+> currencySymbolDoc postingCurrencySymbol <> "\n"
 
-accountNameDoc :: AccountName -> Doc ann
-accountNameDoc = pretty . unAccountName
+accountNameDoc :: GenLocated l AccountName -> Doc ann
+accountNameDoc = pretty . unAccountName . locatedValue
 
-accountDoc :: DecimalLiteral -> Doc ann
-accountDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = True})
+accountDoc :: GenLocated l DecimalLiteral -> Doc ann
+accountDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = True}) . locatedValue
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . renderDecimalLiteral

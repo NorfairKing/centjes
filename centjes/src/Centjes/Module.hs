@@ -5,6 +5,7 @@
 module Centjes.Module where
 
 import Centjes.DecimalLiteral
+import Centjes.Location
 import Control.DeepSeq
 import qualified Data.Char as Char
 import Data.Set (Set)
@@ -19,26 +20,31 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import Path
 
+type LModule = Module SourceSpan
+
 -- TODO roundtrip comments.
-data Module = Module
+data Module ann = Module
   { moduleImports :: [Import],
-    moduleDeclarations :: [Declaration]
+    moduleDeclarations :: [Declaration ann]
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity Module
+instance Validity ann => Validity (Module ann)
 
-instance NFData Module
+instance NFData ann => NFData (Module ann)
 
-data Declaration
-  = DeclarationCurrency !CurrencyDeclaration
-  | DeclarationAccount !AccountDeclaration
-  | DeclarationTransaction !Transaction
+type LDeclaration = Declaration SourceSpan
+
+data Declaration ann
+  = DeclarationComment !(GenLocated ann Text)
+  | DeclarationCurrency !(GenLocated ann (CurrencyDeclaration ann))
+  | DeclarationAccount !(GenLocated ann (AccountDeclaration ann))
+  | DeclarationTransaction !(GenLocated ann (Transaction ann))
   deriving stock (Show, Eq, Generic)
 
-instance Validity Declaration
+instance Validity ann => Validity (Declaration ann)
 
-instance NFData Declaration
+instance NFData ann => NFData (Declaration ann)
 
 newtype Import = Import {importFile :: Path Rel File}
   deriving stock (Show, Eq, Generic)
@@ -47,24 +53,28 @@ instance Validity Import
 
 instance NFData Import
 
-data CurrencyDeclaration = CurrencyDeclaration
-  { currencyDeclarationSymbol :: CurrencySymbol,
-    currencyDeclarationQuantisationFactor :: DecimalLiteral
+type LCurrencyDeclaration = LLocated CurrencyDeclaration
+
+data CurrencyDeclaration ann = CurrencyDeclaration
+  { currencyDeclarationSymbol :: !(GenLocated ann CurrencySymbol),
+    currencyDeclarationQuantisationFactor :: !(GenLocated ann DecimalLiteral)
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity CurrencyDeclaration
+instance Validity ann => Validity (CurrencyDeclaration ann)
 
-instance NFData CurrencyDeclaration
+instance NFData ann => NFData (CurrencyDeclaration ann)
 
-newtype AccountDeclaration = AccountDeclaration
-  { accountDeclarationName :: AccountName
+type LAccountDeclaration = LLocated AccountDeclaration
+
+newtype AccountDeclaration ann = AccountDeclaration
+  { accountDeclarationName :: GenLocated ann AccountName
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity AccountDeclaration
+instance Validity ann => Validity (AccountDeclaration ann)
 
-instance NFData AccountDeclaration
+instance NFData ann => NFData (AccountDeclaration ann)
 
 newtype CurrencySymbol = CurrencySymbol {unCurrencySymbol :: Text}
   deriving (Show, Eq, Ord, Generic)
@@ -86,19 +96,21 @@ instance Validity CurrencySymbol where
 
 instance NFData CurrencySymbol
 
-data Transaction = Transaction
-  { transactionTimestamp :: !Timestamp,
-    transactionDescription :: !Description,
-    transactionPostings :: ![Posting]
+type LTransaction = LLocated Transaction
+
+data Transaction ann = Transaction
+  { transactionTimestamp :: !(GenLocated ann Timestamp),
+    transactionDescription :: !(Maybe (GenLocated ann Description)),
+    transactionPostings :: ![GenLocated ann (Posting ann)]
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity Transaction
+instance Validity ann => Validity (Transaction ann)
 
-instance NFData Transaction
+instance NFData ann => NFData (Transaction ann)
 
-transactionCurrencySymbols :: Transaction -> Set CurrencySymbol
-transactionCurrencySymbols = S.fromList . map postingCurrencySymbol . transactionPostings
+transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
+transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySymbol . locatedValue) . transactionPostings
 
 newtype Description = Description {unDescription :: Text}
   deriving (Show, Eq, Ord, Generic)
@@ -124,18 +136,25 @@ instance NFData Description
 nullDescription :: Description -> Bool
 nullDescription = T.null . unDescription
 
-data Posting = Posting
-  { postingAccountName :: !AccountName,
-    postingAccount :: !DecimalLiteral,
-    postingCurrencySymbol :: !CurrencySymbol
+type LPosting = LLocated Posting
+
+data Posting ann = Posting
+  { postingAccountName :: !(GenLocated ann AccountName),
+    postingAccount :: !(GenLocated ann DecimalLiteral),
+    postingCurrencySymbol :: !(GenLocated ann CurrencySymbol)
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity Posting
+instance Validity ann => Validity (Posting ann)
 
-instance NFData Posting
+instance NFData ann => NFData (Posting ann)
 
-type Timestamp = Day
+newtype Timestamp = Timestamp {timestampDay :: Day}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Timestamp
+
+instance NFData Timestamp
 
 newtype AccountName = AccountName {unAccountName :: Text}
   deriving (Show, Eq, Ord, Generic)

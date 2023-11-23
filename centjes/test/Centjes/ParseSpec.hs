@@ -7,7 +7,6 @@ import Centjes.Parse
 import Centjes.Parse.TestUtils
 import Control.Monad
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import GHC.Stack
 import Path
@@ -17,12 +16,7 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
-  let parseSpec' n p = parseSpec n (\fp t -> p fp (T.strip t))
-  parseSpec' "account" parseAccount
-  parseSpec' "account-name" parseAccountName
-  parseSpec "posting" parsePosting
   parseSpec "transaction" parseTransaction
-  parseSpec "import" parseImport
   parseSpec "declaration" parseDeclaration
   parseSpec "module" parseModule
 
@@ -35,13 +29,13 @@ parseSpec ::
   Spec
 parseSpec name parser = withFrozenCallStack $ do
   describe name $ do
-    scenarioDir ("test_resources/" <> name <> "/valid") $ \fp ->
+    scenarioDir ("test_resources/syntax/" <> name <> "/valid") $ \fp ->
       it (unwords ["can parse", fp]) $ do
         contents <- T.readFile fp
         expected <- shouldParse parser fp contents
         shouldBeValid expected
 
-    scenarioDir ("test_resources/" <> name <> "/invalid") $ \fp -> do
+    scenarioDir ("test_resources/syntax/" <> name <> "/invalid") $ \fp -> do
       af <- liftIO $ resolveFile' fp
       when (fileExtension af == Just ".cent") $ do
         errFile <- liftIO $ replaceExtension ".error" af

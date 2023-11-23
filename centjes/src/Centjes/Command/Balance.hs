@@ -7,6 +7,7 @@ module Centjes.Command.Balance (runCentjesBalance) where
 import Centjes.Compile
 import Centjes.Ledger
 import Centjes.Load
+import Centjes.Location
 import Centjes.OptParse
 import Centjes.Report.Balance
 import Centjes.Validation
@@ -27,17 +28,18 @@ import Text.Printf
 
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
-  declarations <- loadModules settingLedgerFile
-  ledger <- liftIO $ checkValidation $ compileDeclarations declarations
-  accs <- liftIO $ checkValidation $ produceBalanceReport ledger
+  (declarations, diagnostic) <- loadModules settingLedgerFile
+  ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
+  -- TODO: combine these two "checkValidation"s
+  accs <- liftIO $ checkValidation diagnostic $ produceBalanceReport ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   let t = table (renderBalanceReport accs)
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
 
-renderBalanceReport :: BalanceReport -> [[Chunk]]
+renderBalanceReport :: BalanceReport ann -> [[Chunk]]
 renderBalanceReport = renderBalances . unBalanceReport
 
-renderBalances :: Map AccountName (Money.MultiAccount Currency) -> [[Chunk]]
+renderBalances :: Map AccountName (Money.MultiAccount (Currency ann)) -> [[Chunk]]
 renderBalances =
   concatMap
     ( \(an, acc) ->
@@ -52,14 +54,15 @@ renderBalances =
 accountNameChunk :: AccountName -> Chunk
 accountNameChunk = fore yellow . chunk . unAccountName
 
-multiAccountChunks :: Money.MultiAccount Currency -> [[Chunk]]
+multiAccountChunks :: Money.MultiAccount (Currency ann) -> [[Chunk]]
 multiAccountChunks ma =
   let accounts = MultiAccount.unMultiAccount ma
    in map
         ( \(c, acc) ->
-            [ accountChunk (currencyFactor c) acc,
-              currencySymbolChunk (currencySymbol c)
-            ]
+            let Located _ qf = currencyQuantisationFactor c
+             in [ accountChunk qf acc,
+                  currencySymbolChunk (currencySymbol c)
+                ]
         )
         (M.toList accounts)
 

@@ -3,6 +3,7 @@
 module Centjes.Module.Gen where
 
 import Centjes.DecimalLiteral.Gen ()
+import Centjes.Location.Gen ()
 import Centjes.Module
 import Data.GenValidity
 import Data.GenValidity.Path ()
@@ -15,15 +16,15 @@ import Money.QuantisationFactor.Gen ()
 import Path
 import Test.QuickCheck
 
-instance GenValid Module
+instance GenValid ann => GenValid (Module ann)
 
-instance GenValid Declaration
+instance GenValid ann => GenValid (Declaration ann)
 
 instance GenValid Import where
   genValid = genValid `suchThatMap` (fmap Import . replaceExtension ".cent")
   shrinkValid _ = []
 
-instance GenValid CurrencyDeclaration
+instance GenValid ann => GenValid (CurrencyDeclaration ann)
 
 instance GenValid CurrencySymbol where
   genValid =
@@ -31,9 +32,11 @@ instance GenValid CurrencySymbol where
       let genChar = choose ('A', 'Z')
       T.cons <$> genChar <*> genTextBy genChar
 
-instance GenValid AccountDeclaration
+instance GenValid ann => GenValid (AccountDeclaration ann)
 
-instance GenValid Transaction
+instance GenValid ann => GenValid (Transaction ann)
+
+instance GenValid Timestamp
 
 instance GenValid Description where
   genValid =
@@ -41,7 +44,7 @@ instance GenValid Description where
       genTextBy $
         genValid `suchThat` (validationIsValid . validateDescriptionChar)
 
-instance GenValid Posting
+instance GenValid ann => GenValid (Posting ann)
 
 instance GenValid AccountName where
   genValid =

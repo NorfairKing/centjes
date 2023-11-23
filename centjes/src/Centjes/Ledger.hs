@@ -14,6 +14,7 @@ module Centjes.Ledger
   )
 where
 
+import Centjes.Location
 import Centjes.Module (AccountName (..), CurrencySymbol (..), Description (..), Timestamp)
 import Control.DeepSeq
 import Data.List (sort)
@@ -27,20 +28,22 @@ import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 import Money.QuantisationFactor
 
-data Ledger = Ledger
-  { ledgerCurrencies :: Map CurrencySymbol QuantisationFactor,
-    ledgerTransactions :: Vector Transaction
+data Ledger ann = Ledger
+  { -- Note the quantisation factors will have the source location of their currency declaration.
+    -- TODO get rid of this field entirely?
+    ledgerCurrencies :: Map CurrencySymbol (GenLocated ann QuantisationFactor),
+    ledgerTransactions :: Vector (GenLocated ann (Transaction ann))
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity Ledger where
+instance Validity ann => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     mconcat
       [ genericValidate l,
-        declare "the transactions are sorted" $ ordered ledgerTransactions
+        declare "the transactions are sorted" $ ordered $ V.map (locatedValue . transactionTimestamp . locatedValue) ledgerTransactions
       ]
 
-instance NFData Ledger
+instance NFData ann => NFData (Ledger ann)
 
 -- TODO this can probably be much faster
 ordered :: Ord a => Vector a -> Bool
@@ -48,38 +51,37 @@ ordered v =
   let l = V.toList v
    in sort l == l
 
--- Note: We sort the transactions with the Ord instance to make sure that all
--- fields are taken into account.
--- In order for that to also sort the transactions by timestamp, the
--- timestamp must be the first field.
-data Transaction = Transaction
-  { transactionTimestamp :: !Timestamp,
-    transactionDescription :: !Description,
-    transactionPostings :: ![Posting]
+data Transaction ann = Transaction
+  { transactionTimestamp :: !(GenLocated ann Timestamp),
+    transactionDescription :: !(Maybe (GenLocated ann Description)),
+    transactionPostings :: ![GenLocated ann (Posting ann)] -- TODO vector here
   }
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity Transaction
+instance Validity ann => Validity (Transaction ann)
 
-instance NFData Transaction
+instance NFData ann => NFData (Transaction ann)
 
-data Posting = Posting
-  { postingAccountName :: !AccountName,
-    postingCurrency :: !Currency,
-    postingAccount :: !Money.Account
+data Posting ann = Posting
+  { postingAccountName :: !(GenLocated ann AccountName),
+    -- Note: This field will have the source location of the currency _symbol_ that defined it.
+    postingCurrency :: !(GenLocated ann (Currency ann)),
+    -- Note: This field will have the source location of the decimal literal that defined it.
+    postingAccount :: !(GenLocated ann Money.Account)
   }
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity Posting
+instance Validity ann => Validity (Posting ann)
 
-instance NFData Posting
+instance NFData ann => NFData (Posting ann)
 
-data Currency = Currency
+data Currency ann = Currency
   { currencySymbol :: !CurrencySymbol,
-    currencyFactor :: !QuantisationFactor
+    -- Note: This field will have the source location of currency _declaration_ that defined it
+    currencyQuantisationFactor :: !(GenLocated ann QuantisationFactor)
   }
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity Currency
+instance Validity ann => Validity (Currency ann)
 
-instance NFData Currency
+instance NFData ann => NFData (Currency ann)

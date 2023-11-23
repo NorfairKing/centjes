@@ -5,6 +5,52 @@
 
 packages:
 - completed:
+    hackage: diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
+    pantry-tree:
+      sha256: 99b2b3c2b2d3769ef45b030b0578ac7b3ce8b1b68ae7dd511857e7690ad19f52
+      size: 1401
+  original:
+    hackage: diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
+- completed:
+    name: really-safe-money
+    pantry-tree:
+      sha256: 4f0d7dd32d6c3f4f2a6dbf7e6ac87f1ff44a5f98598f365910b65e19cd64fc12
+      size: 739
+    sha256: 3a3598fa7f18941fb03009408949c1ed67d8ca705b21ef09ad95f147d93f7382
+    size: 36263
+    subdir: really-safe-money
+    url: https://github.com/NorfairKing/really-safe-money/archive/f87bf1a37330c9b01774a96c170a09679ba71224.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: really-safe-money
+    url: https://github.com/NorfairKing/really-safe-money/archive/f87bf1a37330c9b01774a96c170a09679ba71224.tar.gz
+- completed:
+    name: really-safe-money-autodocodec
+    pantry-tree:
+      sha256: 962bdb61891354082d2da5f31e2f2ad346b16fd51e6599f08eac838ad594e4e5
+      size: 1214
+    sha256: 3a3598fa7f18941fb03009408949c1ed67d8ca705b21ef09ad95f147d93f7382
+    size: 36263
+    subdir: really-safe-money-autodocodec
+    url: https://github.com/NorfairKing/really-safe-money/archive/f87bf1a37330c9b01774a96c170a09679ba71224.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: really-safe-money-autodocodec
+    url: https://github.com/NorfairKing/really-safe-money/archive/f87bf1a37330c9b01774a96c170a09679ba71224.tar.gz
+- completed:
+    name: really-safe-money-gen
+    pantry-tree:
+      sha256: 7d106cf84b1050c1488df8763a752460e4783fe2c6d40e57f1725df7b5f79825
+      size: 1366
+    sha256: 3a3598fa7f18941fb03009408949c1ed67d8ca705b21ef09ad95f147d93f7382
+    size: 36263
+    subdir: really-safe-money-gen
+    url: https://github.com/NorfairKing/really-safe-money/archive/f87bf1a37330c9b01774a96c170a09679ba71224.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: really-safe-money-gen
+    url: https://github.com/NorfairKing/really-safe-money/archive/f87bf1a37330c9b01774a96c170a09679ba71224.tar.gz
+- completed:
     name: autodocodec
     pantry-tree:
       sha256: 43e9568b96fd2eb0942d08c9d47f69fb4a0fba859458c312cdab51434d852df6

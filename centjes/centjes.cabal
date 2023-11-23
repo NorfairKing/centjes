@@ -10,32 +10,30 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
-    test_resources/account-name/formatted/example.cent
-    test_resources/account-name/valid/example.cent
-    test_resources/account/formatted/cent.cent
-    test_resources/account/formatted/example.cent
-    test_resources/account/formatted/rappen.cent
-    test_resources/account/valid/cent.cent
-    test_resources/account/valid/example.cent
-    test_resources/account/valid/rappen.cent
-    test_resources/declaration/formatted/currency.cent
-    test_resources/declaration/formatted/signed.cent
-    test_resources/declaration/formatted/transaction.cent
-    test_resources/declaration/valid/currency.cent
-    test_resources/declaration/valid/signed.cent
-    test_resources/declaration/valid/transaction.cent
-    test_resources/import/formatted/with-extension.cent
-    test_resources/import/formatted/without-extension.cent
-    test_resources/import/invalid/wrong-etension.cent
-    test_resources/import/invalid/wrong-etension.error
-    test_resources/import/valid/with-extension.cent
-    test_resources/import/valid/without-extension.cent
-    test_resources/module/formatted/example.cent
-    test_resources/module/valid/example.cent
-    test_resources/posting/formatted/example.cent
-    test_resources/posting/valid/example.cent
-    test_resources/transaction/formatted/example.cent
-    test_resources/transaction/valid/example.cent
+    test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err
+    test_resources/errors/balance-report/BE_OFF_BALANCE-simple.err
+    test_resources/errors/balance-report/BE_OFF_BALANCE-two.err
+    test_resources/errors/balance-report/BE_RUNNING_BALANCE.err
+    test_resources/errors/balance-report/BE_TRANSACTION_SUM.err
+    test_resources/errors/check/CE_DUPLICATE_ACCOUNT.err
+    test_resources/errors/check/CE_UNDECLARED_ACCOUNT.err
+    test_resources/errors/compile/CE_INVALID_AMOUNT.err
+    test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err
+    test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/syntax/declaration/formatted/comment.cent
+    test_resources/syntax/declaration/formatted/currency.cent
+    test_resources/syntax/declaration/formatted/signed.cent
+    test_resources/syntax/declaration/formatted/transaction.cent
+    test_resources/syntax/declaration/valid/comment.cent
+    test_resources/syntax/declaration/valid/currency.cent
+    test_resources/syntax/declaration/valid/signed.cent
+    test_resources/syntax/declaration/valid/transaction.cent
+    test_resources/syntax/module/formatted/example.cent
+    test_resources/syntax/module/formatted/multiline-comment.cent
+    test_resources/syntax/module/valid/example.cent
+    test_resources/syntax/module/valid/multiline-comment.cent
+    test_resources/syntax/transaction/formatted/example.cent
+    test_resources/syntax/transaction/valid/example.cent
 
 source-repository head
   type: git
@@ -53,6 +51,7 @@ library
       Centjes.Format
       Centjes.Ledger
       Centjes.Load
+      Centjes.Location
       Centjes.Module
       Centjes.OptParse
       Centjes.Parse
@@ -79,6 +78,7 @@ library
     , bytestring
     , containers
     , deepseq
+    , diagnose
     , envparse
     , monad-logger
     , mtl
@@ -86,6 +86,7 @@ library
     , path
     , path-io
     , prettyprinter
+    , prettyprinter-ansi-terminal
     , primitive
     , random
     , really-safe-money
@@ -130,6 +131,7 @@ test-suite centjes-test
       Centjes.DecimalLiteralSpec
       Centjes.FormatSpec
       Centjes.Ledger.Gen
+      Centjes.Location.Gen
       Centjes.Module.Gen
       Centjes.ModuleSpec
       Centjes.Parse.TestUtils
@@ -156,6 +158,7 @@ test-suite centjes-test
     , genvalidity-text
     , genvalidity-time
     , genvalidity-vector
+    , monad-logger
     , path
     , path-io
     , really-safe-money
@@ -163,5 +166,6 @@ test-suite centjes-test
     , scientific
     , sydtest
     , text
+    , time
     , vector
   default-language: Haskell2010

@@ -1,8 +1,0 @@
-import foobar
-
-currency USD 100
-
-2023-11-15
-  | Coffee
-  * expenses:coffee                                            +5 USD
-  * assets:cash                                                -5 USD

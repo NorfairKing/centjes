@@ -4,31 +4,16 @@
 module Centjes.Parse.Happy
   ( parseModule
   , parseDeclaration
-  , parseImport
   , parseTransaction
-  , parsePosting
-  , parseAccountName
-  , parseAccount
   ) where
 
-import Centjes.DecimalLiteral
+import Centjes.DecimalLiteral (DecimalLiteral)
+import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
 import Centjes.Parse.Utils
-import Data.List
-import Data.Maybe (fromJust)
 import Data.Text (Text)
-import Data.Time
-import Debug.Trace
-import Money.Account as Money (Account)
-import Money.Amount as Money (Amount)
-import Money.QuantisationFactor as Money
-import Path (parseRelFile)
-import Text.ParserCombinators.ReadP
-import qualified Centjes.DecimalLiteral as DecimalLiteral
 import qualified Data.Text as T
-import qualified Money.Account as Account
-import qualified Money.Amount as Amount
 
 }
 
@@ -45,7 +30,7 @@ import qualified Money.Amount as Amount
 
 %tokentype { Token }
 %monad { Alex }
-%lexer { lexwrap } { Token _ TokenEOF }
+%lexer { lexwrap } { Located _ TokenEOF }
 -- Without this we get a type error
 %error { happyError }
 
@@ -53,26 +38,23 @@ import qualified Money.Amount as Amount
 %expect 0
 
 %token 
-      comment         { Token _ (TokenComment $$) }
-      day             { Token _ (TokenDay $$) }
-      var             { Token _ (TokenVar $$) }
-      pipetext        { Token _ (TokenDescription $$) }
-      decimal_literal { Token _ (TokenDecimalLiteral $$) }
-      star            { Token _ TokenStar }
-      dot             { Token _ TokenDot }
-      import          { Token _ (TokenImport $$ )}
-      currency_tok    { Token _ TokenCurrency}
-      account_tok     { Token _ TokenAccount}
-      newline         { Token _ TokenNewLine }
+      comment         { Located _ (TokenComment _) }
+      day             { Located _ (TokenDay _) }
+      var             { Located _ (TokenVar _) }
+      pipetext        { Located _ (TokenDescription _) }
+      decimal_literal { Located _ (TokenDecimalLiteral _) }
+      star            { Located _ TokenStar }
+      dot             { Located _ TokenDot }
+      import          { Located _ (TokenImport $$ )}
+      currency_tok    { Located _ TokenCurrency}
+      account_tok     { Located _ TokenAccount}
+      newline         { Located _ TokenNewLine }
 
-
-%right arrow
-%nonassoc '='
 
 %%
 
 module
-  :: { Module }
+  :: { LModule }
   : many(newline) many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
 
 import_with_newlines
@@ -84,56 +66,60 @@ import_dec
   : import {% parseImportFrom $1 }
 
 declaration_with_newlines
-  :: { Declaration }
+  :: { LDeclaration }
   : declaration many(newline) { $1 }
 
 declaration
-  :: { Declaration }
-  : currency_dec { DeclarationCurrency $1 }
+  :: { LDeclaration }
+  : comment_dec { DeclarationComment $1 }
+  | currency_dec { DeclarationCurrency $1 }
   | account_dec { DeclarationAccount $1 }
   | transaction_dec { DeclarationTransaction $1 }
 
+comment_dec
+  :: { Located Text }
+  : comment { parseComment $1 }
+
 currency_dec
-  :: { CurrencyDeclaration }
-  : currency_tok currency_symbol quantisation_factor newline { CurrencyDeclaration $2 $3 } -- TODO actual parsing
+  :: { LCurrencyDeclaration }
+  : currency_tok currency_symbol quantisation_factor newline { sBE $1 $4 $ CurrencyDeclaration $2 $3 } -- TODO actual parsing
 
 currency_symbol
-  :: { CurrencySymbol }
-  : var { CurrencySymbol $1 } -- TODO actual parsing
+  :: { Located CurrencySymbol }
+  : var { parseCurrencySymbol $1 }
 
 quantisation_factor
-  :: { DecimalLiteral }
-  : decimal_literal { $1 }
+  :: { Located DecimalLiteral }
+  : decimal_literal { parseDecimalLiteral $1 }
 
 account_dec
-  :: { AccountDeclaration }
-  : account_tok account_name { AccountDeclaration $2 }
+  :: { LAccountDeclaration }
+  : account_tok account_name { sBE $1 $2 $ AccountDeclaration $2 }
 
 transaction_dec
-  :: { Transaction }
-  : timestamp newline description many(posting) { Transaction $1 $3 $4 }
-  | timestamp %shift { Transaction $1 (Description "") [] }
+  :: { LTransaction }
+  : timestamp newline optional(description) many(posting) { sBLE $1 $4 (Transaction $1 $3 $4) }
+  | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] }
 
 timestamp
-  :: { Timestamp }
-  : day {% timeParser "%F" $1 }
+  :: { Located Timestamp }
+  : day {% parseTimestamp $1 }
 
 description
-  :: { Description }
-  : pipetext { Description $1 } -- TODO actual parsing
-  | {- empty -} { Description "" }
+  :: { Located Description }
+  : pipetext { parseDescription $1 } -- TODO actual parsing
 
 posting
-  :: { Posting }
-  : star account_name account_exp currency_symbol newline { Posting $2 $3 $4 }
+  :: { LPosting }
+  : star account_name account_exp currency_symbol newline { sBE $1 $5 $ Posting $2 $3 $4 }
 
 account_name
-  :: { AccountName }
-  : var { AccountName $1 } -- TODO do actual paring
+  :: { Located AccountName }
+  : var { parseAccountName $1 }
 
 account_exp
-  :: { DecimalLiteral }
-  : decimal_literal { $1 } -- TODO do actual parsing
+  :: { Located DecimalLiteral }
+  : decimal_literal { parseDecimalLiteral $1 }
 
 -- Helpers
 optional(p)
@@ -148,32 +134,59 @@ many_rev(p)
   : {- empty -}   { [] }
   | many_rev(p) p { $2 : $1 }
 
-{
+{ 
+
+sL1 :: Located a -> b -> Located b
+sL1 (Located l val) b = Located l b
+
+sBE :: Located a -> Located b -> c -> Located c
+sBE (Located begin _) (Located end _) c = Located (combineSpans begin end) c
+
+sBME :: Located a -> Maybe (Located b) -> c -> Located c
+sBME l1 Nothing = sL1 l1
+sBME l1 (Just l2) = sBE l1 l2
+
+sBLE :: Located a -> [Located b] -> c -> Located c
+sBLE l1 [] = sL1 l1
+sBLE l1 ls = sBE l1 (last ls)
+
+combineSpans :: SourceSpan -> SourceSpan -> SourceSpan
+combineSpans begin end = begin { sourceSpanEnd = sourceSpanEnd end }
+
+parseComment :: Token -> Located Text
+parseComment (Located l (TokenComment t)) = Located l t
+
+parseTimestamp :: Token -> Alex (Located Timestamp)
+parseTimestamp t@(Located _ (TokenDay ds)) = fmap Timestamp . sL1 t <$> timeParser "%F" ds
+
+parseDescription :: Token -> Located Description
+parseDescription t@(Located _ (TokenDescription ds)) = sL1 t $ Description ds 
+
+-- TODO do actual paring
+parseAccountName :: Token -> Located AccountName
+parseAccountName t@(Located _ (TokenVar ans)) = sL1 t $ AccountName ans
+
+-- TODO actual parsing
+parseCurrencySymbol :: Token -> Located CurrencySymbol
+parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t $ CurrencySymbol ans
+
+-- TODO do actual parsing
+parseDecimalLiteral :: Token -> Located DecimalLiteral
+parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl
+  
 lexwrap :: (Token -> Alex a) -> Alex a
 lexwrap = (alexMonadScan' >>=)
                                     
 happyError :: Token -> Alex a
-happyError (Token p t) =
+happyError (Located p t) =
   alexError' p ("parse error at token '" ++ show t ++ "'")
 
-parseModule :: FilePath -> Text -> Either String Module
+parseModule :: FilePath -> Text -> Either String LModule
 parseModule fp = runAlex' moduleParser fp . T.unpack
 
-parseDeclaration :: FilePath -> Text -> Either String Declaration
+parseDeclaration :: FilePath -> Text -> Either String LDeclaration
 parseDeclaration fp = runAlex' declarationParser fp . T.unpack
 
-parseImport :: FilePath -> Text -> Either String Import
-parseImport fp = runAlex' importParser fp . T.unpack
-
-parseTransaction :: FilePath -> Text -> Either String Transaction
-parseTransaction fp = runAlex' transactionParser fp . T.unpack
-
-parsePosting :: FilePath -> Text -> Either String Posting
-parsePosting fp = runAlex' postingParser fp . T.unpack
-
-parseAccountName :: FilePath -> Text -> Either String AccountName
-parseAccountName fp = runAlex' accountNameParser fp . T.unpack
-
-parseAccount :: FilePath -> Text -> Either String DecimalLiteral
-parseAccount fp = runAlex' accountParser fp . T.unpack
+parseTransaction :: FilePath -> Text -> Either String (Transaction SourceSpan)
+parseTransaction fp = runAlex' (locatedValue <$> transactionParser) fp . T.unpack
 }
