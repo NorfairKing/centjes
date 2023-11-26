@@ -22,3 +22,8 @@ Assumptions:
 * Raw data will not be correct.
   We will need a mechanism to correct it, and not forget about the correction.
   Banks and Brokers are notoriously terrible at getting currency conversions correct.
+
+
+## A ledger language as a compiler target
+
+TODO
