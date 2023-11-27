@@ -1,6 +1,7 @@
 resolver: lts-20.25
 packages:
 - centjes
+- centjes-gen
 # - ../really-safe-money/really-safe-money
 # - ../really-safe-money/really-safe-money-autodocodec
 # - ../really-safe-money/really-safe-money-gen

@@ -1,0 +1,158 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           centjes-gen
+version:        0.0.0.0
+homepage:       https://github.com/NorfairKing/centjes#readme
+bug-reports:    https://github.com/NorfairKing/centjes/issues
+build-type:     Simple
+extra-source-files:
+    test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err
+    test_resources/errors/balance-report/BE_OFF_BALANCE-simple.err
+    test_resources/errors/balance-report/BE_OFF_BALANCE-two.err
+    test_resources/errors/balance-report/BE_RUNNING_BALANCE.err
+    test_resources/errors/balance-report/BE_TRANSACTION_SUM.err
+    test_resources/errors/check/CE_DUPLICATE_ACCOUNT.err
+    test_resources/errors/check/CE_UNDECLARED_ACCOUNT.err
+    test_resources/errors/compile/CE_INVALID_AMOUNT.err
+    test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err
+    test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/syntax/declaration/formatted/comment.cent
+    test_resources/syntax/declaration/formatted/currency.cent
+    test_resources/syntax/declaration/formatted/signed.cent
+    test_resources/syntax/declaration/formatted/transaction.cent
+    test_resources/syntax/declaration/valid/comment.cent
+    test_resources/syntax/declaration/valid/currency.cent
+    test_resources/syntax/declaration/valid/signed.cent
+    test_resources/syntax/declaration/valid/transaction.cent
+    test_resources/syntax/module/formatted/aligned-amounts.cent
+    test_resources/syntax/module/formatted/commented-transaction.cent
+    test_resources/syntax/module/formatted/example.cent
+    test_resources/syntax/module/formatted/multiline-comment.cent
+    test_resources/syntax/module/formatted/multiple-accounts.cent
+    test_resources/syntax/module/formatted/multiple-currencies.cent
+    test_resources/syntax/module/formatted/multiple-imports.cent
+    test_resources/syntax/module/valid/aligned-amounts.cent
+    test_resources/syntax/module/valid/commented-transaction.cent
+    test_resources/syntax/module/valid/example.cent
+    test_resources/syntax/module/valid/multiline-comment.cent
+    test_resources/syntax/module/valid/multiple-accounts.cent
+    test_resources/syntax/module/valid/multiple-currencies.cent
+    test_resources/syntax/module/valid/multiple-imports.cent
+    test_resources/syntax/transaction/formatted/example.cent
+    test_resources/syntax/transaction/valid/example.cent
+
+source-repository head
+  type: git
+  location: https://github.com/NorfairKing/centjes
+
+library
+  exposed-modules:
+      Centjes.DecimalLiteral.Gen
+      Centjes.Ledger.Gen
+      Centjes.Location.Gen
+      Centjes.Module.Gen
+      Centjes.Parse.TestUtils
+      Centjes.Validation.TestUtils
+  other-modules:
+      Paths_centjes_gen
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      QuickCheck
+    , array
+    , autodocodec
+    , autodocodec-yaml
+    , base >=4.7 && <5
+    , bytestring
+    , centjes
+    , containers
+    , deepseq
+    , diagnose
+    , envparse
+    , genvalidity
+    , genvalidity-containers
+    , genvalidity-path
+    , genvalidity-scientific
+    , genvalidity-sydtest
+    , genvalidity-text
+    , genvalidity-time
+    , genvalidity-vector
+    , monad-logger
+    , mtl
+    , optparse-applicative
+    , path
+    , path-io
+    , prettyprinter
+    , prettyprinter-ansi-terminal
+    , primitive
+    , random
+    , really-safe-money
+    , really-safe-money-gen
+    , safe-coloured-text
+    , safe-coloured-text-layout
+    , safe-coloured-text-terminfo
+    , scientific
+    , sydtest
+    , text
+    , time
+    , unliftio
+    , validity
+    , validity-containers
+    , validity-path
+    , validity-scientific
+    , validity-text
+    , validity-time
+    , validity-vector
+    , vector
+    , yaml
+  default-language: Haskell2010
+
+test-suite centjes-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Centjes.Command.CheckSpec
+      Centjes.Command.FormatSpec
+      Centjes.CompileSpec
+      Centjes.DecimalLiteralSpec
+      Centjes.FormatSpec
+      Centjes.ModuleSpec
+      Centjes.ParseSpec
+      Centjes.Report.BalanceSpec
+      Paths_centjes_gen
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , bytestring
+    , centjes
+    , centjes-gen
+    , containers
+    , genvalidity
+    , genvalidity-containers
+    , genvalidity-path
+    , genvalidity-scientific
+    , genvalidity-sydtest
+    , genvalidity-text
+    , genvalidity-time
+    , genvalidity-vector
+    , monad-logger
+    , path
+    , path-io
+    , really-safe-money
+    , really-safe-money-gen
+    , scientific
+    , sydtest
+    , text
+    , time
+    , vector
+  default-language: Haskell2010

@@ -53,6 +53,7 @@
       packages.${system}.default = pkgs.centjes;
       checks.${system} = {
         package = self.packages.${system}.default;
+        release = pkgs.haskellPackages.centjesRelease;
         shell = self.devShells.${system}.default;
         pre-commit = pre-commit-hooks.lib.${system}.run {
           src = ./.;
@@ -68,7 +69,7 @@
       };
       devShells.${system}.default = pkgs.haskellPackages.shellFor {
         name = "centjes-shell";
-        packages = p: [ p.centjes ];
+        packages = p: builtins.attrValues p.centjesPackages;
         withHoogle = true;
         doBenchmark = true;
         buildInputs = (with pkgs; [
