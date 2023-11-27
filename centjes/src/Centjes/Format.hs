@@ -36,11 +36,51 @@ renderDocText = renderStrict . layoutPretty layoutOptions
 
 moduleDoc :: Module l -> Doc ann
 moduleDoc Module {..} =
-  vcat $
+  mconcat $
     concat
       [ map importDoc moduleImports,
-        map declarationDoc moduleDeclarations
+        [hardline | not (null moduleImports) && not (null moduleDeclarations)],
+        go Nothing moduleDeclarations
       ]
+  where
+    go :: Maybe DecType -> [Declaration l] -> [Doc ann]
+    go _ [] = []
+    go Nothing (d : ds) =
+      -- No newline up front, but remember the declaration type
+      declarationDoc d : go (Just (decType d)) ds
+    go (Just dt) (d : ds) =
+      let dt' = decType d
+          insertEmptyLine = case (dt, dt') of
+            -- Group comments together
+            (DecComment, DecComment) -> False
+            -- Attach comments to the next declaration
+            (DecComment, _) -> False
+            -- Group currency declarations together
+            (DecCurrency, DecCurrency) -> False
+            -- Group account declarations together
+            (DecAccount, DecAccount) -> False
+            -- Don't group transactions together
+            (DecTransaction, DecTransaction) -> True
+            _ -> dt /= dt'
+       in ( if insertEmptyLine
+              then (hardline :)
+              else id
+          )
+            $ declarationDoc d : go (Just dt') ds
+
+data DecType
+  = DecComment
+  | DecCurrency
+  | DecAccount
+  | DecTransaction
+  deriving (Show, Eq)
+
+decType :: Declaration l -> DecType
+decType = \case
+  DeclarationComment {} -> DecComment
+  DeclarationCurrency {} -> DecCurrency
+  DeclarationAccount {} -> DecAccount
+  DeclarationTransaction {} -> DecTransaction
 
 importDoc :: Import -> Doc ann
 importDoc (Import fp) =

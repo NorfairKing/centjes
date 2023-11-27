@@ -7,3 +7,8 @@ currency USD 100
   | Coffee
   * expenses:coffee 5 USD
   * assets:cash -5 USD
+
+2023-11-16
+  | More Coffee
+  * expenses:coffee 5 USD
+  * assets:cash -5 USD
