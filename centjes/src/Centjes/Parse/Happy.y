@@ -94,7 +94,7 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : account_tok account_name { sBE $1 $2 $ AccountDeclaration $2 }
+  : account_tok account_name newline { sBE $1 $2 $ AccountDeclaration $2 }
 
 transaction_dec
   :: { LTransaction }
