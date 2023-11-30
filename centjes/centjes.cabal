@@ -21,9 +21,11 @@ library
       Centjes.Command.Balance
       Centjes.Command.Check
       Centjes.Command.Format
+      Centjes.Command.Register
       Centjes.Compile
       Centjes.DecimalLiteral
       Centjes.Format
+      Centjes.Formatting
       Centjes.Ledger
       Centjes.Load
       Centjes.Location

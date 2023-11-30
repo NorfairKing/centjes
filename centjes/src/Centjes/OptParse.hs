@@ -37,11 +37,15 @@ data Settings = Settings
 
 data Dispatch
   = DispatchCheck !CheckSettings
+  | DispatchRegister !RegisterSettings
   | DispatchBalance !BalanceSettings
   | DispatchFormat !FormatSettings
   deriving (Show, Eq, Generic)
 
 data CheckSettings = CheckSettings
+  deriving (Show, Eq, Generic)
+
+data RegisterSettings = RegisterSettings
   deriving (Show, Eq, Generic)
 
 data BalanceSettings = BalanceSettings
@@ -79,6 +83,8 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
     case cmd of
       CommandCheck CheckArgs -> do
         pure $ DispatchCheck CheckSettings
+      CommandRegister RegisterArgs -> do
+        pure $ DispatchRegister RegisterSettings
       CommandBalance BalanceArgs -> do
         pure $ DispatchBalance BalanceSettings
       CommandFormat FormatArgs {..} -> do
@@ -168,6 +174,7 @@ parseArgs = Arguments <$> parseCommand <*> parseFlags
 -- | A sum type for the commands and their specific arguments
 data Command
   = CommandCheck !CheckArgs
+  | CommandRegister !RegisterArgs
   | CommandBalance !BalanceArgs
   | CommandFormat !FormatArgs
   deriving (Show, Eq, Generic)
@@ -177,6 +184,7 @@ parseCommand =
   OptParse.hsubparser $
     mconcat
       [ OptParse.command "check" $ CommandCheck <$> parseCommandCheck,
+        OptParse.command "register" $ CommandRegister <$> parseCommandRegister,
         OptParse.command "balance" $ CommandBalance <$> parseCommandBalance,
         OptParse.command "format" $ CommandFormat <$> parseCommandFormat
       ]
@@ -187,8 +195,17 @@ data CheckArgs = CheckArgs
 parseCommandCheck :: OptParse.ParserInfo CheckArgs
 parseCommandCheck = OptParse.info parser modifier
   where
-    modifier = OptParse.fullDesc <> OptParse.progDesc "Show a check of accounts"
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Perform an internal consistency check"
     parser = pure CheckArgs
+
+data RegisterArgs = RegisterArgs
+  deriving (Show, Eq, Generic)
+
+parseCommandRegister :: OptParse.ParserInfo RegisterArgs
+parseCommandRegister = OptParse.info parser modifier
+  where
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Show a register of all transactions"
+    parser = pure RegisterArgs
 
 data BalanceArgs = BalanceArgs
   deriving (Show, Eq, Generic)
