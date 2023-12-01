@@ -24,6 +24,12 @@ Assumptions:
   Banks and Brokers are notoriously terrible at getting currency conversions correct.
 
 
+## Goals
+
+* Make it easy to file tax declarations.
+* Automate as much as possible.
+* Make it hard to make mistakes.
+
 ## A ledger language as a compiler target
 
 TODO
