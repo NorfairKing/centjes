@@ -3,6 +3,7 @@ packages:
 - centjes
 - centjes-gen
 - centjes-import-ubs
+- centjes-import-revolut
 - centjes-switzerland
 
 # - ../really-safe-money/really-safe-money

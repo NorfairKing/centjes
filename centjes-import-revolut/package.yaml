@@ -1,0 +1,25 @@
+name: centjes-import-revolut
+version: 0.0.0.0
+github: "NorfairKing/centjes"
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  dependencies:
+  - bytestring
+  - centjes
+  - text
+
+executables:
+  centjes-import-revolut:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - centjes-import-revolut
+
