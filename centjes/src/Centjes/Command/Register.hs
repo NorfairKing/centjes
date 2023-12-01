@@ -43,22 +43,26 @@ renderTransaction ::
   Transaction ann ->
   [[Chunk]]
 renderTransaction ix Transaction {..} =
-  map (renderPosting transactionTimestamp transactionDescription ix) transactionPostings
+  let Located _ timestamp = transactionTimestamp
+      headerChunks =
+        [ fore white $ chunk $ T.pack $ show ix,
+          timestampChunk timestamp,
+          maybe " " (descriptionChunk . locatedValue) transactionDescription
+        ]
+
+      postingLines = map renderPosting transactionPostings
+   in case postingLines of
+        [] -> [headerChunks]
+        (l : ls) -> (headerChunks ++ l) : map ([chunk " ", chunk " ", chunk " "] ++) ls
 
 renderPosting ::
-  GenLocated ann Timestamp ->
-  Maybe (GenLocated ann Description) ->
-  Int ->
   GenLocated ann (Posting ann) ->
   [Chunk]
-renderPosting (Located _ timestamp) mDescription ix (Located _ Posting {..}) =
+renderPosting (Located _ Posting {..}) =
   let Located _ accountName = postingAccountName
       Located _ Currency {..} = postingCurrency
       Located _ quantisationFactor = currencyQuantisationFactor
-   in [ fore white $ chunk $ T.pack $ show ix,
-        timestampChunk timestamp,
-        maybe " " (descriptionChunk . locatedValue) mDescription,
-        accountNameChunk accountName,
+   in [ accountNameChunk accountName,
         accountChunk quantisationFactor (locatedValue postingAccount),
         currencySymbolChunk currencySymbol
       ]
