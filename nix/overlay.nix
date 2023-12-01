@@ -38,6 +38,7 @@ with final.haskell.lib;
           centjesPackages = {
             centjes = centjesPkg "centjes";
             centjes-gen = centjesPkg "centjes-gen";
+            centjes-import-ubs = centjesPkg "centjes-import-ubs";
             centjes-switzerland = centjesPkg "centjes-switzerland";
           };
           centjesRelease = final.symlinkJoin {

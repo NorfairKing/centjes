@@ -2,6 +2,7 @@ resolver: lts-20.25
 packages:
 - centjes
 - centjes-gen
+- centjes-import-ubs
 - centjes-switzerland
 
 # - ../really-safe-money/really-safe-money

@@ -1,4 +1,4 @@
-name: centjes-switzerland
+name: centjes-import-ubs
 version: 0.0.0.0
 github: "NorfairKing/centjes"
 
@@ -7,9 +7,13 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - bytestring
+  - centjes
+  - text
 
 executables:
-  centjes-switzerland:
+  centjes-import-ubs:
     main: Main.hs
     source-dirs: app
     ghc-options:
@@ -17,5 +21,5 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - centjes-switzerland
+    - centjes-import-ubs
 

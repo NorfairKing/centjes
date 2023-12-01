@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           centjes-switzerland
+name:           centjes-import-ubs
 version:        0.0.0.0
 homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
@@ -16,23 +16,26 @@ source-repository head
 
 library
   exposed-modules:
-      Centjes.Switzerland
+      Centjes.Import.Ubs
   other-modules:
-      Paths_centjes_switzerland
+      Paths_centjes_import_ubs
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , bytestring
+    , centjes
+    , text
   default-language: Haskell2010
 
-executable centjes-switzerland
+executable centjes-import-ubs
   main-is: Main.hs
   other-modules:
-      Paths_centjes_switzerland
+      Paths_centjes_import_ubs
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , centjes-switzerland
+    , centjes-import-ubs
   default-language: Haskell2010
