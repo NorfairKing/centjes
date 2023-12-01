@@ -1,7 +1,4 @@
-module Centjes
-  ( runCentjes,
-  )
-where
+module Centjes (runCentjes) where
 
 import Centjes.Command
 import Centjes.OptParse

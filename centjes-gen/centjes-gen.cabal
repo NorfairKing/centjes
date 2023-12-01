@@ -61,55 +61,23 @@ library
       Paths_centjes_gen
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       QuickCheck
-    , array
-    , autodocodec
-    , autodocodec-yaml
     , base >=4.7 && <5
-    , bytestring
     , centjes
-    , containers
-    , deepseq
-    , diagnose
-    , envparse
     , genvalidity
     , genvalidity-containers
     , genvalidity-path
     , genvalidity-scientific
-    , genvalidity-sydtest
     , genvalidity-text
     , genvalidity-time
     , genvalidity-vector
-    , monad-logger
-    , mtl
-    , optparse-applicative
     , path
-    , path-io
-    , prettyprinter
-    , prettyprinter-ansi-terminal
-    , primitive
-    , random
-    , really-safe-money
     , really-safe-money-gen
-    , safe-coloured-text
-    , safe-coloured-text-layout
-    , safe-coloured-text-terminfo
     , scientific
     , sydtest
     , text
-    , time
-    , unliftio
-    , validity
-    , validity-containers
-    , validity-path
-    , validity-scientific
-    , validity-text
-    , validity-time
-    , validity-vector
     , vector
-    , yaml
   default-language: Haskell2010
 
 test-suite centjes-test
@@ -127,7 +95,7 @@ test-suite centjes-test
       Paths_centjes_gen
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-tool-depends:
       sydtest-discover:sydtest-discover
   build-depends:
@@ -137,14 +105,8 @@ test-suite centjes-test
     , centjes
     , centjes-gen
     , containers
-    , genvalidity
     , genvalidity-containers
-    , genvalidity-path
-    , genvalidity-scientific
     , genvalidity-sydtest
-    , genvalidity-text
-    , genvalidity-time
-    , genvalidity-vector
     , monad-logger
     , path
     , path-io
@@ -154,5 +116,4 @@ test-suite centjes-test
     , sydtest
     , text
     , time
-    , vector
   default-language: Haskell2010

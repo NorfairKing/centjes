@@ -8,66 +8,24 @@ dependencies:
 extra-source-files:
 - test_resources/**/*
 
-ghc-options:
-- -Wall
-- -Wcompat
-- -Widentities
-- -Wincomplete-record-updates
-- -Wincomplete-uni-patterns
-- -Wmissing-home-modules
-- -Wpartial-fields
-- -Wredundant-constraints
-
 library:
   source-dirs: src
   dependencies:
   - QuickCheck
-  - array
-  - autodocodec
-  - autodocodec-yaml
-  - bytestring
-  - bytestring
   - centjes
-  - containers
-  - deepseq
-  - diagnose
-  - envparse
   - genvalidity
   - genvalidity-containers
   - genvalidity-path
   - genvalidity-scientific
-  - genvalidity-sydtest
   - genvalidity-text
   - genvalidity-time
   - genvalidity-vector
-  - monad-logger
-  - mtl
-  - optparse-applicative
   - path
-  - path-io
-  - prettyprinter
-  - prettyprinter-ansi-terminal
-  - primitive
-  - random
-  - really-safe-money
   - really-safe-money-gen
-  - safe-coloured-text
-  - safe-coloured-text-layout
-  - safe-coloured-text-terminfo
   - scientific
   - sydtest
   - text
-  - time
-  - unliftio
-  - validity
-  - validity-containers
-  - validity-path
-  - validity-scientific
-  - validity-text
-  - validity-time
-  - validity-vector
   - vector
-  - yaml
 
 tests:
   centjes-test:
@@ -84,14 +42,8 @@ tests:
     - centjes
     - centjes-gen
     - containers
-    - genvalidity
     - genvalidity-containers
-    - genvalidity-path
-    - genvalidity-scientific
     - genvalidity-sydtest
-    - genvalidity-text
-    - genvalidity-time
-    - genvalidity-vector
     - monad-logger
     - path
     - path-io
@@ -101,5 +53,4 @@ tests:
     - sydtest
     - text
     - time
-    - vector
     - centjes

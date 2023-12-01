@@ -38,6 +38,7 @@ with final.haskell.lib;
           centjesPackages = {
             centjes = centjesPkg "centjes";
             centjes-gen = centjesPkg "centjes-gen";
+            centjes-switzerland = centjesPkg "centjes-switzerland";
           };
           centjesRelease = final.symlinkJoin {
             name = "centjes-release";
