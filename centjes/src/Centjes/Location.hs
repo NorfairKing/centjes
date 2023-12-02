@@ -54,9 +54,10 @@ toDiagnosePosition SourceSpan {..} =
       file = sourceSpanFile
     }
 
--- TODO maybe refactor this out into a module
 data SourcePosition = SourcePosition
-  { sourcePositionLine :: !Int, -- Should be words, but I'd rather not use 'fromIntegral'.
+  { -- Not that these should be 'Word's, but I'd rather not use 'fromIntegral'
+    -- to go back and forth from Happy to this to Diagnose which both use 'Int's.
+    sourcePositionLine :: !Int,
     sourcePositionColumn :: !Int
   }
   deriving stock (Show, Eq, Ord, Generic)

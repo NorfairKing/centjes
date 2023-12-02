@@ -23,7 +23,6 @@ import Path
 
 type LModule = Module SourceSpan
 
--- TODO roundtrip comments.
 data Module ann = Module
   { moduleImports :: [Import],
     moduleDeclarations :: [Declaration ann]

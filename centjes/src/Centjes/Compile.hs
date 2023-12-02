@@ -67,7 +67,8 @@ instance ToReport (CompileError SourceSpan) where
         [ (toDiagnosePosition tl, Where "While trying to compile this transaction"),
           (toDiagnosePosition sl, This "this currency is never declared"),
           (toDiagnosePosition pl, Where "While trying to compile this posting"),
-          (toDiagnosePosition tl, Maybe "Declare this currency with a currency declaration") -- TODO
+          (toDiagnosePosition tl, Maybe "Declare this currency with a currency declaration")
+          -- TODO show an example declaration based on the literal that was used.
         ]
         []
     CompileErrorUnparseableAmount tl pl (Located cl qf) (Located al dl) ->
