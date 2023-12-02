@@ -14,16 +14,19 @@ module Centjes.Compile
 where
 
 import Centjes.DecimalLiteral as DecimalLiteral
+import Centjes.Format
 import Centjes.Ledger as Ledger
 import Centjes.Location
 import Centjes.Module as Module
 import Centjes.Validation
 import Control.DeepSeq
 import Control.Monad
-import Data.List (sortOn)
+import Data.List (intercalate, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Scientific
+import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
 import qualified Data.Vector as V
@@ -77,8 +80,21 @@ instance ToReport (CompileError SourceSpan) where
         [ (toDiagnosePosition tl, Where "While trying to compile this transaction"),
           (toDiagnosePosition sl, This "this currency is never declared"),
           (toDiagnosePosition pl, Where "While trying to compile this posting"),
-          (toDiagnosePosition tl, Maybe "Declare this currency with a currency declaration")
-          -- TODO show an example declaration based on the literal that was used.
+          ( toDiagnosePosition tl,
+            Maybe $
+              unlines'
+                [ "You can this currency with a currency declaration:",
+                  T.unpack $
+                    T.strip $
+                      formatDeclaration $
+                        DeclarationCurrency $
+                          noLoc $
+                            CurrencyDeclaration
+                              { currencyDeclarationSymbol = noLoc symbol,
+                                currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral False 0 (scientific 1 (-2))
+                              }
+                ]
+          )
         ]
         []
     CompileErrorUnparseableAmount tl pl (Located cl qf) (Located al dl) ->
@@ -167,3 +183,6 @@ compilePosting currencies tl (Located l mp) = do
     Nothing -> validationFailure $ CompileErrorUnparseableAmount tl l lqf (Module.postingAccount mp)
     Just a -> pure a
   pure (Located l Ledger.Posting {..})
+
+unlines' :: [String] -> String
+unlines' = intercalate "\n"
