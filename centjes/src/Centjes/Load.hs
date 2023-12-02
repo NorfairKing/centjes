@@ -1,6 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Centjes.Load (loadModules) where
+module Centjes.Load
+  ( loadModules,
+    loadModules',
+    diagFromFileMap,
+  )
+where
 
 import Centjes.Module
 import Centjes.Parse
@@ -12,6 +17,7 @@ import qualified Data.ByteString as SB
 import Data.Foldable
 import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Error.Diagnose
@@ -20,13 +26,17 @@ import System.Exit
 
 loadModules :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Diagnostic String)
 loadModules firstPath = do
+  (declarations, fileMap) <- loadModules' firstPath
+  pure (declarations, diagFromFileMap fileMap)
+
+loadModules' :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModules' firstPath = do
   let base = parent firstPath
-  (ds, visited) <- flip runStateT M.empty $ do
+  flip runStateT M.empty $ do
     m <- readSingle base firstPath
     go base base m
-  pure (ds, foldl' (\d (f, c) -> addFile d (fromRelFile f) c) mempty (M.toList visited))
   where
-    go :: Path Abs Dir -> Path Abs Dir -> LModule -> StateT (Map (Path Rel File) String) m [LDeclaration]
+    go :: Path Abs Dir -> Path Abs Dir -> LModule -> StateT (Map (Path Rel File) (Text, LModule)) m [LDeclaration]
     go originalBase currentBase m = do
       restDecls <- forM (moduleImports m) $ \(Import rf) -> do
         let af = currentBase </> rf
@@ -34,7 +44,7 @@ loadModules firstPath = do
         go originalBase (parent af) m'
       pure $ concat (moduleDeclarations m : restDecls)
 
-    readSingle :: Path Abs Dir -> Path Abs File -> StateT (Map (Path Rel File) String) m LModule
+    readSingle :: Path Abs Dir -> Path Abs File -> StateT (Map (Path Rel File) (Text, LModule)) m LModule
     readSingle originalBase p = do
       visited <- get
       case stripProperPrefix originalBase p of
@@ -50,10 +60,17 @@ loadModules firstPath = do
                     ]
             else do
               (contents, m) <- lift $ readSingleModule originalBase rf
-              modify' (M.insert rf contents)
+              modify' (M.insert rf (contents, m))
               pure m
 
-readSingleModule :: MonadLoggerIO m => Path Abs Dir -> Path Rel File -> m (String, LModule)
+diagFromFileMap :: Map (Path Rel File) (Text, LModule) -> Diagnostic String
+diagFromFileMap =
+  foldl'
+    (\d (f, (c, _)) -> addFile d (fromRelFile f) (T.unpack c))
+    mempty
+    . M.toList
+
+readSingleModule :: MonadLoggerIO m => Path Abs Dir -> Path Rel File -> m (Text, LModule)
 readSingleModule base p = do
   let fp = fromRelFile p
   contents <- liftIO $ SB.readFile $ fromAbsFile $ base </> p
@@ -78,4 +95,4 @@ readSingleModule base p = do
                 ]
         Right m -> do
           logDebugN $ T.pack $ unwords ["Read module:", fp]
-          pure (T.unpack textContents, m)
+          pure (textContents, m)

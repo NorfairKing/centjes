@@ -13,6 +13,7 @@ import Centjes.OptParse
 import Centjes.Parse
 import Centjes.Validation
 import Control.Arrow (second)
+import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
@@ -39,12 +40,13 @@ runCentjesFormat Settings {..} FormatSettings {..} = do
 
 formatFromLedger :: Path Abs File -> LoggingT IO ()
 formatFromLedger l = do
-  -- TODO find a way to not read and parse every file twice (worst-case)
-  currencies <- do
-    (ds, diag) <- loadModules l
-    liftIO $ checkValidation diag $ compileCurrencies ds
-  logDebugN $ T.pack $ unlines $ "Compiled currencies:" : map show (M.toList currencies)
-  formatDir currencies (parent l)
+  (ds, fileMap) <- loadModules' l
+  let diag = diagFromFileMap fileMap
+  currencies <- liftIO $ checkValidation diag $ compileCurrencies ds
+
+  let base = parent l
+  forM_ (M.toList fileMap) $ \(fp, (textContents, m)) ->
+    formatSingleFileWith (base </> fp) textContents (fillInDigits currencies m)
 
 formatDir :: Map CurrencySymbol (GenLocated ann QuantisationFactor) -> Path Abs Dir -> LoggingT IO ()
 formatDir currencies d = do
@@ -106,11 +108,14 @@ formatSingleFile fp = do
               show fp,
               show err
             ]
-    Right (textContents, m) -> do
-      newTextContents <- case idempotenceTest fp m of
-        Left err -> liftIO $ die err
-        Right ft -> pure ft
-      formatFile fp textContents newTextContents
+    Right (textContents, m) -> formatSingleFileWith fp textContents m
+
+formatSingleFileWith :: Path Abs File -> Text -> LModule -> LoggingT IO ()
+formatSingleFileWith fp textContents m = do
+  newTextContents <- case idempotenceTest fp m of
+    Left err -> liftIO $ die err
+    Right ft -> pure ft
+  formatFile fp textContents newTextContents
 
 parseFile :: Path Abs File -> LoggingT IO (Either String (Text, LModule))
 parseFile fp = do

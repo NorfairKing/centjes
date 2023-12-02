@@ -15,7 +15,6 @@ import qualified Data.Vector as V
 
 instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
   genValid = do
-    ledgerCurrencies <- genValid
     ledgerTransactions <- V.fromList . sortOn (locatedValue . transactionTimestamp . locatedValue) <$> genValid
     pure Ledger {..}
   shrinkValid l =
