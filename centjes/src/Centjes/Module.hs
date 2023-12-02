@@ -4,6 +4,7 @@
 
 module Centjes.Module where
 
+import Autodocodec
 import Centjes.DecimalLiteral
 import Centjes.Location
 import Control.DeepSeq
@@ -156,6 +157,7 @@ instance Validity Timestamp
 
 instance NFData Timestamp
 
+-- TODO Rename unAccountName to accountNameText
 newtype AccountName = AccountName {unAccountName :: Text}
   deriving (Show, Eq, Ord, Generic)
 
@@ -177,3 +179,7 @@ instance Validity AccountName where
       ]
 
 instance NFData AccountName
+
+instance HasCodec AccountName where
+  -- TODO actual parsing
+  codec = dimapCodec AccountName unAccountName codec

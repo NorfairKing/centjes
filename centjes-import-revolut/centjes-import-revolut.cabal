@@ -17,15 +17,26 @@ source-repository head
 library
   exposed-modules:
       Centjes.Import.Revolut
+      Centjes.Import.Revolut.OptParse
   other-modules:
       Paths_centjes_import_revolut
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      autodocodec
+    , autodocodec-yaml
+    , base >=4.7 && <5
     , bytestring
+    , cassava
     , centjes
+    , envparse
+    , optparse-applicative
+    , path
+    , path-io
     , text
+    , time
+    , vector
+    , yaml
   default-language: Haskell2010
 
 executable centjes-import-revolut

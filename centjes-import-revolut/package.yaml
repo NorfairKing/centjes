@@ -8,9 +8,19 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - autodocodec
+  - autodocodec-yaml
   - bytestring
+  - cassava
   - centjes
+  - envparse
+  - optparse-applicative
+  - path
+  - path-io
   - text
+  - time
+  - vector
+  - yaml
 
 executables:
   centjes-import-revolut:
