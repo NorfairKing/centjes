@@ -17,7 +17,7 @@ import Text.Colour
 import Text.Printf
 
 accountNameChunk :: AccountName -> Chunk
-accountNameChunk = fore white . chunk . unAccountName
+accountNameChunk = fore white . chunk . accountNameText
 
 multiAccountChunks :: Money.MultiAccount (Currency ann) -> [[Chunk]]
 multiAccountChunks ma =

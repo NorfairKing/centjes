@@ -2,9 +2,33 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Centjes.Module where
+module Centjes.Module
+  ( LModule,
+    Module (..),
+    Import (..),
+    LDeclaration,
+    Declaration (..),
+    LCurrencyDeclaration,
+    CurrencyDeclaration (..),
+    CurrencySymbol (..),
+    LAccountDeclaration,
+    AccountDeclaration (..),
+    AccountName (..),
+    LTransaction,
+    Transaction (..),
+    transactionCurrencySymbols,
+    Timestamp (..),
+    Description (..),
+    nullDescription,
+    validateDescriptionChar,
+    LPosting,
+    Posting (..),
+    DecimalLiteral (..),
+  )
+where
 
 import Autodocodec
+import Centjes.AccountName
 import Centjes.DecimalLiteral
 import Centjes.Location
 import Control.DeepSeq
@@ -156,29 +180,5 @@ instance Validity Timestamp
 
 instance NFData Timestamp
 
--- TODO Rename unAccountName to accountNameText
-newtype AccountName = AccountName {unAccountName :: Text}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity AccountName where
-  validate an@(AccountName t) =
-    mconcat
-      [ genericValidate an,
-        declare "The account name is not empty" $ not (T.null t),
-        declare "The account name starts with an alphabetic character" $ case T.uncons t of
-          Nothing -> False
-          Just (h, _) -> Char.isAlpha h,
-        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character or _ or :" $
-          case c of
-            ':' -> True
-            '_' -> True
-            _
-              | Char.isLatin1 c && Char.isAlphaNum c -> True
-              | otherwise -> False
-      ]
-
-instance NFData AccountName
-
-instance HasCodec AccountName where
-  -- TODO actual parsing
-  codec = dimapCodec AccountName unAccountName codec
+instance HasCodec Timestamp where
+  codec = dimapCodec Timestamp timestampDay codec

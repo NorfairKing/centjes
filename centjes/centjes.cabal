@@ -17,6 +17,7 @@ source-repository head
 library
   exposed-modules:
       Centjes
+      Centjes.AccountName
       Centjes.Command
       Centjes.Command.Balance
       Centjes.Command.Check

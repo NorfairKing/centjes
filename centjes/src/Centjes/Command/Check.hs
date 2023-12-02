@@ -66,7 +66,7 @@ instance ToReport (CheckError SourceSpan) where
         (Just "CE_DUPLICATE_ACCOUNT")
         ( unwords
             [ "Account has been declared twice:",
-              show (unAccountName an)
+              show (accountNameText an)
             ]
         )
         [ (toDiagnosePosition adl1, This "This account has been declared here first"),
@@ -78,7 +78,7 @@ instance ToReport (CheckError SourceSpan) where
         (Just "CE_UNDECLARED_ACCOUNT")
         ( unwords
             [ "Account has not been declared:",
-              show (unAccountName an)
+              show (accountNameText an)
             ]
         )
         [ (toDiagnosePosition tl, Where "While trying to check this transaction"),

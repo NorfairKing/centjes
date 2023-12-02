@@ -59,7 +59,7 @@ instance ToReport (BalanceError SourceSpan) where
             Where
               ( unlines' $
                   concat
-                    [ [unwords ["Account: ", T.unpack (unAccountName an)]],
+                    [ [unwords ["Account: ", T.unpack (accountNameText an)]],
                       ["Running total:"],
                       multiAccountLines subtotal,
                       ["Balance to add:"],
@@ -79,7 +79,7 @@ instance ToReport (BalanceError SourceSpan) where
             Where $
               unlines' $
                 concat
-                  [ [unwords ["Account: ", T.unpack (unAccountName an)]],
+                  [ [unwords ["Account: ", T.unpack (accountNameText an)]],
                     ["Running total:"],
                     multiAccountLines ma1
                   ]

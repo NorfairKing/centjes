@@ -8,6 +8,7 @@ module Centjes.Parse.Happy
   ) where
 
 import Centjes.DecimalLiteral (DecimalLiteral)
+import Centjes.AccountName as AccountName
 import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex

@@ -14,8 +14,9 @@ module Centjes.Ledger
   )
 where
 
+import Centjes.AccountName (AccountName (..))
 import Centjes.Location
-import Centjes.Module (AccountName (..), CurrencySymbol (..), Description (..), Timestamp (..))
+import Centjes.Module (CurrencySymbol (..), Description (..), Timestamp (..))
 import Control.DeepSeq
 import Data.List (sort)
 import Data.Validity

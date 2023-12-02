@@ -51,6 +51,7 @@ source-repository head
 
 library
   exposed-modules:
+      Centjes.AccountName.Gen
       Centjes.DecimalLiteral.Gen
       Centjes.Ledger.Gen
       Centjes.Location.Gen
@@ -84,6 +85,7 @@ test-suite centjes-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Centjes.AccountNameSpec
       Centjes.Command.CheckSpec
       Centjes.Command.FormatSpec
       Centjes.CompileSpec

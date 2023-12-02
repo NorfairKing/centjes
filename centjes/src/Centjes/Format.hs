@@ -9,6 +9,7 @@ module Centjes.Format
   )
 where
 
+import Centjes.AccountName
 import Centjes.DecimalLiteral as DecimalLiteral
 import Centjes.Location
 import Centjes.Module
@@ -157,7 +158,7 @@ postingDoc Posting {..} =
     <+> currencySymbolDoc postingCurrencySymbol
 
 accountNameDoc :: GenLocated l AccountName -> Doc ann
-accountNameDoc = pretty . unAccountName . locatedValue
+accountNameDoc = pretty . accountNameText . locatedValue
 
 accountDoc :: GenLocated l DecimalLiteral -> Doc ann
 accountDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = True}) . locatedValue
