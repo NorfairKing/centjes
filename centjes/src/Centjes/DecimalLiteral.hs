@@ -6,12 +6,14 @@
 module Centjes.DecimalLiteral
   ( DecimalLiteral (..),
     renderDecimalLiteral,
+    parseDecimalLiteralM,
     parseDecimalLiteral,
     toQuantisationFactor,
     fromQuantisationFactor,
     toAccount,
     fromAccount,
     quantisationFactorDigits,
+    Centjes.DecimalLiteral.negate,
   )
 where
 
@@ -52,6 +54,11 @@ renderDecimalLiteral (DecimalLiteral useSign digits s) =
   (if s >= 0 && useSign then ('+' :) else id) $
     let d = max (fromIntegral digits) (-(base10Exponent s))
      in formatScientific Fixed (Just d) s
+
+parseDecimalLiteralM :: MonadFail m => String -> m DecimalLiteral
+parseDecimalLiteralM s = case parseDecimalLiteral s of
+  Nothing -> fail $ "Failed to parse decimal literal from:" <> show s
+  Just dl -> pure dl
 
 parseDecimalLiteral :: String -> Maybe DecimalLiteral
 parseDecimalLiteral = fmap fst . find (null . snd) . readP_to_S decimalLiteralP
@@ -158,3 +165,6 @@ fromAccount qf acc =
 
 quantisationFactorDigits :: QuantisationFactor -> Word8
 quantisationFactorDigits qf = ceiling (logBase 10 $ fromIntegral $ unQuantisationFactor qf :: Float)
+
+negate :: DecimalLiteral -> DecimalLiteral
+negate dl = dl {decimalLiteralScientific = Prelude.negate $ decimalLiteralScientific dl}

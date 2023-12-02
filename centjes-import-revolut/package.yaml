@@ -9,8 +9,11 @@ library:
   source-dirs: src
   dependencies:
   - bytestring
+  - cassava
   - centjes
   - text
+  - time
+  - vector
 
 executables:
   centjes-import-revolut:
