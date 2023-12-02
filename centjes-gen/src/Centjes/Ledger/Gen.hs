@@ -20,7 +20,6 @@ instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
     pure Ledger {..}
   shrinkValid l =
     filter (/= l)
-      -- TODO sort the vector directly?
       . map (\l' -> l' {ledgerTransactions = V.fromList (sortOn (locatedValue . transactionTimestamp . locatedValue) (V.toList (ledgerTransactions l')))})
       $ shrinkValidStructurally l
 

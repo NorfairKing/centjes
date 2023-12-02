@@ -223,5 +223,5 @@ moduleGoldenBalanceError file m tdir = do
     -- Compile to a ledger
     ledger <- shouldValidate $ compileDeclarations ds
 
-    errs <- shouldFail $ produceBalanceReport ledger
+    errs <- shouldFailToValidate $ produceBalanceReport ledger
     pure $ renderValidationErrors diag errs

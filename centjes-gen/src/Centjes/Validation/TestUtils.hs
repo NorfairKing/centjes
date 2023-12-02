@@ -2,7 +2,7 @@
 
 module Centjes.Validation.TestUtils
   ( shouldValidate,
-    shouldFail,
+    shouldFailToValidate,
   )
 where
 
@@ -18,9 +18,8 @@ shouldValidate = \case
     expectationFailure $
       unlines ("Failed:" : map show (NE.toList errs))
 
--- TODO rename this to shouldFailToValidate
-shouldFail :: Show a => Validation e a -> IO (NonEmpty e)
-shouldFail = \case
+shouldFailToValidate :: Show a => Validation e a -> IO (NonEmpty e)
+shouldFailToValidate = \case
   Failure errs -> pure errs
   Success a ->
     expectationFailure $

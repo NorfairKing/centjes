@@ -145,5 +145,5 @@ moduleGoldenCompileError file m tdir = do
     -- Load the module
     (ds, diag) <- runNoLoggingT $ loadModules tfile
     -- Try to compil
-    errs <- shouldFail $ compileDeclarations ds
+    errs <- shouldFailToValidate $ compileDeclarations ds
     pure $ renderValidationErrors diag errs

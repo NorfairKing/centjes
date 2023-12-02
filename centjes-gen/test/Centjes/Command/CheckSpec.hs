@@ -34,7 +34,7 @@ spec = do
       forAllValid $ \an -> do
         let ad1 = AccountDeclaration {accountDeclarationName = noLoc an}
         let ad2 = AccountDeclaration {accountDeclarationName = noLoc an}
-        errs <- shouldFail $ checkAccountsUnique [DeclarationAccount $ noLoc ad1, DeclarationAccount $ noLoc ad2]
+        errs <- shouldFailToValidate $ checkAccountsUnique [DeclarationAccount $ noLoc ad1, DeclarationAccount $ noLoc ad2]
         errs `shouldBe` CheckErrorAccountDeclaredTwice () () an :| []
 
   describe "checkAccountsDeclared" $
@@ -45,7 +45,7 @@ spec = do
               t = noLoc $ t' {transactionPostings = [noLoc p]}
               Located _ an = postingAccountName p
           let td = DeclarationTransaction t
-          errs <- shouldFail $ checkAccountsDeclared M.empty [td]
+          errs <- shouldFailToValidate $ checkAccountsDeclared M.empty [td]
           errs `shouldBe` CheckErrorUndeclaredAccount () () (Located () an) :| []
 
   describe "checkDeclarations" $
@@ -110,5 +110,5 @@ moduleGoldenCheckError file m tdir = do
     -- Load the module
     (ds, diag) <- runNoLoggingT $ loadModules tfile
     -- Try to check
-    errs <- shouldFail $ doCompleteCheck ds
+    errs <- shouldFailToValidate $ doCompleteCheck ds
     pure $ renderValidationErrors diag errs
