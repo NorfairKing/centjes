@@ -69,8 +69,8 @@ instance ToReport (CheckError SourceSpan) where
               show (accountNameText an)
             ]
         )
-        [ (toDiagnosePosition adl1, This "This account has been declared here first"),
-          (toDiagnosePosition adl2, Where "While trying to check this declaration")
+        [ (toDiagnosePosition adl1, Where "This account has been declared here first"),
+          (toDiagnosePosition adl2, This "This account has been declared twice")
         ]
         []
     CheckErrorUndeclaredAccount tl pl (Located al an) ->

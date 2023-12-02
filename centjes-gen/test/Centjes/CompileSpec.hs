@@ -81,6 +81,26 @@ spec = do
                 ]
             }
 
+      it "shows the same error when encountering a duplicate currency" $
+        moduleGoldenCompileError "test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err" $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                let lSymbol = noLoc (CurrencySymbol "DUPLICATE")
+                 in [ DeclarationCurrency $
+                        noLoc $
+                          CurrencyDeclaration
+                            { currencyDeclarationSymbol = lSymbol,
+                              currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 1 (-2))
+                            },
+                      DeclarationCurrency $
+                        noLoc $
+                          CurrencyDeclaration
+                            { currencyDeclarationSymbol = lSymbol,
+                              currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 5 (-2))
+                            }
+                    ]
+            }
       it "shows the same error when encountering an undeclared currency" $
         moduleGoldenCompileError "test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err" $
           Module

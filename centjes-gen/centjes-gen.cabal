@@ -17,6 +17,7 @@ extra-source-files:
     test_resources/errors/balance-report/BE_TRANSACTION_SUM.err
     test_resources/errors/check/CE_DUPLICATE_ACCOUNT.err
     test_resources/errors/check/CE_UNDECLARED_ACCOUNT.err
+    test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err
     test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err

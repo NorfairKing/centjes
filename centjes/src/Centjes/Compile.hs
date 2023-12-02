@@ -19,6 +19,7 @@ import Centjes.Location
 import Centjes.Module as Module
 import Centjes.Validation
 import Control.DeepSeq
+import Control.Monad
 import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -32,6 +33,7 @@ import Money.QuantisationFactor
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
+  | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingCurrency !ann !ann !(GenLocated ann CurrencySymbol)
   | CompileErrorUnparseableAmount !ann !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Eq, Generic)
@@ -54,6 +56,14 @@ instance ToReport (CompileError SourceSpan) where
         )
         [ (toDiagnosePosition fl, This "this number does not represent a valid quantisation factor"),
           (toDiagnosePosition cdl, Where "While trying to compile this currency declaration")
+        ]
+        []
+    CompileErrorCurrencyDeclaredTwice cl1 cl2 symbol ->
+      Err
+        (Just "CE_DUPLICATE_CURRENCY")
+        (unwords ["Currency has been declared twice:", show (unCurrencySymbol symbol)])
+        [ (toDiagnosePosition cl1, Where "This currency has been declared here first"),
+          (toDiagnosePosition cl2, This "This currency has been declared twice")
         ]
         []
     CompileErrorMissingCurrency tl pl (Located sl symbol) ->
@@ -102,10 +112,9 @@ compileDeclarations declarations = do
   pure Ledger {..}
 
 compileCurrencies :: [Declaration ann] -> Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
-compileCurrencies declarations =
-  -- TODO check for duplicate currencies
-  M.fromList
-    <$> mapM
+compileCurrencies declarations = do
+  tups <-
+    mapM
       compileCurrency
       ( mapMaybe
           ( \case
@@ -114,6 +123,15 @@ compileCurrencies declarations =
           )
           declarations
       )
+  foldM go M.empty tups
+  where
+    go ::
+      Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+      (CurrencySymbol, GenLocated ann QuantisationFactor) ->
+      Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
+    go m (symbol, lqf@(Located l2 _)) = case M.lookup symbol m of
+      Nothing -> pure $ M.insert symbol lqf m
+      Just (Located l1 _) -> validationFailure $ CompileErrorCurrencyDeclaredTwice l1 l2 symbol
 
 compileCurrency :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
 compileCurrency (Located l CurrencyDeclaration {..}) = do
