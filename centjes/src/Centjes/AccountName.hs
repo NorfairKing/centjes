@@ -19,7 +19,6 @@ import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
--- TODO Rename accountNameText to accountNameText
 newtype AccountName = AccountName {accountNameText :: Text}
   deriving (Show, Eq, Ord, Generic)
 
@@ -43,8 +42,11 @@ instance Validity AccountName where
 instance NFData AccountName
 
 instance HasCodec AccountName where
-  -- TODO actual parsing
-  codec = dimapCodec AccountName accountNameText codec
+  codec = bimapCodec f accountNameText codec
+    where
+      f t = case fromText t of
+        Nothing -> Left $ "Invalid AccountName: " <> show t
+        Just an -> Right an
 
 fromText :: Text -> Maybe AccountName
 fromText = constructValid . AccountName

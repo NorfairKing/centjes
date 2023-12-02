@@ -116,7 +116,7 @@ posting
 
 account_name
   :: { Located AccountName }
-  : var { parseAccountName $1 }
+  : var {% parseAccountName $1 }
 
 account_exp
   :: { Located DecimalLiteral }
@@ -163,9 +163,8 @@ parseTimestamp t@(Located _ (TokenDay ds)) = fmap Timestamp . sL1 t <$> timePars
 parseDescription :: Token -> Located Description
 parseDescription t@(Located _ (TokenDescription ds)) = sL1 t $ Description ds 
 
--- TODO do actual paring
-parseAccountName :: Token -> Located AccountName
-parseAccountName t@(Located _ (TokenVar ans)) = sL1 t $ AccountName ans
+parseAccountName :: Token -> Alex (Located AccountName)
+parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
 
 -- TODO actual parsing
 parseCurrencySymbol :: Token -> Located CurrencySymbol
