@@ -18,7 +18,6 @@ import Centjes.Location
 import Centjes.Module (AccountName (..), CurrencySymbol (..), Description (..), Timestamp (..))
 import Control.DeepSeq
 import Data.List (sort)
-import Data.Map (Map)
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Vector ()
@@ -28,11 +27,8 @@ import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 import Money.QuantisationFactor
 
-data Ledger ann = Ledger
-  { -- Note the quantisation factors will have the source location of their currency declaration.
-    -- TODO get rid of this field entirely?
-    ledgerCurrencies :: Map CurrencySymbol (GenLocated ann QuantisationFactor),
-    ledgerTransactions :: Vector (GenLocated ann (Transaction ann))
+newtype Ledger ann = Ledger
+  { ledgerTransactions :: Vector (GenLocated ann (Transaction ann))
   }
   deriving stock (Show, Eq, Generic)
 
