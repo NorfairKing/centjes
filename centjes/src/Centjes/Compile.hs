@@ -54,7 +54,7 @@ instance ToReport (CompileError SourceSpan) where
             [ "Could not parse decimal literal as quantisation factor:",
               renderDecimalLiteral dl,
               "for currency with symbol",
-              show (unCurrencySymbol sym)
+              show (currencySymbolText sym)
             ]
         )
         [ (toDiagnosePosition fl, This "this number does not represent a valid quantisation factor"),
@@ -64,7 +64,7 @@ instance ToReport (CompileError SourceSpan) where
     CompileErrorCurrencyDeclaredTwice cl1 cl2 symbol ->
       Err
         (Just "CE_DUPLICATE_CURRENCY")
-        (unwords ["Currency has been declared twice:", show (unCurrencySymbol symbol)])
+        (unwords ["Currency has been declared twice:", show (currencySymbolText symbol)])
         [ (toDiagnosePosition cl1, Where "This currency has been declared here first"),
           (toDiagnosePosition cl2, This "This currency has been declared twice")
         ]
@@ -74,7 +74,7 @@ instance ToReport (CompileError SourceSpan) where
         (Just "CE_UNDECLARED_CURRENCY")
         ( unwords
             [ "Undeclared currency:",
-              show (unCurrencySymbol symbol)
+              show (currencySymbolText symbol)
             ]
         )
         [ (toDiagnosePosition tl, Where "While trying to compile this transaction"),

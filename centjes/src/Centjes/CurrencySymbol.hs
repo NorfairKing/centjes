@@ -19,8 +19,7 @@ import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
--- TODO rename to currencySymbolText
-newtype CurrencySymbol = CurrencySymbol {unCurrencySymbol :: Text}
+newtype CurrencySymbol = CurrencySymbol {currencySymbolText :: Text}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity CurrencySymbol where

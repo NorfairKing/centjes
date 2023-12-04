@@ -32,7 +32,7 @@ multiAccountChunks ma =
         (M.toList accounts)
 
 currencySymbolChunk :: CurrencySymbol -> Chunk
-currencySymbolChunk = fore magenta . chunk . unCurrencySymbol
+currencySymbolChunk = fore magenta . chunk . currencySymbolText
 
 accountChunk :: QuantisationFactor -> Money.Account -> Chunk
 accountChunk qf a =

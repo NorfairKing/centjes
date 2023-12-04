@@ -78,7 +78,7 @@ instance ToReport ImportError where
             ImportErrorUnknownCurrency symbol ->
               Err
                 (Just "IE_REVOLUT_UNKNOWN_CURRENCY")
-                (unwords ["Unknown currency:", show (unCurrencySymbol symbol)])
+                (unwords ["Unknown currency:", show (currencySymbolText symbol)])
             ImportErrorInvalidAccount qf dl ->
               Err
                 (Just "IE_REVOLUT_INVALID_AMOUNT")

@@ -122,7 +122,7 @@ multiAccountLines = map go . M.toList . MultiAccount.unMultiAccount
       let Located _ qf = currencyQuantisationFactor c
        in unwords
             [ Account.format qf a,
-              T.unpack $ unCurrencySymbol $ currencySymbol c
+              T.unpack $ currencySymbolText $ currencySymbol c
             ]
 
 produceBalanceReport ::

@@ -111,7 +111,7 @@ currencyDeclarationDoc (Located _ CurrencyDeclaration {..}) =
       <> hardline
 
 currencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
-currencySymbolDoc = pretty . unCurrencySymbol . locatedValue
+currencySymbolDoc = pretty . currencySymbolText . locatedValue
 
 quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc ann
 quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
