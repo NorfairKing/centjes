@@ -5,6 +5,7 @@
 module Centjes.Import.Revolut (runCentjesImportRevolut) where
 
 import Centjes.Compile
+import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Format
 import Centjes.Import.Revolut.OptParse
 import Centjes.Load
@@ -190,7 +191,7 @@ instance FromNamedRecord Row where
         .: "Description"
       <*> (r .: "Amount" >>= parseDecimalLiteralM)
       <*> (r .: "Fee" >>= parseDecimalLiteralM)
-      <*> (r .: "Currency" >>= parseCurrencySymbolM)
+      <*> (r .: "Currency" >>= CurrencySymbol.fromTextM)
       <*> r
         .: "State"
       <*> (r .: "Balance" >>= traverse parseDecimalLiteralM)

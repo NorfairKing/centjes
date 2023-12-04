@@ -4,7 +4,8 @@
 
 module Centjes.CurrencySymbol
   ( CurrencySymbol (..),
-    parseCurrencySymbolM,
+    fromTextM,
+    fromText,
   )
 where
 
@@ -39,10 +40,10 @@ instance Validity CurrencySymbol where
 
 instance NFData CurrencySymbol
 
-parseCurrencySymbolM :: MonadFail m => Text -> m CurrencySymbol
-parseCurrencySymbolM t = case parseCurrencySymbol t of
+fromTextM :: MonadFail m => Text -> m CurrencySymbol
+fromTextM t = case fromText t of
   Nothing -> fail $ "Invalid currency symbol: " <> show t
   Just cs -> pure cs
 
-parseCurrencySymbol :: Text -> Maybe CurrencySymbol
-parseCurrencySymbol = constructValid . CurrencySymbol
+fromText :: Text -> Maybe CurrencySymbol
+fromText = constructValid . CurrencySymbol

@@ -11,7 +11,6 @@ module Centjes.Module
     LCurrencyDeclaration,
     CurrencyDeclaration (..),
     CurrencySymbol (..),
-    parseCurrencySymbolM,
     LAccountDeclaration,
     AccountDeclaration (..),
     AccountName (..),
