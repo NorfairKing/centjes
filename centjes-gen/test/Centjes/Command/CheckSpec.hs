@@ -90,7 +90,8 @@ spec = do
                                         postingAccount = noLoc "1",
                                         postingCurrencySymbol = noLoc usdSymbol
                                       }
-                                ]
+                                ],
+                              transactionAttachments = []
                             }
                     ]
                 }

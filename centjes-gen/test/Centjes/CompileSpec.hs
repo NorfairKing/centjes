@@ -116,7 +116,8 @@ spec = do
                                     postingAccount = noLoc "1",
                                     postingCurrencySymbol = noLoc (CurrencySymbol "USD")
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         }
                 ]
             }
@@ -145,7 +146,8 @@ spec = do
                                     postingAccount = noLoc "0.001",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         }
                 ]
             }

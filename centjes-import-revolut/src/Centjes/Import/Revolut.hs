@@ -162,6 +162,7 @@ rowTransaction currencies assetsAccountName expensesAccountName feeAccountName R
             maybeToList mFeePosting,
             [leftoverPosting]
           ]
+  let transactionAttachments = []
   pure Transaction {..}
 
 data Row = Row

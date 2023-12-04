@@ -137,7 +137,8 @@ transactionDoc Transaction {..} =
               ]
             | d <- maybeToList transactionDescription
           ],
-          map (("  " <>) . postingDoc . locatedValue) transactionPostings
+          map (("  " <>) . postingDoc . locatedValue) transactionPostings,
+          map (("  " <>) . attachmentDoc . locatedValue) transactionAttachments
         ]
 
 timestampDoc :: GenLocated l Timestamp -> Doc ann
@@ -165,3 +166,6 @@ accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired . locatedValue
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . renderDecimalLiteral
+
+attachmentDoc :: Attachment -> Doc ann
+attachmentDoc (Attachment fp) = "+ attach" <+> pretty (fromRelFile fp)

@@ -65,7 +65,8 @@ spec = do
                                     postingAccount = noLoc "-184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         },
                   DeclarationTransaction $
                     noLoc $
@@ -85,7 +86,8 @@ spec = do
                                     postingAccount = noLoc "-184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         }
                 ]
             }
@@ -113,7 +115,8 @@ spec = do
                                     postingAccount = noLoc "0.02",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         }
                 ]
             }
@@ -142,7 +145,8 @@ spec = do
                                     postingAccount = noLoc "0.02",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         }
                 ]
             }
@@ -165,7 +169,8 @@ spec = do
                                     postingAccount = noLoc "1",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         }
                 ]
             }
@@ -187,7 +192,8 @@ spec = do
                                     postingAccount = noLoc "1",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         },
                   DeclarationTransaction $
                     noLoc $
@@ -201,7 +207,8 @@ spec = do
                                     postingAccount = noLoc "-1",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
-                            ]
+                            ],
+                          transactionAttachments = []
                         }
                 ]
             }

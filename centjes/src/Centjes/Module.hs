@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Module
   ( LModule,
@@ -23,6 +25,7 @@ module Centjes.Module
     validateDescriptionChar,
     LPosting,
     Posting (..),
+    Attachment (..),
     DecimalLiteral (..),
   )
 where
@@ -31,6 +34,7 @@ import Autodocodec
 import Centjes.AccountName
 import Centjes.CurrencySymbol
 import Centjes.Location
+import Control.Arrow (left)
 import Control.DeepSeq
 import qualified Data.Char as Char
 import Data.Set (Set)
@@ -106,7 +110,8 @@ type LTransaction = LLocated Transaction
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
-    transactionPostings :: ![GenLocated ann (Posting ann)]
+    transactionPostings :: ![GenLocated ann (Posting ann)],
+    transactionAttachments :: ![GenLocated ann Attachment]
   }
   deriving stock (Show, Eq, Generic)
 
@@ -116,6 +121,16 @@ instance NFData ann => NFData (Transaction ann)
 
 transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
 transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySymbol . locatedValue) . transactionPostings
+
+newtype Timestamp = Timestamp {timestampDay :: Day}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity Timestamp
+
+instance NFData Timestamp
+
+instance HasCodec Timestamp where
+  codec = dimapCodec Timestamp timestampDay codec
 
 newtype Description = Description {unDescription :: Text}
   deriving (Show, Eq, Ord, Generic)
@@ -154,12 +169,15 @@ instance Validity ann => Validity (Posting ann)
 
 instance NFData ann => NFData (Posting ann)
 
-newtype Timestamp = Timestamp {timestampDay :: Day}
+newtype Attachment = Attachment {attachmentPath :: Path Rel File}
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity Timestamp
+instance Validity Attachment
 
-instance NFData Timestamp
+instance NFData Attachment
 
-instance HasCodec Timestamp where
-  codec = dimapCodec Timestamp timestampDay codec
+instance HasCodec Attachment where
+  codec = dimapCodec Attachment attachmentPath codec
+
+instance HasCodec (Path Rel File) where
+  codec = bimapCodec (left show . parseRelFile) fromRelFile codec <?> "relative filepath"

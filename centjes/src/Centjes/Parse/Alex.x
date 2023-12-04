@@ -60,11 +60,14 @@ $alpha = [A-Za-z]
 @day_of_month = $digit $digit
 @day = @year \- @month_of_year \- @day_of_month
 
+@path = [$alpha $digit \_ \- : .]+
+
 @star = \*
 @dot = \.
 @import = "import " .* \n
 @currency = "currency "
 @account = "account "
+@attach = "+ attach " @path
 
 @comment = "-- " .* \n
 
@@ -77,6 +80,7 @@ $white_no_nl+ ;
 
 @import             { lex (TokenImport . drop (length "import ") . init) }
 @day                { lex TokenDay }
+@attach             { lex (TokenAttachment . drop (length "+ attach ")) }
 @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
 @scientific         { lex (TokenDecimalLiteral . fromJust . parseDecimalLiteral) } -- TODO get rid of fromJust
 @dot                { lex' TokenDot}
@@ -110,6 +114,7 @@ type Token = GenLocated SourceSpan TokenClass
 
 data TokenClass
   = TokenComment !Text
+  | TokenAttachment !FilePath
   | TokenDay !String
   | TokenVar !Text
   | TokenDescription !Text

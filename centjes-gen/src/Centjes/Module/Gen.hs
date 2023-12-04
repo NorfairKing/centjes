@@ -56,3 +56,5 @@ instance GenValid AccountName where
                 elements [':', '_']
               ]
       T.cons <$> alpha <*> genTextBy rest
+
+instance GenValid Attachment

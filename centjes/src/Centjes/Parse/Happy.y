@@ -14,6 +14,7 @@ import Centjes.Parse.Alex
 import Centjes.Parse.Utils
 import Data.Text (Text)
 import Numeric.DecimalLiteral (DecimalLiteral)
+import Path
 import qualified Data.Text as T
 
 }
@@ -40,6 +41,7 @@ import qualified Data.Text as T
 
 %token 
       comment         { Located _ (TokenComment _) }
+      attach          { Located _ (TokenAttachment _) }
       day             { Located _ (TokenDay _) }
       var             { Located _ (TokenVar _) }
       pipetext        { Located _ (TokenDescription _) }
@@ -99,8 +101,8 @@ account_dec
 
 transaction_dec
   :: { LTransaction }
-  : timestamp newline optional(description) many(posting) { sBLE $1 $4 (Transaction $1 $3 $4) }
-  | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] }
+  : timestamp newline optional(description) many(posting) many(attachment) { sBMLL $1 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+  | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 timestamp
   :: { Located Timestamp }
@@ -121,6 +123,10 @@ account_name
 account_exp
   :: { Located DecimalLiteral }
   : decimal_literal { parseDecimalLiteral $1 }
+
+attachment
+  :: { Located Attachment }
+  : attach newline {% parseAttachment $1 }
 
 -- Helpers
 optional(p)
@@ -147,9 +153,15 @@ sBME :: Located a -> Maybe (Located b) -> c -> Located c
 sBME l1 Nothing = sL1 l1
 sBME l1 (Just l2) = sBE l1 l2
 
-sBLE :: Located a -> [Located b] -> c -> Located c
-sBLE l1 [] = sL1 l1
-sBLE l1 ls = sBE l1 (last ls)
+sBL :: Located a -> [Located b] -> c -> Located c
+sBL l1 [] = sL1 l1
+sBL l1 ls = sBE l1 (last ls)
+
+sBMLL :: Located a -> Maybe (Located b) -> [Located c] -> [Located d] -> e -> Located e
+sBMLL l1 Nothing   [] [] = sL1 l1
+sBMLL l1 (Just l2) [] [] = sBE l1 l2
+sBMLL l1 _         ls [] = sBL l1 ls
+sBMLL l1 _         _  ls = sBL l1 ls
 
 combineSpans :: SourceSpan -> SourceSpan -> SourceSpan
 combineSpans begin end = begin { sourceSpanEnd = sourceSpanEnd end }
@@ -165,6 +177,9 @@ parseDescription t@(Located _ (TokenDescription ds)) = sL1 t $ Description ds
 
 parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
+
+parseAttachment :: Token -> Alex (Located Attachment)
+parseAttachment t@(Located _ (TokenAttachment atch)) = sL1 t <$> maybeParser "Attachment" (fmap Attachment . parseRelFile) atch
 
 -- TODO actual parsing
 parseCurrencySymbol :: Token -> Located CurrencySymbol
