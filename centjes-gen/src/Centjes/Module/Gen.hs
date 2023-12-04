@@ -2,6 +2,7 @@
 
 module Centjes.Module.Gen where
 
+import Centjes.CurrencySymbol.Gen ()
 import Centjes.Location.Gen ()
 import Centjes.Module
 import Data.GenValidity
@@ -24,12 +25,6 @@ instance GenValid Import where
   shrinkValid _ = []
 
 instance GenValid ann => GenValid (CurrencyDeclaration ann)
-
-instance GenValid CurrencySymbol where
-  genValid =
-    fmap CurrencySymbol $ do
-      let genChar = choose ('A', 'Z')
-      T.cons <$> genChar <*> genTextBy genChar
 
 instance GenValid ann => GenValid (AccountDeclaration ann)
 
