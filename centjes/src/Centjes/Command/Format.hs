@@ -4,7 +4,6 @@
 module Centjes.Command.Format (runCentjesFormat) where
 
 import Centjes.Compile
-import Centjes.DecimalLiteral
 import Centjes.Format
 import Centjes.Load
 import Centjes.Location
@@ -24,7 +23,8 @@ import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Money.QuantisationFactor
+import Money.QuantisationFactor as QuantisationFactor
+import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Path.IO
 import System.Exit
@@ -176,4 +176,4 @@ fillInDigits currencies m = m {moduleDeclarations = map goDeclaration (moduleDec
             Nothing -> p
             Just (Located _ qf) ->
               let Located l account = postingAccount p
-               in p {postingAccount = Located l $ account {decimalLiteralDigits = quantisationFactorDigits qf}}
+               in p {postingAccount = Located l $ DecimalLiteral.setMinimumDigits (QuantisationFactor.digits qf) account}

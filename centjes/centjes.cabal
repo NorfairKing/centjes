@@ -24,7 +24,6 @@ library
       Centjes.Command.Format
       Centjes.Command.Register
       Centjes.Compile
-      Centjes.DecimalLiteral
       Centjes.Format
       Centjes.Formatting
       Centjes.Ledger
@@ -68,14 +67,12 @@ library
     , safe-coloured-text
     , safe-coloured-text-layout
     , safe-coloured-text-terminfo
-    , scientific
     , text
     , time
     , unliftio
     , validity
     , validity-containers
     , validity-path
-    , validity-scientific
     , validity-text
     , validity-time
     , validity-vector

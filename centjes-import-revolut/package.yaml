@@ -13,10 +13,14 @@ library:
   - bytestring
   - cassava
   - centjes
+  - containers
+  - diagnose
   - envparse
+  - monad-logger
   - optparse-applicative
   - path
   - path-io
+  - really-safe-money
   - text
   - time
   - vector

@@ -10,13 +10,13 @@ module Centjes.Format
 where
 
 import Centjes.AccountName
-import Centjes.DecimalLiteral as DecimalLiteral
 import Centjes.Location
 import Centjes.Module
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
+import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Prettyprinter
 import Prettyprinter.Render.Text
@@ -114,7 +114,7 @@ currencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
 currencySymbolDoc = pretty . unCurrencySymbol . locatedValue
 
 quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc ann
-quantisationFactorDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = False}) . locatedValue
+quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
 
 accountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
 accountDeclarationDoc (Located _ AccountDeclaration {..}) =
@@ -161,7 +161,7 @@ accountNameDoc :: GenLocated l AccountName -> Doc ann
 accountNameDoc = pretty . accountNameText . locatedValue
 
 accountDoc :: GenLocated l DecimalLiteral -> Doc ann
-accountDoc = decimalLiteralDoc . (\dl -> dl {decimalLiteralSign = True}) . locatedValue
+accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired . locatedValue
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . renderDecimalLiteral

@@ -2,12 +2,12 @@
 
 module Centjes.AccountName.Gen where
 
-import Centjes.DecimalLiteral.Gen ()
 import Centjes.Location.Gen ()
 import Centjes.Module
 import Data.GenValidity
 import Data.GenValidity.Text
 import qualified Data.Text as T
+import Numeric.DecimalLiteral.Gen ()
 import Test.QuickCheck
 
 instance GenValid AccountName where
@@ -23,6 +23,6 @@ instance GenValid AccountName where
               [ choose ('a', 'z'),
                 choose ('A', 'Z'),
                 choose ('0', '9'),
-                elements [':', '_']
+                elements [':', '_', '-']
               ]
       T.cons <$> alpha <*> genTextBy rest

@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Compile
@@ -13,7 +14,6 @@ module Centjes.Compile
   )
 where
 
-import Centjes.DecimalLiteral as DecimalLiteral
 import Centjes.Format
 import Centjes.Ledger as Ledger
 import Centjes.Location
@@ -25,7 +25,6 @@ import Data.List (intercalate, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.Scientific
 import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
@@ -33,6 +32,7 @@ import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
 import Money.QuantisationFactor
+import Numeric.DecimalLiteral as DecimalLiteral
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
@@ -91,7 +91,7 @@ instance ToReport (CompileError SourceSpan) where
                           noLoc $
                             CurrencyDeclaration
                               { currencyDeclarationSymbol = noLoc symbol,
-                                currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral False 0 (scientific 1 (-2))
+                                currencyDeclarationQuantisationFactor = noLoc "0.01"
                               }
                 ]
           )

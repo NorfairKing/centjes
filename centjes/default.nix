@@ -3,9 +3,9 @@
 , envparse, happy, lib, monad-logger, mtl, optparse-applicative
 , path, path-io, prettyprinter, prettyprinter-ansi-terminal
 , really-safe-money, safe-coloured-text, safe-coloured-text-layout
-, safe-coloured-text-terminfo, scientific, text, time, unliftio
-, validity, validity-containers, validity-path, validity-scientific
-, validity-text, validity-time, validity-vector, vector, yaml
+, safe-coloured-text-terminfo, text, time, unliftio, validity
+, validity-containers, validity-path, validity-text, validity-time
+, validity-vector, vector, yaml
 }:
 mkDerivation {
   pname = "centjes";
@@ -18,9 +18,9 @@ mkDerivation {
     deepseq diagnose envparse monad-logger mtl optparse-applicative
     path path-io prettyprinter prettyprinter-ansi-terminal
     really-safe-money safe-coloured-text safe-coloured-text-layout
-    safe-coloured-text-terminfo scientific text time unliftio validity
-    validity-containers validity-path validity-scientific validity-text
-    validity-time validity-vector vector yaml
+    safe-coloured-text-terminfo text time unliftio validity
+    validity-containers validity-path validity-text validity-time
+    validity-vector vector yaml
   ];
   libraryToolDepends = [ alex autoexporter happy ];
   executableHaskellDepends = [ base ];

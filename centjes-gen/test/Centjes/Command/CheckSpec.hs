@@ -5,7 +5,6 @@
 module Centjes.Command.CheckSpec (spec) where
 
 import Centjes.Command.Check
-import Centjes.DecimalLiteral
 import Centjes.Format
 import Centjes.Load
 import Centjes.Location
@@ -17,7 +16,6 @@ import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Map as M
-import Data.Scientific
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import Data.Time
@@ -74,7 +72,7 @@ spec = do
                   noLoc $
                     CurrencyDeclaration
                       { currencyDeclarationSymbol = noLoc usdSymbol,
-                        currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 1 (-2))
+                        currencyDeclarationQuantisationFactor = noLoc "0.01"
                       }
            in Module
                 { moduleImports = [],
@@ -89,7 +87,7 @@ spec = do
                                 [ noLoc
                                     Posting
                                       { postingAccountName = noLoc (AccountName "undeclared"),
-                                        postingAccount = noLoc (DecimalLiteral True 0 (scientific 1 0)),
+                                        postingAccount = noLoc "1",
                                         postingCurrencySymbol = noLoc usdSymbol
                                       }
                                 ]

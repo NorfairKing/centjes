@@ -16,12 +16,12 @@ module Centjes.Parse.Alex
   , getsAlex
   ) where
 
-import Centjes.DecimalLiteral
 import Centjes.Location
 import Control.Monad (liftM)
 import Data.List
 import Data.Maybe (fromJust)
 import Data.Text (Text)
+import Numeric.DecimalLiteral
 import Prelude hiding (lex)
 import qualified Data.Text as T
 }

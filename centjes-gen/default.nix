@@ -1,9 +1,8 @@
 { mkDerivation, base, bytestring, centjes, containers, genvalidity
-, genvalidity-containers, genvalidity-path, genvalidity-scientific
-, genvalidity-sydtest, genvalidity-text, genvalidity-time
-, genvalidity-vector, lib, monad-logger, path, path-io, QuickCheck
-, really-safe-money, really-safe-money-gen, scientific, sydtest
-, sydtest-discover, text, time, vector
+, genvalidity-containers, genvalidity-path, genvalidity-sydtest
+, genvalidity-text, genvalidity-time, genvalidity-vector, lib
+, monad-logger, path, path-io, QuickCheck, really-safe-money-gen
+, sydtest, sydtest-discover, text, time, vector
 }:
 mkDerivation {
   pname = "centjes-gen";
@@ -11,15 +10,13 @@ mkDerivation {
   src = ./.;
   libraryHaskellDepends = [
     base centjes genvalidity genvalidity-containers genvalidity-path
-    genvalidity-scientific genvalidity-text genvalidity-time
-    genvalidity-vector path QuickCheck really-safe-money-gen scientific
-    sydtest text vector
+    genvalidity-text genvalidity-time genvalidity-vector path
+    QuickCheck really-safe-money-gen sydtest text vector
   ];
   testHaskellDepends = [
     base bytestring centjes containers genvalidity-containers
-    genvalidity-sydtest monad-logger path path-io QuickCheck
-    really-safe-money really-safe-money-gen scientific sydtest text
-    time
+    genvalidity-sydtest monad-logger path path-io QuickCheck sydtest
+    text time
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

@@ -2,9 +2,9 @@
 
 module Centjes.Location.Gen where
 
-import Centjes.DecimalLiteral.Gen ()
 import Centjes.Location
 import Data.GenValidity
+import Numeric.DecimalLiteral.Gen ()
 
 instance (GenValid l, GenValid a) => GenValid (GenLocated l a)
 

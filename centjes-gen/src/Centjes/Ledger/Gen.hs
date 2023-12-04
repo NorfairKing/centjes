@@ -3,7 +3,6 @@
 
 module Centjes.Ledger.Gen where
 
-import Centjes.DecimalLiteral.Gen ()
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Module.Gen ()
@@ -12,6 +11,7 @@ import Data.GenValidity.Map ()
 import Data.GenValidity.Vector ()
 import Data.List (sortOn)
 import qualified Data.Vector as V
+import Numeric.DecimalLiteral.Gen ()
 
 instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
   genValid = do

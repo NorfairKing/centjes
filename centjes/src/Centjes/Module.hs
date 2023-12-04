@@ -11,6 +11,7 @@ module Centjes.Module
     LCurrencyDeclaration,
     CurrencyDeclaration (..),
     CurrencySymbol (..),
+    parseCurrencySymbolM,
     LAccountDeclaration,
     AccountDeclaration (..),
     AccountName (..),
@@ -29,7 +30,6 @@ where
 
 import Autodocodec
 import Centjes.AccountName
-import Centjes.DecimalLiteral
 import Centjes.Location
 import Control.DeepSeq
 import qualified Data.Char as Char
@@ -43,6 +43,7 @@ import Data.Validity.Path ()
 import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import Numeric.DecimalLiteral
 import Path
 
 type LModule = Module SourceSpan
@@ -100,6 +101,7 @@ instance Validity ann => Validity (AccountDeclaration ann)
 
 instance NFData ann => NFData (AccountDeclaration ann)
 
+-- TODO rename to currencySymbolText
 newtype CurrencySymbol = CurrencySymbol {unCurrencySymbol :: Text}
   deriving (Show, Eq, Ord, Generic)
 
@@ -119,6 +121,14 @@ instance Validity CurrencySymbol where
       ]
 
 instance NFData CurrencySymbol
+
+parseCurrencySymbolM :: MonadFail m => Text -> m CurrencySymbol
+parseCurrencySymbolM t = case parseCurrencySymbol t of
+  Nothing -> fail $ "Invalid currency symbol: " <> show t
+  Just cs -> pure cs
+
+parseCurrencySymbol :: Text -> Maybe CurrencySymbol
+parseCurrencySymbol = constructValid . CurrencySymbol
 
 type LTransaction = LLocated Transaction
 

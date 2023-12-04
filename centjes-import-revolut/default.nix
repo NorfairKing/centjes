@@ -1,6 +1,7 @@
 { mkDerivation, autodocodec, autodocodec-yaml, base, bytestring
-, cassava, centjes, envparse, lib, optparse-applicative, path
-, path-io, text, time, vector, yaml
+, cassava, centjes, containers, diagnose, envparse, lib
+, monad-logger, optparse-applicative, path, path-io
+, really-safe-money, text, time, vector, yaml
 }:
 mkDerivation {
   pname = "centjes-import-revolut";
@@ -10,7 +11,8 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     autodocodec autodocodec-yaml base bytestring cassava centjes
-    envparse optparse-applicative path path-io text time vector yaml
+    containers diagnose envparse monad-logger optparse-applicative path
+    path-io really-safe-money text time vector yaml
   ];
   executableHaskellDepends = [ base ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

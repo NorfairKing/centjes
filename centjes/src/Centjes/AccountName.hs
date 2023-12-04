@@ -30,9 +30,10 @@ instance Validity AccountName where
         declare "The account name starts with an alphabetic character" $ case T.uncons t of
           Nothing -> False
           Just (h, _) -> Char.isAlpha h,
-        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character or _ or :" $
+        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character or _, - or :" $
           case c of
             ':' -> True
+            '-' -> True
             '_' -> True
             _
               | Char.isLatin1 c && Char.isAlphaNum c -> True

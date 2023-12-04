@@ -7,13 +7,13 @@ module Centjes.Parse.Happy
   , parseTransaction
   ) where
 
-import Centjes.DecimalLiteral (DecimalLiteral)
 import Centjes.AccountName as AccountName
 import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
 import Centjes.Parse.Utils
 import Data.Text (Text)
+import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Data.Text as T
 
 }

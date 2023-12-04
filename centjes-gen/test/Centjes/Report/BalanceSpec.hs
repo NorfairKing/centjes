@@ -6,7 +6,6 @@
 module Centjes.Report.BalanceSpec (spec) where
 
 import Centjes.Compile
-import Centjes.DecimalLiteral
 import Centjes.Format
 import Centjes.Ledger.Gen ()
 import Centjes.Load
@@ -17,7 +16,6 @@ import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
-import Data.Scientific
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import Data.Time
@@ -40,7 +38,7 @@ spec = do
               noLoc $
                 CurrencyDeclaration
                   { currencyDeclarationSymbol = noLoc usdSymbol,
-                    currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 1 (-2))
+                    currencyDeclarationQuantisationFactor = noLoc "0.01"
                   }
 
       it "shows the same error when an account's total amount balance gets too large" $
@@ -58,13 +56,13 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 18446744073709551615 (-2))),
+                                    postingAccount = noLoc "184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   },
                               noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific (-18446744073709551615) (-2))),
+                                    postingAccount = noLoc "-184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]
@@ -78,13 +76,13 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 18446744073709551615 (-2))),
+                                    postingAccount = noLoc "184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   },
                               noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific (-18446744073709551615) (-2))),
+                                    postingAccount = noLoc "-184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]
@@ -106,13 +104,13 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 18446744073709551615 (-2))),
+                                    postingAccount = noLoc "184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   },
                               noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 2 (-2))),
+                                    postingAccount = noLoc "0.02",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]
@@ -135,13 +133,13 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 18446744073709551615 (-2))),
+                                    postingAccount = noLoc "184467440737095516.15",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   },
                               noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 2 (-2))),
+                                    postingAccount = noLoc "0.02",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]
@@ -164,7 +162,7 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 1 0)),
+                                    postingAccount = noLoc "1",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]
@@ -186,7 +184,7 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 1 0)),
+                                    postingAccount = noLoc "1",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]
@@ -200,7 +198,7 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific (-1) 0)),
+                                    postingAccount = noLoc "-1",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]

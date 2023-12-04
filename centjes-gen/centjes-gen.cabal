@@ -53,7 +53,6 @@ source-repository head
 library
   exposed-modules:
       Centjes.AccountName.Gen
-      Centjes.DecimalLiteral.Gen
       Centjes.Ledger.Gen
       Centjes.Location.Gen
       Centjes.Module.Gen
@@ -70,13 +69,11 @@ library
     , genvalidity
     , genvalidity-containers
     , genvalidity-path
-    , genvalidity-scientific
     , genvalidity-text
     , genvalidity-time
     , genvalidity-vector
     , path
     , really-safe-money-gen
-    , scientific
     , sydtest
     , text
     , vector
@@ -90,7 +87,6 @@ test-suite centjes-test
       Centjes.Command.CheckSpec
       Centjes.Command.FormatSpec
       Centjes.CompileSpec
-      Centjes.DecimalLiteralSpec
       Centjes.FormatSpec
       Centjes.ModuleSpec
       Centjes.ParseSpec
@@ -113,9 +109,6 @@ test-suite centjes-test
     , monad-logger
     , path
     , path-io
-    , really-safe-money
-    , really-safe-money-gen
-    , scientific
     , sydtest
     , text
     , time

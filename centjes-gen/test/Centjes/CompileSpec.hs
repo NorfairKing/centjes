@@ -5,7 +5,6 @@
 module Centjes.CompileSpec (spec) where
 
 import Centjes.Compile
-import Centjes.DecimalLiteral
 import Centjes.Format
 import Centjes.Load
 import Centjes.Location
@@ -18,7 +17,6 @@ import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import Data.GenValidity.Map ()
 import qualified Data.Map.Strict as M
-import Data.Scientific
 import Data.Text (Text)
 import qualified Data.Text.Encoding as TE
 import Data.Time
@@ -76,7 +74,7 @@ spec = do
                     noLoc $
                       CurrencyDeclaration
                         { currencyDeclarationSymbol = noLoc (CurrencySymbol "INVALID"),
-                          currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 1 2)
+                          currencyDeclarationQuantisationFactor = noLoc "100"
                         }
                 ]
             }
@@ -91,13 +89,13 @@ spec = do
                         noLoc $
                           CurrencyDeclaration
                             { currencyDeclarationSymbol = lSymbol,
-                              currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 1 (-2))
+                              currencyDeclarationQuantisationFactor = noLoc "0.01"
                             },
                       DeclarationCurrency $
                         noLoc $
                           CurrencyDeclaration
                             { currencyDeclarationSymbol = lSymbol,
-                              currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 5 (-2))
+                              currencyDeclarationQuantisationFactor = noLoc "0.05"
                             }
                     ]
             }
@@ -115,7 +113,7 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 1 0)),
+                                    postingAccount = noLoc "1",
                                     postingCurrencySymbol = noLoc (CurrencySymbol "USD")
                                   }
                             ]
@@ -133,7 +131,7 @@ spec = do
                     noLoc $
                       CurrencyDeclaration
                         { currencyDeclarationSymbol = noLoc usdSymbol,
-                          currencyDeclarationQuantisationFactor = noLoc $ DecimalLiteral True 0 (scientific 1 (-2))
+                          currencyDeclarationQuantisationFactor = noLoc "0.01"
                         },
                   DeclarationTransaction $
                     noLoc $
@@ -144,7 +142,7 @@ spec = do
                             [ noLoc
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc (DecimalLiteral True 0 (scientific 1 (-3))),
+                                    postingAccount = noLoc "0.001",
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ]

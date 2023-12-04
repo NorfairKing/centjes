@@ -44,7 +44,7 @@ combineToSettings Flags {..} Environment {..} mConf = do
   settingOutput <- resolveFile' $ fromMaybe "revolut.cent" $ flagOutput <|> envOutput
   let settingAssetsAccountName = fromMaybe (AccountName "assets:revolut") $ flagAssetsAccountName <|> envAssetsAccountName <|> mc configAssetsAccountName
   let settingExpensesAccountName = fromMaybe (AccountName "expenses:unknown") $ flagExpensesAccountName <|> envExpensesAccountName <|> mc configExpensesAccountName
-  let settingFeesAccountName = fromMaybe (AccountName "expenses:banking") $ flagFeesAccountName <|> envFeesAccountName <|> mc configFeesAccountName
+  let settingFeesAccountName = fromMaybe (AccountName "expenses:banking:revolut") $ flagFeesAccountName <|> envFeesAccountName <|> mc configFeesAccountName
   pure Settings {..}
   where
     mc :: (Configuration -> Maybe a) -> Maybe a

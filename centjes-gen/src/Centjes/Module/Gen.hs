@@ -2,17 +2,16 @@
 
 module Centjes.Module.Gen where
 
-import Centjes.DecimalLiteral.Gen ()
 import Centjes.Location.Gen ()
 import Centjes.Module
 import Data.GenValidity
 import Data.GenValidity.Path ()
-import Data.GenValidity.Scientific ()
 import Data.GenValidity.Text
 import Data.GenValidity.Time ()
 import qualified Data.Text as T
 import Money.Account.Gen ()
 import Money.QuantisationFactor.Gen ()
+import Numeric.DecimalLiteral.Gen ()
 import Path
 import Test.QuickCheck
 
