@@ -29,7 +29,3 @@ Assumptions:
 * Make it easy to file tax declarations.
 * Automate as much as possible.
 * Make it hard to make mistakes.
-
-## A ledger language as a compiler target
-
-TODO
