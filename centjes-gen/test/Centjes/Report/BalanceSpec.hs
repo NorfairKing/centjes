@@ -40,6 +40,14 @@ spec = do
                   { currencyDeclarationSymbol = noLoc usdSymbol,
                     currencyDeclarationQuantisationFactor = noLoc "0.01"
                   }
+      let eurSymbol = CurrencySymbol "EUR"
+      let eurDeclaration =
+            DeclarationCurrency $
+              noLoc $
+                CurrencyDeclaration
+                  { currencyDeclarationSymbol = noLoc eurSymbol,
+                    currencyDeclarationQuantisationFactor = noLoc "0.01"
+                  }
 
       it "shows the same error when an account's total amount balance gets too large" $
         moduleGoldenBalanceError "test_resources/errors/balance-report/BE_RUNNING_BALANCE.err" $
@@ -174,6 +182,68 @@ spec = do
                         }
                 ]
             }
+
+      it "shows the same error when a transaction with two postings is off-balance" $
+        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_OFF_BALANCE-two-postings.err" $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ usdDeclaration,
+                  DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 11 24)),
+                          transactionDescription = Nothing,
+                          transactionPostings =
+                            [ noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "assets"),
+                                    postingAccount = noLoc "1",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  },
+                              noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "income"),
+                                    postingAccount = noLoc "-1.5",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  }
+                            ],
+                          transactionAttachments = []
+                        }
+                ]
+            }
+
+      it "does not show suggestions if postings have a different currency" $
+        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_OFF_BALANCE-two-currencies.err" $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ usdDeclaration,
+                  eurDeclaration,
+                  DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 11 24)),
+                          transactionDescription = Nothing,
+                          transactionPostings =
+                            [ noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "assets"),
+                                    postingAccount = noLoc "1",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  },
+                              noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "income"),
+                                    postingAccount = noLoc "-1",
+                                    postingCurrencySymbol = noLoc eurSymbol
+                                  }
+                            ],
+                          transactionAttachments = []
+                        }
+                ]
+            }
+
       it "shows the same TWO errors when a transaction is off-balance" $
         moduleGoldenBalanceError "test_resources/errors/balance-report/BE_OFF_BALANCE-two.err" $
           Module

@@ -54,6 +54,9 @@ toDiagnosePosition SourceSpan {..} =
       file = sourceSpanFile
     }
 
+combineSpans :: SourceSpan -> SourceSpan -> SourceSpan
+combineSpans begin end = begin {sourceSpanEnd = sourceSpanEnd end}
+
 data SourcePosition = SourcePosition
   { -- Not that these should be 'Word's, but I'd rather not use 'fromIntegral'
     -- to go back and forth from Happy to this to Diagnose which both use 'Int's.

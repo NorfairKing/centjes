@@ -165,9 +165,6 @@ sBMLL l1 (Just l2) [] [] = sBE l1 l2
 sBMLL l1 _         ls [] = sBL l1 ls
 sBMLL l1 _         _  ls = sBL l1 ls
 
-combineSpans :: SourceSpan -> SourceSpan -> SourceSpan
-combineSpans begin end = begin { sourceSpanEnd = sourceSpanEnd end }
-
 parseComment :: Token -> Located Text
 parseComment (Located l (TokenComment t)) = Located l t
 

@@ -20,13 +20,19 @@ import Control.Monad
 import Data.List (intercalate)
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
+import Data.Maybe
+import Data.Set (Set)
+import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Validity (Validity (..))
+import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
+import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
+import Numeric.DecimalLiteral as DecimalLiteral
 
 newtype BalanceReport ann = BalanceReport
   {unBalanceReport :: Map AccountName (Money.MultiAccount (Currency ann))}
@@ -40,7 +46,7 @@ data BalanceError ann
   = BalanceErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
   | BalanceErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
   | BalanceErrorCouldNotSumPostings !ann ![Money.MultiAccount (Currency ann)]
-  | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann))
+  | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann)) ![GenLocated ann (Posting ann)]
   deriving stock (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceError ann)
@@ -104,16 +110,45 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition s, Where $ unlines' $ concatMap multiAccountLines mas)
         ]
         []
-    BalanceErrorTransactionOffBalance s ma ->
+    BalanceErrorTransactionOffBalance s ma postings ->
       Err
         (Just "BE_OFF_BALANCE")
         "Could not balance transaction"
-        [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
-          (toDiagnosePosition s, This "This transaction is off balance."),
-          (toDiagnosePosition s, Where $ unlines' ("By this amount:" : multiAccountLines ma))
-          -- TODO make really good diagnostics if the transaction has only two postings
-        ]
+        ( [ (toDiagnosePosition s, This "This transaction is off balance."),
+            (toDiagnosePosition s, Where $ unlines' ("By this amount:" : multiAccountLines ma))
+          ]
+            ++ mapMaybe
+              (\(Located _ Posting {..}) -> makePostingSuggestion ma postingCurrency postingAccount)
+              postings
+        )
         []
+
+makePostingSuggestion ::
+  Money.MultiAccount (Currency SourceSpan) ->
+  Located (Currency SourceSpan) ->
+  Located Money.Account ->
+  Maybe (Position, Marker String)
+makePostingSuggestion total (Located cl currency) (Located al account) =
+  let accountMap = MultiAccount.unMultiAccount total
+      totalCurrencies :: Set (Currency SourceSpan)
+      totalCurrencies = M.keysSet accountMap
+   in if totalCurrencies /= S.singleton currency
+        then Nothing
+        else do
+          totalAccount <- M.lookup currency accountMap
+          suggestedAccount <- Account.subtract account totalAccount
+          let qf = locatedValue (currencyQuantisationFactor currency)
+          suggestedLiteral <- DecimalLiteral.fromAccount qf suggestedAccount
+          let symbol = currencySymbol currency
+          pure
+            ( toDiagnosePosition $ combineSpans al cl,
+              Maybe $
+                unwords
+                  [ "Perhaps you meant",
+                    renderDecimalLiteral suggestedLiteral,
+                    T.unpack (currencySymbolText symbol)
+                  ]
+            )
 
 multiAccountLines :: Money.MultiAccount (Currency ann) -> [String]
 multiAccountLines = map go . M.toList . MultiAccount.unMultiAccount
@@ -171,7 +206,7 @@ balanceTransaction (Located tl Transaction {..}) = do
     Nothing -> validationFailure $ BalanceErrorCouldNotSumPostings tl as
     Just d
       | d == MultiAccount.zero -> pure (Located tl m)
-      | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d
+      | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"

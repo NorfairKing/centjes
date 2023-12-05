@@ -12,6 +12,8 @@ build-type:     Simple
 extra-source-files:
     test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err
     test_resources/errors/balance-report/BE_OFF_BALANCE-simple.err
+    test_resources/errors/balance-report/BE_OFF_BALANCE-two-currencies.err
+    test_resources/errors/balance-report/BE_OFF_BALANCE-two-postings.err
     test_resources/errors/balance-report/BE_OFF_BALANCE-two.err
     test_resources/errors/balance-report/BE_RUNNING_BALANCE.err
     test_resources/errors/balance-report/BE_TRANSACTION_SUM.err
