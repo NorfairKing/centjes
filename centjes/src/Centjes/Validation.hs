@@ -1,8 +1,10 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
 
 module Centjes.Validation where
 
+import Control.Monad.Trans
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -14,9 +16,40 @@ import Prettyprinter
 import Prettyprinter.Render.Terminal (AnsiStyle, renderStrict)
 import System.Exit
 
+newtype ValidationT e m a = ValidationT {unValidationT :: m (Validation e a)}
+  deriving (Functor)
+
+instance Applicative m => Applicative (ValidationT e m) where
+  pure = ValidationT . pure . Success
+  (ValidationT m1) <*> (ValidationT m2) =
+    ValidationT $
+      (<*>) <$> m1 <*> m2
+
+instance Monad m => Monad (ValidationT e m) where
+  (ValidationT m) >>= f = ValidationT $ do
+    va <- m
+    case va of
+      Failure es -> pure $ Failure es
+      Success a -> unValidationT $ f a
+
+instance MonadTrans (ValidationT e) where
+  lift f = ValidationT $ Success <$> f
+
+runValidationT :: ValidationT e m a -> m (Validation e a)
+runValidationT = unValidationT
+
+liftValidation :: Applicative m => Validation e a -> ValidationT e m a
+liftValidation v = ValidationT $ pure v
+
+validationTFailure :: Applicative m => e -> ValidationT e m a
+validationTFailure = ValidationT . pure . validationFailure
+
+mapValidationTFailure :: Functor m => (e1 -> e2) -> ValidationT e1 m a -> ValidationT e2 m a
+mapValidationTFailure f (ValidationT m) = ValidationT $ mapValidationFailure f <$> m
+
 data Validation e a
-  = Failure (NonEmpty e)
-  | Success a
+  = Failure !(NonEmpty e)
+  | Success !a
   deriving (Eq, Generic, Ord, Show)
 
 instance (Validity e, Validity a) => Validity (Validation e a)

@@ -40,13 +40,18 @@ import GHC.Generics (Generic)
 runCentjesCheck :: Settings -> CheckSettings -> IO ()
 runCentjesCheck Settings {..} CheckSettings = runStderrLoggingT $ do
   (declarations, diag) <- loadModules settingLedgerFile
-  liftIO $ checkValidation diag $ doCompleteCheck declarations
+  val <- liftIO $ runValidationT $ doCompleteCheck declarations
+  liftIO $ checkValidation diag val
 
-doCompleteCheck :: Ord ann => [Declaration ann] -> Validation (CheckError ann) ()
+type CheckerT ann a = ValidationT (CheckError ann) IO a
+
+type Checker ann a = Validation (CheckError ann) a
+
+doCompleteCheck :: Ord ann => [Declaration ann] -> CheckerT ann ()
 doCompleteCheck declarations = do
   () <- checkDeclarations declarations
-  ledger <- mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
-  checkLedger ledger
+  ledger <- liftValidation $ mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
+  liftValidation $ checkLedger ledger
 
 data CheckError ann
   = CheckErrorAccountDeclaredTwice !ann !ann !AccountName
@@ -89,12 +94,12 @@ instance ToReport (CheckError SourceSpan) where
     CheckErrorCompileError ce -> toReport ce
     CheckErrorBalanceError be -> toReport be
 
-checkDeclarations :: [Declaration ann] -> Validation (CheckError ann) ()
+checkDeclarations :: [Declaration ann] -> CheckerT ann ()
 checkDeclarations ds = do
-  checkAccounts ds
+  liftValidation $ checkAccounts ds
   pure ()
 
-checkAccounts :: [Declaration ann] -> Validation (CheckError ann) ()
+checkAccounts :: [Declaration ann] -> Checker ann ()
 checkAccounts ds = do
   as <- checkAccountsUnique ds
   checkAccountsDeclared as ds
@@ -109,7 +114,7 @@ checkAccountsUnique ds =
       )
       ds
 
-checkAccountsDeclared :: Map AccountName ann -> [Declaration ann] -> Validation (CheckError ann) ()
+checkAccountsDeclared :: Map AccountName ann -> [Declaration ann] -> Checker ann ()
 checkAccountsDeclared as = traverse_ $ \case
   DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
@@ -133,7 +138,7 @@ validateUniquesMap errFunc = foldM go M.empty
       Nothing -> pure $ M.insert a l m
       Just l' -> validationFailure $ errFunc l' l a
 
-checkLedger :: Ord ann => Ledger ann -> Validation (CheckError ann) ()
+checkLedger :: Ord ann => Ledger ann -> Checker ann ()
 checkLedger l = do
   _ <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport l
   pure ()
