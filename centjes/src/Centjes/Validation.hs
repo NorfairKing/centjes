@@ -7,7 +7,6 @@ import Data.Foldable
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Validity (Validity (..))
 import Error.Diagnose
 import GHC.Generics
@@ -50,28 +49,30 @@ mapValidationFailure f = \case
   Success a -> Success a
   Failure errs -> Failure $ NE.map f errs
 
+-- Keep this in sync with renderValidationErrors
 checkValidation :: ToReport e => Diagnostic String -> Validation e a -> IO a
-checkValidation diag v =
-  case checkValidationPure diag v of
-    Right a -> pure a
-    Left e ->
-      -- TODO make this faster
-      -- Maybe we could use something faster than die and unpack
-      -- The prettyprinter lib can render directly to stderr
-      die $ T.unpack e
+checkValidation diag = \case
+  Success a -> pure a
+  Failure errs -> do
+    printDiagnostic stderr WithUnicode (TabSize 2) defaultStyle (renderDiagnostic diag errs)
+    exitFailure
 
 checkValidationPure :: ToReport e => Diagnostic String -> Validation e a -> Either Text a
 checkValidationPure diag = \case
   Success a -> Right a
   Failure errs -> Left $ renderValidationErrors diag errs
 
+-- Keep this in sync with checkValidation
 renderValidationErrors :: ToReport e => Diagnostic String -> NonEmpty e -> Text
 renderValidationErrors diag errs =
   let diag' :: Diagnostic String
-      diag' = foldl' addReport diag (map toReport (NE.toList errs))
+      diag' = renderDiagnostic diag errs
       doc :: Doc AnsiStyle
       doc = defaultStyle <$> prettyDiagnostic WithUnicode (TabSize 2) diag'
    in renderStrict $ layoutPretty defaultLayoutOptions doc
+
+renderDiagnostic :: ToReport e => Diagnostic String -> NonEmpty e -> Diagnostic String
+renderDiagnostic diag errs = foldl' addReport diag (map toReport (NE.toList errs))
 
 class ToReport e where
   toReport :: e -> Report String
