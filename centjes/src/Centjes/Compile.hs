@@ -165,7 +165,7 @@ compileTransaction ::
 compileTransaction currencies (Located l mt) = do
   let transactionTimestamp = Module.transactionTimestamp mt
       transactionDescription = Module.transactionDescription mt
-  transactionPostings <- traverse (compilePosting currencies l) (Module.transactionPostings mt)
+  transactionPostings <- V.fromList <$> traverse (compilePosting currencies l) (Module.transactionPostings mt)
   pure $ Located l Ledger.Transaction {..}
 
 compilePosting ::

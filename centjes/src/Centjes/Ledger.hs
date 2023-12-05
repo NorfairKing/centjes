@@ -18,7 +18,6 @@ import Centjes.AccountName (AccountName (..))
 import Centjes.Location
 import Centjes.Module (CurrencySymbol (..), Description (..), Timestamp (..))
 import Control.DeepSeq
-import Data.List (sort)
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Vector ()
@@ -42,16 +41,16 @@ instance Validity ann => Validity (Ledger ann) where
 
 instance NFData ann => NFData (Ledger ann)
 
--- TODO this can probably be much faster
 ordered :: Ord a => Vector a -> Bool
 ordered v =
-  let l = V.toList v
-   in sort l == l
+  if V.null v
+    then True
+    else V.and (V.zipWith (<=) v (V.tail v))
 
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
-    transactionPostings :: ![GenLocated ann (Posting ann)] -- TODO vector here
+    transactionPostings :: !(Vector (GenLocated ann (Posting ann)))
   }
   deriving stock (Show, Eq, Ord, Generic)
 

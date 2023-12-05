@@ -50,7 +50,7 @@ renderTransaction ix Transaction {..} =
           maybe " " (descriptionChunk . locatedValue) transactionDescription
         ]
 
-      postingLines = map renderPosting transactionPostings
+      postingLines = V.toList $ V.map renderPosting transactionPostings
    in case postingLines of
         [] -> [headerChunks]
         (l : ls) -> (headerChunks ++ l) : map ([chunk " ", chunk " ", chunk " "] ++) ls
