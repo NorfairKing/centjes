@@ -20,11 +20,5 @@ timeParser formatString s = case parseTimeM False defaultTimeLocale formatString
   Nothing -> parseError $ "Failed to parse time value: " <> formatString
   Just t -> pure t
 
-maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
-maybeParser name func b =
-  case func b of
-    Nothing -> parseError $ "Failed to parse " <> name <> " from " <> show b
-    Just a -> pure a
-
 parseError :: String -> Alex a
 parseError = alexError

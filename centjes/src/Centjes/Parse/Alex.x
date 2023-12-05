@@ -14,12 +14,11 @@ module Centjes.Parse.Alex
   , scanMany
   , getSourceFilePath
   , getsAlex
+  , maybeParser
   ) where
 
 import Centjes.Location
 import Control.Monad (liftM)
-import Data.List
-import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Numeric.DecimalLiteral
 import Prelude hiding (lex)
@@ -46,13 +45,13 @@ $alpha = [A-Za-z]
 
 @natural = @decimal
 
-@unsigned_scientific =
+@unsigned_decimal_literal =
     @decimal
   | @decimal \. @decimal
 
-@scientific =
-    \+? @unsigned_scientific
-  | \- @unsigned_scientific
+@decimal_literal =
+    \+? @unsigned_decimal_literal
+  | \- @unsigned_decimal_literal
 
 @var = $alpha [$alpha $digit \_ \- :]*
 @year = $digit $digit $digit $digit
@@ -82,7 +81,7 @@ $white_no_nl+ ;
 @day                { lex TokenDay }
 @attach             { lex (TokenAttachment . drop (length "+ attach ")) }
 @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
-@scientific         { lex (TokenDecimalLiteral . fromJust . parseDecimalLiteral) } -- TODO get rid of fromJust
+@decimal_literal    { lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . parseDecimalLiteral)) }
 @dot                { lex' TokenDot}
 @star               { lex' TokenStar}
 @currency           { lex' TokenCurrency}
@@ -158,7 +157,10 @@ alexEOF = do
 -- Unfortunately, we have to extract the matching bit of string
 -- ourselves...
 lex :: (String -> TokenClass) -> AlexAction Token
-lex f = \(p,_,_,s) i -> do
+lex f = lexM (pure . f)
+
+lexM :: (String -> Alex TokenClass) -> AlexAction Token
+lexM f = \(p,_,_,s) i -> do
   let begin = alexSourcePosition p
   let end = begin { sourcePositionColumn = sourcePositionColumn begin + i}
   path <- getSourceFilePath
@@ -167,7 +169,8 @@ lex f = \(p,_,_,s) i -> do
         , sourceSpanBegin = begin
         , sourceSpanEnd = end
         }
-  return $ Located span (f (take i s))
+  tc <- f (take i s)
+  return $ Located span tc
 
 -- For constructing tokens that do not depend on
 -- the input
@@ -200,6 +203,13 @@ alexError' (SourceSpan _ begin _) msg = do
   let c = sourcePositionColumn begin
   fp <- getSourceFilePath
   alexError (fp ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
+
+maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
+maybeParser name func b =
+  case func b of
+    Nothing -> alexError $ "Failed to parse " <> name <> " from " <> show b
+    Just a -> pure a
+
 
 -- A variant of runAlex, keeping track of the path of the file we are lexing.
 runAlex' :: Alex a -> FilePath -> String -> Either String a
