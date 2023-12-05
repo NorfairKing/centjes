@@ -36,6 +36,7 @@ import Data.Maybe
 import Data.Validity (Validity)
 import Error.Diagnose
 import GHC.Generics (Generic)
+import Path.IO
 
 runCentjesCheck :: Settings -> CheckSettings -> IO ()
 runCentjesCheck Settings {..} CheckSettings = runStderrLoggingT $ do
@@ -56,6 +57,7 @@ doCompleteCheck declarations = do
 data CheckError ann
   = CheckErrorAccountDeclaredTwice !ann !ann !AccountName
   | CheckErrorUndeclaredAccount !ann !ann !(GenLocated ann AccountName)
+  | CheckErrorMissingAttachment !ann !(GenLocated ann Attachment)
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
   deriving (Show, Eq, Generic)
@@ -91,13 +93,21 @@ instance ToReport (CheckError SourceSpan) where
           (toDiagnosePosition pl, Where "While trying to check this posting")
         ]
         []
+    CheckErrorMissingAttachment tl (Located al (Attachment fp)) ->
+      Err
+        (Just "CE_MISSING_ATTACHMENT")
+        (unwords ["Attachment does not exist:", show fp])
+        [ (toDiagnosePosition tl, Where "While trying to check this transaction"),
+          (toDiagnosePosition al, This "This attachment is missing")
+        ]
+        []
     CheckErrorCompileError ce -> toReport ce
     CheckErrorBalanceError be -> toReport be
 
 checkDeclarations :: [Declaration ann] -> CheckerT ann ()
 checkDeclarations ds = do
   liftValidation $ checkAccounts ds
-  pure ()
+  traverse_ checkDeclaration ds
 
 checkAccounts :: [Declaration ann] -> Checker ann ()
 checkAccounts ds = do
@@ -137,6 +147,24 @@ validateUniquesMap errFunc = foldM go M.empty
     go m (a, l) = case M.lookup a m of
       Nothing -> pure $ M.insert a l m
       Just l' -> validationFailure $ errFunc l' l a
+
+checkDeclaration :: Declaration ann -> CheckerT ann ()
+checkDeclaration = \case
+  DeclarationComment _ -> pure ()
+  DeclarationCurrency _ -> pure ()
+  DeclarationAccount _ -> pure ()
+  DeclarationTransaction t -> checkTransaction t
+
+checkTransaction :: GenLocated ann (Module.Transaction ann) -> CheckerT ann ()
+checkTransaction (Located tl Module.Transaction {..}) = do
+  traverse_ (checkAttachment tl) transactionAttachments
+
+checkAttachment :: ann -> GenLocated ann Attachment -> CheckerT ann ()
+checkAttachment tl a@(Located _ (Attachment fp)) = do
+  -- TODO test that this works relative to the file that the attachment is declared in.
+  exists <- liftIO $ doesFileExist fp
+  -- TODO error when attachment is not readable.
+  when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a
 
 checkLedger :: Ord ann => Ledger ann -> Checker ann ()
 checkLedger l = do

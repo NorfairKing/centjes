@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -53,6 +54,23 @@ spec = do
 
   describe "doCompleteCheck" $ do
     tempDirSpec "centjes-check-errors" $ do
+      it "shows the same error when encountering a missing attachment" $
+        moduleGoldenCheckError "test_resources/errors/check/CE_MISSING_ATTACHMENT.err" $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 12 05)),
+                          transactionDescription = Nothing,
+                          transactionPostings = [],
+                          transactionAttachments =
+                            [ noLoc $ Attachment [relfile|example.pdf|]
+                            ]
+                        }
+                ]
+            }
       it "shows the same error when encountering a duplicate account definition" $
         moduleGoldenCheckError "test_resources/errors/check/CE_DUPLICATE_ACCOUNT.err" $
           let ad = DeclarationAccount $ noLoc $ AccountDeclaration {accountDeclarationName = noLoc (AccountName "duplicate")}

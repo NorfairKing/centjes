@@ -10,6 +10,8 @@
     name: "Use underscore"
 - ignore:
     name: "Use tuple-section"
+- ignore:
+    name: "Use unless"
 
 
 # Functions that we dissallow.

@@ -4,6 +4,7 @@
 
 module Centjes.Validation where
 
+import Control.Monad.IO.Class
 import Control.Monad.Trans
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty (..))
@@ -34,6 +35,9 @@ instance Monad m => Monad (ValidationT e m) where
 
 instance MonadTrans (ValidationT e) where
   lift f = ValidationT $ Success <$> f
+
+instance MonadIO m => MonadIO (ValidationT e m) where
+  liftIO io = ValidationT $ Success <$> liftIO io
 
 runValidationT :: ValidationT e m a -> m (Validation e a)
 runValidationT = unValidationT
