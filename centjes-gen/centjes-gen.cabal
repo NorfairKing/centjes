@@ -56,6 +56,7 @@ library
   exposed-modules:
       Centjes.AccountName.Gen
       Centjes.CurrencySymbol.Gen
+      Centjes.Description.Gen
       Centjes.Ledger.Gen
       Centjes.Location.Gen
       Centjes.Module.Gen
@@ -91,6 +92,7 @@ test-suite centjes-test
       Centjes.Command.FormatSpec
       Centjes.CompileSpec
       Centjes.CurrencySymbolSpec
+      Centjes.DescriptionSpec
       Centjes.FormatSpec
       Centjes.ModuleSpec
       Centjes.ParseSpec

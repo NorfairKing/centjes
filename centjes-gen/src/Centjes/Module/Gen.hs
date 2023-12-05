@@ -3,6 +3,7 @@
 module Centjes.Module.Gen where
 
 import Centjes.CurrencySymbol.Gen ()
+import Centjes.Description.Gen ()
 import Centjes.Location.Gen ()
 import Centjes.Module
 import Data.GenValidity
@@ -31,12 +32,6 @@ instance GenValid ann => GenValid (AccountDeclaration ann)
 instance GenValid ann => GenValid (Transaction ann)
 
 instance GenValid Timestamp
-
-instance GenValid Description where
-  genValid =
-    fmap Description $
-      genTextBy $
-        genValid `suchThat` (validationIsValid . validateDescriptionChar)
 
 instance GenValid ann => GenValid (Posting ann)
 

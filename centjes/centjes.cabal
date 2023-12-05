@@ -25,6 +25,7 @@ library
       Centjes.Command.Register
       Centjes.Compile
       Centjes.CurrencySymbol
+      Centjes.Description
       Centjes.Format
       Centjes.Formatting
       Centjes.Ledger

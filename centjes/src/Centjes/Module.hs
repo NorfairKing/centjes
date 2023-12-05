@@ -21,8 +21,6 @@ module Centjes.Module
     transactionCurrencySymbols,
     Timestamp (..),
     Description (..),
-    nullDescription,
-    validateDescriptionChar,
     LPosting,
     Posting (..),
     Attachment (..),
@@ -33,18 +31,16 @@ where
 import Autodocodec
 import Centjes.AccountName
 import Centjes.CurrencySymbol
+import Centjes.Description
 import Centjes.Location
 import Control.Arrow (left)
 import Control.DeepSeq
-import qualified Data.Char as Char
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Time
 import Data.Validity
 import Data.Validity.Path ()
-import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import Numeric.DecimalLiteral
@@ -131,30 +127,6 @@ instance NFData Timestamp
 
 instance HasCodec Timestamp where
   codec = dimapCodec Timestamp timestampDay codec
-
-newtype Description = Description {unDescription :: Text}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Validity Description where
-  validate an@(Description t) =
-    mconcat
-      [ genericValidate an,
-        decorateText t validateDescriptionChar
-      ]
-
-validateDescriptionChar :: Char -> Validation
-validateDescriptionChar = \c -> declare "The character is not a newline, and not a control character" $
-  case c of
-    '\n' -> False
-    '\r' -> False
-    _
-      | Char.isControl c -> False
-      | otherwise -> True
-
-instance NFData Description
-
-nullDescription :: Description -> Bool
-nullDescription = T.null . unDescription
 
 type LPosting = LLocated Posting
 

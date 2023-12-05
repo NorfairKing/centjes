@@ -85,7 +85,7 @@ comment_dec
 
 currency_dec
   :: { LCurrencyDeclaration }
-  : currency_tok currency_symbol quantisation_factor newline { sBE $1 $4 $ CurrencyDeclaration $2 $3 } -- TODO actual parsing
+  : currency_tok currency_symbol quantisation_factor newline { sBE $1 $4 $ CurrencyDeclaration $2 $3 }
 
 currency_symbol
   :: { Located CurrencySymbol }
