@@ -6,6 +6,7 @@ module Centjes.Import.Revolut (runCentjesImportRevolut) where
 
 import Centjes.Compile
 import Centjes.CurrencySymbol as CurrencySymbol
+import Centjes.Description as Description
 import Centjes.Format
 import Centjes.Import.Revolut.OptParse
 import Centjes.Load
@@ -112,8 +113,7 @@ rowTransaction ::
   Validation ImportError' (Transaction ())
 rowTransaction currencies assetsAccountName expensesAccountName feeAccountName Row {..} = do
   let transactionTimestamp = noLoc $ Timestamp $ localDay rowStartedDate
-      -- TODO parse description
-      transactionDescription = Just $ noLoc $ Description rowDescription
+      transactionDescription = Just $ noLoc rowDescription
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
     Nothing -> validationFailure $ ImportErrorUnknownCurrency rowCurrency
     Just qf -> pure qf
@@ -170,7 +170,7 @@ data Row = Row
     rowProduct :: !Text,
     rowStartedDate :: !LocalTime,
     rowCompletedDate :: !(Maybe LocalTime),
-    rowDescription :: !Text,
+    rowDescription :: !Description,
     rowAccount :: !DecimalLiteral,
     rowFee :: !DecimalLiteral,
     rowCurrency :: !CurrencySymbol,
@@ -188,8 +188,7 @@ instance FromNamedRecord Row where
         .: "Product"
       <*> (r .: "Started Date" >>= parseTimeM True defaultTimeLocale "%F %H:%M:%S")
       <*> (r .: "Completed Date" >>= traverse (parseTimeM True defaultTimeLocale "%F %H:%M:%S"))
-      <*> r
-        .: "Description"
+      <*> (r .: "Description" >>= Description.fromTextM)
       <*> (r .: "Amount" >>= parseDecimalLiteralM)
       <*> (r .: "Fee" >>= parseDecimalLiteralM)
       <*> (r .: "Currency" >>= CurrencySymbol.fromTextM)
