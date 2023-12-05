@@ -8,6 +8,8 @@ module Centjes.Parse.Happy
   ) where
 
 import Centjes.AccountName as AccountName
+import Centjes.Description as Description
+import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
@@ -89,7 +91,7 @@ currency_dec
 
 currency_symbol
   :: { Located CurrencySymbol }
-  : var { parseCurrencySymbol $1 }
+  : var {% parseCurrencySymbol $1 }
 
 quantisation_factor
   :: { Located DecimalLiteral }
@@ -110,7 +112,7 @@ timestamp
 
 description
   :: { Located Description }
-  : pipetext { parseDescription $1 } -- TODO actual parsing
+  : pipetext {% parseDescription $1 }
 
 posting
   :: { LPosting }
@@ -172,8 +174,8 @@ parseComment (Located l (TokenComment t)) = Located l t
 parseTimestamp :: Token -> Alex (Located Timestamp)
 parseTimestamp t@(Located _ (TokenDay ds)) = fmap Timestamp . sL1 t <$> timeParser "%F" ds
 
-parseDescription :: Token -> Located Description
-parseDescription t@(Located _ (TokenDescription ds)) = sL1 t $ Description ds 
+parseDescription :: Token -> Alex (Located Description)
+parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> maybeParser "Description" Description.fromText ds 
 
 parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
@@ -181,11 +183,9 @@ parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountNa
 parseAttachment :: Token -> Alex (Located Attachment)
 parseAttachment t@(Located _ (TokenAttachment atch)) = sL1 t <$> maybeParser "Attachment" (fmap Attachment . parseRelFile) atch
 
--- TODO actual parsing
-parseCurrencySymbol :: Token -> Located CurrencySymbol
-parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t $ CurrencySymbol ans
+parseCurrencySymbol :: Token -> Alex (Located CurrencySymbol)
+parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "CurrencySymbol" (CurrencySymbol.fromText) ans
 
--- TODO do actual parsing
 parseDecimalLiteral :: Token -> Located DecimalLiteral
 parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl
   

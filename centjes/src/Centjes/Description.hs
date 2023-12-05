@@ -8,6 +8,8 @@ module Centjes.Description
   ( Description (..),
     nullDescription,
     validateDescriptionChar,
+    fromTextM,
+    fromText,
   )
 where
 
@@ -44,3 +46,11 @@ instance NFData Description
 
 nullDescription :: Description -> Bool
 nullDescription = T.null . unDescription
+
+fromTextM :: MonadFail m => Text -> m Description
+fromTextM t = case fromText t of
+  Nothing -> fail $ "Invalid description: " <> show t
+  Just d -> pure d
+
+fromText :: Text -> Maybe Description
+fromText = constructValid . Description
