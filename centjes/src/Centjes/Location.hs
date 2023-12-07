@@ -6,8 +6,10 @@ module Centjes.Location where
 
 import Control.DeepSeq
 import Data.Validity
+import Data.Validity.Path ()
 import qualified Error.Diagnose.Position as Diagnose (Position (..))
 import GHC.Generics (Generic)
+import Path
 
 data GenLocated l e = Located
   { locatedLocation :: !l,
@@ -36,7 +38,7 @@ noLoc :: a -> GenLocated () a
 noLoc = Located ()
 
 data SourceSpan = SourceSpan
-  { sourceSpanFile :: !FilePath,
+  { sourceSpanFile :: !(Path Rel File),
     sourceSpanBegin :: !SourcePosition, -- Should be words, but I'd rather not use 'fromIntegral'.
     sourceSpanEnd :: !SourcePosition
   }
@@ -51,7 +53,7 @@ toDiagnosePosition SourceSpan {..} =
   Diagnose.Position
     { begin = (sourcePositionLine sourceSpanBegin, sourcePositionColumn sourceSpanBegin),
       end = (sourcePositionLine sourceSpanEnd, sourcePositionColumn sourceSpanEnd),
-      file = sourceSpanFile
+      file = fromRelFile sourceSpanFile
     }
 
 combineSpans :: SourceSpan -> SourceSpan -> SourceSpan

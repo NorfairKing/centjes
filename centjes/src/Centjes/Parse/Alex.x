@@ -21,6 +21,7 @@ import Centjes.Location
 import Control.Monad (liftM)
 import Data.Text (Text)
 import Numeric.DecimalLiteral
+import Path
 import Prelude hiding (lex)
 import qualified Data.Text as T
 }
@@ -95,16 +96,16 @@ $white_no_nl+ ;
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
 data AlexUserState = AlexUserState
-  { sourceFilePath :: FilePath
+  { sourceFilePath :: Path Rel File
   }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState ""
+alexInitUserState = AlexUserState undefined -- Laziness saves our butt
 
-getSourceFilePath :: Alex FilePath
+getSourceFilePath :: Alex (Path Rel File)
 getSourceFilePath = liftM sourceFilePath alexGetUserState
 
-setSourceFilePath :: FilePath -> Alex ()
+setSourceFilePath :: Path Rel File -> Alex ()
 setSourceFilePath = alexSetUserState . AlexUserState
 
 
@@ -202,7 +203,7 @@ alexError' (SourceSpan _ begin _) msg = do
   let l = sourcePositionLine begin
   let c = sourcePositionColumn begin
   fp <- getSourceFilePath
-  alexError (fp ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
+  alexError (fromRelFile fp ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
 
 maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
 maybeParser name func b =
@@ -212,7 +213,7 @@ maybeParser name func b =
 
 
 -- A variant of runAlex, keeping track of the path of the file we are lexing.
-runAlex' :: Alex a -> FilePath -> String -> Either String a
+runAlex' :: Alex a -> Path Rel File -> String -> Either String a
 runAlex' a fp input = runAlex input (setSourceFilePath fp >> a)
 
 scanMany :: String -> Either String [Token]

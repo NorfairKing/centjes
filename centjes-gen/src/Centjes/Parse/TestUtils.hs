@@ -8,7 +8,7 @@ import qualified Data.Text as T
 import GHC.Stack
 import Test.Syd
 
-shouldParse :: HasCallStack => (FilePath -> Text -> Either String a) -> FilePath -> Text -> IO a
+shouldParse :: HasCallStack => (filepath -> Text -> Either String a) -> filepath -> Text -> IO a
 shouldParse parser fp contents = withFrozenCallStack $
   case parser fp contents of
     Left err -> do

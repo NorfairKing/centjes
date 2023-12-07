@@ -162,7 +162,7 @@ checkTransaction (Located tl Module.Transaction {..}) = do
 
 checkAttachment :: SourceSpan -> Located Attachment -> CheckerT SourceSpan ()
 checkAttachment tl a@(Located l (Attachment fp)) = do
-  curFile <- resolveFile' $ sourceSpanFile l
+  let curFile = sourceSpanFile l
   liftIO $ print curFile
   let af = parent curFile </> fp
   liftIO $ print af
