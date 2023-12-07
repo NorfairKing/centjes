@@ -8,9 +8,9 @@ import qualified Data.Text as T
 import GHC.Stack
 import Test.Syd
 
-shouldParse :: HasCallStack => (filepath -> Text -> Either String a) -> filepath -> Text -> IO a
-shouldParse parser fp contents = withFrozenCallStack $
-  case parser fp contents of
+shouldParse :: HasCallStack => (base -> filepath -> Text -> Either String a) -> base -> filepath -> Text -> IO a
+shouldParse parser base fp contents = withFrozenCallStack $
+  case parser base fp contents of
     Left err -> do
       expectationFailure $
         unlines $

@@ -84,7 +84,7 @@ readSingleModule base p = do
               show e
             ]
     Right textContents -> do
-      case parseModule p textContents of
+      case parseModule base p textContents of
         Left e ->
           liftIO $
             die $

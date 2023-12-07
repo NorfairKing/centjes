@@ -38,7 +38,8 @@ noLoc :: a -> GenLocated () a
 noLoc = Located ()
 
 data SourceSpan = SourceSpan
-  { sourceSpanFile :: !(Path Rel File),
+  { sourceSpanBase :: !(Path Abs Dir),
+    sourceSpanFile :: !(Path Rel File),
     sourceSpanBegin :: !SourcePosition, -- Should be words, but I'd rather not use 'fromIntegral'.
     sourceSpanEnd :: !SourcePosition
   }

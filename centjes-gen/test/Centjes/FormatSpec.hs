@@ -39,7 +39,7 @@ parseFormatRoundtrip ::
     GenValid (s SourceSpan)
   ) =>
   String ->
-  (Path Rel File -> Text -> Either String (s SourceSpan)) ->
+  (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
   (forall ann. s ann -> Text) ->
   Spec
 parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
@@ -53,22 +53,23 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
 
         it (unwords ["can roundtrip", fp, "back to text the same way"]) $
           goldenTextFile (fromAbsFile resultFile) $ do
-            rf <- makeRelativeToCurrentDir af
+            here <- getCurrentDir
+            rf <- makeRelative here af
             contents <- T.readFile (fromAbsFile af)
-            expected <- shouldParse parser rf contents
+            expected <- shouldParse parser here rf contents
             shouldBeValid expected
             context (show expected) $ do
               let rendered = formatter (expected :: (s SourceSpan))
               context (unlines ["Rendered:", T.unpack rendered]) $ do
-                actual <- shouldParse parser rf rendered
+                actual <- shouldParse parser here rf rendered
                 formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
                 pure (formatter actual)
 
     it "roundtrips valid values back to text the same way" $
       forAllValid $ \expected -> do
         let rendered = formatter (expected :: (s ()))
-
+        here <- getCurrentDir
         context (unlines ["Rendered:", T.unpack rendered, show rendered]) $ do
-          actual <- shouldParse parser [relfile|pure-test.cent|] rendered
+          actual <- shouldParse parser here [relfile|pure-test.cent|] rendered
           context (ppShow actual) $ do
             formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected

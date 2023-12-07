@@ -193,12 +193,12 @@ happyError :: Token -> Alex a
 happyError (Located p t) =
   alexError' p ("parse error at token '" ++ show t ++ "'")
 
-parseModule :: Path Rel File -> Text -> Either String LModule
-parseModule fp = runAlex' moduleParser fp . T.unpack
+parseModule :: Path Abs Dir -> Path Rel File -> Text -> Either String LModule
+parseModule base fp = runAlex' moduleParser base fp . T.unpack
 
-parseDeclaration :: Path Rel File -> Text -> Either String LDeclaration
-parseDeclaration fp = runAlex' declarationParser fp . T.unpack
+parseDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String LDeclaration
+parseDeclaration base fp = runAlex' declarationParser base fp . T.unpack
 
-parseTransaction :: Path Rel File -> Text -> Either String (Transaction SourceSpan)
-parseTransaction fp = runAlex' (locatedValue <$> transactionParser) fp . T.unpack
+parseTransaction :: Path Abs Dir -> Path Rel File -> Text -> Either String (Transaction SourceSpan)
+parseTransaction base fp = runAlex' (locatedValue <$> transactionParser) base fp . T.unpack
 }

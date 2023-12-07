@@ -12,13 +12,11 @@ module Centjes.Parse.Alex
   , alexError'
   , alexError
   , scanMany
-  , getSourceFilePath
   , getsAlex
   , maybeParser
   ) where
 
 import Centjes.Location
-import Control.Monad (liftM)
 import Data.Text (Text)
 import Numeric.DecimalLiteral
 import Path
@@ -96,17 +94,12 @@ $white_no_nl+ ;
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
 data AlexUserState = AlexUserState
-  { sourceFilePath :: Path Rel File
+  { sourceFileBase :: Path Abs Dir
+  , sourceFilePath :: Path Rel File
   }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState undefined -- Laziness saves our butt
-
-getSourceFilePath :: Alex (Path Rel File)
-getSourceFilePath = liftM sourceFilePath alexGetUserState
-
-setSourceFilePath :: Path Rel File -> Alex ()
-setSourceFilePath = alexSetUserState . AlexUserState
+alexInitUserState = AlexUserState undefined undefined -- Laziness saves our butt
 
 
 -- The token type, consisting of the source code position and a token class.
@@ -134,10 +127,11 @@ spanFromSingle posn = spanFromBeginEnd posn posn
 
 spanFromBeginEnd :: AlexPosn -> AlexPosn -> Alex SourceSpan
 spanFromBeginEnd beginPos endPos = do
-  path <- getSourceFilePath
+  state <- alexGetUserState
   pure SourceSpan
-        { sourceSpanFile = path
-        , sourceSpanBegin =alexSourcePosition beginPos
+        { sourceSpanBase = sourceFileBase state
+        , sourceSpanFile = sourceFilePath state
+        , sourceSpanBegin = alexSourcePosition beginPos
         , sourceSpanEnd = alexSourcePosition endPos
         }
 
@@ -164,12 +158,14 @@ lexM :: (String -> Alex TokenClass) -> AlexAction Token
 lexM f = \(p,_,_,s) i -> do
   let begin = alexSourcePosition p
   let end = begin { sourcePositionColumn = sourcePositionColumn begin + i}
-  path <- getSourceFilePath
-  let span = SourceSpan
-        { sourceSpanFile = path
-        , sourceSpanBegin = begin
-        , sourceSpanEnd = end
-        }
+  state <- alexGetUserState
+  let span =
+        SourceSpan
+          { sourceSpanBase = sourceFileBase state
+          , sourceSpanFile = sourceFilePath state
+          , sourceSpanBegin = begin
+          , sourceSpanEnd = end
+          }
   tc <- f (take i s)
   return $ Located span tc
 
@@ -199,11 +195,11 @@ alexMonadScan' = do
 
 -- Signal an error, including a commonly accepted source code position.
 alexError' :: SourceSpan -> String -> Alex a
-alexError' (SourceSpan _ begin _) msg = do
+alexError' (SourceSpan _ _ begin _) msg = do
+  state <- alexGetUserState
   let l = sourcePositionLine begin
   let c = sourcePositionColumn begin
-  fp <- getSourceFilePath
-  alexError (fromRelFile fp ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
+  alexError (fromRelFile (sourceFilePath state) ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
 
 maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
 maybeParser name func b =
@@ -212,9 +208,8 @@ maybeParser name func b =
     Just a -> pure a
 
 
--- A variant of runAlex, keeping track of the path of the file we are lexing.
-runAlex' :: Alex a -> Path Rel File -> String -> Either String a
-runAlex' a fp input = runAlex input (setSourceFilePath fp >> a)
+runAlex' :: Alex a -> Path Abs Dir -> Path Rel File -> String -> Either String a
+runAlex' a base fp input = runAlex input (alexSetUserState (AlexUserState base fp) >> a)
 
 scanMany :: String -> Either String [Token]
 scanMany input = runAlex input go

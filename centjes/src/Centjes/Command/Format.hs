@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Command.Format (runCentjesFormat) where
@@ -46,11 +47,11 @@ formatFromLedger l = do
 
   let base = parent l
   forM_ (M.toList fileMap) $ \(fp, (textContents, m)) ->
-    formatSingleFileWith (base </> fp) textContents (fillInDigits currencies m)
+    formatSingleFileWith base fp textContents (fillInDigits currencies m)
 
 formatDir :: Map CurrencySymbol (GenLocated ann QuantisationFactor) -> Path Abs Dir -> LoggingT IO ()
-formatDir currencies d = do
-  files <- snd <$> listDirRecur d
+formatDir currencies base = do
+  files <- snd <$> listDirRecurRel base
 
   let pen :: (a, Either b c) -> Either (a, b) (a, c)
       pen (a, Left b) = Left (a, b)
@@ -58,7 +59,7 @@ formatDir currencies d = do
 
   parsedFiles <- fmap catMaybes $ forConcurrently files $ \fp ->
     if fileExtension fp == Just ".cent"
-      then Just . pen . (,) fp . fmap (second (fillInDigits currencies)) <$> parseFile fp
+      then Just . pen . (,) fp . fmap (second (fillInDigits currencies)) <$> parseFile base fp
       else pure Nothing
 
   parsedModules <- case partitionEithers parsedFiles of
@@ -69,13 +70,13 @@ formatDir currencies d = do
           unlines $
             flip map errs $ \(fp, err) ->
               concat
-                [ unwords ["Failed to parse", fromAbsFile fp],
+                [ unwords ["Failed to parse", fromAbsFile (base </> fp)],
                   "\n",
                   err
                 ]
       liftIO $ die "Could not parse all files. Not continuing to formatting them."
 
-  let checkedModules = map (\(fp, (textContents, m)) -> pen ((fp, textContents), idempotenceTest fp m)) parsedModules
+  let checkedModules = map (\(fp, (textContents, m)) -> pen ((fp, textContents), idempotenceTest base fp m)) parsedModules
 
   readyToFormatModules <- case partitionEithers checkedModules of
     ([], ms) -> pure ms
@@ -85,20 +86,22 @@ formatDir currencies d = do
           unlines $
             flip map errs $ \((fp, _), err) ->
               concat
-                [ unwords ["Idempotence test failed for", fromAbsFile fp],
+                [ unwords ["Idempotence test failed for", fromAbsFile (base </> fp)],
                   "\n",
                   err
                 ]
       liftIO $ die "At least one file failed the idempotence test. Not continuing to formatting them."
 
   forConcurrently_ readyToFormatModules $ \((fp, textContents), newTextContents) -> do
-    formatFile fp textContents newTextContents
+    formatFile base fp textContents newTextContents
 
 -- Format a single file on its own.
 -- This ignores any declarations.
 formatSingleFile :: Path Abs File -> LoggingT IO ()
 formatSingleFile fp = do
-  errOrModule <- parseFile fp
+  let base = parent fp
+  let rf = filename fp
+  errOrModule <- parseFile base rf
   case errOrModule of
     Left err ->
       logWarnN $
@@ -108,37 +111,37 @@ formatSingleFile fp = do
               show fp,
               show err
             ]
-    Right (textContents, m) -> formatSingleFileWith fp textContents m
+    Right (textContents, m) -> formatSingleFileWith base rf textContents m
 
-formatSingleFileWith :: Path Abs File -> Text -> LModule -> LoggingT IO ()
-formatSingleFileWith fp textContents m = do
-  newTextContents <- case idempotenceTest fp m of
+formatSingleFileWith :: Path Abs Dir -> Path Rel File -> Text -> LModule -> LoggingT IO ()
+formatSingleFileWith base rf textContents m = do
+  newTextContents <- case idempotenceTest base rf m of
     Left err -> liftIO $ die err
     Right ft -> pure ft
-  formatFile fp textContents newTextContents
+  formatFile base rf textContents newTextContents
 
-parseFile :: Path Abs File -> LoggingT IO (Either String (Text, LModule))
-parseFile fp = do
-  contents <- liftIO $ SB.readFile (fromAbsFile fp)
+parseFile :: Path Abs Dir -> Path Rel File -> LoggingT IO (Either String (Text, LModule))
+parseFile base fp = do
+  contents <- liftIO $ SB.readFile (fromAbsFile (base </> fp))
   case TE.decodeUtf8' contents of
     Left err -> pure (Left (show err))
     Right textContents ->
-      pure $ case parseModule (fromAbsFile fp) textContents of
+      pure $ case parseModule base fp textContents of
         Left err -> Left err
         Right m -> Right (textContents, m)
 
-formatFile :: Path Abs File -> Text -> Text -> LoggingT IO ()
-formatFile fp textContents newTextContents =
+formatFile :: Path Abs Dir -> Path Rel File -> Text -> Text -> LoggingT IO ()
+formatFile base rf textContents newTextContents =
   if newTextContents == textContents
-    then logDebugN $ T.pack $ unwords ["Did not format because nothing changed:", fromAbsFile fp]
+    then logDebugN $ T.pack $ unwords ["Did not format because nothing changed:", fromAbsFile (base </> rf)]
     else do
-      liftIO $ SB.writeFile (fromAbsFile fp) $ TE.encodeUtf8 newTextContents
-      logInfoN $ T.pack $ unwords ["Formatted", fromAbsFile fp]
+      liftIO $ SB.writeFile (fromAbsFile (base </> rf)) $ TE.encodeUtf8 newTextContents
+      logInfoN $ T.pack $ unwords ["Formatted", fromAbsFile (base </> rf)]
 
-idempotenceTest :: Path Abs File -> LModule -> Either String Text
-idempotenceTest fp m = do
+idempotenceTest :: Path Abs Dir -> Path Rel File -> LModule -> Either String Text
+idempotenceTest base rf m = do
   let newTextContents = formatModule m
-  case parseModule "idempotence-test" newTextContents of
+  case parseModule base [relfile|idempotence-test|] newTextContents of
     Left err ->
       Left $
         unlines
@@ -153,7 +156,7 @@ idempotenceTest fp m = do
           Left $
             unlines
               [ "Formatting was not idempotent.",
-                fromAbsFile fp,
+                fromAbsFile (base </> rf),
                 "Before:",
                 show m,
                 "After:",

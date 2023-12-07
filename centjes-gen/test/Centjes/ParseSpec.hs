@@ -25,27 +25,29 @@ parseSpec ::
   HasCallStack =>
   (Show a, GenValid a) =>
   String ->
-  (Path Rel File -> Text -> Either String a) ->
+  (Path Abs Dir -> Path Rel File -> Text -> Either String a) ->
   Spec
 parseSpec name parser = withFrozenCallStack $ do
   describe name $ do
     scenarioDir ("test_resources/syntax/" <> name <> "/valid") $ \fp ->
       it (unwords ["can parse", fp]) $ do
         af <- resolveFile' fp
-        rf <- makeRelativeToCurrentDir af
+        here <- getCurrentDir
+        rf <- makeRelative here af
         contents <- T.readFile (fromAbsFile af)
-        expected <- shouldParse parser rf contents
+        expected <- shouldParse parser here rf contents
         shouldBeValid expected
 
     scenarioDir ("test_resources/syntax/" <> name <> "/invalid") $ \fp -> do
       af <- liftIO $ resolveFile' fp
       when (fileExtension af == Just ".cent") $ do
-        rf <- makeRelativeToCurrentDir af
         errFile <- liftIO $ replaceExtension ".error" af
         it (unwords ["fails to parse", fp, "with the right error"]) $
           goldenStringFile (fromAbsFile errFile) $ do
-            contents <- T.readFile fp
-            case parser rf contents of
+            here <- getCurrentDir
+            rf <- makeRelative here af
+            contents <- T.readFile (fromAbsFile af)
+            case parser here rf contents of
               Left err -> pure err
               Right a ->
                 expectationFailure $
