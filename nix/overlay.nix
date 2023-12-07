@@ -48,12 +48,12 @@ with final.haskell.lib;
           };
         in
         {
-          diagnose = self.callCabal2nix "diagnose"
+          diagnose = doJailbreak (self.callCabal2nix "diagnose"
             (builtins.fetchGit {
               url = "https://github.com/Mesabloo/diagnose";
               rev = "0f17c071d0b00f56a5aabe06f756863d0baca13f";
             })
-            { };
+            { });
           inherit centjesPackages;
           inherit centjesRelease;
         } // centjesPackages
