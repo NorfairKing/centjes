@@ -36,6 +36,7 @@ import Data.Maybe
 import Data.Validity (Validity)
 import Error.Diagnose
 import GHC.Generics (Generic)
+import Path
 import Path.IO
 
 runCentjesCheck :: Settings -> CheckSettings -> IO ()
@@ -48,7 +49,7 @@ type CheckerT ann a = ValidationT (CheckError ann) IO a
 
 type Checker ann a = Validation (CheckError ann) a
 
-doCompleteCheck :: Ord ann => [Declaration ann] -> CheckerT ann ()
+doCompleteCheck :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 doCompleteCheck declarations = do
   () <- checkDeclarations declarations
   ledger <- liftValidation $ mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
@@ -104,7 +105,7 @@ instance ToReport (CheckError SourceSpan) where
     CheckErrorCompileError ce -> toReport ce
     CheckErrorBalanceError be -> toReport be
 
-checkDeclarations :: [Declaration ann] -> CheckerT ann ()
+checkDeclarations :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 checkDeclarations ds = do
   liftValidation $ checkAccounts ds
   traverse_ checkDeclaration ds
@@ -148,21 +149,24 @@ validateUniquesMap errFunc = foldM go M.empty
       Nothing -> pure $ M.insert a l m
       Just l' -> validationFailure $ errFunc l' l a
 
-checkDeclaration :: Declaration ann -> CheckerT ann ()
+checkDeclaration :: Declaration SourceSpan -> CheckerT SourceSpan ()
 checkDeclaration = \case
   DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
   DeclarationAccount _ -> pure ()
   DeclarationTransaction t -> checkTransaction t
 
-checkTransaction :: GenLocated ann (Module.Transaction ann) -> CheckerT ann ()
+checkTransaction :: Located (Module.Transaction SourceSpan) -> CheckerT SourceSpan ()
 checkTransaction (Located tl Module.Transaction {..}) = do
   traverse_ (checkAttachment tl) transactionAttachments
 
-checkAttachment :: ann -> GenLocated ann Attachment -> CheckerT ann ()
-checkAttachment tl a@(Located _ (Attachment fp)) = do
-  -- TODO test that this works relative to the file that the attachment is declared in.
-  exists <- liftIO $ doesFileExist fp
+checkAttachment :: SourceSpan -> Located Attachment -> CheckerT SourceSpan ()
+checkAttachment tl a@(Located l (Attachment fp)) = do
+  curFile <- resolveFile' $ sourceSpanFile l
+  liftIO $ print curFile
+  let af = parent curFile </> fp
+  liftIO $ print af
+  exists <- liftIO $ doesFileExist af
   -- TODO error when attachment is not readable.
   when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a
 
