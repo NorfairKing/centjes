@@ -103,7 +103,7 @@ account_dec
 
 transaction_dec
   :: { LTransaction }
-  : timestamp newline optional(description) many(posting) many(attachment) { sBMLL $1 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+  : timestamp newline optional(description) many(posting) many(transaction_extra) { sBMLL $1 $3 $4 $5 (Transaction $1 $3 $4 $5) }
   | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 timestamp
@@ -125,6 +125,10 @@ account_name
 account_exp
   :: { Located DecimalLiteral }
   : decimal_literal { parseDecimalLiteral $1 }
+
+transaction_extra
+  :: { LTransactionExtra  }
+  : attachment { sL1 $1 $ TransactionAttachment $1 }
 
 attachment
   :: { Located Attachment }

@@ -23,6 +23,8 @@ module Centjes.Module
     Description (..),
     LPosting,
     Posting (..),
+    LTransactionExtra,
+    TransactionExtra (..),
     Attachment (..),
     DecimalLiteral (..),
   )
@@ -107,7 +109,7 @@ data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
     transactionPostings :: ![GenLocated ann (Posting ann)],
-    transactionAttachments :: ![GenLocated ann Attachment]
+    transactionExtras :: ![GenLocated ann (TransactionExtra ann)]
   }
   deriving stock (Show, Eq, Generic)
 
@@ -117,6 +119,15 @@ instance NFData ann => NFData (Transaction ann)
 
 transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
 transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySymbol . locatedValue) . transactionPostings
+
+type LTransactionExtra = LLocated TransactionExtra
+
+data TransactionExtra ann = TransactionAttachment (GenLocated ann Attachment)
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (TransactionExtra ann)
+
+instance NFData ann => NFData (TransactionExtra ann)
 
 newtype Timestamp = Timestamp {timestampDay :: Day}
   deriving stock (Show, Eq, Ord, Generic)

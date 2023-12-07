@@ -158,7 +158,11 @@ checkDeclaration = \case
 
 checkTransaction :: Located (Module.Transaction SourceSpan) -> CheckerT SourceSpan ()
 checkTransaction (Located tl Module.Transaction {..}) = do
-  traverse_ (checkAttachment tl) transactionAttachments
+  traverse_ (checkTransactionExtra tl . locatedValue) transactionExtras
+
+checkTransactionExtra :: SourceSpan -> TransactionExtra SourceSpan -> CheckerT SourceSpan ()
+checkTransactionExtra tl = \case
+  TransactionAttachment a -> checkAttachment tl a
 
 checkAttachment :: SourceSpan -> Located Attachment -> CheckerT SourceSpan ()
 checkAttachment tl a@(Located l (Attachment fp)) = do

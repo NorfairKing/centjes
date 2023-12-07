@@ -117,7 +117,7 @@ spec = do
                                     postingCurrencySymbol = noLoc (CurrencySymbol "USD")
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }
@@ -147,7 +147,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }

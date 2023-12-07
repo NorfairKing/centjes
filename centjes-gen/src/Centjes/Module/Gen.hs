@@ -31,6 +31,8 @@ instance GenValid ann => GenValid (AccountDeclaration ann)
 
 instance GenValid ann => GenValid (Transaction ann)
 
+instance GenValid ann => GenValid (TransactionExtra ann)
+
 instance GenValid Timestamp
 
 instance GenValid ann => GenValid (Posting ann)

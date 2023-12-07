@@ -74,7 +74,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         },
                   DeclarationTransaction $
                     noLoc $
@@ -95,7 +95,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }
@@ -124,7 +124,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }
@@ -154,7 +154,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }
@@ -178,7 +178,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }
@@ -208,7 +208,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }
@@ -239,7 +239,7 @@ spec = do
                                     postingCurrencySymbol = noLoc eurSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }
@@ -263,7 +263,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         },
                   DeclarationTransaction $
                     noLoc $
@@ -278,7 +278,7 @@ spec = do
                                     postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
-                          transactionAttachments = []
+                          transactionExtras = []
                         }
                 ]
             }

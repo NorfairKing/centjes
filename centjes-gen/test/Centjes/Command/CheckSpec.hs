@@ -65,8 +65,8 @@ spec = do
                         { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 12 05)),
                           transactionDescription = Nothing,
                           transactionPostings = [],
-                          transactionAttachments =
-                            [ noLoc $ Attachment [relfile|example.pdf|]
+                          transactionExtras =
+                            [ noLoc $ TransactionAttachment $ noLoc $ Attachment [relfile|example.pdf|]
                             ]
                         }
                 ]
@@ -108,7 +108,7 @@ spec = do
                                         postingCurrencySymbol = noLoc usdSymbol
                                       }
                                 ],
-                              transactionAttachments = []
+                              transactionExtras = []
                             }
                     ]
                 }
