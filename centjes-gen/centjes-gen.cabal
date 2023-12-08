@@ -47,8 +47,10 @@ extra-source-files:
     test_resources/syntax/module/valid/multiple-currencies.cent
     test_resources/syntax/module/valid/multiple-imports.cent
     test_resources/syntax/transaction/formatted/example.cent
+    test_resources/syntax/transaction/formatted/with-assertion.cent
     test_resources/syntax/transaction/formatted/with-attachment.cent
     test_resources/syntax/transaction/valid/example.cent
+    test_resources/syntax/transaction/valid/with-assertion.cent
     test_resources/syntax/transaction/valid/with-attachment.cent
 
 source-repository head

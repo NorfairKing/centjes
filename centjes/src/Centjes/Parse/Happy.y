@@ -44,6 +44,8 @@ import qualified Data.Text as T
 %token 
       comment         { Located _ (TokenComment _) }
       attach          { Located _ (TokenAttachment _) }
+      assert          { Located _ TokenAssert }
+      eq              { Located _ TokenEq }
       day             { Located _ (TokenDay _) }
       var             { Located _ (TokenVar _) }
       pipetext        { Located _ (TokenDescription _) }
@@ -129,10 +131,15 @@ account_exp
 transaction_extra
   :: { LTransactionExtra  }
   : attachment { sL1 $1 $ TransactionAttachment $1 }
+  | assertion { sL1 $1 $ TransactionAssertion $1 }
 
 attachment
   :: { Located Attachment }
   : attach newline {% parseAttachment $1 }
+
+assertion
+  :: { LAssertion }
+  : assert account_name eq account_exp currency_symbol newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
 
 -- Helpers
 optional(p)

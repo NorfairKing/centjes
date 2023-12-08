@@ -66,6 +66,8 @@ $alpha = [A-Za-z]
 @currency = "currency "
 @account = "account "
 @attach = "+ attach " @path
+@assert = "+ assert "
+@eq = \=
 
 @comment = "-- " .* \n
 
@@ -79,6 +81,8 @@ $white_no_nl+ ;
 @import             { lex (TokenImport . drop (length "import ") . init) }
 @day                { lex TokenDay }
 @attach             { lex (TokenAttachment . drop (length "+ attach ")) }
+@assert             { lex' TokenAssert }
+@eq                 { lex' TokenEq }
 @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
 @decimal_literal    { lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . parseDecimalLiteral)) }
 @dot                { lex' TokenDot}
@@ -108,6 +112,8 @@ type Token = GenLocated SourceSpan TokenClass
 data TokenClass
   = TokenComment !Text
   | TokenAttachment !FilePath
+  | TokenAssert
+  | TokenEq
   | TokenDay !String
   | TokenVar !Text
   | TokenDescription !Text
