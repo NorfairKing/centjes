@@ -58,7 +58,7 @@ doCompleteCheck declarations = do
 data CheckError ann
   = CheckErrorAccountDeclaredTwice !ann !ann !AccountName
   | CheckErrorUndeclaredAccount !ann !ann !(GenLocated ann AccountName)
-  | CheckErrorMissingAttachment !ann !(GenLocated ann Attachment)
+  | CheckErrorMissingAttachment !ann !(Attachment ann)
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
   deriving (Show, Eq, Generic)
@@ -94,12 +94,12 @@ instance ToReport (CheckError SourceSpan) where
           (toDiagnosePosition pl, Where "While trying to check this posting")
         ]
         []
-    CheckErrorMissingAttachment tl (Located al (Attachment fp)) ->
+    CheckErrorMissingAttachment tl (Attachment (Located fl fp)) ->
       Err
         (Just "CE_MISSING_ATTACHMENT")
         (unwords ["Attachment does not exist:", show fp])
         [ (toDiagnosePosition tl, Where "While trying to check this transaction"),
-          (toDiagnosePosition al, This "This attachment is missing")
+          (toDiagnosePosition fl, This "This file is missing")
         ]
         []
     CheckErrorCompileError ce -> toReport ce
@@ -165,8 +165,8 @@ checkTransactionExtra tl = \case
   TransactionAttachment a -> checkAttachment tl a
   TransactionAssertion _ -> pure ()
 
-checkAttachment :: SourceSpan -> Located Attachment -> CheckerT SourceSpan ()
-checkAttachment tl a@(Located l (Attachment fp)) = do
+checkAttachment :: SourceSpan -> LAttachment -> CheckerT SourceSpan ()
+checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
   let base = sourceSpanBase l
   let curFile = sourceSpanFile l
   let af = base </> parent curFile </> fp

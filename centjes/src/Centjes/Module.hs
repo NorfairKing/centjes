@@ -25,6 +25,7 @@ module Centjes.Module
     Posting (..),
     LTransactionExtra,
     TransactionExtra (..),
+    LAttachment,
     Attachment (..),
     LAssertion,
     Assertion (..),
@@ -148,7 +149,7 @@ instance NFData ann => NFData (Posting ann)
 type LTransactionExtra = LLocated TransactionExtra
 
 data TransactionExtra ann
-  = TransactionAttachment (GenLocated ann Attachment)
+  = TransactionAttachment (GenLocated ann (Attachment ann))
   | TransactionAssertion (GenLocated ann (Assertion ann))
   deriving stock (Show, Eq, Generic)
 
@@ -156,15 +157,17 @@ instance Validity ann => Validity (TransactionExtra ann)
 
 instance NFData ann => NFData (TransactionExtra ann)
 
-newtype Attachment = Attachment {attachmentPath :: Path Rel File}
+type LAttachment = LLocated Attachment
+
+newtype Attachment ann = Attachment {attachmentPath :: GenLocated ann (Path Rel File)}
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity Attachment
+instance Validity ann => Validity (Attachment ann)
 
-instance NFData Attachment
+instance NFData ann => NFData (Attachment ann)
 
-instance HasCodec Attachment where
-  codec = dimapCodec Attachment attachmentPath codec
+-- instance HasCodec Attachment where
+--   codec = dimapCodec Attachment attachmentPath codec
 
 type LAssertion = LLocated Assertion
 

@@ -161,8 +161,8 @@ transactionExtraDoc =
     TransactionAttachment a -> attachmentDoc (locatedValue a)
     TransactionAssertion a -> assertionDoc (locatedValue a)
 
-attachmentDoc :: Attachment -> Doc ann
-attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile fp)
+attachmentDoc :: Attachment l -> Doc ann
+attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue fp))
 
 assertionDoc :: Assertion l -> Doc ann
 assertionDoc (AssertionEquals (Located _ an) (Located _ dl) (Located _ cs)) =

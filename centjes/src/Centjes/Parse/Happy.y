@@ -43,8 +43,9 @@ import qualified Data.Text as T
 
 %token 
       comment         { Located _ (TokenComment _) }
-      attach          { Located _ (TokenAttachment _) }
+      attach          { Located _ TokenAttach }
       assert          { Located _ TokenAssert }
+      file_path       { Located _ (TokenFilePath _) }
       eq              { Located _ TokenEq }
       day             { Located _ (TokenDay _) }
       var             { Located _ (TokenVar _) }
@@ -134,12 +135,21 @@ transaction_extra
   | assertion { sL1 $1 $ TransactionAssertion $1 }
 
 attachment
-  :: { Located Attachment }
-  : attach newline {% parseAttachment $1 }
+  :: { LAttachment }
+  : attach rel_file_exp newline { sBE $1 $3 $ Attachment $2 }
 
 assertion
   :: { LAssertion }
   : assert account_name eq account_exp currency_symbol newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
+
+rel_file_exp
+  :: { Located (Path Rel File) }
+  : file_path_exp {% traverse (maybeParser "RelFile" parseRelFile) $1 }
+
+file_path_exp
+  :: { Located FilePath }
+  : file_path  { parseFilePath $1 }
+
 
 -- Helpers
 optional(p)
@@ -188,14 +198,14 @@ parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> maybeParser "De
 parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
 
-parseAttachment :: Token -> Alex (Located Attachment)
-parseAttachment t@(Located _ (TokenAttachment atch)) = sL1 t <$> maybeParser "Attachment" (fmap Attachment . parseRelFile) atch
-
 parseCurrencySymbol :: Token -> Alex (Located CurrencySymbol)
 parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "CurrencySymbol" (CurrencySymbol.fromText) ans
 
 parseDecimalLiteral :: Token -> Located DecimalLiteral
 parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl
+
+parseFilePath :: Token -> Located FilePath
+parseFilePath t@(Located _ (TokenFilePath fp)) = sL1 t fp
   
 lexwrap :: (Token -> Alex a) -> Alex a
 lexwrap = (alexMonadScan' >>=)

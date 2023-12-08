@@ -66,7 +66,7 @@ spec = do
                           transactionDescription = Nothing,
                           transactionPostings = [],
                           transactionExtras =
-                            [ noLoc $ TransactionAttachment $ noLoc $ Attachment [relfile|example.pdf|]
+                            [ noLoc $ TransactionAttachment $ noLoc $ Attachment $ noLoc [relfile|example.pdf|]
                             ]
                         }
                 ]

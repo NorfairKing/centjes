@@ -58,14 +58,14 @@ $alpha = [A-Za-z]
 @day_of_month = $digit $digit
 @day = @year \- @month_of_year \- @day_of_month
 
-@path = [$alpha $digit \_ \- : .]+
+@file_path = [$alpha $digit \_ \- : .]+
 
 @star = \*
 @dot = \.
 @import = "import " .* \n
 @currency = "currency "
 @account = "account "
-@attach = "+ attach " @path
+@attach = "+ attach "
 @assert = "+ assert "
 @eq = \=
 
@@ -78,22 +78,39 @@ tokens :-
 -- Skip non-newline whitespace everywhere
 $white_no_nl+ ;
 
-@import             { lex (TokenImport . drop (length "import ") . init) }
-@day                { lex TokenDay }
-@attach             { lex (TokenAttachment . drop (length "+ attach ")) }
-@assert             { lex' TokenAssert }
-@eq                 { lex' TokenEq }
-@comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
-@decimal_literal    { lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . parseDecimalLiteral)) }
-@dot                { lex' TokenDot}
-@star               { lex' TokenStar}
-@currency           { lex' TokenCurrency}
-@account            { lex' TokenAccount}
-@description        { lex (TokenDescription . T.pack . drop (length "| ") . init) }
-@newline            { lex' TokenNewLine }
-@var                { lex (TokenVar . T.pack) }
+<0> @import             { lex (TokenImport . drop (length "import ") . init) }
+<0> @day                { lex TokenDay }
+<0> @newline            { lex' TokenNewLine }
+<0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
+<0> @decimal_literal    { lexDL }
+<0> @dot                { lex' TokenDot}
+<0> @star               { lex' TokenStar}
+<0> @currency           { lex' TokenCurrency}
+<0> @account            { lex' TokenAccount}
+<0> @description        { lex (TokenDescription . T.pack . drop (length "| ") . init) }
+<0> @var                { lexVar }
+<0> @newline            { lexNl }
+
+<0> @assert                  { lex' TokenAssert `andBegin` assertion }
+<assertion> @var             { lexVar }
+<assertion> @eq              { lex' TokenEq }
+<assertion> @decimal_literal { lexDL }
+<assertion> @newline         { lexNl `andBegin` 0}
+
+<0> @attach             { lex' TokenAttach `andBegin` attachment}
+<attachment> @file_path { lex TokenFilePath `andBegin` 0}
+<attachment> @newline   { lexNl `andBegin` 0}
 
 {
+
+lexVar :: AlexAction Token
+lexVar = lex (TokenVar . T.pack)
+
+lexDL :: AlexAction Token
+lexDL = lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . parseDecimalLiteral))
+
+lexNl :: AlexAction Token
+lexNl = lex' TokenNewLine
 
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
@@ -111,10 +128,11 @@ type Token = GenLocated SourceSpan TokenClass
 
 data TokenClass
   = TokenComment !Text
-  | TokenAttachment !FilePath
+  | TokenAttach
   | TokenAssert
   | TokenEq
   | TokenDay !String
+  | TokenFilePath !FilePath
   | TokenVar !Text
   | TokenDescription !Text
   | TokenDecimalLiteral !DecimalLiteral
