@@ -84,12 +84,16 @@ $white_no_nl+ ;
 <0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
 <0> @decimal_literal    { lexDL }
 <0> @dot                { lex' TokenDot}
-<0> @star               { lex' TokenStar}
 <0> @currency           { lex' TokenCurrency}
 <0> @account            { lex' TokenAccount}
 <0> @description        { lex (TokenDescription . T.pack . drop (length "| ") . init) }
 <0> @var                { lexVar }
 <0> @newline            { lexNl }
+
+<0> @star                  { lex' TokenStar `andBegin` posting }
+<posting> @var             { lexVar }
+<posting> @decimal_literal { lexDL }
+<posting> @newline         { lexNl `andBegin` 0}
 
 <0> @assert                  { lex' TokenAssert `andBegin` assertion }
 <assertion> @var             { lexVar }
