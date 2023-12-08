@@ -51,9 +51,9 @@ import qualified Data.Text as T
       var             { Located _ (TokenVar _) }
       pipetext        { Located _ (TokenDescription _) }
       decimal_literal { Located _ (TokenDecimalLiteral _) }
+      plus            { Located _ TokenPlus }
       star            { Located _ TokenStar }
-      dot             { Located _ TokenDot }
-      import          { Located _ (TokenImport $$ )}
+      import          { Located _ (TokenImport $$)}
       currency_tok    { Located _ TokenCurrency}
       account_tok     { Located _ TokenAccount}
       newline         { Located _ TokenNewLine }
@@ -131,8 +131,8 @@ account_exp
 
 transaction_extra
   :: { LTransactionExtra  }
-  : attachment { sL1 $1 $ TransactionAttachment $1 }
-  | assertion { sL1 $1 $ TransactionAssertion $1 }
+  : plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
+  | plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
 
 attachment
   :: { LAttachment }

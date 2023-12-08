@@ -60,13 +60,13 @@ $alpha = [A-Za-z]
 
 @file_path = [$alpha $digit \_ \- : .]+
 
-@star = \*
-@dot = \.
+@star = "* "
+@plus = "+ " 
 @import = "import " .* \n
 @currency = "currency "
 @account = "account "
-@attach = "+ attach "
-@assert = "+ assert "
+@attach = "attach "
+@assert = "assert "
 @eq = \=
 
 @comment = "-- " .* \n
@@ -79,11 +79,10 @@ tokens :-
 $white_no_nl+ ;
 
 <0> @import             { lex (TokenImport . drop (length "import ") . init) }
+
 <0> @day                { lex TokenDay }
-<0> @newline            { lex' TokenNewLine }
 <0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
 <0> @decimal_literal    { lexDL }
-<0> @dot                { lex' TokenDot}
 <0> @currency           { lex' TokenCurrency}
 <0> @account            { lex' TokenAccount}
 <0> @description        { lex (TokenDescription . T.pack . drop (length "| ") . init) }
@@ -95,13 +94,16 @@ $white_no_nl+ ;
 <posting> @decimal_literal { lexDL }
 <posting> @newline         { lexNl `andBegin` 0}
 
-<0> @assert                  { lex' TokenAssert `andBegin` assertion }
+
+<0> @plus  { lex' TokenPlus `andBegin` extra }
+
+<extra> @assert                  { lex' TokenAssert `andBegin` assertion }
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
 <assertion> @newline         { lexNl `andBegin` 0}
 
-<0> @attach             { lex' TokenAttach `andBegin` attachment}
+<extra> @attach             { lex' TokenAttach `andBegin` attachment}
 <attachment> @file_path { lex TokenFilePath `andBegin` 0}
 <attachment> @newline   { lexNl `andBegin` 0}
 
@@ -142,6 +144,7 @@ data TokenClass
   | TokenDecimalLiteral !DecimalLiteral
   | TokenFloat !Double
   | TokenStar
+  | TokenPlus
   | TokenDot
   | TokenCurrency
   | TokenAccount
