@@ -83,7 +83,7 @@ instance ToReport (CompileError SourceSpan) where
           ( toDiagnosePosition tl,
             Maybe $
               unlines'
-                [ "You can this currency with a currency declaration:",
+                [ "You can declare this currency with a currency declaration:",
                   T.unpack $
                     T.strip $
                       formatDeclaration $

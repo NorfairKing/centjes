@@ -13,6 +13,7 @@ import Centjes.Load
 import Centjes.Location
 import Centjes.Module
 import Centjes.Validation
+import Control.Monad
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
@@ -60,7 +61,7 @@ runCentjesImportRevolut = do
                     (ImportError inputFp rowIx)
                     (rowTransaction currencies settingAssetsAccountName settingExpensesAccountName settingFeesAccountName row)
             )
-            (zip [1 ..] (sortOn rowCompletedDate (V.toList v)))
+            (zip [1 ..] (sortOn (\r -> fromMaybe (rowStartedDate r) (rowCompletedDate r)) (V.toList v)))
       let m = Module {moduleImports = [], moduleDeclarations = ts}
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 
@@ -112,7 +113,7 @@ rowTransaction ::
   Row ->
   Validation ImportError' (Transaction ())
 rowTransaction currencies assetsAccountName expensesAccountName feeAccountName Row {..} = do
-  let transactionTimestamp = noLoc $ Timestamp $ localDay rowStartedDate
+  let transactionTimestamp = noLoc $ Timestamp $ localDay $ fromMaybe rowStartedDate rowCompletedDate
       transactionDescription = Just $ noLoc rowDescription
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
     Nothing -> validationFailure $ ImportErrorUnknownCurrency rowCurrency
@@ -162,7 +163,19 @@ rowTransaction currencies assetsAccountName expensesAccountName feeAccountName R
             maybeToList mFeePosting,
             [leftoverPosting]
           ]
-  let transactionExtras = []
+  mbl <- forM rowBalance $ \bal -> do
+    balanceAccount <- fromLiteral bal
+    toLiteral balanceAccount
+  let transactionExtras =
+        [ noLoc $
+            TransactionAssertion $
+              noLoc $
+                AssertionEquals
+                  (noLoc assetsAccountName)
+                  (noLoc bl)
+                  (noLoc rowCurrency)
+          | bl <- maybeToList mbl
+        ]
   pure Transaction {..}
 
 data Row = Row
