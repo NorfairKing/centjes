@@ -55,3 +55,5 @@ instance GenValid AccountName where
       T.cons <$> alpha <*> genTextBy rest
 
 instance GenValid Attachment
+
+instance GenValid ann => GenValid (Assertion ann)

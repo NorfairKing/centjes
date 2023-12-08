@@ -6,9 +6,16 @@ import Centjes.Parse.Alex
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Stack
+import Path
 import Test.Syd
 
-shouldParse :: HasCallStack => (base -> filepath -> Text -> Either String a) -> base -> filepath -> Text -> IO a
+shouldParse ::
+  HasCallStack =>
+  (Path Abs Dir -> Path Rel File -> Text -> Either String a) ->
+  Path Abs Dir ->
+  Path Rel File ->
+  Text ->
+  IO a
 shouldParse parser base fp contents = withFrozenCallStack $
   case parser base fp contents of
     Left err -> do
@@ -20,7 +27,7 @@ shouldParse parser base fp contents = withFrozenCallStack $
               ],
               [ "",
                 "tokens:",
-                ppShow (scanMany (T.unpack contents))
+                ppShow (scanMany base fp (T.unpack contents))
               ]
             ]
     Right m -> pure m

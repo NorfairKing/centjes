@@ -211,8 +211,8 @@ maybeParser name func b =
 runAlex' :: Alex a -> Path Abs Dir -> Path Rel File -> String -> Either String a
 runAlex' a base fp input = runAlex input (alexSetUserState (AlexUserState base fp) >> a)
 
-scanMany :: String -> Either String [Token]
-scanMany input = runAlex input go
+scanMany :: Path Abs Dir -> Path Rel File -> String -> Either String [Token]
+scanMany base fp input = runAlex' go base fp input 
   where
     go = do
       token@(Located _ c) <- alexMonadScan'

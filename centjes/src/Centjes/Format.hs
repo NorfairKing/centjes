@@ -106,12 +106,9 @@ commentDoc (Located _ t) =
 currencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc ann
 currencyDeclarationDoc (Located _ CurrencyDeclaration {..}) =
   "currency"
-    <+> currencySymbolDoc currencyDeclarationSymbol
+    <+> currencySymbolDoc (locatedValue currencyDeclarationSymbol)
     <+> quantisationFactorDoc currencyDeclarationQuantisationFactor
       <> hardline
-
-currencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
-currencySymbolDoc = pretty . currencySymbolText . locatedValue
 
 quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc ann
 quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
@@ -119,7 +116,7 @@ quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . loc
 accountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
 accountDeclarationDoc (Located _ AccountDeclaration {..}) =
   "account"
-    <+> accountNameDoc accountDeclarationName
+    <+> accountNameDoc (locatedValue accountDeclarationName)
       <> hardline
 
 transactionDecDoc :: GenLocated l (Transaction l) -> Doc ann
@@ -152,24 +149,33 @@ postingDoc Posting {..} =
   fill
     60
     ( "*"
-        <+> accountNameDoc postingAccountName
+        <+> accountNameDoc (locatedValue postingAccountName)
         <+> " "
     )
-    <+> accountDoc postingAccount
-    <+> currencySymbolDoc postingCurrencySymbol
+    <+> accountDoc (locatedValue postingAccount)
+    <+> currencySymbolDoc (locatedValue postingCurrencySymbol)
 
-accountNameDoc :: GenLocated l AccountName -> Doc ann
-accountNameDoc = pretty . accountNameText . locatedValue
+transactionExtraDoc :: TransactionExtra l -> Doc ann
+transactionExtraDoc =
+  ("+" <+>) . \case
+    TransactionAttachment a -> attachmentDoc (locatedValue a)
+    TransactionAssertion a -> assertionDoc (locatedValue a)
 
-accountDoc :: GenLocated l DecimalLiteral -> Doc ann
-accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired . locatedValue
+attachmentDoc :: Attachment -> Doc ann
+attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile fp)
+
+assertionDoc :: Assertion l -> Doc ann
+assertionDoc (AssertionEquals (Located _ an) (Located _ dl) (Located _ cs)) =
+  "assert" <+> accountNameDoc an <+> "=" <+> accountDoc dl <+> currencySymbolDoc cs
+
+accountNameDoc :: AccountName -> Doc ann
+accountNameDoc = pretty . accountNameText
+
+accountDoc :: DecimalLiteral -> Doc ann
+accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . renderDecimalLiteral
 
-transactionExtraDoc :: TransactionExtra l -> Doc ann
-transactionExtraDoc = \case
-  TransactionAttachment a -> attachmentDoc (locatedValue a)
-
-attachmentDoc :: Attachment -> Doc ann
-attachmentDoc (Attachment fp) = "+ attach" <+> pretty (fromRelFile fp)
+currencySymbolDoc :: CurrencySymbol -> Doc ann
+currencySymbolDoc = pretty . currencySymbolText

@@ -163,6 +163,7 @@ checkTransaction (Located tl Module.Transaction {..}) = do
 checkTransactionExtra :: SourceSpan -> TransactionExtra SourceSpan -> CheckerT SourceSpan ()
 checkTransactionExtra tl = \case
   TransactionAttachment a -> checkAttachment tl a
+  TransactionAssertion _ -> pure ()
 
 checkAttachment :: SourceSpan -> Located Attachment -> CheckerT SourceSpan ()
 checkAttachment tl a@(Located l (Attachment fp)) = do

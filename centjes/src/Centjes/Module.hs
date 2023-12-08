@@ -26,6 +26,8 @@ module Centjes.Module
     LTransactionExtra,
     TransactionExtra (..),
     Attachment (..),
+    LAssertion,
+    Assertion (..),
     DecimalLiteral (..),
   )
 where
@@ -120,15 +122,6 @@ instance NFData ann => NFData (Transaction ann)
 transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
 transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySymbol . locatedValue) . transactionPostings
 
-type LTransactionExtra = LLocated TransactionExtra
-
-data TransactionExtra ann = TransactionAttachment (GenLocated ann Attachment)
-  deriving stock (Show, Eq, Generic)
-
-instance Validity ann => Validity (TransactionExtra ann)
-
-instance NFData ann => NFData (TransactionExtra ann)
-
 newtype Timestamp = Timestamp {timestampDay :: Day}
   deriving stock (Show, Eq, Ord, Generic)
 
@@ -152,6 +145,17 @@ instance Validity ann => Validity (Posting ann)
 
 instance NFData ann => NFData (Posting ann)
 
+type LTransactionExtra = LLocated TransactionExtra
+
+data TransactionExtra ann
+  = TransactionAttachment (GenLocated ann Attachment)
+  | TransactionAssertion (GenLocated ann (Assertion ann))
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (TransactionExtra ann)
+
+instance NFData ann => NFData (TransactionExtra ann)
+
 newtype Attachment = Attachment {attachmentPath :: Path Rel File}
   deriving stock (Show, Eq, Ord, Generic)
 
@@ -161,6 +165,19 @@ instance NFData Attachment
 
 instance HasCodec Attachment where
   codec = dimapCodec Attachment attachmentPath codec
+
+type LAssertion = LLocated Assertion
+
+data Assertion ann
+  = AssertionEquals
+      !(GenLocated ann AccountName)
+      !(GenLocated ann DecimalLiteral)
+      !(GenLocated ann CurrencySymbol)
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (Assertion ann)
+
+instance NFData ann => NFData (Assertion ann)
 
 instance HasCodec (Path Rel File) where
   codec = bimapCodec (left show . parseRelFile) fromRelFile codec <?> "relative filepath"
