@@ -78,34 +78,55 @@ tokens :-
 -- Skip non-newline whitespace everywhere
 $white_no_nl+ ;
 
-<0> @import             { lex (TokenImport . drop (length "import ") . init) }
+-- The 0 start code means "toplevel declaration"
 
-<0> @day                { lex TokenDay }
-<0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
-<0> @decimal_literal    { lexDL }
-<0> @currency           { lex' TokenCurrency}
-<0> @account            { lex' TokenAccount}
-<0> @description        { lex (TokenDescription . T.pack . drop (length "| ") . init) }
-<0> @var                { lexVar }
 <0> @newline            { lexNl }
 
-<0> @star                  { lex' TokenStar `andBegin` posting }
+-- Imports
+<0> @import             { lex (TokenImport . drop (length "import ") . init) }
+
+-- Comments
+<0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
+
+-- Currency declarations
+<0> @currency               { lex' TokenCurrency `andBegin` currency }
+<currency> @var             { lexVar }
+<currency> @decimal_literal { lexDL }
+<currency> @newline         { lexNl `andBegin` 0 }
+
+-- Account declarations
+<0> @account        { lex' TokenAccount `andBegin` account}
+<account> @var     { lexVar }
+<account> @newline { lexNl `andBegin` 0 }
+
+
+-- Transactions
+<0> @day                { lex TokenDay `andBegin` transaction_header }
+
+-- We need a separate state for the newline after the day
+<transaction_header>  @newline  { lexNl `andBegin` transaction}
+
+<transaction> @description  { lex (TokenDescription . T.pack . drop (length "| ") . init) }
+<transaction> @newline      { lexNl `andBegin` 0}
+
+
+<transaction> @star                  { lex' TokenStar `andBegin` posting }
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
-<posting> @newline         { lexNl `andBegin` 0}
+<posting> @newline         { lexNl `andBegin` transaction}
 
 
-<0> @plus  { lex' TokenPlus `andBegin` extra }
+<transaction> @plus  { lex' TokenPlus `andBegin` extra }
 
 <extra> @assert                  { lex' TokenAssert `andBegin` assertion }
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
-<assertion> @newline         { lexNl `andBegin` 0}
+<assertion> @newline         { lexNl `andBegin` transaction}
 
 <extra> @attach             { lex' TokenAttach `andBegin` attachment}
-<attachment> @file_path { lex TokenFilePath `andBegin` 0}
-<attachment> @newline   { lexNl `andBegin` 0}
+<attachment> @file_path { lex TokenFilePath }
+<attachment> @newline   { lexNl `andBegin` transaction}
 
 {
 

@@ -35,8 +35,9 @@ parseSpec name parser = withFrozenCallStack $ do
         here <- getCurrentDir
         rf <- makeRelative here af
         contents <- T.readFile (fromAbsFile af)
-        expected <- shouldParse parser here rf contents
-        shouldBeValid expected
+        context (show contents) $ do
+          expected <- shouldParse parser here rf contents
+          shouldBeValid expected
 
     scenarioDir ("test_resources/syntax/" <> name <> "/invalid") $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -47,11 +48,12 @@ parseSpec name parser = withFrozenCallStack $ do
             here <- getCurrentDir
             rf <- makeRelative here af
             contents <- T.readFile (fromAbsFile af)
-            case parser here rf contents of
-              Left err -> pure err
-              Right a ->
-                expectationFailure $
-                  unlines
-                    [ "Should have failed to parse, but got",
-                      ppShow a
-                    ]
+            context (show contents) $
+              case parser here rf contents of
+                Left err -> pure err
+                Right a ->
+                  expectationFailure $
+                    unlines
+                      [ "Should have failed to parse, but got",
+                        ppShow a
+                      ]

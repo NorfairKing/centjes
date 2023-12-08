@@ -56,14 +56,15 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
             here <- getCurrentDir
             rf <- makeRelative here af
             contents <- T.readFile (fromAbsFile af)
-            expected <- shouldParse parser here rf contents
-            shouldBeValid expected
-            context (show expected) $ do
-              let rendered = formatter (expected :: (s SourceSpan))
-              context (unlines ["Rendered:", T.unpack rendered]) $ do
-                actual <- shouldParse parser here rf rendered
-                formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
-                pure (formatter actual)
+            context (show contents) $ do
+              expected <- shouldParse parser here rf contents
+              shouldBeValid expected
+              context (show expected) $ do
+                let rendered = formatter (expected :: (s SourceSpan))
+                context (unlines ["Rendered:", T.unpack rendered]) $ do
+                  actual <- shouldParse parser here rf rendered
+                  formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
+                  pure (formatter actual)
 
     it "roundtrips valid values back to text the same way" $
       forAllValid $ \expected -> do
