@@ -102,11 +102,11 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : account_tok account_name newline { sBE $1 $2 $ AccountDeclaration $2 }
+  : account_tok account_name newline { sBE $1 $3 $ AccountDeclaration $2 }
 
 transaction_dec
   :: { LTransaction }
-  : timestamp newline optional(description) many(posting) many(transaction_extra) { sBMLL $1 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+  : timestamp newline optional(description) many(posting) many(transaction_extra) { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
   | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 timestamp
@@ -180,11 +180,11 @@ sBL :: Located a -> [Located b] -> c -> Located c
 sBL l1 [] = sL1 l1
 sBL l1 ls = sBE l1 (last ls)
 
-sBMLL :: Located a -> Maybe (Located b) -> [Located c] -> [Located d] -> e -> Located e
-sBMLL l1 Nothing   [] [] = sL1 l1
-sBMLL l1 (Just l2) [] [] = sBE l1 l2
-sBMLL l1 _         ls [] = sBL l1 ls
-sBMLL l1 _         _  ls = sBL l1 ls
+sBMLL :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> [Located e] -> f -> Located f
+sBMLL l1 l2 Nothing  [] [] = sBE l1 l2
+sBMLL l1 _ (Just l3) [] [] = sBE l1 l3
+sBMLL l1 _ _         ls [] = sBL l1 ls
+sBMLL l1 _ _         _  ls = sBL l1 ls
 
 parseComment :: Token -> Located Text
 parseComment (Located l (TokenComment t)) = Located l t
