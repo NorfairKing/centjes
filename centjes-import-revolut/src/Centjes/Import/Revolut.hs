@@ -71,7 +71,7 @@ data ImportError'
   = ImportErrorUnknownCurrency !CurrencySymbol
   | ImportErrorInvalidAccount !QuantisationFactor !DecimalLiteral
   | ImportErrorInvalidLiteral !QuantisationFactor !Money.Account
-  | ImportErrorSubtract !Money.Account !Money.Account
+  | ImportErrorAdd !Money.Account !Money.Account
 
 instance ToReport ImportError where
   toReport (ImportError fp rowIx ie) =
@@ -89,10 +89,10 @@ instance ToReport ImportError where
               Err
                 (Just "IE_REVOLUT_INVALID_LITERAL")
                 (unwords ["Invalid literal:", show a, "with quantisation factor", show (unQuantisationFactor qf)])
-            ImportErrorSubtract a1 a2 ->
+            ImportErrorAdd a1 a2 ->
               Err
-                (Just "IE_REVOLUT_SUBTRACT")
-                (unwords ["Could not subtract", show a2, "from", show a1])
+                (Just "IE_REVOLUT_ADD")
+                (unwords ["Could not add", show a2, "to", show a1])
      in f
           [ ( Position
                 { begin = (rowIx, 0),
@@ -113,6 +113,8 @@ rowTransaction ::
   Row ->
   Validation ImportError' (Transaction ())
 rowTransaction currencies assetsAccountName expensesAccountName feeAccountName Row {..} = do
+  -- rowAccount is the amount the expense
+  -- rowFee is the fee on top of that amount
   let transactionTimestamp = noLoc $ Timestamp $ localDay $ fromMaybe rowStartedDate rowCompletedDate
       transactionDescription = Just $ noLoc rowDescription
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
@@ -124,44 +126,32 @@ rowTransaction currencies assetsAccountName expensesAccountName feeAccountName R
   let toLiteral a = case DecimalLiteral.fromAccount quantisationFactor a of
         Nothing -> validationFailure $ ImportErrorInvalidLiteral quantisationFactor a
         Just dl -> pure dl
-  assetAccount <- fromLiteral rowAccount
-  assetLiteral <- toLiteral assetAccount
-  let assetPosting =
-        noLoc
-          Posting
-            { postingAccountName = noLoc assetsAccountName,
-              postingAccount = noLoc assetLiteral,
-              postingCurrencySymbol = noLoc rowCurrency
-            }
+  expensesAccount <- Account.negate <$> fromLiteral rowAccount
+  expensesLiteral <- toLiteral expensesAccount
   feeAccount <- fromLiteral rowFee
   feeLiteral <- toLiteral feeAccount
+  assetsAccount <- case Account.add expensesAccount feeAccount of
+    Nothing -> validationFailure $ ImportErrorAdd expensesAccount feeAccount
+    Just l -> pure $ Account.negate l
+  assetsLiteral <- toLiteral assetsAccount
+  let mkPosting accountName literal =
+        noLoc
+          Posting
+            { postingAccountName = noLoc accountName,
+              postingAccount = noLoc literal,
+              postingCurrencySymbol = noLoc rowCurrency
+            }
+  let assetPosting = mkPosting assetsAccountName assetsLiteral
   let mFeePosting =
         if feeAccount == Account.zero
           then Nothing
-          else
-            Just $
-              noLoc
-                Posting
-                  { postingAccountName = noLoc feeAccountName,
-                    postingAccount = noLoc feeLiteral,
-                    postingCurrencySymbol = noLoc rowCurrency
-                  }
-  leftoverAccount <- case Account.subtract (Account.negate assetAccount) feeAccount of
-    Nothing -> validationFailure $ ImportErrorSubtract assetAccount feeAccount
-    Just l -> pure l
-  leftoverLiteral <- toLiteral leftoverAccount
-  let leftoverPosting =
-        noLoc
-          Posting
-            { postingAccountName = noLoc expensesAccountName,
-              postingAccount = noLoc leftoverLiteral,
-              postingCurrencySymbol = noLoc rowCurrency
-            }
-      transactionPostings =
+          else Just $ mkPosting feeAccountName feeLiteral
+  let expensePosting = mkPosting expensesAccountName expensesLiteral
+  let transactionPostings =
         concat
           [ [assetPosting],
             maybeToList mFeePosting,
-            [leftoverPosting]
+            [expensePosting]
           ]
   mbl <- forM rowBalance $ \bal -> do
     balanceAccount <- fromLiteral bal
