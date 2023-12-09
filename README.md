@@ -29,3 +29,12 @@ Assumptions:
 * Make it easy to file tax declarations.
 * Automate as much as possible.
 * Make it hard to make mistakes.
+
+## FAQ
+
+* Q: Why do I need to declare accounts?
+  A: To help avoid typos
+
+* Q: Why do I need to declare currencies?
+  A: To help avoid typos, and so that `centjes` can figure out the right precision to use in calculations.
+

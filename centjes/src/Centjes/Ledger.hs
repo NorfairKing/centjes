@@ -9,6 +9,7 @@ module Centjes.Ledger
     Transaction (..),
     Description (..),
     Posting (..),
+    Assertion (..),
     Currency (..),
     AccountName (..),
   )
@@ -50,7 +51,8 @@ ordered v =
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
-    transactionPostings :: !(Vector (GenLocated ann (Posting ann)))
+    transactionPostings :: !(Vector (GenLocated ann (Posting ann))),
+    transactionAssertions :: !(Vector (GenLocated ann (Assertion ann)))
   }
   deriving stock (Show, Eq, Ord, Generic)
 
@@ -70,6 +72,19 @@ data Posting ann = Posting
 instance Validity ann => Validity (Posting ann)
 
 instance NFData ann => NFData (Posting ann)
+
+data Assertion ann
+  = AssertionEquals
+      !(GenLocated ann AccountName)
+      -- Note: This field will have the source location of the decimal literal that defined it.
+      !(GenLocated ann Money.Account)
+      -- Note: This field will have the source location of the currency _symbol_ that defined it
+      !(GenLocated ann (Currency ann))
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity ann => Validity (Assertion ann)
+
+instance NFData ann => NFData (Assertion ann)
 
 data Currency ann = Currency
   { currencySymbol :: !CurrencySymbol,

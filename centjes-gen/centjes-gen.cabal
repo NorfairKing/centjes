@@ -11,6 +11,8 @@ bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
     test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err
+    test_resources/errors/balance-report/BE_ASSERTION-wrong-currency.err
+    test_resources/errors/balance-report/BE_ASSERTION.err
     test_resources/errors/balance-report/BE_OFF_BALANCE-simple.err
     test_resources/errors/balance-report/BE_OFF_BALANCE-two-currencies.err
     test_resources/errors/balance-report/BE_OFF_BALANCE-two-postings.err

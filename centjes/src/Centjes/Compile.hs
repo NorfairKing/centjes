@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
@@ -26,19 +27,19 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
-import Data.Traversable
 import Data.Validity (Validity)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
+import qualified Money.Account as Money (Account)
 import Money.QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
   | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
-  | CompileErrorMissingCurrency !ann !ann !(GenLocated ann CurrencySymbol)
-  | CompileErrorUnparseableAmount !ann !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
+  | CompileErrorMissingCurrency !ann !(GenLocated ann CurrencySymbol)
+  | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Eq, Generic)
 
 instance Validity ann => Validity (CompileError ann)
@@ -69,7 +70,7 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition cl2, This "This currency has been declared twice")
         ]
         []
-    CompileErrorMissingCurrency tl pl (Located sl symbol) ->
+    CompileErrorMissingCurrency tl (Located sl symbol) ->
       Err
         (Just "CE_UNDECLARED_CURRENCY")
         ( unwords
@@ -79,7 +80,6 @@ instance ToReport (CompileError SourceSpan) where
         )
         [ (toDiagnosePosition tl, Where "While trying to compile this transaction"),
           (toDiagnosePosition sl, This "this currency is never declared"),
-          (toDiagnosePosition pl, Where "While trying to compile this posting"),
           ( toDiagnosePosition tl,
             Maybe $
               unlines'
@@ -97,7 +97,7 @@ instance ToReport (CompileError SourceSpan) where
           )
         ]
         []
-    CompileErrorUnparseableAmount tl pl (Located cl qf) (Located al dl) ->
+    CompileErrorUnparseableAmount tl (Located cl qf) (Located al dl) ->
       Err
         (Just "CE_INVALID_AMOUNT")
         ( unwords
@@ -109,10 +109,12 @@ instance ToReport (CompileError SourceSpan) where
         )
         [ (toDiagnosePosition tl, Where "While trying to compile this transaction"),
           (toDiagnosePosition al, This "this amount is invalid"),
-          (toDiagnosePosition pl, Where "While trying to compile this posting"),
           (toDiagnosePosition cl, Where "Based on this currency declaration")
         ]
         []
+
+unlines' :: [String] -> String
+unlines' = intercalate "\n"
 
 compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
@@ -127,6 +129,7 @@ compileDeclarations declarations = do
   ledgerTransactions <- V.fromList . sortOn (locatedValue . Ledger.transactionTimestamp . locatedValue) <$> traverse (compileTransaction ledgerCurrencies) transactions
   pure Ledger {..}
 
+-- TODO: rename to compileCurrencyDeclarations
 compileCurrencies :: [Declaration ann] -> Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
 compileCurrencies declarations = do
   tups <-
@@ -149,6 +152,7 @@ compileCurrencies declarations = do
       Nothing -> pure $ M.insert symbol lqf m
       Just (Located l1 _) -> validationFailure $ CompileErrorCurrencyDeclaredTwice l1 l2 symbol
 
+-- TODO rename to compileCurrencyDeclaration
 compileCurrency :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
 compileCurrency (Located l CurrencyDeclaration {..}) = do
   let Located _ symbol = currencyDeclarationSymbol
@@ -166,6 +170,19 @@ compileTransaction currencies (Located l mt) = do
   let transactionTimestamp = Module.transactionTimestamp mt
       transactionDescription = Module.transactionDescription mt
   transactionPostings <- V.fromList <$> traverse (compilePosting currencies l) (Module.transactionPostings mt)
+  transactionAssertions <-
+    V.fromList
+      <$> traverse
+        (compileAssertion currencies l)
+        ( mapMaybe
+            ( ( \case
+                  TransactionAttachment _ -> Nothing
+                  TransactionAssertion a -> Just a
+              )
+                . locatedValue
+            )
+            (Module.transactionExtras mt)
+        )
   pure $ Located l Ledger.Transaction {..}
 
 compilePosting ::
@@ -175,14 +192,36 @@ compilePosting ::
   Validation (CompileError ann) (GenLocated ann (Ledger.Posting ann))
 compilePosting currencies tl (Located l mp) = do
   let postingAccountName = Module.postingAccountName mp
-  postingCurrency <- for (Module.postingCurrencySymbol mp) $ \symbol -> case M.lookup symbol currencies of
-    Nothing -> validationFailure $ CompileErrorMissingCurrency tl l (Module.postingCurrencySymbol mp)
-    Just factor -> pure $ Currency {currencySymbol = symbol, currencyQuantisationFactor = factor}
-  let lqf@(Located _ qf) = currencyQuantisationFactor (locatedValue postingCurrency)
-  postingAccount <- for (Module.postingAccount mp) $ \df -> case DecimalLiteral.toAccount qf df of
-    Nothing -> validationFailure $ CompileErrorUnparseableAmount tl l lqf (Module.postingAccount mp)
-    Just a -> pure a
+  postingCurrency <- compileCurrencySymbol currencies tl (Module.postingCurrencySymbol mp)
+  let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
+  postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
   pure (Located l Ledger.Posting {..})
 
-unlines' :: [String] -> String
-unlines' = intercalate "\n"
+compileAssertion ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  ann ->
+  GenLocated ann (Module.Assertion ann) ->
+  Validation (CompileError ann) (GenLocated ann (Ledger.Assertion ann))
+compileAssertion currencies tl (Located l (Module.AssertionEquals lan ldl lqs)) = do
+  lc <- compileCurrencySymbol currencies tl lqs
+  let lqf = currencyQuantisationFactor (locatedValue lc)
+  la <- compileDecimalLiteral tl lqf ldl
+  pure (Located l (Ledger.AssertionEquals lan la lc))
+
+compileCurrencySymbol ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  ann ->
+  GenLocated ann CurrencySymbol ->
+  Validation (CompileError ann) (GenLocated ann (Currency ann))
+compileCurrencySymbol currencies tl lcs@(Located cl symbol) = case M.lookup symbol currencies of
+  Nothing -> validationFailure $ CompileErrorMissingCurrency tl lcs
+  Just factor -> pure $ Located cl $ Currency {currencySymbol = symbol, currencyQuantisationFactor = factor}
+
+compileDecimalLiteral ::
+  ann ->
+  GenLocated ann QuantisationFactor ->
+  GenLocated ann DecimalLiteral ->
+  Validation (CompileError ann) (GenLocated ann Money.Account)
+compileDecimalLiteral tl lqf@(Located _ qf) ldl@(Located ll dl) = case DecimalLiteral.toAccount qf dl of
+  Nothing -> validationFailure $ CompileErrorUnparseableAmount tl lqf ldl
+  Just a -> pure (Located ll a)

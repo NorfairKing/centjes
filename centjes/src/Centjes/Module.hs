@@ -166,9 +166,6 @@ instance Validity ann => Validity (Attachment ann)
 
 instance NFData ann => NFData (Attachment ann)
 
--- instance HasCodec Attachment where
---   codec = dimapCodec Attachment attachmentPath codec
-
 type LAssertion = LLocated Assertion
 
 data Assertion ann

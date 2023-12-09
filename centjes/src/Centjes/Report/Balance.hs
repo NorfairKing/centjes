@@ -17,6 +17,7 @@ import Centjes.Location
 import Centjes.Validation
 import Control.DeepSeq
 import Control.Monad
+import Data.Foldable
 import Data.List (intercalate)
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
@@ -24,7 +25,9 @@ import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
+import Data.Traversable
 import Data.Validity (Validity (..))
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
@@ -34,8 +37,17 @@ import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import Numeric.DecimalLiteral as DecimalLiteral
 
+newtype BalancedLedger ann = BalancedLedger {balancedLedgerTransactions :: Vector (GenLocated ann (Transaction ann), AccountBalances ann)}
+  deriving (Show, Eq, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (BalancedLedger ann)
+
+instance NFData ann => NFData (BalancedLedger ann)
+
+type AccountBalances ann = Map AccountName (Money.MultiAccount (Currency ann))
+
 newtype BalanceReport ann = BalanceReport
-  {unBalanceReport :: Map AccountName (Money.MultiAccount (Currency ann))}
+  {unBalanceReport :: AccountBalances ann}
   deriving (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceReport ann)
@@ -47,6 +59,7 @@ data BalanceError ann
   | BalanceErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
   | BalanceErrorCouldNotSumPostings !ann ![Money.MultiAccount (Currency ann)]
   | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann)) ![GenLocated ann (Posting ann)]
+  | BalanceErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Currency ann)) !(Maybe Money.Account)
   deriving stock (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceError ann)
@@ -122,6 +135,41 @@ instance ToReport (BalanceError SourceSpan) where
               postings
         )
         []
+    BalanceErrorAssertion s (Located al (AssertionEquals _ (Located _ asserted) (Located _ c))) actual mDifference ->
+      Err
+        (Just "BE_ASSERTION")
+        "Assertion failure"
+        ( concat
+            [ [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
+                (toDiagnosePosition al, This "This assertion failed"),
+                ( toDiagnosePosition s,
+                  Where $
+                    unlines' $
+                      concat $
+                        [ ["Calculated:"],
+                          multiAccountLines actual,
+                          ["Asserted:", accountLine c asserted]
+                        ]
+                          ++ ( [ [ "Difference (calculated - asserted):",
+                                   accountLine c difference
+                                 ]
+                                 | difference <- maybeToList mDifference
+                               ]
+                             )
+                )
+              ],
+              [ ( toDiagnosePosition s,
+                  Maybe $
+                    unlines'
+                      [ "The actual balance has no amount in the asserted currency.",
+                        "Maybe there is a mistake with the currency?"
+                      ]
+                )
+                | not (M.member c (MultiAccount.unMultiAccount actual))
+              ]
+            ]
+        )
+        []
 
 makePostingSuggestion ::
   Money.MultiAccount (Currency SourceSpan) ->
@@ -151,48 +199,103 @@ makePostingSuggestion total (Located cl currency) (Located al account) =
             )
 
 multiAccountLines :: Money.MultiAccount (Currency ann) -> [String]
-multiAccountLines = map go . M.toList . MultiAccount.unMultiAccount
-  where
-    go (c, a) =
-      let Located _ qf = currencyQuantisationFactor c
-       in unwords
-            [ Account.format qf a,
-              T.unpack $ currencySymbolText $ currencySymbol c
-            ]
+multiAccountLines = map (uncurry accountLine) . M.toList . MultiAccount.unMultiAccount
+
+accountLine :: Currency ann -> Money.Account -> String
+accountLine c a =
+  let Located _ qf = currencyQuantisationFactor c
+   in unwords
+        [ Account.format qf a,
+          T.unpack $ currencySymbolText $ currencySymbol c
+        ]
 
 produceBalanceReport ::
   forall ann.
   Ord ann =>
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
-produceBalanceReport m = do
-  let incorporateAccount ::
-        ann ->
-        Map AccountName (Money.MultiAccount (Currency ann)) ->
-        (AccountName, Money.MultiAccount (Currency ann)) ->
-        Validation (BalanceError ann) (Map AccountName (Money.MultiAccount (Currency ann)))
-      incorporateAccount l totals (an, current) = case M.lookup an totals of
-        Nothing -> pure $ M.insert an current totals
-        Just total -> case MultiAccount.add total current of
-          Nothing -> validationFailure $ BalanceErrorCouldNotAddTransaction l an total current
-          Just new -> pure $ M.insert an new totals
-  let incorporateAccounts ::
-        Map AccountName (Money.MultiAccount (Currency ann)) ->
-        GenLocated ann (Map AccountName (Money.MultiAccount (Currency ann))) ->
-        Validation (BalanceError ann) (Map AccountName (Money.MultiAccount (Currency ann)))
-      incorporateAccounts totals (Located l currents) = foldM (incorporateAccount l) totals (M.toList currents)
-  fmap BalanceReport $ traverse balanceTransaction (ledgerTransactions m) >>= foldM incorporateAccounts M.empty
+produceBalanceReport l =
+  ( \bl ->
+      let v = balancedLedgerTransactions bl
+       in BalanceReport $
+            if V.null v
+              then M.empty
+              else snd (V.last v)
+  )
+    <$> produceBalancedLedger l
+
+produceBalancedLedger ::
+  forall ann.
+  Ord ann =>
+  Ledger ann ->
+  Validation (BalanceError ann) (BalancedLedger ann)
+produceBalancedLedger ledger = do
+  tups <- for (ledgerTransactions ledger) $ \t -> (,) t <$> balanceTransaction t
+
+  let constructBalancedVector ::
+        (Int, AccountBalances ann) ->
+        Validation
+          (BalanceError ann)
+          ( (GenLocated ann (Transaction ann), AccountBalances ann),
+            (Int, AccountBalances ann)
+          )
+      constructBalancedVector (ix, runningTotal) = do
+        let (lt@(Located tl t), ab) = V.unsafeIndex tups ix
+        newTotal <- incorporateAccounts runningTotal ab
+
+        traverse_ (checkAssertion tl newTotal) (transactionAssertions t)
+
+        pure ((lt, newTotal), (succ ix, newTotal))
+
+  BalancedLedger <$> V.unfoldrExactNM (V.length tups) constructBalancedVector (0, M.empty)
+  where
+    incorporateAccounts ::
+      AccountBalances ann ->
+      GenLocated ann (AccountBalances ann) ->
+      Validation
+        (BalanceError ann)
+        (AccountBalances ann)
+    incorporateAccounts
+      totals
+      (Located l currents) = foldM (incorporateAccount l) totals (M.toList currents)
+
+    incorporateAccount ::
+      ann ->
+      AccountBalances ann ->
+      (AccountName, Money.MultiAccount (Currency ann)) ->
+      Validation (BalanceError ann) (AccountBalances ann)
+    incorporateAccount l totals (an, current) = case M.lookup an totals of
+      Nothing -> pure $ M.insert an current totals
+      Just total -> case MultiAccount.add total current of
+        Nothing -> validationFailure $ BalanceErrorCouldNotAddTransaction l an total current
+        Just new -> pure $ M.insert an new totals
+
+checkAssertion ::
+  Ord ann =>
+  ann ->
+  AccountBalances ann ->
+  GenLocated ann (Assertion ann) ->
+  Validation (BalanceError ann) ()
+checkAssertion tl runningTotal a@(Located _ (AssertionEquals lan la lcs)) = do
+  let Located _ an = lan
+  let Located _ expected = la
+  let Located _ c = lcs
+  let actualMulti = fromMaybe MultiAccount.zero $ M.lookup an runningTotal
+  let actual = fromMaybe Account.zero $ M.lookup c $ MultiAccount.unMultiAccount actualMulti
+  if actual == expected
+    then pure ()
+    else validationFailure $ BalanceErrorAssertion tl a actualMulti (Account.subtract actual expected)
 
 balanceTransaction ::
   forall ann.
   Ord ann =>
   GenLocated ann (Transaction ann) ->
-  Validation (BalanceError ann) (GenLocated ann (Map AccountName (Money.MultiAccount (Currency ann))))
+  Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
 balanceTransaction (Located tl Transaction {..}) = do
   let incorporatePosting ::
-        Map AccountName (Money.MultiAccount (Currency ann)) ->
+        AccountBalances ann ->
         GenLocated ann (Posting ann) ->
-        Validation (BalanceError ann) (Map AccountName (Money.MultiAccount (Currency ann)))
+        Validation (BalanceError ann) (AccountBalances ann)
       incorporatePosting m (Located _ (Posting (Located pl an) (Located _ currency) (Located _ account))) =
         let current = MultiAccount.fromAccount currency account
          in case M.lookup an m of

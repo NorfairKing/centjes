@@ -99,6 +99,7 @@ spec = do
                         }
                 ]
             }
+
       it "shows the same error when an account's total amount balance gets too large" $
         moduleGoldenBalanceError "test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err" $
           Module
@@ -279,6 +280,83 @@ spec = do
                                   }
                             ],
                           transactionExtras = []
+                        }
+                ]
+            }
+
+      it "shows the same error when an assertion fails" $
+        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_ASSERTION.err" $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ usdDeclaration,
+                  DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 12 09)),
+                          transactionDescription = Nothing,
+                          transactionPostings =
+                            [ noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "assets"),
+                                    postingAccount = noLoc "2",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  },
+                              noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "income"),
+                                    postingAccount = noLoc "-2",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  }
+                            ],
+                          transactionExtras =
+                            [ noLoc $
+                                TransactionAssertion $
+                                  noLoc $
+                                    AssertionEquals
+                                      (noLoc (AccountName "assets"))
+                                      (noLoc "3")
+                                      (noLoc usdSymbol)
+                            ]
+                        }
+                ]
+            }
+
+      it "shows the same error when an assertion fails because of an incorrect currency" $
+        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_ASSERTION-wrong-currency.err" $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ usdDeclaration,
+                  eurDeclaration,
+                  DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 12 09)),
+                          transactionDescription = Nothing,
+                          transactionPostings =
+                            [ noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "assets"),
+                                    postingAccount = noLoc "2",
+                                    postingCurrencySymbol = noLoc eurSymbol
+                                  },
+                              noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "income"),
+                                    postingAccount = noLoc "-2",
+                                    postingCurrencySymbol = noLoc eurSymbol
+                                  }
+                            ],
+                          transactionExtras =
+                            [ noLoc $
+                                TransactionAssertion $
+                                  noLoc $
+                                    AssertionEquals
+                                      (noLoc (AccountName "assets"))
+                                      (noLoc "3")
+                                      (noLoc usdSymbol)
+                            ]
                         }
                 ]
             }
