@@ -17,15 +17,30 @@ source-repository head
 library
   exposed-modules:
       Centjes.Import.Ubs
+      Centjes.Import.Ubs.OptParse
   other-modules:
       Paths_centjes_import_ubs
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      autodocodec
+    , autodocodec-yaml
+    , base >=4.7 && <5
     , bytestring
+    , cassava
     , centjes
+    , containers
+    , diagnose
+    , envparse
+    , monad-logger
+    , optparse-applicative
+    , path
+    , path-io
+    , really-safe-money
     , text
+    , time
+    , vector
+    , yaml
   default-language: Haskell2010
 
 executable centjes-import-ubs

@@ -8,9 +8,23 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
+  - autodocodec
+  - autodocodec-yaml
   - bytestring
+  - cassava
   - centjes
+  - containers
+  - diagnose
+  - envparse
+  - monad-logger
+  - optparse-applicative
+  - path
+  - path-io
+  - really-safe-money
   - text
+  - time
+  - vector
+  - yaml
 
 executables:
   centjes-import-ubs:
