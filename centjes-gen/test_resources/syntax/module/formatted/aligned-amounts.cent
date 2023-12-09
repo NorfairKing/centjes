@@ -2,7 +2,7 @@ currency USD 0.01
 
 2023-11-17
   | This transaction example serves to test if amounts can be aligned.
-  * assets                                                     +1 USD
-  * assets                                                     +1.01 USD
-  * assets                                                     +100.01 USD
-  * assets                                                     +100 USD
+  * assets +1 USD
+  * assets +1.01 USD
+  * assets +100.01 USD
+  * assets +100 USD

@@ -146,12 +146,8 @@ descriptionDoc = pretty . unDescription . locatedValue
 
 postingDoc :: Posting l -> Doc ann
 postingDoc Posting {..} =
-  fill
-    60
-    ( "*"
-        <+> accountNameDoc (locatedValue postingAccountName)
-        <+> " "
-    )
+  "*"
+    <+> accountNameDoc (locatedValue postingAccountName)
     <+> accountDoc (locatedValue postingAccount)
     <+> currencySymbolDoc (locatedValue postingCurrencySymbol)
 
