@@ -1,46 +1,35 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Description
   ( Description (..),
     nullDescription,
-    validateDescriptionChar,
     fromTextM,
     fromText,
+    combine,
   )
 where
 
 import Control.DeepSeq
-import qualified Data.Char as Char
+import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Path ()
-import Data.Validity.Text
+import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
 newtype Description = Description {unDescription :: Text}
-  deriving (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
+  deriving newtype (Semigroup, Monoid, IsString)
 
-instance Validity Description where
-  validate an@(Description t) =
-    mconcat
-      [ genericValidate an,
-        decorateText t validateDescriptionChar
-      ]
-
-validateDescriptionChar :: Char -> Validation
-validateDescriptionChar = \c -> declare "The character is not a newline, and not a control character" $
-  case c of
-    '\n' -> False
-    '\r' -> False
-    _
-      | Char.isControl c -> False
-      | otherwise -> True
+instance Validity Description
 
 instance NFData Description
 
@@ -54,3 +43,8 @@ fromTextM t = case fromText t of
 
 fromText :: Text -> Maybe Description
 fromText = constructValid . Description
+
+combine :: [Description] -> Maybe Description
+combine = \case
+  [] -> Nothing
+  ds -> Just $ Description $ T.intercalate "\n" $ map unDescription ds

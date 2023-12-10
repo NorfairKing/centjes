@@ -50,7 +50,7 @@
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
-      packages.${system}.default = pkgs.centjes;
+      packages.${system}.default = pkgs.centjesRelease;
       checks.${system} = {
         package = self.packages.${system}.default;
         release = pkgs.haskellPackages.centjesRelease;

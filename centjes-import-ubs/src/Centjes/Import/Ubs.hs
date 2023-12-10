@@ -25,6 +25,7 @@ import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -128,7 +129,22 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
   -- rowAccount is the amount the expense
   -- rowFee is the fee on top of that amount
   let transactionTimestamp = noLoc $ Timestamp rowBookingDate
-      transactionDescription = Just $ noLoc rowDescription1
+      transactionDescription =
+        noLoc
+          <$> Description.combine
+            ( filter
+                (not . T.null . unDescription)
+                [ "Trade date: " <> case rowTradeTime of
+                    Nothing -> fromString (formatTime defaultTimeLocale "%F" rowTradeDate)
+                    Just tt -> fromString (formatTime defaultTimeLocale "%F %T" (LocalTime rowValueDate tt)),
+                  "Booking date: " <> fromString (formatTime defaultTimeLocale "%F" rowBookingDate),
+                  "Value date: " <> fromString (formatTime defaultTimeLocale "%F" rowValueDate),
+                  rowDescription1,
+                  rowDescription2,
+                  rowDescription3,
+                  rowFootnotes
+                ]
+            )
 
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
     Nothing -> validationFailure $ ImportErrorUnknownCurrency rowCurrency

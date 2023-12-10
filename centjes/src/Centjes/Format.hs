@@ -12,7 +12,6 @@ where
 import Centjes.AccountName
 import Centjes.Location
 import Centjes.Module
-import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -128,12 +127,7 @@ transactionDoc Transaction {..} =
     map (<> hardline) $
       concat
         [ [timestampDoc transactionTimestamp],
-          [ mconcat
-              [ "  | ",
-                descriptionDoc d
-              ]
-            | d <- maybeToList transactionDescription
-          ],
+          map ("  " <>) $ maybe [] descriptionDocs transactionDescription,
           map (("  " <>) . postingDoc . locatedValue) transactionPostings,
           map (("  " <>) . transactionExtraDoc . locatedValue) transactionExtras
         ]
@@ -141,8 +135,8 @@ transactionDoc Transaction {..} =
 timestampDoc :: GenLocated l Timestamp -> Doc ann
 timestampDoc = pretty . formatTime defaultTimeLocale "%F" . timestampDay . locatedValue
 
-descriptionDoc :: GenLocated l Description -> Doc ann
-descriptionDoc = pretty . unDescription . locatedValue
+descriptionDocs :: GenLocated l Description -> [Doc ann]
+descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
 
 postingDoc :: Posting l -> Doc ann
 postingDoc Posting {..} =

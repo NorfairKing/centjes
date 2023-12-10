@@ -23,6 +23,7 @@ import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -116,7 +117,17 @@ rowTransaction currencies assetsAccountName expensesAccountName feeAccountName R
   -- rowAccount is the amount the expense
   -- rowFee is the fee on top of that amount
   let transactionTimestamp = noLoc $ Timestamp $ localDay $ fromMaybe rowStartedDate rowCompletedDate
-      transactionDescription = Just $ noLoc rowDescription
+      transactionDescription =
+        noLoc
+          <$> Description.combine
+            ( filter
+                (not . T.null . unDescription)
+                [ "Started date: " <> fromString (formatTime defaultTimeLocale "%F %T" rowStartedDate),
+                  "Completed date: " <> fromString (maybe "" (formatTime defaultTimeLocale "%F %T") rowCompletedDate),
+                  rowDescription
+                ]
+            )
+
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
     Nothing -> validationFailure $ ImportErrorUnknownCurrency rowCurrency
     Just qf -> pure qf

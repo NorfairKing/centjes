@@ -106,16 +106,24 @@ account_dec
 
 transaction_dec
   :: { LTransaction }
-  : timestamp newline optional(description) many(posting) many(transaction_extra) { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+  : timestamp newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
   | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 timestamp
   :: { Located Timestamp }
   : day {% parseTimestamp $1 }
 
+descriptions
+  :: { Maybe (Located Description) }
+  : many(description) { combineDescriptions $1 }
+
 description
   :: { Located Description }
   : pipetext {% parseDescription $1 }
+
+postings
+  :: { [LPosting] }
+  : many(posting) { $1 }
 
 posting
   :: { LPosting }
@@ -129,8 +137,12 @@ account_exp
   :: { Located DecimalLiteral }
   : decimal_literal { parseDecimalLiteral $1 }
 
+transaction_extras
+  :: { [LTransactionExtra] }
+  : many(transaction_extra) { $1 }
+
 transaction_extra
-  :: { LTransactionExtra  }
+  :: { LTransactionExtra }
   : plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
   | plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
 
@@ -194,6 +206,10 @@ parseTimestamp t@(Located _ (TokenDay ds)) = fmap Timestamp . sL1 t <$> timePars
 
 parseDescription :: Token -> Alex (Located Description)
 parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> maybeParser "Description" Description.fromText ds 
+
+combineDescriptions :: [Located Description] -> Maybe (Located Description)
+combineDescriptions [] = Nothing
+combineDescriptions dss@(d:ds) = sBL d ds <$> Description.combine (map locatedValue dss)
 
 parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
