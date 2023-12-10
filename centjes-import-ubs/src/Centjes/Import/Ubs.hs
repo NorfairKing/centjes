@@ -12,6 +12,7 @@ import Centjes.Import.Ubs.OptParse
 import Centjes.Load
 import Centjes.Location
 import Centjes.Module
+import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
@@ -57,19 +58,24 @@ runCentjesImportUbs = do
           )
           $ traverse
             ( \(rowIx, row) ->
-                DeclarationTransaction . noLoc
-                  <$> mapValidationFailure
-                    (ImportError inputFp rowIx)
-                    ( rowTransaction
-                        currencies
-                        settingAssetsAccountName
-                        settingExpensesAccountName
-                        settingIncomeAccountName
-                        row
-                    )
+                mapValidationFailure
+                  (ImportError inputFp rowIx)
+                  ( rowTransaction
+                      currencies
+                      settingAssetsAccountName
+                      settingExpensesAccountName
+                      settingIncomeAccountName
+                      row
+                  )
             )
-            (zip [10 ..] (reverse (V.toList v)))
-      let m = Module {moduleImports = [], moduleDeclarations = ts}
+            (zip [10 ..] (V.toList v))
+      let m =
+            Module
+              { moduleImports = [],
+                moduleDeclarations =
+                  map (DeclarationTransaction . noLoc) $
+                    reverse ts
+              }
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 
 data ImportError = ImportError !FilePath !Int ImportError'
@@ -185,15 +191,18 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
         [ assetsPosting,
           otherPosting
         ]
-  let transactionExtras =
-        [ noLoc $
-            TransactionAssertion $
-              noLoc $
-                AssertionEquals
-                  (noLoc assetsAccountName)
-                  (noLoc balanceLiteral)
-                  (noLoc rowCurrency)
-        ]
+  let transactionExtras = []
+  -- We don't use automatic assertions for UBS because it's impossible to
+  -- figure out which transaction comes first if we only have day-based
+  -- granularity.
+  -- [ noLoc $
+  --     TransactionAssertion $
+  --       noLoc $
+  --         AssertionEquals
+  --           (noLoc assetsAccountName)
+  --           (noLoc balanceLiteral)
+  --           (noLoc rowCurrency)
+  -- ]
   pure Transaction {..}
 
 data Row = Row
