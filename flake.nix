@@ -50,10 +50,10 @@
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
-      packages.${system}.default = pkgs.centjesRelease;
+      packages.${system}.default = pkgs.centjes;
       checks.${system} = {
         package = self.packages.${system}.default;
-        release = pkgs.haskellPackages.centjesRelease;
+        release = pkgs.haskellPackages.centjes;
         shell = self.devShells.${system}.default;
         pre-commit = pre-commit-hooks.lib.${system}.run {
           src = ./.;

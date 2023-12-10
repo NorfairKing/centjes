@@ -12,6 +12,7 @@ import Centjes.Import.Revolut.OptParse
 import Centjes.Load
 import Centjes.Location
 import Centjes.Module
+import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad
 import Control.Monad.Logger
@@ -114,9 +115,10 @@ rowTransaction ::
   Row ->
   Validation ImportError' (Transaction ())
 rowTransaction currencies assetsAccountName expensesAccountName feeAccountName Row {..} = do
+  -- TODO dont import non-completed transactions?
   -- rowAccount is the amount the expense
   -- rowFee is the fee on top of that amount
-  let transactionTimestamp = noLoc $ Timestamp $ localDay $ fromMaybe rowStartedDate rowCompletedDate
+  let transactionTimestamp = noLoc $ Timestamp.secondFromLocalTime $ fromMaybe rowStartedDate rowCompletedDate
       transactionDescription =
         noLoc
           <$> Description.combine

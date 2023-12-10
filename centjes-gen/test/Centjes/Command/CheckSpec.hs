@@ -62,7 +62,7 @@ spec = do
                 [ DeclarationTransaction $
                     noLoc $
                       Transaction
-                        { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 12 05)),
+                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 05)),
                           transactionDescription = Nothing,
                           transactionPostings = [],
                           transactionExtras =
@@ -98,7 +98,7 @@ spec = do
                       DeclarationTransaction $
                         noLoc $
                           Transaction
-                            { transactionTimestamp = noLoc (Timestamp (fromGregorian 2023 11 24)),
+                            { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
                               transactionDescription = Nothing,
                               transactionPostings =
                                 [ noLoc

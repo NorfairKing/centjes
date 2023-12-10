@@ -17,8 +17,10 @@ where
 
 import Centjes.AccountName (AccountName (..))
 import Centjes.Location
-import Centjes.Module (CurrencySymbol (..), Description (..), Timestamp (..))
+import Centjes.Module (CurrencySymbol (..), Description (..))
+import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
+import Data.Function
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Vector ()
@@ -37,16 +39,19 @@ instance Validity ann => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     mconcat
       [ genericValidate l,
-        declare "the transactions are sorted" $ ordered $ V.map (locatedValue . transactionTimestamp . locatedValue) ledgerTransactions
+        declare "the transactions are sorted" $
+          partiallyOrderedBy
+            (Timestamp.comparePartially `on` locatedValue . transactionTimestamp . locatedValue)
+            ledgerTransactions
       ]
 
 instance NFData ann => NFData (Ledger ann)
 
-ordered :: Ord a => Vector a -> Bool
-ordered v =
+partiallyOrderedBy :: (a -> a -> Maybe Ordering) -> Vector a -> Bool
+partiallyOrderedBy f v =
   if V.null v
     then True
-    else V.and (V.zipWith (<=) v (V.tail v))
+    else V.and (V.zipWith (\a1 a2 -> f a1 a2 /= Just GT) v (V.tail v))
 
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
@@ -54,7 +59,7 @@ data Transaction ann = Transaction
     transactionPostings :: !(Vector (GenLocated ann (Posting ann))),
     transactionAssertions :: !(Vector (GenLocated ann (Assertion ann)))
   }
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (Transaction ann)
 
@@ -67,7 +72,7 @@ data Posting ann = Posting
     -- Note: This field will have the source location of the decimal literal that defined it.
     postingAccount :: !(GenLocated ann Money.Account)
   }
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (Posting ann)
 
@@ -80,7 +85,7 @@ data Assertion ann
       !(GenLocated ann Money.Account)
       -- Note: This field will have the source location of the currency _symbol_ that defined it
       !(GenLocated ann (Currency ann))
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (Assertion ann)
 

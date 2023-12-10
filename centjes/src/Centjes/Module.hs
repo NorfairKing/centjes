@@ -38,12 +38,12 @@ import Centjes.AccountName
 import Centjes.CurrencySymbol
 import Centjes.Description
 import Centjes.Location
+import Centjes.Timestamp
 import Control.Arrow (left)
 import Control.DeepSeq
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
-import Data.Time
 import Data.Validity
 import Data.Validity.Path ()
 import Data.Validity.Time ()
@@ -122,16 +122,6 @@ instance NFData ann => NFData (Transaction ann)
 
 transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
 transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySymbol . locatedValue) . transactionPostings
-
-newtype Timestamp = Timestamp {timestampDay :: Day}
-  deriving stock (Show, Eq, Ord, Generic)
-
-instance Validity Timestamp
-
-instance NFData Timestamp
-
-instance HasCodec Timestamp where
-  codec = dimapCodec Timestamp timestampDay codec
 
 type LPosting = LLocated Posting
 

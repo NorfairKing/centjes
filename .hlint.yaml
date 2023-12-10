@@ -98,6 +98,5 @@
   # 44
   - name: fromIntegral
     within:
-      - Centjes.DecimalLiteral
-      - Centjes.DecimalLiteral.Gen
+      - Centjes.Timestamp
       - Centjes.Import.Ubs

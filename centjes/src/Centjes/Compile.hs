@@ -19,10 +19,12 @@ import Centjes.Format
 import Centjes.Ledger as Ledger
 import Centjes.Location
 import Centjes.Module as Module
+import Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.DeepSeq
 import Control.Monad
-import Data.List (intercalate, sortOn)
+import Data.Function
+import Data.List (intercalate, sortBy)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -126,7 +128,17 @@ compileDeclarations declarations = do
               _ -> Nothing
           )
           declarations
-  ledgerTransactions <- V.fromList . sortOn (locatedValue . Ledger.transactionTimestamp . locatedValue) <$> traverse (compileTransaction ledgerCurrencies) transactions
+  ledgerTransactions <-
+    V.fromList
+      . sortBy
+        ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+            `on` locatedValue
+              . Ledger.transactionTimestamp
+              . locatedValue
+        )
+      <$> traverse
+        (compileTransaction ledgerCurrencies)
+        transactions
   pure Ledger {..}
 
 -- TODO: rename to compileCurrencyDeclarations

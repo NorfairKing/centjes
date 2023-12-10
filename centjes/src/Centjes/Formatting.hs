@@ -5,9 +5,9 @@ module Centjes.Formatting where
 
 import Centjes.Ledger
 import Centjes.Location
+import qualified Centjes.Timestamp as Timestamp
 import qualified Data.Map as M
 import qualified Data.Text as T
-import Data.Time
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
@@ -43,7 +43,7 @@ accountChunk qf a =
     $ Account.format qf a
 
 timestampChunk :: Timestamp -> Chunk
-timestampChunk (Timestamp d) = fore blue $ chunk $ T.pack $ formatTime defaultTimeLocale "%F" d
+timestampChunk = fore blue . chunk . Timestamp.toText
 
 descriptionChunk :: Description -> Chunk
 descriptionChunk (Description t) = fore yellow $ chunk t

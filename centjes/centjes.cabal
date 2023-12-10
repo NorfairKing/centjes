@@ -38,6 +38,7 @@ library
       Centjes.Parse.Happy
       Centjes.Parse.Utils
       Centjes.Report.Balance
+      Centjes.Timestamp
       Centjes.Validation
   other-modules:
       Paths_centjes

@@ -3,23 +3,47 @@
 
 module Centjes.Ledger.Gen where
 
-import Centjes.Ledger
+import Centjes.Ledger as Ledger
 import Centjes.Location
 import Centjes.Module.Gen ()
+import Centjes.Timestamp as Timestamp
+import Data.Function
 import Data.GenValidity
 import Data.GenValidity.Map ()
 import Data.GenValidity.Vector ()
-import Data.List (sortOn)
+import Data.List (sortBy)
+import Data.Maybe
 import qualified Data.Vector as V
 import Numeric.DecimalLiteral.Gen ()
 
 instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
   genValid = do
-    ledgerTransactions <- V.fromList . sortOn (locatedValue . transactionTimestamp . locatedValue) <$> genValid
+    ledgerTransactions <-
+      V.fromList
+        . sortBy
+          ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+              `on` locatedValue
+                . Ledger.transactionTimestamp
+                . locatedValue
+          )
+        <$> genValid
     pure Ledger {..}
   shrinkValid l =
     filter (/= l)
-      . map (\l' -> l' {ledgerTransactions = V.fromList (sortOn (locatedValue . transactionTimestamp . locatedValue) (V.toList (ledgerTransactions l')))})
+      . map
+        ( \l' ->
+            l'
+              { ledgerTransactions =
+                  V.fromList $
+                    sortBy
+                      ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+                          `on` locatedValue
+                            . Ledger.transactionTimestamp
+                            . locatedValue
+                      )
+                      (V.toList (ledgerTransactions l'))
+              }
+        )
       $ shrinkValidStructurally l
 
 instance GenValid ann => GenValid (Transaction ann)

@@ -8,12 +8,13 @@ module Centjes.Parse.Happy
   ) where
 
 import Centjes.AccountName as AccountName
-import Centjes.Description as Description
 import Centjes.CurrencySymbol as CurrencySymbol
+import Centjes.Description as Description
 import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
 import Centjes.Parse.Utils
+import Centjes.Timestamp as Timestamp
 import Data.Text (Text)
 import Numeric.DecimalLiteral (DecimalLiteral)
 import Path
@@ -47,7 +48,7 @@ import qualified Data.Text as T
       assert          { Located _ TokenAssert }
       file_path       { Located _ (TokenFilePath _) }
       eq              { Located _ TokenEq }
-      day             { Located _ (TokenDay _) }
+      timestamp_tok   { Located _ (TokenTimestamp _) }
       var             { Located _ (TokenVar _) }
       pipetext        { Located _ (TokenDescription _) }
       decimal_literal { Located _ (TokenDecimalLiteral _) }
@@ -111,7 +112,7 @@ transaction_dec
 
 timestamp
   :: { Located Timestamp }
-  : day {% parseTimestamp $1 }
+  : timestamp_tok {% parseTimestamp $1 }
 
 descriptions
   :: { Maybe (Located Description) }
@@ -202,7 +203,7 @@ parseComment :: Token -> Located Text
 parseComment (Located l (TokenComment t)) = Located l t
 
 parseTimestamp :: Token -> Alex (Located Timestamp)
-parseTimestamp t@(Located _ (TokenDay ds)) = fmap Timestamp . sL1 t <$> timeParser "%F" ds
+parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Timestamp" Timestamp.fromString ds
 
 parseDescription :: Token -> Alex (Located Description)
 parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> maybeParser "Description" Description.fromText ds 

@@ -6,6 +6,7 @@ import Centjes.CurrencySymbol.Gen ()
 import Centjes.Description.Gen ()
 import Centjes.Location.Gen ()
 import Centjes.Module
+import Centjes.Timestamp.Gen ()
 import Data.GenValidity
 import Data.GenValidity.Path ()
 import Data.GenValidity.Text
@@ -32,8 +33,6 @@ instance GenValid ann => GenValid (AccountDeclaration ann)
 instance GenValid ann => GenValid (Transaction ann)
 
 instance GenValid ann => GenValid (TransactionExtra ann)
-
-instance GenValid Timestamp
 
 instance GenValid ann => GenValid (Posting ann)
 

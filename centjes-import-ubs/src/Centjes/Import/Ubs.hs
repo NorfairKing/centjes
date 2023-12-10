@@ -13,7 +13,6 @@ import Centjes.Load
 import Centjes.Location
 import Centjes.Module
 import Centjes.Validation
-import Control.Monad
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Char8 as SB8
@@ -21,17 +20,14 @@ import qualified Data.ByteString.Lazy as LB
 import Data.Char as Char (ord)
 import Data.Csv as Csv
 import Data.Either
-import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import Data.Maybe
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
 import qualified Data.Vector as V
-import Debug.Trace
 import Error.Diagnose
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account (..))
@@ -69,7 +65,6 @@ runCentjesImportUbs = do
                         settingAssetsAccountName
                         settingExpensesAccountName
                         settingIncomeAccountName
-                        settingFeesAccountName
                         row
                     )
             )
@@ -122,13 +117,12 @@ rowTransaction ::
   AccountName ->
   AccountName ->
   AccountName ->
-  AccountName ->
   Row ->
   Validation ImportError' (Transaction ())
-rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName feeAccountName Row {..} = do
+rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName Row {..} = do
   -- rowAccount is the amount the expense
   -- rowFee is the fee on top of that amount
-  let transactionTimestamp = noLoc $ Timestamp rowBookingDate
+  let transactionTimestamp = noLoc $ TimestampDay rowBookingDate
       transactionDescription =
         noLoc
           <$> Description.combine

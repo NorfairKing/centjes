@@ -2,8 +2,10 @@ final: prev:
 with final.lib;
 with final.haskell.lib;
 {
-
-  centjes = justStaticExecutables final.haskellPackages.centjes;
+  centjes = final.symlinkJoin {
+    name = "centjes";
+    paths = attrValues (builtins.mapAttrs (_: v: justStaticExecutables v) final.haskellPackages.centjesPackages);
+  };
 
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (

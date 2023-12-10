@@ -12,9 +12,9 @@ where
 import Centjes.AccountName
 import Centjes.Location
 import Centjes.Module
+import qualified Centjes.Timestamp as Timestamp
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Time
 import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Prettyprinter
@@ -133,7 +133,7 @@ transactionDoc Transaction {..} =
         ]
 
 timestampDoc :: GenLocated l Timestamp -> Doc ann
-timestampDoc = pretty . formatTime defaultTimeLocale "%F" . timestampDay . locatedValue
+timestampDoc = pretty . Timestamp.toString . locatedValue
 
 descriptionDocs :: GenLocated l Description -> [Doc ann]
 descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue

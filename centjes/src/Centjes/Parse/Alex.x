@@ -14,6 +14,7 @@ module Centjes.Parse.Alex
   , scanMany
   , getsAlex
   , maybeParser
+  , eitherParser
   ) where
 
 import Centjes.Location
@@ -52,13 +53,24 @@ $alpha = [A-Za-z]
     \+? @unsigned_decimal_literal
   | \- @unsigned_decimal_literal
 
-@var = $alpha [$alpha $digit \_ \- :]*
+@var = $alpha [$alpha $digit \_ \- \:]*
 @year = $digit $digit $digit $digit
 @month_of_year = $digit $digit
 @day_of_month = $digit $digit
 @day = @year \- @month_of_year \- @day_of_month
 
-@file_path = [$alpha $digit \_ \- : .]+
+@hour = $digit $digit
+@minute = $digit $digit
+@second = $digit $digit
+@time_of_day =
+    @hour \: @minute \: @second
+  | @hour \: @minute
+
+@timestamp =
+    @day
+  | @day \  @time_of_day
+
+@file_path = [$alpha $digit \_ \- \: .]+
 
 @star = "* "
 @plus = "+ " 
@@ -101,7 +113,7 @@ $white_no_nl+ ;
 
 
 -- Transactions
-<0> @day                { lex TokenDay `andBegin` transaction_header }
+<0> @timestamp { lex TokenTimestamp `andBegin` transaction_header }
 
 -- We need a separate state for the newline after the day
 <transaction_header>  @newline  { lexNl `andBegin` transaction}
@@ -158,7 +170,7 @@ data TokenClass
   | TokenAttach
   | TokenAssert
   | TokenEq
-  | TokenDay !String
+  | TokenTimestamp !String
   | TokenFilePath !FilePath
   | TokenVar !Text
   | TokenDescription !Text
@@ -259,6 +271,11 @@ maybeParser name func b =
     Nothing -> alexError $ "Failed to parse " <> name <> " from " <> show b
     Just a -> pure a
 
+eitherParser :: Show b => String -> (b -> Either String a) -> b -> Alex a
+eitherParser name func b =
+  case func b of
+    Left err -> alexError $ "Failed to parse " <> name <> " from " <> show b <> ":\n" <> err
+    Right a -> pure a
 
 runAlex' :: Alex a -> Path Abs Dir -> Path Rel File -> String -> Either String a
 runAlex' a base fp input = runAlex input (alexSetUserState (AlexUserState base fp) >> a)
