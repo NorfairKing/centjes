@@ -46,6 +46,7 @@ import qualified Data.Text as T
       comment         { Located _ (TokenComment _) }
       attach          { Located _ TokenAttach }
       assert          { Located _ TokenAssert }
+      price           { Located _ TokenPrice }
       file_path       { Located _ (TokenFilePath _) }
       eq              { Located _ TokenEq }
       timestamp_tok   { Located _ (TokenTimestamp _) }
@@ -83,6 +84,7 @@ declaration
   : comment_dec { DeclarationComment $1 }
   | currency_dec { DeclarationCurrency $1 }
   | account_dec { DeclarationAccount $1 }
+  | price_dec { DeclarationPrice $1 }
   | transaction_dec { DeclarationTransaction $1 }
 
 comment_dec
@@ -104,6 +106,14 @@ quantisation_factor
 account_dec
   :: { LAccountDeclaration }
   : account_tok account_name newline { sBE $1 $3 $ AccountDeclaration $2 }
+
+price_dec
+  :: { LPriceDeclaration }
+  : price timestamp currency_symbol conversion_rate currency_symbol newline { sBE $1 $6 $ PriceDeclaration $2 $3 $4 $5 }
+
+conversion_rate
+  :: { Located DecimalLiteral }
+  : decimal_literal { parseDecimalLiteral $1 }
 
 transaction_dec
   :: { LTransaction }

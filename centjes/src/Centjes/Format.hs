@@ -59,6 +59,8 @@ moduleDoc Module {..} =
             (DecCurrency, DecCurrency) -> False
             -- Group account declarations together
             (DecAccount, DecAccount) -> False
+            -- Group price declarations together
+            (DecPrice, DecPrice) -> True
             -- Don't group transactions together
             (DecTransaction, DecTransaction) -> True
             _ -> dt /= dt'
@@ -72,6 +74,7 @@ data DecType
   = DecComment
   | DecCurrency
   | DecAccount
+  | DecPrice
   | DecTransaction
   deriving (Show, Eq)
 
@@ -80,6 +83,7 @@ decType = \case
   DeclarationComment {} -> DecComment
   DeclarationCurrency {} -> DecCurrency
   DeclarationAccount {} -> DecAccount
+  DeclarationPrice {} -> DecPrice
   DeclarationTransaction {} -> DecTransaction
 
 importDoc :: Import -> Doc ann
@@ -94,6 +98,7 @@ declarationDoc = \case
   DeclarationComment t -> commentDoc t
   DeclarationCurrency cd -> currencyDeclarationDoc cd
   DeclarationAccount ad -> accountDeclarationDoc ad
+  DeclarationPrice pd -> priceDeclarationDoc pd
   DeclarationTransaction t -> transactionDecDoc t
 
 commentDoc :: GenLocated l Text -> Doc ann
@@ -115,8 +120,23 @@ quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . loc
 accountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
 accountDeclarationDoc (Located _ AccountDeclaration {..}) =
   "account"
-    <+> accountNameDoc (locatedValue accountDeclarationName)
+    <+> lAccountNameDoc accountDeclarationName
       <> hardline
+
+priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
+priceDeclarationDoc (Located _ PriceDeclaration {..}) =
+  "price"
+    <+> lTimestampDoc priceDeclarationTimestamp
+    <+> lCurrencySymbolDoc priceDeclarationNew
+    <+> lConversionRateDoc priceDeclarationConversionRate
+    <+> lCurrencySymbolDoc priceDeclarationOld
+      <> hardline
+
+lConversionRateDoc :: GenLocated l DecimalLiteral -> Doc ann
+lConversionRateDoc = conversionRateDoc . locatedValue
+
+conversionRateDoc :: DecimalLiteral -> Doc ann
+conversionRateDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional
 
 transactionDecDoc :: GenLocated l (Transaction l) -> Doc ann
 transactionDecDoc = transactionDoc . locatedValue
@@ -126,14 +146,17 @@ transactionDoc Transaction {..} =
   mconcat $
     map (<> hardline) $
       concat
-        [ [timestampDoc transactionTimestamp],
+        [ [lTimestampDoc transactionTimestamp],
           map ("  " <>) $ maybe [] descriptionDocs transactionDescription,
           map (("  " <>) . postingDoc . locatedValue) transactionPostings,
           map (("  " <>) . transactionExtraDoc . locatedValue) transactionExtras
         ]
 
-timestampDoc :: GenLocated l Timestamp -> Doc ann
-timestampDoc = pretty . Timestamp.toString . locatedValue
+lTimestampDoc :: GenLocated l Timestamp -> Doc ann
+lTimestampDoc = timestampDoc . locatedValue
+
+timestampDoc :: Timestamp -> Doc ann
+timestampDoc = pretty . Timestamp.toString
 
 descriptionDocs :: GenLocated l Description -> [Doc ann]
 descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
@@ -141,9 +164,9 @@ descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedVa
 postingDoc :: Posting l -> Doc ann
 postingDoc Posting {..} =
   "*"
-    <+> accountNameDoc (locatedValue postingAccountName)
+    <+> lAccountNameDoc postingAccountName
     <+> accountDoc (locatedValue postingAccount)
-    <+> currencySymbolDoc (locatedValue postingCurrencySymbol)
+    <+> lCurrencySymbolDoc postingCurrencySymbol
 
 transactionExtraDoc :: TransactionExtra l -> Doc ann
 transactionExtraDoc =
@@ -155,8 +178,11 @@ attachmentDoc :: Attachment l -> Doc ann
 attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue fp))
 
 assertionDoc :: Assertion l -> Doc ann
-assertionDoc (AssertionEquals (Located _ an) (Located _ dl) (Located _ cs)) =
-  "assert" <+> accountNameDoc an <+> "=" <+> accountDoc dl <+> currencySymbolDoc cs
+assertionDoc (AssertionEquals an (Located _ dl) cs) =
+  "assert" <+> lAccountNameDoc an <+> "=" <+> accountDoc dl <+> lCurrencySymbolDoc cs
+
+lAccountNameDoc :: GenLocated l AccountName -> Doc ann
+lAccountNameDoc = accountNameDoc . locatedValue
 
 accountNameDoc :: AccountName -> Doc ann
 accountNameDoc = pretty . accountNameText
@@ -166,6 +192,9 @@ accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . renderDecimalLiteral
+
+lCurrencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
+lCurrencySymbolDoc = currencySymbolDoc . locatedValue
 
 currencySymbolDoc :: CurrencySymbol -> Doc ann
 currencySymbolDoc = pretty . currencySymbolText

@@ -18,6 +18,15 @@ import Numeric.DecimalLiteral.Gen ()
 
 instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
   genValid = do
+    ledgerPrices <-
+      V.fromList
+        . sortBy
+          ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+              `on` locatedValue
+                . Ledger.priceTimestamp
+                . locatedValue
+          )
+        <$> genValid
     ledgerTransactions <-
       V.fromList
         . sortBy
@@ -45,6 +54,8 @@ instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
               }
         )
       $ shrinkValidStructurally l
+
+instance GenValid ann => GenValid (Price ann)
 
 instance GenValid ann => GenValid (Transaction ann)
 

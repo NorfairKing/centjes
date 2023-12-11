@@ -6,6 +6,7 @@ module Centjes.Ledger
   ( Ledger (..),
     Timestamp (..),
     CurrencySymbol (..),
+    Price (..),
     Transaction (..),
     Description (..),
     Posting (..),
@@ -21,6 +22,7 @@ import Centjes.Module (CurrencySymbol (..), Description (..))
 import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
+import Data.Ratio
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Vector ()
@@ -29,9 +31,11 @@ import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 import Money.QuantisationFactor
+import Numeric.Natural
 
-newtype Ledger ann = Ledger
-  { ledgerTransactions :: Vector (GenLocated ann (Transaction ann))
+data Ledger ann = Ledger
+  { ledgerPrices :: !(Vector (GenLocated ann (Price ann))),
+    ledgerTransactions :: !(Vector (GenLocated ann (Transaction ann)))
   }
   deriving stock (Show, Eq, Generic)
 
@@ -52,6 +56,21 @@ partiallyOrderedBy f v =
   if V.null v
     then True
     else V.and (V.zipWith (\a1 a2 -> f a1 a2 /= Just GT) v (V.tail v))
+
+data Price ann = Price
+  { priceTimestamp :: !(GenLocated ann Timestamp),
+    -- Note: This field will have the source location of the currency _symbol_ in the price declaration.
+    priceNew :: GenLocated ann (Currency ann),
+    -- Note: This field will have the source location of the decimal literal in the price declaration.
+    priceConversionRate :: GenLocated ann (Ratio Natural),
+    -- Note: This field will have the source location of the currency _symbol_ in the price declaration.
+    priceOld :: GenLocated ann (Currency ann)
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (Price ann)
+
+instance NFData ann => NFData (Price ann)
 
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),

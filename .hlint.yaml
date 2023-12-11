@@ -99,4 +99,5 @@
   - name: fromIntegral
     within:
       - Centjes.Timestamp
+      - Centjes.Compile.compileConversionRate
       - Centjes.Import.Ubs

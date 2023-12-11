@@ -30,6 +30,8 @@ instance GenValid ann => GenValid (CurrencyDeclaration ann)
 
 instance GenValid ann => GenValid (AccountDeclaration ann)
 
+instance GenValid ann => GenValid (PriceDeclaration ann)
+
 instance GenValid ann => GenValid (Transaction ann)
 
 instance GenValid ann => GenValid (TransactionExtra ann)

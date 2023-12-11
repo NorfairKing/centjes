@@ -79,6 +79,7 @@ $alpha = [A-Za-z]
 @account = "account "
 @attach = "attach "
 @assert = "assert "
+@price = "price "
 @eq = \=
 
 @comment = "-- " .* \n
@@ -111,9 +112,15 @@ $white_no_nl+ ;
 <account> @var     { lexVar }
 <account> @newline { lexNl `andBegin` 0 }
 
+-- Price declarations
+<0> @price               { lex' TokenPrice `andBegin` price}
+<price> @timestamp       { lexTimestamp }
+<price> @var             { lexVar }
+<price> @decimal_literal { lexDL }
+<price> @newline         { lexNl `andBegin` 0 }
 
 -- Transactions
-<0> @timestamp { lex TokenTimestamp `andBegin` transaction_header }
+<0> @timestamp { lexTimestamp `andBegin` transaction_header }
 
 -- We need a separate state for the newline after the day
 <transaction_header>  @newline  { lexNl `andBegin` transaction}
@@ -122,7 +129,7 @@ $white_no_nl+ ;
 <transaction> @newline      { lexNl `andBegin` 0}
 
 
-<transaction> @star                  { lex' TokenStar `andBegin` posting }
+<transaction> @star        { lex' TokenStar `andBegin` posting }
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
 <posting> @newline         { lexNl `andBegin` transaction}
@@ -130,7 +137,7 @@ $white_no_nl+ ;
 
 <transaction> @plus  { lex' TokenPlus `andBegin` extra }
 
-<extra> @assert                  { lex' TokenAssert `andBegin` assertion }
+<extra> @assert             { lex' TokenAssert `andBegin` assertion }
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
@@ -141,6 +148,8 @@ $white_no_nl+ ;
 <attachment> @newline   { lexNl `andBegin` transaction}
 
 {
+lexTimestamp :: AlexAction Token
+lexTimestamp = lex TokenTimestamp 
 
 lexVar :: AlexAction Token
 lexVar = lex (TokenVar . T.pack)
@@ -169,6 +178,7 @@ data TokenClass
   = TokenComment !Text
   | TokenAttach
   | TokenAssert
+  | TokenPrice
   | TokenEq
   | TokenTimestamp !String
   | TokenFilePath !FilePath

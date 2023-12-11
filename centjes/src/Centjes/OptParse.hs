@@ -8,6 +8,7 @@ module Centjes.OptParse where
 
 import Autodocodec
 import Autodocodec.Yaml
+import Centjes.CurrencySymbol as CurrencySymbol
 import Control.Applicative
 import qualified Data.Text as T
 import Data.Yaml (FromJSON, ToJSON)
@@ -49,6 +50,8 @@ data RegisterSettings = RegisterSettings
   deriving (Show, Eq, Generic)
 
 data BalanceSettings = BalanceSettings
+  { balanceSettingCurrency :: !(Maybe CurrencySymbol)
+  }
   deriving (Show, Eq, Generic)
 
 data FormatSettings = FormatSettings
@@ -85,8 +88,9 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
         pure $ DispatchCheck CheckSettings
       CommandRegister RegisterArgs -> do
         pure $ DispatchRegister RegisterSettings
-      CommandBalance BalanceArgs -> do
-        pure $ DispatchBalance BalanceSettings
+      CommandBalance BalanceArgs {..} -> do
+        let balanceSettingCurrency = flagConversionCurrency
+        pure $ DispatchBalance BalanceSettings {..}
       CommandFormat FormatArgs {..} -> do
         formatSettingFileOrDir <- case (formatArgFile, formatArgDir) of
           (Just fp, _) -> Just . Left <$> resolveFile' fp
@@ -208,13 +212,24 @@ parseCommandRegister = OptParse.info parser modifier
     parser = pure RegisterArgs
 
 data BalanceArgs = BalanceArgs
+  {flagConversionCurrency :: !(Maybe CurrencySymbol)}
   deriving (Show, Eq, Generic)
 
 parseCommandBalance :: OptParse.ParserInfo BalanceArgs
 parseCommandBalance = OptParse.info parser modifier
   where
     modifier = OptParse.fullDesc <> OptParse.progDesc "Show a balance of accounts"
-    parser = pure BalanceArgs
+    parser =
+      BalanceArgs
+        <$> optional
+          ( option
+              (maybeReader (CurrencySymbol.fromText . T.pack))
+              ( mconcat
+                  [ long "convert",
+                    help "Currency to convert to"
+                  ]
+              )
+          )
 
 data FormatArgs = FormatArgs
   { formatArgFile :: !(Maybe FilePath),

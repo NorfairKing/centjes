@@ -15,7 +15,8 @@ module Centjes.Module
     CurrencySymbol (..),
     LAccountDeclaration,
     AccountDeclaration (..),
-    AccountName (..),
+    LPriceDeclaration,
+    PriceDeclaration (..),
     LTransaction,
     Transaction (..),
     transactionCurrencySymbols,
@@ -29,6 +30,7 @@ module Centjes.Module
     Attachment (..),
     LAssertion,
     Assertion (..),
+    AccountName (..),
     DecimalLiteral (..),
   )
 where
@@ -69,6 +71,7 @@ data Declaration ann
   = DeclarationComment !(GenLocated ann Text)
   | DeclarationCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | DeclarationAccount !(GenLocated ann (AccountDeclaration ann))
+  | DeclarationPrice !(GenLocated ann (PriceDeclaration ann))
   | DeclarationTransaction !(GenLocated ann (Transaction ann))
   deriving stock (Show, Eq, Generic)
 
@@ -105,6 +108,22 @@ newtype AccountDeclaration ann = AccountDeclaration
 instance Validity ann => Validity (AccountDeclaration ann)
 
 instance NFData ann => NFData (AccountDeclaration ann)
+
+type LPriceDeclaration = LLocated PriceDeclaration
+
+data PriceDeclaration ann = PriceDeclaration
+  { priceDeclarationTimestamp :: GenLocated ann Timestamp,
+    priceDeclarationNew :: GenLocated ann CurrencySymbol,
+    -- | How many olds for one new
+    -- This is of unit: old/new
+    priceDeclarationConversionRate :: GenLocated ann DecimalLiteral,
+    priceDeclarationOld :: GenLocated ann CurrencySymbol
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (PriceDeclaration ann)
+
+instance NFData ann => NFData (PriceDeclaration ann)
 
 type LTransaction = LLocated Transaction
 

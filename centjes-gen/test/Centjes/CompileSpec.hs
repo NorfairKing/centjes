@@ -65,6 +65,18 @@ spec = do
       producesValid (compileDeclarations @())
 
     tempDirSpec "centjes-compile-errors" $ do
+      let usdSymbol = CurrencySymbol "USD"
+      let usdDeclaration =
+            CurrencyDeclaration
+              { currencyDeclarationSymbol = noLoc usdSymbol,
+                currencyDeclarationQuantisationFactor = noLoc "0.01"
+              }
+      let chfSymbol = CurrencySymbol "CHF"
+      let chfDeclaration =
+            CurrencyDeclaration
+              { currencyDeclarationSymbol = noLoc chfSymbol,
+                currencyDeclarationQuantisationFactor = noLoc "0.05"
+              }
       it "shows the same error when encountering an invalid quantisation factor" $
         moduleGoldenCompileError "test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err" $
           Module
@@ -114,7 +126,7 @@ spec = do
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
                                     postingAccount = noLoc "1",
-                                    postingCurrencySymbol = noLoc (CurrencySymbol "USD")
+                                    postingCurrencySymbol = noLoc usdSymbol
                                   }
                             ],
                           transactionExtras = []
@@ -122,18 +134,29 @@ spec = do
                 ]
             }
 
-      let usdSymbol = CurrencySymbol "USD"
+      it "shows the same error when encountering an invalid amount" $
+        moduleGoldenCompileError "test_resources/errors/compile/CE_INVALID_PRICE.err" $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ DeclarationCurrency $ noLoc usdDeclaration,
+                  DeclarationCurrency $ noLoc chfDeclaration,
+                  DeclarationPrice $
+                    noLoc $
+                      PriceDeclaration
+                        { priceDeclarationTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 11)),
+                          priceDeclarationNew = noLoc usdSymbol,
+                          priceDeclarationConversionRate = noLoc "-1.05",
+                          priceDeclarationOld = noLoc chfSymbol
+                        }
+                ]
+            }
       it "shows the same error when encountering an invalid amount" $
         moduleGoldenCompileError "test_resources/errors/compile/CE_INVALID_AMOUNT.err" $
           Module
             { moduleImports = [],
               moduleDeclarations =
-                [ DeclarationCurrency $
-                    noLoc $
-                      CurrencyDeclaration
-                        { currencyDeclarationSymbol = noLoc usdSymbol,
-                          currencyDeclarationQuantisationFactor = noLoc "0.01"
-                        },
+                [ DeclarationCurrency $ noLoc usdDeclaration,
                   DeclarationTransaction $
                     noLoc $
                       Transaction

@@ -130,6 +130,7 @@ checkAccountsDeclared as = traverse_ $ \case
   DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
   DeclarationAccount _ -> pure ()
+  DeclarationPrice _ -> pure ()
   DeclarationTransaction (Located tl t) -> for_ (Module.transactionPostings t) $ \(Located pl p) ->
     let Located _ an = Module.postingAccountName p
      in case M.lookup an as of
@@ -154,6 +155,7 @@ checkDeclaration = \case
   DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
   DeclarationAccount _ -> pure ()
+  DeclarationPrice _ -> pure ()
   DeclarationTransaction t -> checkTransaction t
 
 checkTransaction :: Located (Module.Transaction SourceSpan) -> CheckerT SourceSpan ()

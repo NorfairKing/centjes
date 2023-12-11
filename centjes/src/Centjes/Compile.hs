@@ -28,19 +28,23 @@ import Data.List (intercalate, sortBy)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Ratio
 import qualified Data.Text as T
 import Data.Validity (Validity)
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 import Money.QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
+import Numeric.Natural
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
   | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingCurrency !ann !(GenLocated ann CurrencySymbol)
+  | CompileErrorInvalidPrice !ann !(GenLocated ann DecimalLiteral)
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Eq, Generic)
 
@@ -72,7 +76,7 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition cl2, This "This currency has been declared twice")
         ]
         []
-    CompileErrorMissingCurrency tl (Located sl symbol) ->
+    CompileErrorMissingCurrency dl (Located sl symbol) ->
       Err
         (Just "CE_UNDECLARED_CURRENCY")
         ( unwords
@@ -80,9 +84,9 @@ instance ToReport (CompileError SourceSpan) where
               show (currencySymbolText symbol)
             ]
         )
-        [ (toDiagnosePosition tl, Where "While trying to compile this transaction"),
+        [ (toDiagnosePosition dl, Where "While trying to compile this declaration"),
           (toDiagnosePosition sl, This "this currency is never declared"),
-          ( toDiagnosePosition tl,
+          ( toDiagnosePosition dl,
             Maybe $
               unlines'
                 [ "You can declare this currency with a currency declaration:",
@@ -99,6 +103,18 @@ instance ToReport (CompileError SourceSpan) where
           )
         ]
         []
+    CompileErrorInvalidPrice pdl (Located ll dl) ->
+      Err
+        (Just "CE_INVALID_PRICE")
+        ( unwords
+            [ "Invalid price:",
+              renderDecimalLiteral dl
+            ]
+        )
+        [ (toDiagnosePosition ll, This "This rate is invalid"),
+          (toDiagnosePosition pdl, Where "While compiling this price declaration")
+        ]
+        []
     CompileErrorUnparseableAmount tl (Located cl qf) (Located al dl) ->
       Err
         (Just "CE_INVALID_AMOUNT")
@@ -109,9 +125,9 @@ instance ToReport (CompileError SourceSpan) where
               show (unQuantisationFactor qf)
             ]
         )
-        [ (toDiagnosePosition tl, Where "While trying to compile this transaction"),
-          (toDiagnosePosition al, This "this amount is invalid"),
-          (toDiagnosePosition cl, Where "Based on this currency declaration")
+        [ (toDiagnosePosition tl, Where "while trying to compile this transaction"),
+          (toDiagnosePosition al, This "This amount is invalid."),
+          (toDiagnosePosition cl, Where "based on this currency declaration")
         ]
         []
 
@@ -120,7 +136,8 @@ unlines' = intercalate "\n"
 
 compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
-  ledgerCurrencies <- compileCurrencies declarations
+  currencies <- compileCurrencies declarations
+  ledgerPrices <- compilePriceDeclarations currencies declarations
   let transactions =
         mapMaybe
           ( \case
@@ -137,7 +154,7 @@ compileDeclarations declarations = do
               . locatedValue
         )
       <$> traverse
-        (compileTransaction ledgerCurrencies)
+        (compileTransaction currencies)
         transactions
   pure Ledger {..}
 
@@ -173,6 +190,44 @@ compileCurrency (Located l CurrencyDeclaration {..}) = do
     Nothing -> validationFailure $ CompileErrorInvalidQuantisationFactor l symbol currencyDeclarationQuantisationFactor
     Just qf -> pure qf
   pure (symbol, Located l qf)
+
+compilePriceDeclarations ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  [Declaration ann] ->
+  Validation (CompileError ann) (Vector (GenLocated ann (Price ann)))
+compilePriceDeclarations currencies =
+  fmap V.fromList
+    . traverse (compilePriceDeclaration currencies)
+    . mapMaybe
+      ( \case
+          DeclarationPrice pd -> Just pd
+          _ -> Nothing
+      )
+
+compilePriceDeclaration ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  GenLocated ann (PriceDeclaration ann) ->
+  Validation (CompileError ann) (GenLocated ann (Price ann))
+compilePriceDeclaration currencies (Located pdl PriceDeclaration {..}) = do
+  let priceTimestamp = priceDeclarationTimestamp
+  priceNew <- compileCurrencySymbol currencies pdl priceDeclarationNew
+  priceConversionRate <- compileConversionRate pdl priceDeclarationConversionRate
+  priceOld <- compileCurrencySymbol currencies pdl priceDeclarationOld
+  pure $ Located pdl Price {..}
+
+compileConversionRate ::
+  ann ->
+  GenLocated ann DecimalLiteral ->
+  Validation (CompileError ann) (GenLocated ann (Ratio Natural))
+compileConversionRate pdl ldl@(Located rl dl) = do
+  let r = DecimalLiteral.toRational dl
+  let n = numerator r
+  if n < 0
+    then validationFailure $ CompileErrorInvalidPrice pdl ldl
+    else do
+      let d = denominator r
+      -- TODO error for negative or invalid literal
+      pure $ Located rl $ fromIntegral n % fromIntegral d
 
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

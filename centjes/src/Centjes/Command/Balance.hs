@@ -21,10 +21,11 @@ import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
 
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
-runCentjesBalance Settings {..} BalanceSettings = runStderrLoggingT $ do
+runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   (declarations, diagnostic) <- loadModules settingLedgerFile
   ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
   accs <- liftIO $ checkValidation diagnostic $ produceBalanceReport ledger
+  liftIO $ print balanceSettingCurrency -- TODO
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   let t = table (renderBalanceReport accs)
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
