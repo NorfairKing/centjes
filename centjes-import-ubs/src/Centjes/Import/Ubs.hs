@@ -12,7 +12,6 @@ import Centjes.Import.Ubs.OptParse
 import Centjes.Load
 import Centjes.Location
 import Centjes.Module
-import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
@@ -166,9 +165,6 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
 
   let otherAccount = Account.negate assetsAccount
   otherLiteral <- toLiteral otherAccount
-
-  balanceAccount <- fromLiteral rowBalance
-  balanceLiteral <- toLiteral balanceAccount
 
   let mkPosting accountName literal =
         noLoc

@@ -8,6 +8,7 @@
 module Centjes.Report.Balance
   ( BalanceReport (..),
     BalanceError (..),
+    convertBalanceReport,
     produceBalanceReport,
   )
 where
@@ -17,11 +18,13 @@ import Centjes.Location
 import Centjes.Validation
 import Control.DeepSeq
 import Control.Monad
+import Data.Either
 import Data.Foldable
 import Data.List (intercalate)
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Maybe
+import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -35,7 +38,10 @@ import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
+import qualified Money.QuantisationFactor as Money (QuantisationFactor)
+import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
+import Numeric.Natural
 
 newtype BalancedLedger ann = BalancedLedger {balancedLedgerTransactions :: Vector (GenLocated ann (Transaction ann), AccountBalances ann)}
   deriving (Show, Eq, Generic)
@@ -53,6 +59,78 @@ newtype BalanceReport ann = BalanceReport
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceReport ann)
 
 instance NFData ann => NFData (BalanceReport ann)
+
+-- TODO version of this that only gets the prices not the entire ledger
+convertBalanceReport :: forall ann. Ord ann => Ledger ann -> CurrencySymbol -> BalanceReport ann -> BalanceReport ann
+convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccountBalance $ unBalanceReport br
+  where
+    convertAccountBalance :: AccountBalances ann -> AccountBalances ann
+    convertAccountBalance = M.map convertMultiAccount
+
+    convertMultiAccount :: Money.MultiAccount (Currency ann) -> Money.MultiAccount (Currency ann)
+    convertMultiAccount =
+      -- TODO error properly
+      buildUp . map convertAccount . M.toList . MultiAccount.unMultiAccount
+      where
+        buildUp ::
+          [ Either
+              (Currency ann, Money.Account)
+              ( Currency ann,
+                Money.QuantisationFactor,
+                Ratio Natural,
+                Money.Account
+              )
+          ] ->
+          Money.MultiAccount (Currency ann)
+        buildUp ls =
+          let (unconverteds, rs) = partitionEithers ls
+              unconvertedTotal = MultiAccount.MultiAccount (M.fromList unconverteds)
+           in case rs of
+                [] -> unconvertedTotal
+                ((c, _, _, _) : _) -> fromMaybe undefined $ do
+                  -- TODO find a way to round only once.
+                  individualConverteds <-
+                    traverse
+                      ( \(_, qf, r, a) ->
+                          let f =
+                                realToFrac r
+                                  * fromIntegral (QuantisationFactor.unQuantisationFactor (locatedValue (currencyQuantisationFactor c)))
+                                  / fromIntegral (QuantisationFactor.unQuantisationFactor qf)
+                           in fst (Account.fraction Account.RoundNearest a f)
+                      )
+                      rs
+                  convertedTotal <- Account.sum individualConverteds
+                  MultiAccount.add unconvertedTotal $ MultiAccount.fromAccount c convertedTotal
+
+    -- TODO look up the currency up front so we don't need to put the currency in the rights list multiple times.
+    convertAccount ::
+      (Currency ann, Money.Account) ->
+      -- Left: Could not convert
+      -- Right: Converted amount
+      Either (Currency ann, Money.Account) (Currency ann, Money.QuantisationFactor, Ratio Natural, Money.Account)
+    convertAccount (currencyFrom, a) =
+      if currencySymbol currencyFrom == currencySymbolTo
+        then Left (currencyFrom, a) -- Not converted because it's already the correct currency.
+        else case firstMatch (matchingPrice . locatedValue) (V.reverse (ledgerPrices ledger)) of
+          Nothing -> Left (currencyFrom, a) -- Could not convert because we don't have the price info
+          Just (currencyTo, rate) -> Right (currencyTo, locatedValue (currencyQuantisationFactor currencyFrom), rate, a)
+      where
+        matchingPrice :: Price ann -> Maybe (Currency ann, Ratio Natural)
+        matchingPrice Price {..} =
+          let new = locatedValue priceNew
+              old = locatedValue priceOld
+           in if currencySymbol old == currencySymbolTo && currencySymbol new == currencySymbol currencyFrom
+                then Just (old, locatedValue priceConversionRate)
+                else Nothing -- TODO also use reverse prices
+
+firstMatch :: (a -> Maybe b) -> Vector a -> Maybe b
+firstMatch f v = go 0
+  where
+    go ix = case v V.!? ix of
+      Nothing -> Nothing
+      Just a -> case f a of
+        Nothing -> go (succ ix)
+        Just b -> Just b
 
 data BalanceError ann
   = BalanceErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))

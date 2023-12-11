@@ -18,6 +18,7 @@ import Numeric.DecimalLiteral.Gen ()
 
 instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
   genValid = do
+    ledgerCurrencies <- genValid -- TODO deduce the curriencies from the other fields
     ledgerPrices <-
       V.fromList
         . sortBy

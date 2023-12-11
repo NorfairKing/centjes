@@ -91,7 +91,9 @@
 
   # Does unexpected things, see
   # https://github.com/NorfairKing/haskell-WAT#real-double
-  - {name: realToFrac, within: []}
+  - name: realToFrac
+    within:
+      - Centjes.Report.Balance # TODO get rid of this by putting  positiveFraction in Money.Account
 
   # Does silent truncation:
   # > fromIntegral (300 :: Word) :: Word8
@@ -100,4 +102,5 @@
     within:
       - Centjes.Timestamp
       - Centjes.Compile.compileConversionRate
+      - Centjes.Report.Balance.convertBalanceReport # TODO get rid of this by putting currency conversions into Money.Amount and Money.Account
       - Centjes.Import.Ubs

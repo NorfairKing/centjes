@@ -22,6 +22,7 @@ import Centjes.Module (CurrencySymbol (..), Description (..))
 import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
+import Data.Map.Strict (Map)
 import Data.Ratio
 import Data.Validity
 import Data.Validity.Map ()
@@ -34,7 +35,8 @@ import Money.QuantisationFactor
 import Numeric.Natural
 
 data Ledger ann = Ledger
-  { ledgerPrices :: !(Vector (GenLocated ann (Price ann))),
+  { ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
+    ledgerPrices :: !(Vector (GenLocated ann (Price ann))),
     ledgerTransactions :: !(Vector (GenLocated ann (Transaction ann)))
   }
   deriving stock (Show, Eq, Generic)
@@ -43,6 +45,11 @@ instance Validity ann => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     mconcat
       [ genericValidate l,
+        -- TODO all the currencies are consistent
+        declare "the prices are sorted" $
+          partiallyOrderedBy
+            (Timestamp.comparePartially `on` locatedValue . priceTimestamp . locatedValue)
+            ledgerPrices,
         declare "the transactions are sorted" $
           partiallyOrderedBy
             (Timestamp.comparePartially `on` locatedValue . transactionTimestamp . locatedValue)

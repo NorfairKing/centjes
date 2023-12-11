@@ -226,6 +226,7 @@ parseCommandBalance = OptParse.info parser modifier
               (maybeReader (CurrencySymbol.fromText . T.pack))
               ( mconcat
                   [ long "convert",
+                    metavar "CURRENCY",
                     help "Currency to convert to"
                   ]
               )

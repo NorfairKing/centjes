@@ -136,8 +136,8 @@ unlines' = intercalate "\n"
 
 compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
-  currencies <- compileCurrencies declarations
-  ledgerPrices <- compilePriceDeclarations currencies declarations
+  ledgerCurrencies <- compileCurrencies declarations
+  ledgerPrices <- compilePriceDeclarations ledgerCurrencies declarations
   let transactions =
         mapMaybe
           ( \case
@@ -154,7 +154,7 @@ compileDeclarations declarations = do
               . locatedValue
         )
       <$> traverse
-        (compileTransaction currencies)
+        (compileTransaction ledgerCurrencies)
         transactions
   pure Ledger {..}
 
