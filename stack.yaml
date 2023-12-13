@@ -13,7 +13,7 @@ extra-deps:
 - diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
 
 - github: NorfairKing/really-safe-money
-  commit: 0286e01870da8b18a423fc624d53957d0fb501f0
+  commit: ebb13266e620df8169e811ddd4d120f3c43f17d1
   subdirs:
   - really-safe-money
   - really-safe-money-autodocodec

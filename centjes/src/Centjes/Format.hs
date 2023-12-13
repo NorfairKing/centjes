@@ -191,7 +191,7 @@ accountDoc :: DecimalLiteral -> Doc ann
 accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
-decimalLiteralDoc = pretty . renderDecimalLiteral
+decimalLiteralDoc = pretty . DecimalLiteral.format
 
 lCurrencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
 lCurrencySymbolDoc = currencySymbolDoc . locatedValue

@@ -19,7 +19,7 @@ module Centjes.Parse.Alex
 
 import Centjes.Location
 import Data.Text (Text)
-import Numeric.DecimalLiteral
+import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Prelude hiding (lex)
 import qualified Data.Text as T
@@ -155,7 +155,7 @@ lexVar :: AlexAction Token
 lexVar = lex (TokenVar . T.pack)
 
 lexDL :: AlexAction Token
-lexDL = lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . parseDecimalLiteral))
+lexDL = lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . DecimalLiteral.fromString))
 
 lexNl :: AlexAction Token
 lexNl = lex' TokenNewLine

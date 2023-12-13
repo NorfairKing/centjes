@@ -73,11 +73,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1701539137,
-        "narHash": "sha256-nVO/5QYpf1GwjvtpXhyxx5M3U/WN0MwBro4Lsk+9mL0=",
+        "lastModified": 1702233072,
+        "narHash": "sha256-H5G2wgbim2Ku6G6w+NSaQaauv6B6DlPhY9fMvArKqRo=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "933d7dc155096e7575d207be6fb7792bc9f34f6d",
+        "rev": "781e2a9797ecf0f146e81425c822dca69fe4a348",
         "type": "github"
       },
       "original": {
@@ -128,11 +128,11 @@
         "nixpkgs-stable": "nixpkgs-stable"
       },
       "locked": {
-        "lastModified": 1700922917,
-        "narHash": "sha256-ej2fch/T584b5K9sk1UhmZF7W6wEfDHuoUYpFN8dtvM=",
+        "lastModified": 1702456155,
+        "narHash": "sha256-I2XhXGAecdGlqi6hPWYT83AQtMgL+aa3ulA85RAEgOk=",
         "owner": "cachix",
         "repo": "pre-commit-hooks.nix",
-        "rev": "e5ee5c5f3844550c01d2131096c7271cec5e9b78",
+        "rev": "007a45d064c1c32d04e1b8a0de5ef00984c419bc",
         "type": "github"
       },
       "original": {
@@ -144,11 +144,11 @@
     "really-safe-money": {
       "flake": false,
       "locked": {
-        "lastModified": 1701878343,
-        "narHash": "sha256-j+nqakRhveUi5aSLYoU6L9m2ge/3xGjvh4QRP665YtE=",
+        "lastModified": 1702478204,
+        "narHash": "sha256-/xTlxQrke1To1ndustiMSlu8aclkCoP1Vu+3FpSZ/ns=",
         "owner": "NorfairKing",
         "repo": "really-safe-money",
-        "rev": "51412537df288fdc4cd30893cf4c0481d5f17ff2",
+        "rev": "ebb13266e620df8169e811ddd4d120f3c43f17d1",
         "type": "github"
       },
       "original": {

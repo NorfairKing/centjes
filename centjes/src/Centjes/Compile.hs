@@ -35,8 +35,10 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
+import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import Money.QuantisationFactor
+import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
 import Numeric.Natural
 
@@ -59,7 +61,7 @@ instance ToReport (CompileError SourceSpan) where
         (Just "CE_INVALID_QUANTISATION_FACTOR")
         ( unwords
             [ "Could not parse decimal literal as quantisation factor:",
-              renderDecimalLiteral dl,
+              DecimalLiteral.format dl,
               "for currency with symbol",
               show (currencySymbolText sym)
             ]
@@ -108,7 +110,7 @@ instance ToReport (CompileError SourceSpan) where
         (Just "CE_INVALID_PRICE")
         ( unwords
             [ "Invalid price:",
-              renderDecimalLiteral dl
+              DecimalLiteral.format dl
             ]
         )
         [ (toDiagnosePosition ll, This "This rate is invalid"),
@@ -120,7 +122,7 @@ instance ToReport (CompileError SourceSpan) where
         (Just "CE_INVALID_AMOUNT")
         ( unwords
             [ "Could not parse decimal literal as amount:",
-              renderDecimalLiteral dl,
+              DecimalLiteral.format dl,
               "with quantisation factor",
               show (unQuantisationFactor qf)
             ]
@@ -186,7 +188,7 @@ compileCurrency :: GenLocated ann (CurrencyDeclaration ann) -> Validation (Compi
 compileCurrency (Located l CurrencyDeclaration {..}) = do
   let Located _ symbol = currencyDeclarationSymbol
   let Located _ dl = currencyDeclarationQuantisationFactor
-  qf <- case DecimalLiteral.toQuantisationFactor dl of
+  qf <- case QuantisationFactor.fromDecimalLiteral dl of
     Nothing -> validationFailure $ CompileErrorInvalidQuantisationFactor l symbol currencyDeclarationQuantisationFactor
     Just qf -> pure qf
   pure (symbol, Located l qf)
@@ -289,6 +291,6 @@ compileDecimalLiteral ::
   GenLocated ann QuantisationFactor ->
   GenLocated ann DecimalLiteral ->
   Validation (CompileError ann) (GenLocated ann Money.Account)
-compileDecimalLiteral tl lqf@(Located _ qf) ldl@(Located ll dl) = case DecimalLiteral.toAccount qf dl of
+compileDecimalLiteral tl lqf@(Located _ qf) ldl@(Located ll dl) = case Account.fromDecimalLiteral qf dl of
   Nothing -> validationFailure $ CompileErrorUnparseableAmount tl lqf ldl
   Just a -> pure (Located ll a)

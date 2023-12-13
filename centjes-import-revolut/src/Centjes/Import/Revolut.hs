@@ -34,7 +34,7 @@ import Error.Diagnose
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account (..))
 import Money.QuantisationFactor
-import Numeric.DecimalLiteral as DecimalLiteral
+import qualified Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import System.Exit
 
@@ -86,7 +86,7 @@ instance ToReport ImportError where
             ImportErrorInvalidAccount qf dl ->
               Err
                 (Just "IE_REVOLUT_INVALID_AMOUNT")
-                (unwords ["Invalid amount:", show (renderDecimalLiteral dl), "with quantisation factor", show (unQuantisationFactor qf)])
+                (unwords ["Invalid amount:", show (DecimalLiteral.format dl), "with quantisation factor", show (unQuantisationFactor qf)])
             ImportErrorInvalidLiteral qf a ->
               Err
                 (Just "IE_REVOLUT_INVALID_LITERAL")
@@ -133,10 +133,10 @@ rowTransaction currencies assetsAccountName expensesAccountName feeAccountName R
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
     Nothing -> validationFailure $ ImportErrorUnknownCurrency rowCurrency
     Just qf -> pure qf
-  let fromLiteral dl = case DecimalLiteral.toAccount quantisationFactor dl of
+  let fromLiteral dl = case Account.fromDecimalLiteral quantisationFactor dl of
         Nothing -> validationFailure $ ImportErrorInvalidAccount quantisationFactor dl
         Just a -> pure a
-  let toLiteral a = case DecimalLiteral.fromAccount quantisationFactor a of
+  let toLiteral a = case Account.toDecimalLiteral quantisationFactor a of
         Nothing -> validationFailure $ ImportErrorInvalidLiteral quantisationFactor a
         Just dl -> pure dl
   expensesAccount <- Account.negate <$> fromLiteral rowAccount
@@ -205,9 +205,9 @@ instance FromNamedRecord Row where
       <*> (r .: "Started Date" >>= parseTimeM True defaultTimeLocale "%F %H:%M:%S")
       <*> (r .: "Completed Date" >>= traverse (parseTimeM True defaultTimeLocale "%F %H:%M:%S"))
       <*> (r .: "Description" >>= Description.fromTextM)
-      <*> (r .: "Amount" >>= parseDecimalLiteralM)
-      <*> (r .: "Fee" >>= parseDecimalLiteralM)
+      <*> (r .: "Amount" >>= DecimalLiteral.fromStringM)
+      <*> (r .: "Fee" >>= DecimalLiteral.fromStringM)
       <*> (r .: "Currency" >>= CurrencySymbol.fromTextM)
       <*> r
         .: "State"
-      <*> (r .: "Balance" >>= traverse parseDecimalLiteralM)
+      <*> (r .: "Balance" >>= traverse DecimalLiteral.fromStringM)

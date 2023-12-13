@@ -264,14 +264,14 @@ makePostingSuggestion total (Located cl currency) (Located al account) =
           totalAccount <- M.lookup currency accountMap
           suggestedAccount <- Account.subtract account totalAccount
           let qf = locatedValue (currencyQuantisationFactor currency)
-          suggestedLiteral <- DecimalLiteral.fromAccount qf suggestedAccount
+          suggestedLiteral <- Account.toDecimalLiteral qf suggestedAccount
           let symbol = currencySymbol currency
           pure
             ( toDiagnosePosition $ combineSpans al cl,
               Maybe $
                 unwords
                   [ "Perhaps you meant",
-                    renderDecimalLiteral suggestedLiteral,
+                    DecimalLiteral.format suggestedLiteral,
                     T.unpack (currencySymbolText symbol)
                   ]
             )
