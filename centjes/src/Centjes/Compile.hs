@@ -28,7 +28,6 @@ import Data.List (intercalate, sortBy)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.Ratio
 import qualified Data.Text as T
 import Data.Validity (Validity)
 import Data.Vector (Vector)
@@ -37,10 +36,11 @@ import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import qualified Money.ConversionRate as ConversionRate
+import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor
 import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
-import Numeric.Natural
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
@@ -220,16 +220,11 @@ compilePriceDeclaration currencies (Located pdl PriceDeclaration {..}) = do
 compileConversionRate ::
   ann ->
   GenLocated ann DecimalLiteral ->
-  Validation (CompileError ann) (GenLocated ann (Ratio Natural))
+  Validation (CompileError ann) (GenLocated ann Money.ConversionRate)
 compileConversionRate pdl ldl@(Located rl dl) = do
-  let r = DecimalLiteral.toRational dl
-  let n = numerator r
-  if n < 0
-    then validationFailure $ CompileErrorInvalidPrice pdl ldl
-    else do
-      let d = denominator r
-      -- TODO error for negative or invalid literal
-      pure $ Located rl $ fromIntegral n % fromIntegral d
+  case ConversionRate.fromDecimalLiteral dl of
+    Nothing -> validationFailure $ CompileErrorInvalidPrice pdl ldl
+    Just cr -> pure (Located rl cr)
 
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

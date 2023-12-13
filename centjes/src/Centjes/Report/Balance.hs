@@ -24,7 +24,6 @@ import Data.List (intercalate)
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Maybe
-import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -36,12 +35,11 @@ import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import qualified Money.QuantisationFactor as Money (QuantisationFactor)
-import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
-import Numeric.Natural
 
 newtype BalancedLedger ann = BalancedLedger {balancedLedgerTransactions :: Vector (GenLocated ann (Transaction ann), AccountBalances ann)}
   deriving (Show, Eq, Generic)
@@ -77,7 +75,7 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
               (Currency ann, Money.Account)
               ( Currency ann,
                 Money.QuantisationFactor,
-                Ratio Natural,
+                Money.ConversionRate,
                 Money.Account
               )
           ] ->
@@ -92,11 +90,7 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
                   individualConverteds <-
                     traverse
                       ( \(_, qf, r, a) ->
-                          let f =
-                                realToFrac r
-                                  * fromIntegral (QuantisationFactor.unQuantisationFactor (locatedValue (currencyQuantisationFactor c)))
-                                  / fromIntegral (QuantisationFactor.unQuantisationFactor qf)
-                           in fst (Account.fraction Account.RoundNearest a f)
+                          fst (Account.convert Account.RoundNearest qf a r (locatedValue (currencyQuantisationFactor c)))
                       )
                       rs
                   convertedTotal <- Account.sum individualConverteds
@@ -107,7 +101,7 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
       (Currency ann, Money.Account) ->
       -- Left: Could not convert
       -- Right: Converted amount
-      Either (Currency ann, Money.Account) (Currency ann, Money.QuantisationFactor, Ratio Natural, Money.Account)
+      Either (Currency ann, Money.Account) (Currency ann, Money.QuantisationFactor, Money.ConversionRate, Money.Account)
     convertAccount (currencyFrom, a) =
       if currencySymbol currencyFrom == currencySymbolTo
         then Left (currencyFrom, a) -- Not converted because it's already the correct currency.
@@ -115,7 +109,7 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
           Nothing -> Left (currencyFrom, a) -- Could not convert because we don't have the price info
           Just (currencyTo, rate) -> Right (currencyTo, locatedValue (currencyQuantisationFactor currencyFrom), rate, a)
       where
-        matchingPrice :: Price ann -> Maybe (Currency ann, Ratio Natural)
+        matchingPrice :: Price ann -> Maybe (Currency ann, Money.ConversionRate)
         matchingPrice Price {..} =
           let new = locatedValue priceNew
               old = locatedValue priceOld

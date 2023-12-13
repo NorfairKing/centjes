@@ -23,7 +23,6 @@ import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
 import Data.Map.Strict (Map)
-import Data.Ratio
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Vector ()
@@ -31,8 +30,8 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
+import Money.ConversionRate (ConversionRate)
 import Money.QuantisationFactor
-import Numeric.Natural
 
 data Ledger ann = Ledger
   { ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
@@ -69,7 +68,7 @@ data Price ann = Price
     -- Note: This field will have the source location of the currency _symbol_ in the price declaration.
     priceNew :: GenLocated ann (Currency ann),
     -- Note: This field will have the source location of the decimal literal in the price declaration.
-    priceConversionRate :: GenLocated ann (Ratio Natural),
+    priceConversionRate :: GenLocated ann ConversionRate,
     -- Note: This field will have the source location of the currency _symbol_ in the price declaration.
     priceOld :: GenLocated ann (Currency ann)
   }

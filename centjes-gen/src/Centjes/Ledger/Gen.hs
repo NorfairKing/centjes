@@ -14,6 +14,7 @@ import Data.GenValidity.Vector ()
 import Data.List (sortBy)
 import Data.Maybe
 import qualified Data.Vector as V
+import Money.Gen ()
 import Numeric.DecimalLiteral.Gen ()
 
 instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
