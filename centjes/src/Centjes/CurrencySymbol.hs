@@ -6,6 +6,8 @@ module Centjes.CurrencySymbol
   ( CurrencySymbol (..),
     fromTextM,
     fromText,
+    toText,
+    toString,
   )
 where
 
@@ -46,3 +48,9 @@ fromTextM t = case fromText t of
 
 fromText :: Text -> Maybe CurrencySymbol
 fromText = constructValid . CurrencySymbol
+
+toText :: CurrencySymbol -> Text
+toText = currencySymbolText
+
+toString :: CurrencySymbol -> String
+toString = T.unpack . toText

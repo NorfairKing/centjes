@@ -1,5 +1,4 @@
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.Formatting where
 
@@ -25,8 +24,9 @@ multiAccountChunks ma =
    in map
         ( \(c, acc) ->
             let Located _ qf = currencyQuantisationFactor c
-             in [ accountChunk qf acc,
-                  currencySymbolChunk (currencySymbol c)
+                f = fore $ if acc >= Account.zero then green else red
+             in [ f $ accountChunk qf acc,
+                  f $ currencySymbolChunk (currencySymbol c)
                 ]
         )
         (M.toList accounts)
@@ -35,12 +35,11 @@ currencySymbolChunk :: CurrencySymbol -> Chunk
 currencySymbolChunk = fore magenta . chunk . currencySymbolText
 
 accountChunk :: QuantisationFactor -> Money.Account -> Chunk
-accountChunk qf a =
-  fore (if a >= Account.zero then green else red)
+accountChunk qf acc =
+  fore (if acc >= Account.zero then green else red)
     . chunk
     . T.pack
-    . printf "%10s"
-    $ Account.format qf a
+    $ Account.format qf acc
 
 timestampChunk :: Timestamp -> Chunk
 timestampChunk = fore blue . chunk . Timestamp.toText
