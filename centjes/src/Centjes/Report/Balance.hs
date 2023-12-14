@@ -80,7 +80,7 @@ instance ToReport (ConvertError SourceSpan) where
     ConvertErrorMissingPrice _ ->
       Err
         (Just "CONVERT_ERROR_MISSING_PRICE")
-        "Could not convert an amount because of a missing price"
+        "Could not convert an amount because the conversion rate cannot be determined"
         []
         []
     ConvertErrorInvalidSum ->
@@ -130,7 +130,12 @@ convertMultiAccount ::
 convertMultiAccount prices currencyTo ma = do
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
-  (mResult, _) <- MultiAccount.convertAllA MultiAccount.RoundNearest quantisationFactorTo (lookupConversionRate prices currencyTo) ma
+  (mResult, _) <-
+    MultiAccount.convertAllA
+      MultiAccount.RoundNearest
+      quantisationFactorTo
+      (lookupConversionRate prices currencyTo)
+      ma
   case mResult of
     Nothing -> validationFailure ConvertErrorInvalidSum
     Just result -> pure $ MultiAccount.fromAccount currencyTo result

@@ -360,9 +360,78 @@ spec = do
                         }
                 ]
             }
+
       it "shows the same error when the currency to convert to is not recognised" $
         moduleGoldenBalanceError' "test_resources/errors/balance-report/CONVERT_ERROR_UNKNOWN_TARGET.err" usdSymbol $
           Module [] []
+      it "shows the same error when no price has been defined for a conversion" $
+        moduleGoldenBalanceError' "test_resources/errors/balance-report/CONVERT_ERROR_MISSING_PRICE.err" eurSymbol $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ usdDeclaration,
+                  eurDeclaration,
+                  DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 15)),
+                          transactionDescription = Nothing,
+                          transactionPostings =
+                            [ noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "assets"),
+                                    postingAccount = noLoc "1.0",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  },
+                              noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "income"),
+                                    postingAccount = noLoc "-1.0",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  }
+                            ],
+                          transactionExtras = []
+                        }
+                ]
+            }
+      it "shows the same error when the sum gets too large because of currency conversion" $
+        moduleGoldenBalanceError' "test_resources/errors/balance-report/CONVERT_INVALID_SUM.err" eurSymbol $
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ usdDeclaration,
+                  eurDeclaration,
+                  DeclarationPrice $
+                    noLoc $
+                      PriceDeclaration
+                        { priceDeclarationTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 16)),
+                          priceDeclarationNew = noLoc usdSymbol,
+                          priceDeclarationConversionRate = noLoc "200000000000000000",
+                          priceDeclarationOld = noLoc eurSymbol
+                        },
+                  DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 15)),
+                          transactionDescription = Nothing,
+                          transactionPostings =
+                            [ noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "assets"),
+                                    postingAccount = noLoc "1.0",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  },
+                              noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "income"),
+                                    postingAccount = noLoc "-1.0",
+                                    postingCurrencySymbol = noLoc usdSymbol
+                                  }
+                            ],
+                          transactionExtras = []
+                        }
+                ]
+            }
 
 moduleGoldenBalanceError :: FilePath -> Module ann -> Path Abs Dir -> GoldenTest Text
 moduleGoldenBalanceError fp = moduleGoldenBalanceErrorHelper fp Nothing
