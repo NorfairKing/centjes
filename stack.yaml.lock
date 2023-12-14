@@ -12,6 +12,45 @@ packages:
   original:
     hackage: diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
 - completed:
+    name: really-safe-money
+    pantry-tree:
+      sha256: 4e9c3f61312a267efaa39e4befea8c865fb21f5f91e6c85ea7ebce1f3b322ab7
+      size: 949
+    sha256: 842378bb59eb646b7985e7f179b58e7e8217656c2f31540951ba5afa1ad8a263
+    size: 51955
+    subdir: really-safe-money
+    url: https://github.com/NorfairKing/really-safe-money/archive/c3fae57568913d68b25fc6e1c34e94c14b3a4134.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: really-safe-money
+    url: https://github.com/NorfairKing/really-safe-money/archive/c3fae57568913d68b25fc6e1c34e94c14b3a4134.tar.gz
+- completed:
+    name: really-safe-money-autodocodec
+    pantry-tree:
+      sha256: c577666d3110dcd21b1e7cdadfc53e2041883d99a5e36f3055c21d30dbcb3dac
+      size: 1376
+    sha256: 842378bb59eb646b7985e7f179b58e7e8217656c2f31540951ba5afa1ad8a263
+    size: 51955
+    subdir: really-safe-money-autodocodec
+    url: https://github.com/NorfairKing/really-safe-money/archive/c3fae57568913d68b25fc6e1c34e94c14b3a4134.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: really-safe-money-autodocodec
+    url: https://github.com/NorfairKing/really-safe-money/archive/c3fae57568913d68b25fc6e1c34e94c14b3a4134.tar.gz
+- completed:
+    name: really-safe-money-gen
+    pantry-tree:
+      sha256: 2a41d05dce23f8a97aa78070601e38f25c70a4e6cbc9d1efb8a3e089314e7dfb
+      size: 1940
+    sha256: 842378bb59eb646b7985e7f179b58e7e8217656c2f31540951ba5afa1ad8a263
+    size: 51955
+    subdir: really-safe-money-gen
+    url: https://github.com/NorfairKing/really-safe-money/archive/c3fae57568913d68b25fc6e1c34e94c14b3a4134.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: really-safe-money-gen
+    url: https://github.com/NorfairKing/really-safe-money/archive/c3fae57568913d68b25fc6e1c34e94c14b3a4134.tar.gz
+- completed:
     name: autodocodec
     pantry-tree:
       sha256: 43e9568b96fd2eb0942d08c9d47f69fb4a0fba859458c312cdab51434d852df6

@@ -18,7 +18,6 @@ import Centjes.Location
 import Centjes.Validation
 import Control.DeepSeq
 import Control.Monad
-import Data.Either
 import Data.Foldable
 import Data.List (intercalate)
 import qualified Data.Map as M
@@ -35,6 +34,7 @@ import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import qualified Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
@@ -64,6 +64,8 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
   where
     currencyTo :: Currency ann
     currencyTo = Currency currencySymbolTo $ fromMaybe undefined $ M.lookup currencySymbolTo (ledgerCurrencies ledger)
+    -- TODO proper errors
+
     quantisationFactorTo :: Money.QuantisationFactor
     quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
 
@@ -71,52 +73,30 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
     convertAccountBalance = M.map convertMultiAccount
 
     convertMultiAccount :: Money.MultiAccount (Currency ann) -> Money.MultiAccount (Currency ann)
-    convertMultiAccount =
-      -- TODO error properly
-      buildUp . map convertAccount . M.toList . MultiAccount.unMultiAccount
+    convertMultiAccount ma =
+      let (mResult, _) = MultiAccount.convertAll MultiAccount.RoundNearest quantisationFactorTo func ma
+       in -- TODO proper errors
+          MultiAccount.fromAccount currencyTo $ fromMaybe undefined mResult
       where
-        buildUp ::
-          [ Either
-              (Currency ann, Money.Account)
-              ( Money.QuantisationFactor,
-                Money.ConversionRate,
-                Money.Account
-              )
-          ] ->
-          Money.MultiAccount (Currency ann)
-        buildUp ls =
-          let (unconverteds, rs) = partitionEithers ls
-              unconvertedTotal = MultiAccount.MultiAccount (M.fromList unconverteds)
-           in fromMaybe undefined $ do
-                -- TODO find a way to round only once.
-                individualConverteds <-
-                  traverse
-                    ( \(qf, r, a) ->
-                        fst (Account.convert Account.RoundNearest qf a r quantisationFactorTo)
-                    )
-                    rs
-                convertedTotal <- Account.sum individualConverteds
-                MultiAccount.add unconvertedTotal $ MultiAccount.fromAccount currencyTo convertedTotal
-
-    convertAccount ::
-      (Currency ann, Money.Account) ->
-      -- Left: Could not convert
-      -- Right: Converted amount
-      Either (Currency ann, Money.Account) (Money.QuantisationFactor, Money.ConversionRate, Money.Account)
-    convertAccount (currencyFrom, a) =
-      if currencySymbol currencyFrom == currencySymbolTo
-        then Left (currencyFrom, a) -- Not converted because it's already the correct currency.
-        else case firstMatch (matchingPrice . locatedValue) (V.reverse (ledgerPrices ledger)) of
-          Nothing -> Left (currencyFrom, a) -- Could not convert because we don't have the price info
-          Just rate -> Right (locatedValue (currencyQuantisationFactor currencyFrom), rate, a)
-      where
-        matchingPrice :: Price ann -> Maybe Money.ConversionRate
-        matchingPrice Price {..} =
-          let new = locatedValue priceNew
-              old = locatedValue priceOld
-           in if currencySymbol old == currencySymbolTo && currencySymbol new == currencySymbol currencyFrom
-                then Just (locatedValue priceConversionRate)
-                else Nothing -- TODO also use reverse prices
+        func :: Currency ann -> (Money.ConversionRate, Money.QuantisationFactor)
+        func c =
+          if c == currencyTo
+            then (ConversionRate.oneToOne, quantisationFactorTo)
+            else case firstMatch (matchingPrice . locatedValue) (ledgerPrices ledger) of
+              Nothing -> undefined -- Could not convert because we don't have the price info.
+              Just rate -> (rate, locatedValue (currencyQuantisationFactor c))
+          where
+            -- TODO this could probably be much faster.
+            matchingPrice :: Price ann -> Maybe Money.ConversionRate
+            matchingPrice Price {..} =
+              let new = locatedValue priceNew
+                  old = locatedValue priceOld
+               in if old == currencyTo && new == c
+                    then Just (locatedValue priceConversionRate)
+                    else
+                      if old == c && new == currencyTo
+                        then Just (ConversionRate.invert (locatedValue priceConversionRate))
+                        else Nothing -- TODO also use reverse prices
 
 firstMatch :: (a -> Maybe b) -> Vector a -> Maybe b
 firstMatch f v = go 0
