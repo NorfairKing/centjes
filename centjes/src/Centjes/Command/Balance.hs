@@ -24,9 +24,10 @@ runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   (declarations, diagnostic) <- loadModules settingLedgerFile
   ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
-  accs <- liftIO $ checkValidation diagnostic $ do
-    br <- produceBalanceReport ledger
-    maybe pure (convertBalanceReport ledger) balanceSettingCurrency br
+  accs <-
+    liftIO $
+      checkValidation diagnostic $
+        produceBalanceReport balanceSettingCurrency ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   let t = table (renderBalanceReport accs)
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t

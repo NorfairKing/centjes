@@ -99,53 +99,74 @@ convertBalanceReport ::
   BalanceReport ann ->
   Validation (BalanceError ann) (BalanceReport ann)
 convertBalanceReport ledger currencySymbolTo (BalanceReport br) = mapValidationFailure BalanceErrorConvertError $ do
-  currencyTo <- case M.lookup currencySymbolTo (ledgerCurrencies ledger) of
+  currencyTo <- lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
+
+  BalanceReport <$> convertAccountBalances (ledgerPrices ledger) currencyTo br
+
+lookupConversionCurrency ::
+  Map CurrencySymbol (GenLocated ann Money.QuantisationFactor) ->
+  CurrencySymbol ->
+  Validation (ConvertError ann) (Currency ann)
+lookupConversionCurrency currencies currencySymbolTo =
+  case M.lookup currencySymbolTo currencies of
     Nothing -> validationFailure $ ConvertErrorUnknownTarget currencySymbolTo
     Just lqf -> pure $ Currency currencySymbolTo lqf
 
+convertAccountBalances ::
+  Eq ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Currency ann ->
+  AccountBalances ann ->
+  Validation (ConvertError ann) (AccountBalances ann)
+convertAccountBalances prices currencyTo =
+  traverse $ convertMultiAccount prices currencyTo
+
+convertMultiAccount ::
+  Eq ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Currency ann ->
+  Money.MultiAccount (Currency ann) ->
+  Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
+convertMultiAccount prices currencyTo ma = do
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+  (mResult, _) <- MultiAccount.convertAllA MultiAccount.RoundNearest quantisationFactorTo (lookupConversionRate prices currencyTo) ma
+  case mResult of
+    Nothing -> validationFailure ConvertErrorInvalidSum
+    Just result -> pure $ MultiAccount.fromAccount currencyTo result
 
-  let lookupConversionRate ::
-        Currency ann ->
-        Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-      lookupConversionRate c =
-        if c == currencyTo
-          then pure (ConversionRate.oneToOne, quantisationFactorTo)
-          else case firstMatch (matchingPrice . locatedValue) (ledgerPrices ledger) of
-            Nothing ->
-              -- Could not convert because we don't have the price info.
-              validationFailure $ ConvertErrorMissingPrice c
-            Just rate ->
-              pure (rate, locatedValue (currencyQuantisationFactor c))
-        where
-          -- TODO this could probably be much faster instead of a linear search.
-          matchingPrice :: Price ann -> Maybe Money.ConversionRate
-          matchingPrice Price {..} =
-            let new = locatedValue priceNew
-                old = locatedValue priceOld
-             in if old == currencyTo && new == c
-                  then Just (locatedValue priceConversionRate)
-                  else
-                    if old == c && new == currencyTo
-                      then Just (ConversionRate.invert (locatedValue priceConversionRate))
-                      else Nothing -- TODO also use reverse prices
-  let convertMultiAccount ::
-        Money.MultiAccount (Currency ann) ->
-        Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-      convertMultiAccount ma = do
-        (mResult, _) <- MultiAccount.convertAllA MultiAccount.RoundNearest quantisationFactorTo lookupConversionRate ma
-        -- TODO proper errors
-        case mResult of
-          Nothing -> validationFailure ConvertErrorInvalidSum
-          Just result -> pure $ MultiAccount.fromAccount currencyTo result
+lookupConversionRate ::
+  forall ann.
+  Eq ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Currency ann ->
+  Currency ann ->
+  Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
+lookupConversionRate prices currencyTo currencyFrom =
+  if currencyFrom == currencyTo
+    then pure (ConversionRate.oneToOne, quantisationFactorTo)
+    else case firstMatch (matchingPrice . locatedValue) prices of
+      Nothing ->
+        -- Could not convert because we don't have the price info.
+        validationFailure $ ConvertErrorMissingPrice currencyFrom
+      Just rate ->
+        pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
+  where
+    quantisationFactorTo :: Money.QuantisationFactor
+    quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
 
-  let convertAccountBalances ::
-        AccountBalances ann ->
-        Validation (ConvertError ann) (AccountBalances ann)
-      convertAccountBalances = traverse convertMultiAccount
-
-  BalanceReport <$> convertAccountBalances br
+    -- TODO this could probably be much faster instead of a linear search.
+    matchingPrice :: Price ann -> Maybe Money.ConversionRate
+    matchingPrice Price {..} =
+      let new = locatedValue priceNew
+          old = locatedValue priceOld
+          cr = locatedValue priceConversionRate
+       in if old == currencyTo && new == currencyFrom
+            then Just cr
+            else
+              if old == currencyFrom && new == currencyTo
+                then Just (ConversionRate.invert cr)
+                else Nothing -- TODO also use reverse prices
 
 firstMatch :: (a -> Maybe b) -> Vector a -> Maybe b
 firstMatch f v = go 0
@@ -316,25 +337,35 @@ accountLine c a =
 produceBalanceReport ::
   forall ann.
   Ord ann =>
+  Maybe CurrencySymbol ->
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
-produceBalanceReport l =
+produceBalanceReport mCurrencySymbolTo l = do
+  mCurrencyTo <- mapM (mapValidationFailure BalanceErrorConvertError . lookupConversionCurrency (ledgerCurrencies l)) mCurrencySymbolTo
+
   ( \bl ->
       let v = balancedLedgerTransactions bl
        in BalanceReport $
             if V.null v
               then M.empty
               else snd (V.last v)
-  )
-    <$> produceBalancedLedger l
+    )
+    <$> produceBalancedLedger mCurrencyTo l
 
 produceBalancedLedger ::
   forall ann.
   Ord ann =>
+  Maybe (Currency ann) ->
   Ledger ann ->
   Validation (BalanceError ann) (BalancedLedger ann)
-produceBalancedLedger ledger = do
-  tups <- for (ledgerTransactions ledger) $ \t -> (,) t <$> balanceTransaction t
+produceBalancedLedger mCurrencyTo ledger = do
+  tups <- for (ledgerTransactions ledger) $ \t -> do
+    m <- balanceTransaction t
+    m' <-
+      case mCurrencyTo of
+        Nothing -> pure m
+        Just currencyTo -> convertBalancedTransaction (ledgerPrices ledger) currencyTo m
+    pure (t, m')
 
   let constructBalancedVector ::
         (Int, AccountBalances ann) ->
@@ -407,6 +438,7 @@ balanceTransaction (Located tl Transaction {..}) = do
               Just total -> case MultiAccount.add total current of
                 Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl total current
                 Just acc'' -> pure $ M.insert an acc'' m
+
   m <- foldM incorporatePosting M.empty transactionPostings
   let as = M.elems m
   case MultiAccount.sum as of
@@ -414,6 +446,16 @@ balanceTransaction (Located tl Transaction {..}) = do
     Just d
       | d == MultiAccount.zero -> pure (Located tl m)
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
+
+convertBalancedTransaction ::
+  Eq ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Currency ann ->
+  GenLocated ann (AccountBalances ann) ->
+  Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
+convertBalancedTransaction prices currencyTo (Located l m) =
+  mapValidationFailure BalanceErrorConvertError $
+    Located l <$> convertAccountBalances prices currencyTo m
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"

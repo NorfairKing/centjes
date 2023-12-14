@@ -29,7 +29,7 @@ spec :: Spec
 spec = do
   describe "produceBalanceReport" $ do
     it "produces valid reports" $
-      producesValid
+      producesValid2
         (produceBalanceReport @())
     tempDirSpec "centjes-balance-errors" $ do
       let usdSymbol = CurrencySymbol "USD"
@@ -360,9 +360,18 @@ spec = do
                         }
                 ]
             }
+      it "shows the same error when the currency to convert to is not recognised" $
+        moduleGoldenBalanceError' "test_resources/errors/balance-report/CONVERT_ERROR_UNKNOWN_TARGET.err" usdSymbol $
+          Module [] []
 
 moduleGoldenBalanceError :: FilePath -> Module ann -> Path Abs Dir -> GoldenTest Text
-moduleGoldenBalanceError file m tdir = do
+moduleGoldenBalanceError fp = moduleGoldenBalanceErrorHelper fp Nothing
+
+moduleGoldenBalanceError' :: FilePath -> CurrencySymbol -> Module ann -> Path Abs Dir -> GoldenTest Text
+moduleGoldenBalanceError' fp cs = moduleGoldenBalanceErrorHelper fp $ Just cs
+
+moduleGoldenBalanceErrorHelper :: FilePath -> Maybe CurrencySymbol -> Module ann -> Path Abs Dir -> GoldenTest Text
+moduleGoldenBalanceErrorHelper file mCurrencyTo m tdir = do
   goldenTextFile file $ do
     -- We have to write the module to a file to get the right source
     -- locations to produce a nice error.
@@ -376,5 +385,5 @@ moduleGoldenBalanceError file m tdir = do
     -- Compile to a ledger
     ledger <- shouldValidate $ compileDeclarations ds
 
-    errs <- shouldFailToValidate $ produceBalanceReport ledger
+    errs <- shouldFailToValidate $ produceBalanceReport mCurrencyTo ledger
     pure $ renderValidationErrors diag errs

@@ -13,7 +13,6 @@ import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import Money.QuantisationFactor
 import Text.Colour
-import Text.Printf
 
 accountNameChunk :: AccountName -> Chunk
 accountNameChunk = fore white . chunk . accountNameText

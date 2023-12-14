@@ -178,5 +178,5 @@ checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
 
 checkLedger :: Ord ann => Ledger ann -> Checker ann ()
 checkLedger l = do
-  _ <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport l
+  _ <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport Nothing l
   pure ()
