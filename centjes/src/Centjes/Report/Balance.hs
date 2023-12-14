@@ -62,6 +62,11 @@ instance NFData ann => NFData (BalanceReport ann)
 convertBalanceReport :: forall ann. Ord ann => Ledger ann -> CurrencySymbol -> BalanceReport ann -> BalanceReport ann
 convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccountBalance $ unBalanceReport br
   where
+    currencyTo :: Currency ann
+    currencyTo = Currency currencySymbolTo $ fromMaybe undefined $ M.lookup currencySymbolTo (ledgerCurrencies ledger)
+    quantisationFactorTo :: Money.QuantisationFactor
+    quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+
     convertAccountBalance :: AccountBalances ann -> AccountBalances ann
     convertAccountBalance = M.map convertMultiAccount
 
@@ -73,8 +78,7 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
         buildUp ::
           [ Either
               (Currency ann, Money.Account)
-              ( Currency ann,
-                Money.QuantisationFactor,
+              ( Money.QuantisationFactor,
                 Money.ConversionRate,
                 Money.Account
               )
@@ -83,38 +87,35 @@ convertBalanceReport ledger currencySymbolTo br = BalanceReport $ convertAccount
         buildUp ls =
           let (unconverteds, rs) = partitionEithers ls
               unconvertedTotal = MultiAccount.MultiAccount (M.fromList unconverteds)
-           in case rs of
-                [] -> unconvertedTotal
-                ((c, _, _, _) : _) -> fromMaybe undefined $ do
-                  -- TODO find a way to round only once.
-                  individualConverteds <-
-                    traverse
-                      ( \(_, qf, r, a) ->
-                          fst (Account.convert Account.RoundNearest qf a r (locatedValue (currencyQuantisationFactor c)))
-                      )
-                      rs
-                  convertedTotal <- Account.sum individualConverteds
-                  MultiAccount.add unconvertedTotal $ MultiAccount.fromAccount c convertedTotal
+           in fromMaybe undefined $ do
+                -- TODO find a way to round only once.
+                individualConverteds <-
+                  traverse
+                    ( \(qf, r, a) ->
+                        fst (Account.convert Account.RoundNearest qf a r quantisationFactorTo)
+                    )
+                    rs
+                convertedTotal <- Account.sum individualConverteds
+                MultiAccount.add unconvertedTotal $ MultiAccount.fromAccount currencyTo convertedTotal
 
-    -- TODO look up the currency up front so we don't need to put the currency in the rights list multiple times.
     convertAccount ::
       (Currency ann, Money.Account) ->
       -- Left: Could not convert
       -- Right: Converted amount
-      Either (Currency ann, Money.Account) (Currency ann, Money.QuantisationFactor, Money.ConversionRate, Money.Account)
+      Either (Currency ann, Money.Account) (Money.QuantisationFactor, Money.ConversionRate, Money.Account)
     convertAccount (currencyFrom, a) =
       if currencySymbol currencyFrom == currencySymbolTo
         then Left (currencyFrom, a) -- Not converted because it's already the correct currency.
         else case firstMatch (matchingPrice . locatedValue) (V.reverse (ledgerPrices ledger)) of
           Nothing -> Left (currencyFrom, a) -- Could not convert because we don't have the price info
-          Just (currencyTo, rate) -> Right (currencyTo, locatedValue (currencyQuantisationFactor currencyFrom), rate, a)
+          Just rate -> Right (locatedValue (currencyQuantisationFactor currencyFrom), rate, a)
       where
-        matchingPrice :: Price ann -> Maybe (Currency ann, Money.ConversionRate)
+        matchingPrice :: Price ann -> Maybe Money.ConversionRate
         matchingPrice Price {..} =
           let new = locatedValue priceNew
               old = locatedValue priceOld
            in if currencySymbol old == currencySymbolTo && currencySymbol new == currencySymbol currencyFrom
-                then Just (old, locatedValue priceConversionRate)
+                then Just (locatedValue priceConversionRate)
                 else Nothing -- TODO also use reverse prices
 
 firstMatch :: (a -> Maybe b) -> Vector a -> Maybe b

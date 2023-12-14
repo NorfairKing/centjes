@@ -5,6 +5,9 @@ packages:
 - centjes-import-ubs
 - centjes-import-revolut
 - centjes-switzerland
+- /home/syd/src/really-safe-money/really-safe-money
+- /home/syd/src/really-safe-money/really-safe-money-autodocodec
+- /home/syd/src/really-safe-money/really-safe-money-gen
 
 ghc-options:
   "$locals": -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Widentities -Wredundant-constraints -Wcpp-undef -O0 -Wunused-packages
@@ -12,12 +15,12 @@ ghc-options:
 extra-deps:
 - diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
 
-- github: NorfairKing/really-safe-money
-  commit: ebb13266e620df8169e811ddd4d120f3c43f17d1
-  subdirs:
-  - really-safe-money
-  - really-safe-money-autodocodec
-  - really-safe-money-gen
+  # - github: NorfairKing/really-safe-money
+  #   commit: ebb13266e620df8169e811ddd4d120f3c43f17d1
+  #   subdirs:
+  #   - really-safe-money
+  #   - really-safe-money-autodocodec
+  #   - really-safe-money-gen
 
 - github: NorfairKing/autodocodec
   commit: 0e48f4dd464b87471008b74fba2b997b80729fc2
