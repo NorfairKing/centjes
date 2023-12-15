@@ -395,7 +395,7 @@ spec = do
                 ]
             }
       it "shows the same error when the sum gets too large because of currency conversion" $
-        moduleGoldenBalanceError' "test_resources/errors/balance-report/CONVERT_INVALID_SUM.err" eurSymbol $
+        moduleGoldenBalanceError' "test_resources/errors/balance-report/CONVERT_ERROR_INVALID_SUM.err" eurSymbol $
           Module
             { moduleImports = [],
               moduleDeclarations =

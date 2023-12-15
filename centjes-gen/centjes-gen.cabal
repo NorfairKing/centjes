@@ -19,9 +19,9 @@ extra-source-files:
     test_resources/errors/balance-report/BE_OFF_BALANCE-two.err
     test_resources/errors/balance-report/BE_RUNNING_BALANCE.err
     test_resources/errors/balance-report/BE_TRANSACTION_SUM.err
+    test_resources/errors/balance-report/CONVERT_ERROR_INVALID_SUM.err
     test_resources/errors/balance-report/CONVERT_ERROR_MISSING_PRICE.err
     test_resources/errors/balance-report/CONVERT_ERROR_UNKNOWN_TARGET.err
-    test_resources/errors/balance-report/CONVERT_INVALID_SUM.err
     test_resources/errors/check/CE_DUPLICATE_ACCOUNT.err
     test_resources/errors/check/CE_MISSING_ATTACHMENT.err
     test_resources/errors/check/CE_UNDECLARED_ACCOUNT.err

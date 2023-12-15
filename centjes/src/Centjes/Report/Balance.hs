@@ -8,7 +8,6 @@
 module Centjes.Report.Balance
   ( BalanceReport (..),
     BalanceError (..),
-    convertBalanceReport,
     produceBalanceReport,
   )
 where
@@ -61,8 +60,8 @@ instance NFData ann => NFData (BalanceReport ann)
 
 data ConvertError ann
   = ConvertErrorUnknownTarget !CurrencySymbol
-  | ConvertErrorMissingPrice !(Currency ann)
-  | ConvertErrorInvalidSum
+  | ConvertErrorMissingPrice !(Currency ann) !(Currency ann) !ann
+  | ConvertErrorInvalidSum !(Currency ann) !ann
   deriving (Show, Eq, Generic)
 
 instance Validity ann => Validity (ConvertError ann)
@@ -77,110 +76,30 @@ instance ToReport (ConvertError SourceSpan) where
         ("Unknown currency to convert to: " <> CurrencySymbol.toString cs)
         []
         []
-    ConvertErrorMissingPrice _ ->
+    ConvertErrorMissingPrice (Currency fromSymbol (Located fromL _)) (Currency toSymbol (Located toL _)) tl ->
       Err
         (Just "CONVERT_ERROR_MISSING_PRICE")
-        "Could not convert an amount because the conversion rate cannot be determined"
+        ( unwords
+            [ "Could not convert an amount because the conversion rate from",
+              CurrencySymbol.toString fromSymbol,
+              "to",
+              CurrencySymbol.toString toSymbol,
+              "cannot be determined"
+            ]
+        )
+        [ (toDiagnosePosition fromL, Where "Trying to convert from this currency"),
+          (toDiagnosePosition toL, Where "Trying to convert to this currency"),
+          (toDiagnosePosition tl, Where "Trying to convert these amounts")
+        ]
         []
-        []
-    ConvertErrorInvalidSum ->
+    ConvertErrorInvalidSum (Currency _ (Located cl _)) tl ->
       Err
         (Just "CONVERT_ERROR_INVALID_SUM")
         "Could not sum converted amounts together because the result became too big."
+        [ (toDiagnosePosition cl, Where "Trying to convert to this currency"),
+          (toDiagnosePosition tl, Where "Trying to convert these amounts")
+        ]
         []
-        []
-
--- TODO version of this that only gets the prices not the entire ledger
-convertBalanceReport ::
-  forall ann.
-  Ord ann =>
-  Ledger ann ->
-  CurrencySymbol ->
-  BalanceReport ann ->
-  Validation (BalanceError ann) (BalanceReport ann)
-convertBalanceReport ledger currencySymbolTo (BalanceReport br) = mapValidationFailure BalanceErrorConvertError $ do
-  currencyTo <- lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
-
-  BalanceReport <$> convertAccountBalances (ledgerPrices ledger) currencyTo br
-
-lookupConversionCurrency ::
-  Map CurrencySymbol (GenLocated ann Money.QuantisationFactor) ->
-  CurrencySymbol ->
-  Validation (ConvertError ann) (Currency ann)
-lookupConversionCurrency currencies currencySymbolTo =
-  case M.lookup currencySymbolTo currencies of
-    Nothing -> validationFailure $ ConvertErrorUnknownTarget currencySymbolTo
-    Just lqf -> pure $ Currency currencySymbolTo lqf
-
-convertAccountBalances ::
-  Eq ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  AccountBalances ann ->
-  Validation (ConvertError ann) (AccountBalances ann)
-convertAccountBalances prices currencyTo =
-  traverse $ convertMultiAccount prices currencyTo
-
-convertMultiAccount ::
-  Eq ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  Money.MultiAccount (Currency ann) ->
-  Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-convertMultiAccount prices currencyTo ma = do
-  let quantisationFactorTo :: Money.QuantisationFactor
-      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
-  (mResult, _) <-
-    MultiAccount.convertAllA
-      MultiAccount.RoundNearest
-      quantisationFactorTo
-      (lookupConversionRate prices currencyTo)
-      ma
-  case mResult of
-    Nothing -> validationFailure ConvertErrorInvalidSum
-    Just result -> pure $ MultiAccount.fromAccount currencyTo result
-
-lookupConversionRate ::
-  forall ann.
-  Eq ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  Currency ann ->
-  Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-lookupConversionRate prices currencyTo currencyFrom =
-  if currencyFrom == currencyTo
-    then pure (ConversionRate.oneToOne, quantisationFactorTo)
-    else case firstMatch (matchingPrice . locatedValue) prices of
-      Nothing ->
-        -- Could not convert because we don't have the price info.
-        validationFailure $ ConvertErrorMissingPrice currencyFrom
-      Just rate ->
-        pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
-  where
-    quantisationFactorTo :: Money.QuantisationFactor
-    quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
-
-    -- TODO this could probably be much faster instead of a linear search.
-    matchingPrice :: Price ann -> Maybe Money.ConversionRate
-    matchingPrice Price {..} =
-      let new = locatedValue priceNew
-          old = locatedValue priceOld
-          cr = locatedValue priceConversionRate
-       in if old == currencyTo && new == currencyFrom
-            then Just cr
-            else
-              if old == currencyFrom && new == currencyTo
-                then Just (ConversionRate.invert cr)
-                else Nothing -- TODO also use reverse prices
-
-firstMatch :: (a -> Maybe b) -> Vector a -> Maybe b
-firstMatch f v = go 0
-  where
-    go ix = case v V.!? ix of
-      Nothing -> Nothing
-      Just a -> case f a of
-        Nothing -> go (succ ix)
-        Just b -> Just b
 
 data BalanceError ann
   = BalanceErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
@@ -357,6 +276,15 @@ produceBalanceReport mCurrencySymbolTo l = do
     )
     <$> produceBalancedLedger mCurrencyTo l
 
+lookupConversionCurrency ::
+  Map CurrencySymbol (GenLocated ann Money.QuantisationFactor) ->
+  CurrencySymbol ->
+  Validation (ConvertError ann) (Currency ann)
+lookupConversionCurrency currencies currencySymbolTo =
+  case M.lookup currencySymbolTo currencies of
+    Nothing -> validationFailure $ ConvertErrorUnknownTarget currencySymbolTo
+    Just lqf -> pure $ Currency currencySymbolTo lqf
+
 produceBalancedLedger ::
   forall ann.
   Ord ann =>
@@ -460,7 +388,80 @@ convertBalancedTransaction ::
   Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
 convertBalancedTransaction prices currencyTo (Located l m) =
   mapValidationFailure BalanceErrorConvertError $
-    Located l <$> convertAccountBalances prices currencyTo m
+    Located l <$> convertAccountBalances prices currencyTo l m
+
+convertAccountBalances ::
+  Eq ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Currency ann ->
+  ann ->
+  AccountBalances ann ->
+  Validation (ConvertError ann) (AccountBalances ann)
+convertAccountBalances prices currencyTo l =
+  traverse $ convertMultiAccount prices currencyTo l
+
+convertMultiAccount ::
+  Eq ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Currency ann ->
+  ann ->
+  Money.MultiAccount (Currency ann) ->
+  Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
+convertMultiAccount prices currencyTo l ma = do
+  let quantisationFactorTo :: Money.QuantisationFactor
+      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+  (mResult, _) <-
+    MultiAccount.convertAllA
+      MultiAccount.RoundNearest
+      quantisationFactorTo
+      (lookupConversionRate prices currencyTo l)
+      ma
+  case mResult of
+    Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo l
+    Just result -> pure $ MultiAccount.fromAccount currencyTo result
+
+lookupConversionRate ::
+  forall ann.
+  Eq ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Currency ann ->
+  ann ->
+  Currency ann ->
+  Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
+lookupConversionRate prices currencyTo l currencyFrom =
+  if currencyFrom == currencyTo
+    then pure (ConversionRate.oneToOne, quantisationFactorTo)
+    else case firstMatch (matchingPrice . locatedValue) prices of
+      Nothing ->
+        -- Could not convert because we don't have the price info.
+        validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom l
+      Just rate ->
+        pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
+  where
+    quantisationFactorTo :: Money.QuantisationFactor
+    quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+
+    -- TODO this could probably be much faster instead of a linear search.
+    matchingPrice :: Price ann -> Maybe Money.ConversionRate
+    matchingPrice Price {..} =
+      let new = locatedValue priceNew
+          old = locatedValue priceOld
+          cr = locatedValue priceConversionRate
+       in if old == currencyTo && new == currencyFrom
+            then Just cr
+            else
+              if old == currencyFrom && new == currencyTo
+                then Just (ConversionRate.invert cr)
+                else Nothing -- TODO also use reverse prices
+
+firstMatch :: (a -> Maybe b) -> Vector a -> Maybe b
+firstMatch f v = go 0
+  where
+    go ix = case v V.!? ix of
+      Nothing -> Nothing
+      Just a -> case f a of
+        Nothing -> go (succ ix)
+        Just b -> Just b
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
