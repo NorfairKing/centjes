@@ -15,6 +15,7 @@ import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
 import Centjes.OptParse
+import Centjes.Report.Register
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
@@ -28,15 +29,16 @@ runCentjesRegister :: Settings -> RegisterSettings -> IO ()
 runCentjesRegister Settings {..} RegisterSettings = runStderrLoggingT $ do
   (declarations, diag) <- loadModules settingLedgerFile
   ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
+  register <- liftIO $ checkValidation diag $ produceRegister ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-  let t = table (renderRegister ledger)
+  let t = table (renderRegister register)
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
 
-renderRegister :: Ledger ann -> [[Chunk]]
-renderRegister Ledger {..} =
+renderRegister :: Register ann -> [[Chunk]]
+renderRegister (Register v) =
   concatMap
     (\(ix, Located _ t) -> renderTransaction ix t)
-    (V.indexed ledgerTransactions)
+    (V.indexed v)
 
 renderTransaction ::
   Int ->
