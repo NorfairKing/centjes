@@ -21,15 +21,16 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import qualified Money.Account as Account
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
 
 runCentjesRegister :: Settings -> RegisterSettings -> IO ()
-runCentjesRegister Settings {..} RegisterSettings = runStderrLoggingT $ do
+runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
   (declarations, diag) <- loadModules settingLedgerFile
   ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
-  register <- liftIO $ checkValidation diag $ produceRegister ledger
+  register <- liftIO $ checkValidation diag $ produceRegister registerSettingCurrency ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   let t = table (renderRegister register)
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
@@ -64,7 +65,9 @@ renderPosting (Located _ Posting {..}) =
   let Located _ accountName = postingAccountName
       Located _ Currency {..} = postingCurrency
       Located _ quantisationFactor = currencyQuantisationFactor
+      Located _ acc = postingAccount
+      f = fore $ if acc >= Account.zero then green else red
    in [ accountNameChunk accountName,
-        accountChunk quantisationFactor (locatedValue postingAccount),
-        currencySymbolChunk currencySymbol
+        f $ accountChunk quantisationFactor acc,
+        f $ currencySymbolChunk currencySymbol
       ]

@@ -9,6 +9,7 @@ module Centjes.Convert
   ( ConvertError (..),
     lookupConversionCurrency,
     convertMultiAccount,
+    lookupConversionRate,
   )
 where
 
@@ -83,7 +84,6 @@ lookupConversionCurrency currencies currencySymbolTo =
     Just lqf -> pure $ Currency currencySymbolTo lqf
 
 convertMultiAccount ::
-  Eq ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   ann ->
@@ -104,14 +104,13 @@ convertMultiAccount prices currencyTo l ma = do
 
 lookupConversionRate ::
   forall ann.
-  Eq ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   ann ->
   Currency ann ->
   Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
 lookupConversionRate prices currencyTo l currencyFrom =
-  if currencyFrom == currencyTo
+  if currencySymbol currencyFrom == currencySymbol currencyTo
     then pure (ConversionRate.oneToOne, quantisationFactorTo)
     else case firstMatch (matchingPrice . locatedValue) prices of
       Nothing ->
@@ -129,10 +128,10 @@ lookupConversionRate prices currencyTo l currencyFrom =
       let new = locatedValue priceNew
           old = locatedValue priceOld
           cr = locatedValue priceConversionRate
-       in if old == currencyTo && new == currencyFrom
+       in if currencySymbol old == currencySymbol currencyTo && currencySymbol new == currencySymbol currencyFrom
             then Just cr
             else
-              if old == currencyFrom && new == currencyTo
+              if currencySymbol old == currencySymbol currencyFrom && currencySymbol new == currencySymbol currencyTo
                 then Just (ConversionRate.invert cr)
                 else Nothing -- TODO also more complicated paths.
 

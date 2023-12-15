@@ -47,6 +47,8 @@ data CheckSettings = CheckSettings
   deriving (Show, Eq, Generic)
 
 data RegisterSettings = RegisterSettings
+  { registerSettingCurrency :: !(Maybe CurrencySymbol)
+  }
   deriving (Show, Eq, Generic)
 
 data BalanceSettings = BalanceSettings
@@ -86,10 +88,11 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
     case cmd of
       CommandCheck CheckArgs -> do
         pure $ DispatchCheck CheckSettings
-      CommandRegister RegisterArgs -> do
-        pure $ DispatchRegister RegisterSettings
+      CommandRegister RegisterArgs {..} -> do
+        let registerSettingCurrency = registerArgConversionCurrency
+        pure $ DispatchRegister RegisterSettings {..}
       CommandBalance BalanceArgs {..} -> do
-        let balanceSettingCurrency = flagConversionCurrency
+        let balanceSettingCurrency = balanceArgConversionCurrency
         pure $ DispatchBalance BalanceSettings {..}
       CommandFormat FormatArgs {..} -> do
         formatSettingFileOrDir <- case (formatArgFile, formatArgDir) of
@@ -203,16 +206,28 @@ parseCommandCheck = OptParse.info parser modifier
     parser = pure CheckArgs
 
 data RegisterArgs = RegisterArgs
+  {registerArgConversionCurrency :: !(Maybe CurrencySymbol)}
   deriving (Show, Eq, Generic)
 
 parseCommandRegister :: OptParse.ParserInfo RegisterArgs
 parseCommandRegister = OptParse.info parser modifier
   where
     modifier = OptParse.fullDesc <> OptParse.progDesc "Show a register of all transactions"
-    parser = pure RegisterArgs
+    parser =
+      RegisterArgs
+        <$> optional
+          ( option
+              (maybeReader (CurrencySymbol.fromText . T.pack))
+              ( mconcat
+                  [ long "convert",
+                    metavar "CURRENCY",
+                    help "Currency to convert to"
+                  ]
+              )
+          )
 
 data BalanceArgs = BalanceArgs
-  {flagConversionCurrency :: !(Maybe CurrencySymbol)}
+  {balanceArgConversionCurrency :: !(Maybe CurrencySymbol)}
   deriving (Show, Eq, Generic)
 
 parseCommandBalance :: OptParse.ParserInfo BalanceArgs

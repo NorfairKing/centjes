@@ -220,7 +220,12 @@ produceBalanceReport ::
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
 produceBalanceReport mCurrencySymbolTo l = do
-  mCurrencyTo <- mapM (mapValidationFailure BalanceErrorConvertError . lookupConversionCurrency (ledgerCurrencies l)) mCurrencySymbolTo
+  mCurrencyTo <-
+    mapM
+      ( mapValidationFailure BalanceErrorConvertError
+          . lookupConversionCurrency (ledgerCurrencies l)
+      )
+      mCurrencySymbolTo
 
   ( \bl ->
       let v = balancedLedgerTransactions bl
@@ -327,7 +332,6 @@ balanceTransaction (Located tl Transaction {..}) = do
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
 
 convertBalancedTransaction ::
-  Eq ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   GenLocated ann (AccountBalances ann) ->
@@ -337,7 +341,6 @@ convertBalancedTransaction prices currencyTo (Located l m) =
     Located l <$> convertAccountBalances prices currencyTo l m
 
 convertAccountBalances ::
-  Eq ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   ann ->
