@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Report.Register
@@ -16,12 +17,27 @@ import Centjes.Ledger
 import Centjes.Location
 import Centjes.Validation
 import Control.DeepSeq
+import qualified Data.Map.Strict as M
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
+import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
+import qualified Money.Account as Money (Account)
+import qualified Money.MultiAccount as Money (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 
-newtype Register ann = Register {registerTransactions :: Vector (GenLocated ann (Transaction ann))}
+newtype Register ann = Register
+  { registerTransactions ::
+      Vector
+        ( GenLocated ann Timestamp,
+          Maybe (GenLocated ann Description),
+          Vector
+            ( GenLocated ann (Posting ann),
+              Money.MultiAccount (Currency ann)
+            )
+        )
+  }
   deriving (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (Register ann)
@@ -29,7 +45,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (Register ann)
 instance NFData ann => NFData (Register ann)
 
 data RegisterError ann
-  = RegisterErrorConvertError !(ConvertError ann)
+  = RegisterErrorAddError
+  | RegisterErrorConvertError !(ConvertError ann)
   deriving stock (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (RegisterError ann)
@@ -38,9 +55,15 @@ instance NFData ann => NFData (RegisterError ann)
 
 instance ToReport (RegisterError SourceSpan) where
   toReport = \case
+    RegisterErrorAddError -> undefined
     RegisterErrorConvertError ce -> toReport ce
 
-produceRegister :: Maybe CurrencySymbol -> Ledger ann -> Validation (RegisterError ann) (Register ann)
+produceRegister ::
+  forall ann.
+  Ord ann =>
+  Maybe CurrencySymbol ->
+  Ledger ann ->
+  Validation (RegisterError ann) (Register ann)
 produceRegister mCurrencySymbolTo ledger = do
   mCurrencyTo <-
     mapM
@@ -49,16 +72,97 @@ produceRegister mCurrencySymbolTo ledger = do
       )
       mCurrencySymbolTo
 
-  Register <$> mapM (registerTransaction (ledgerPrices ledger) mCurrencyTo) (ledgerTransactions ledger)
+  ts <-
+    mapM
+      ( registerTransaction
+          (ledgerPrices ledger)
+          mCurrencyTo
+      )
+      (ledgerTransactions ledger)
+  let goTransaction ::
+        (Int, Money.MultiAccount (Currency ann)) ->
+        Validation
+          (RegisterError ann)
+          ( ( GenLocated ann Timestamp,
+              Maybe (GenLocated ann Description),
+              Vector
+                ( GenLocated ann (Posting ann),
+                  Money.MultiAccount (Currency ann)
+                )
+            ),
+            (Int, Money.MultiAccount (Currency ann))
+          )
+      goTransaction (ix, runningTotal) = do
+        let (lts, ld, ps) = V.unsafeIndex ts ix
+        let goPosting ::
+              (Int, Money.MultiAccount (Currency ann)) ->
+              Validation
+                (RegisterError ann)
+                ( ( GenLocated ann (Posting ann),
+                    Money.MultiAccount (Currency ann)
+                  ),
+                  (Int, Money.MultiAccount (Currency ann))
+                )
+            goPosting (jx, runningSubTotal) = do
+              let lp@(Located _ Posting {..}) = V.unsafeIndex ps jx
+              let Located _ currency = postingCurrency
+              let Located _ account = postingAccount
+              newRunningTotal <-
+                case addAccount currency account runningSubTotal of
+                  Nothing -> validationFailure RegisterErrorAddError
+                  Just nt -> pure nt
+              pure
+                ( (lp, newRunningTotal),
+                  (succ jx, newRunningTotal)
+                )
+        newPostings <- V.unfoldrExactNM (V.length ps) goPosting (0, runningTotal)
+        let newRunningTotal =
+              if V.null newPostings
+                then runningTotal
+                else snd (V.last newPostings)
+        pure
+          ( (lts, ld, newPostings),
+            (succ ix, newRunningTotal)
+          )
+
+  ts' <- V.unfoldrExactNM (V.length ts) goTransaction (0, MultiAccount.zero)
+
+  pure $ Register ts'
+
+addAccount ::
+  Ord currency =>
+  currency ->
+  Money.Account ->
+  Money.MultiAccount currency ->
+  Maybe (Money.MultiAccount currency)
+addAccount key acc ma =
+  let m = MultiAccount.unMultiAccount ma
+   in fmap MultiAccount.MultiAccount $ case M.lookup key m of
+        Nothing -> Just $ M.insert key acc m
+        Just acc' -> do
+          newAcc <- Account.add acc acc'
+          pure $ M.insert key newAcc m
 
 registerTransaction ::
   Vector (GenLocated ann (Price ann)) ->
   Maybe (Currency ann) ->
   GenLocated ann (Transaction ann) ->
-  Validation (RegisterError ann) (GenLocated ann (Transaction ann))
-registerTransaction prices mCurrencyTo (Located l t) = do
-  ps' <- traverse (registerPosting prices mCurrencyTo) (transactionPostings t)
-  pure (Located l (t {transactionPostings = ps'}))
+  Validation
+    (RegisterError ann)
+    ( GenLocated ann Timestamp,
+      Maybe (GenLocated ann Description),
+      Vector (GenLocated ann (Posting ann))
+    )
+registerTransaction prices mCurrencyTo (Located _ t) = do
+  ps' <-
+    traverse
+      (registerPosting prices mCurrencyTo)
+      (transactionPostings t)
+  pure
+    ( transactionTimestamp t,
+      transactionDescription t,
+      ps'
+    )
 
 registerPosting ::
   Vector (GenLocated ann (Price ann)) ->

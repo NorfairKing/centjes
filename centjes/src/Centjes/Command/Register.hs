@@ -20,8 +20,11 @@ import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.Text as T
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import qualified Money.Account as Account
+import qualified Money.MultiAccount as Money (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
@@ -38,36 +41,57 @@ runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
 renderRegister :: Register ann -> [[Chunk]]
 renderRegister (Register v) =
   concatMap
-    (\(ix, Located _ t) -> renderTransaction ix t)
+    ( \(ix, (Located _ ts, mDescription, postings)) ->
+        renderTransaction
+          ix
+          ts
+          (locatedValue <$> mDescription)
+          postings
+    )
     (V.indexed v)
 
 renderTransaction ::
   Int ->
-  Transaction ann ->
+  Timestamp ->
+  Maybe Description ->
+  Vector
+    ( GenLocated ann (Posting ann),
+      Money.MultiAccount (Currency ann)
+    ) ->
   [[Chunk]]
-renderTransaction ix Transaction {..} =
-  let Located _ timestamp = transactionTimestamp
-      headerChunks =
+renderTransaction ix timestamp mDescription postings =
+  let headerChunks =
         [ fore white $ chunk $ T.pack $ show ix,
           timestampChunk timestamp,
-          maybe " " (descriptionChunk . locatedValue) transactionDescription
+          maybe " " descriptionChunk mDescription
         ]
 
-      postingLines = V.toList $ V.map renderPosting transactionPostings
+      postingLines =
+        concatMap
+          ( \(Located _ posting, runningTotal) ->
+              renderPosting posting runningTotal
+          )
+          $ V.toList postings
    in case postingLines of
         [] -> [headerChunks]
         (l : ls) -> (headerChunks ++ l) : map ([chunk " ", chunk " ", chunk " "] ++) ls
 
 renderPosting ::
-  GenLocated ann (Posting ann) ->
-  [Chunk]
-renderPosting (Located _ Posting {..}) =
+  Posting ann ->
+  Money.MultiAccount (Currency ann) ->
+  [[Chunk]]
+renderPosting Posting {..} runningTotal =
   let Located _ accountName = postingAccountName
       Located _ Currency {..} = postingCurrency
       Located _ quantisationFactor = currencyQuantisationFactor
       Located _ acc = postingAccount
       f = fore $ if acc >= Account.zero then green else red
-   in [ accountNameChunk accountName,
-        f $ accountChunk quantisationFactor acc,
-        f $ currencySymbolChunk currencySymbol
-      ]
+      postingChunks =
+        [ accountNameChunk accountName,
+          f $ accountChunk quantisationFactor acc,
+          f $ currencySymbolChunk currencySymbol
+        ]
+      totalChunks = multiAccountChunks runningTotal
+   in case totalChunks of
+        [] -> [postingChunks]
+        (cs : css) -> (postingChunks ++ cs) : map ([" ", " ", " "] ++) css
