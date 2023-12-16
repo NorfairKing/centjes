@@ -2,7 +2,6 @@ resolver: lts-21.22
 packages:
 - centjes
 - centjes-gen
-- centjes-import-ubs
 - centjes-import-revolut
 - centjes-switzerland
 
