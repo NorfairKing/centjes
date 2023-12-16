@@ -19,15 +19,13 @@ import Centjes.Report.Register
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import Data.Semigroup
 import qualified Data.Text as T
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Money.Account (Account (..))
+import Data.Word
 import qualified Money.Account as Account
-import Money.Amount (Amount (..))
 import qualified Money.MultiAccount as Money (MultiAccount)
-import qualified Money.MultiAccount as MultiAccount
-import Money.QuantisationFactor (QuantisationFactor (..))
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
@@ -42,18 +40,29 @@ runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
 
 renderRegister :: Register ann -> [[Chunk]]
-renderRegister (Register v) =
-  concatMap
-    ( \(ix, (Located _ ts, mDescription, postings)) ->
-        renderTransaction
-          ix
-          ts
-          (locatedValue <$> mDescription)
-          postings
-    )
-    (V.indexed v)
+renderRegister r@(Register v) =
+  let maxAccountWidth = registerMaxAccountWidth r
+   in concatMap
+        ( \(ix, (Located _ ts, mDescription, postings)) ->
+            renderTransaction
+              maxAccountWidth
+              ix
+              ts
+              (locatedValue <$> mDescription)
+              postings
+        )
+        (V.indexed v)
+
+registerMaxAccountWidth :: Register ann -> Max Word8
+registerMaxAccountWidth (Register v) = foldMap goT v
+  where
+    goT (_, _, ps) = foldMap goP ps
+    goP (Located _ Posting {..}, ma) =
+      let Located _ a = postingAccount
+       in accountWidth a <> multiAccountMaxWidth ma
 
 renderTransaction ::
+  Max Word8 ->
   Int ->
   Timestamp ->
   Maybe Description ->
@@ -62,7 +71,7 @@ renderTransaction ::
       Money.MultiAccount (Currency ann)
     ) ->
   [[Chunk]]
-renderTransaction ix timestamp mDescription postings =
+renderTransaction maxWidth ix timestamp mDescription postings =
   let headerChunks =
         [ fore white $ chunk $ T.pack $ show ix,
           timestampChunk timestamp,
@@ -72,7 +81,7 @@ renderTransaction ix timestamp mDescription postings =
       postingLines =
         concatMap
           ( \(Located _ posting, runningTotal) ->
-              renderPosting posting runningTotal
+              renderPosting maxWidth posting runningTotal
           )
           $ V.toList postings
    in case postingLines of
@@ -80,10 +89,11 @@ renderTransaction ix timestamp mDescription postings =
         (l : ls) -> (headerChunks ++ l) : map ([chunk " ", chunk " ", chunk " "] ++) ls
 
 renderPosting ::
+  Max Word8 ->
   Posting ann ->
   Money.MultiAccount (Currency ann) ->
   [[Chunk]]
-renderPosting Posting {..} runningTotal =
+renderPosting maxWidth Posting {..} runningTotal =
   let Located _ accountName = postingAccountName
       Located _ Currency {..} = postingCurrency
       Located _ quantisationFactor = currencyQuantisationFactor
@@ -91,10 +101,10 @@ renderPosting Posting {..} runningTotal =
       f = fore $ if acc >= Account.zero then green else red
       postingChunks =
         [ accountNameChunk accountName,
-          f $ accountChunk quantisationFactor acc,
+          f $ accountChunkWithWidth (Just maxWidth) quantisationFactor acc,
           f $ currencySymbolChunk currencySymbol
         ]
-      totalChunks = multiAccountChunks runningTotal
+      totalChunks = multiAccountChunksWithWidth (Just maxWidth) runningTotal
    in case totalChunks of
-        [] -> [postingChunks ++ [accountChunk (QuantisationFactor 1) (Positive (Amount 0))]]
+        [] -> [postingChunks ++ [chunk " ", chunk " "]]
         (cs : css) -> (postingChunks ++ cs) : map ([" ", " ", " "] ++) css

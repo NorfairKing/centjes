@@ -7,6 +7,7 @@
 
 module Centjes.Report.Balance
   ( BalanceReport (..),
+    AccountBalances,
     BalanceError (..),
     produceBalanceReport,
   )

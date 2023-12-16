@@ -102,5 +102,5 @@
     within:
       - Centjes.Timestamp
       - Centjes.Compile.compileConversionRate
-      - Centjes.Report.Balance.convertBalanceReport # TODO get rid of this by putting currency conversions into Money.Amount and Money.Account
+      - Centjes.Formatting.accountWidth
       - Centjes.Import.Ubs

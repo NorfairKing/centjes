@@ -17,13 +17,11 @@ import Centjes.Ledger
 import Centjes.Location
 import Centjes.Validation
 import Control.DeepSeq
-import qualified Data.Map.Strict as M
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
-import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 

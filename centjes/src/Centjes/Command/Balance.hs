@@ -15,6 +15,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
+import Data.Semigroup
+import Data.Word
 import qualified Money.MultiAccount as Money (MultiAccount)
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
@@ -33,13 +35,24 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
 
 renderBalanceReport :: BalanceReport ann -> [[Chunk]]
-renderBalanceReport = renderBalances . unBalanceReport
+renderBalanceReport br@(BalanceReport m) =
+  let width = balanceReportMaxWidth br
+   in renderBalances width m
 
-renderBalances :: Map AccountName (Money.MultiAccount (Currency ann)) -> [[Chunk]]
-renderBalances =
+balanceReportMaxWidth :: BalanceReport ann -> Max Word8
+balanceReportMaxWidth = accountBalancesMaxWidth . unBalanceReport
+
+accountBalancesMaxWidth :: AccountBalances ann -> Max Word8
+accountBalancesMaxWidth = foldMap multiAccountMaxWidth
+
+renderBalances ::
+  Max Word8 ->
+  Map AccountName (Money.MultiAccount (Currency ann)) ->
+  [[Chunk]]
+renderBalances width =
   concatMap
     ( \(an, acc) ->
-        case multiAccountChunks acc of
+        case multiAccountChunksWithWidth (Just width) acc of
           [] -> []
           (firstChunks : rest) ->
             (accountNameChunk an : firstChunks)
