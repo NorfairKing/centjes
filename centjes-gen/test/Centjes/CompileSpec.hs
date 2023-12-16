@@ -52,13 +52,13 @@ spec = do
             Failure _ -> pure ()
             Success t -> shouldBeValid t
 
-  describe "compileCurrency" $ do
+  describe "compileCurrencyDeclaration" $ do
     it "produces valid ledgers" $
-      producesValid (compileCurrency @())
+      producesValid (compileCurrencyDeclaration @())
 
-  describe "compileCurrencies" $ do
+  describe "compileCurrencyDeclarationDeclarations" $ do
     it "produces valid ledgers" $
-      producesValid (compileCurrencies @())
+      producesValid (compileCurrencyDeclarationDeclarations @())
 
   describe "compileDeclarations" $ do
     it "produces valid ledgers" $

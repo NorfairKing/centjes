@@ -8,8 +8,8 @@
 module Centjes.Compile
   ( CompileError (..),
     compileDeclarations,
-    compileCurrencies,
-    compileCurrency,
+    compileCurrencyDeclarationDeclarations,
+    compileCurrencyDeclaration,
     compileTransaction,
     compilePosting,
   )
@@ -138,7 +138,7 @@ unlines' = intercalate "\n"
 
 compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
-  ledgerCurrencies <- compileCurrencies declarations
+  ledgerCurrencies <- compileCurrencyDeclarationDeclarations declarations
   ledgerPrices <- compilePriceDeclarations ledgerCurrencies declarations
   let transactions =
         mapMaybe
@@ -160,12 +160,13 @@ compileDeclarations declarations = do
         transactions
   pure Ledger {..}
 
--- TODO: rename to compileCurrencyDeclarations
-compileCurrencies :: [Declaration ann] -> Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
-compileCurrencies declarations = do
+compileCurrencyDeclarationDeclarations ::
+  [Declaration ann] ->
+  Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
+compileCurrencyDeclarationDeclarations declarations = do
   tups <-
     mapM
-      compileCurrency
+      compileCurrencyDeclaration
       ( mapMaybe
           ( \case
               DeclarationCurrency cd -> Just cd
@@ -183,9 +184,8 @@ compileCurrencies declarations = do
       Nothing -> pure $ M.insert symbol lqf m
       Just (Located l1 _) -> validationFailure $ CompileErrorCurrencyDeclaredTwice l1 l2 symbol
 
--- TODO rename to compileCurrencyDeclaration
-compileCurrency :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
-compileCurrency (Located l CurrencyDeclaration {..}) = do
+compileCurrencyDeclaration :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
+compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
   let Located _ symbol = currencyDeclarationSymbol
   let Located _ dl = currencyDeclarationQuantisationFactor
   qf <- case QuantisationFactor.fromDecimalLiteral dl of
@@ -212,9 +212,9 @@ compilePriceDeclaration ::
   Validation (CompileError ann) (GenLocated ann (Price ann))
 compilePriceDeclaration currencies (Located pdl PriceDeclaration {..}) = do
   let priceTimestamp = priceDeclarationTimestamp
-  priceNew <- compileCurrencySymbol currencies pdl priceDeclarationNew
+  priceNew <- compileCurrencyDeclarationSymbol currencies pdl priceDeclarationNew
   priceConversionRate <- compileConversionRate pdl priceDeclarationConversionRate
-  priceOld <- compileCurrencySymbol currencies pdl priceDeclarationOld
+  priceOld <- compileCurrencyDeclarationSymbol currencies pdl priceDeclarationOld
   pure $ Located pdl Price {..}
 
 compileConversionRate ::
@@ -256,7 +256,7 @@ compilePosting ::
   Validation (CompileError ann) (GenLocated ann (Ledger.Posting ann))
 compilePosting currencies tl (Located l mp) = do
   let postingAccountName = Module.postingAccountName mp
-  postingCurrency <- compileCurrencySymbol currencies tl (Module.postingCurrencySymbol mp)
+  postingCurrency <- compileCurrencyDeclarationSymbol currencies tl (Module.postingCurrencySymbol mp)
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
   pure (Located l Ledger.Posting {..})
@@ -267,17 +267,17 @@ compileAssertion ::
   GenLocated ann (Module.Assertion ann) ->
   Validation (CompileError ann) (GenLocated ann (Ledger.Assertion ann))
 compileAssertion currencies tl (Located l (Module.AssertionEquals lan ldl lqs)) = do
-  lc <- compileCurrencySymbol currencies tl lqs
+  lc <- compileCurrencyDeclarationSymbol currencies tl lqs
   let lqf = currencyQuantisationFactor (locatedValue lc)
   la <- compileDecimalLiteral tl lqf ldl
   pure (Located l (Ledger.AssertionEquals lan la lc))
 
-compileCurrencySymbol ::
+compileCurrencyDeclarationSymbol ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   ann ->
   GenLocated ann CurrencySymbol ->
   Validation (CompileError ann) (GenLocated ann (Currency ann))
-compileCurrencySymbol currencies tl lcs@(Located cl symbol) = case M.lookup symbol currencies of
+compileCurrencyDeclarationSymbol currencies tl lcs@(Located cl symbol) = case M.lookup symbol currencies of
   Nothing -> validationFailure $ CompileErrorMissingCurrency tl lcs
   Just factor -> pure $ Located cl $ Currency {currencySymbol = symbol, currencyQuantisationFactor = factor}
 

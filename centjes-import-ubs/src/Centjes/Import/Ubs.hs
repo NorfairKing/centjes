@@ -42,7 +42,7 @@ runCentjesImportUbs = do
   let inputFp = fromAbsFile settingInput
   contents <- SB.readFile inputFp
   (ds, diag) <- runStderrLoggingT $ loadModules settingLedgerFile
-  currencies <- checkValidation diag $ compileCurrencies ds
+  currencies <- checkValidation diag $ compileCurrencyDeclarationDeclarations ds
 
   let decodeOpts = Csv.defaultDecodeOptions {decDelimiter = fromIntegral (Char.ord ';')}
   case Csv.decodeByNameWith decodeOpts (LB.fromStrict $ SB8.unlines $ drop 9 $ SB8.lines contents) of
