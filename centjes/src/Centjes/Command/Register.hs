@@ -22,9 +22,12 @@ import Control.Monad.Logger
 import qualified Data.Text as T
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import Money.Account (Account (..))
 import qualified Money.Account as Account
+import Money.Amount (Amount (..))
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
+import Money.QuantisationFactor (QuantisationFactor (..))
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
@@ -93,5 +96,5 @@ renderPosting Posting {..} runningTotal =
         ]
       totalChunks = multiAccountChunks runningTotal
    in case totalChunks of
-        [] -> [postingChunks]
+        [] -> [postingChunks ++ [accountChunk (QuantisationFactor 1) (Positive (Amount 0))]]
         (cs : css) -> (postingChunks ++ cs) : map ([" ", " ", " "] ++) css

@@ -108,7 +108,7 @@ produceRegister mCurrencySymbolTo ledger = do
               let Located _ currency = postingCurrency
               let Located _ account = postingAccount
               newRunningTotal <-
-                case addAccount currency account runningSubTotal of
+                case MultiAccount.addAccount runningSubTotal currency account of
                   Nothing -> validationFailure RegisterErrorAddError
                   Just nt -> pure nt
               pure
@@ -128,20 +128,6 @@ produceRegister mCurrencySymbolTo ledger = do
   ts' <- V.unfoldrExactNM (V.length ts) goTransaction (0, MultiAccount.zero)
 
   pure $ Register ts'
-
-addAccount ::
-  Ord currency =>
-  currency ->
-  Money.Account ->
-  Money.MultiAccount currency ->
-  Maybe (Money.MultiAccount currency)
-addAccount key acc ma =
-  let m = MultiAccount.unMultiAccount ma
-   in fmap MultiAccount.MultiAccount $ case M.lookup key m of
-        Nothing -> Just $ M.insert key acc m
-        Just acc' -> do
-          newAcc <- Account.add acc acc'
-          pure $ M.insert key newAcc m
 
 registerTransaction ::
   Vector (GenLocated ann (Price ann)) ->
