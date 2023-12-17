@@ -20,6 +20,8 @@ extra-source-files:
     test_resources/balance/error/as-is/BE_ASSERTION-wrong-currency.err
     test_resources/balance/error/as-is/BE_ASSERTION.cent
     test_resources/balance/error/as-is/BE_ASSERTION.err
+    test_resources/balance/error/as-is/BE_CONVERSION_TOO_BIG.cent
+    test_resources/balance/error/as-is/BE_CONVERSION_TOO_BIG.err
     test_resources/balance/error/as-is/BE_OFF_BALANCE-simple.cent
     test_resources/balance/error/as-is/BE_OFF_BALANCE-simple.err
     test_resources/balance/error/as-is/BE_OFF_BALANCE-two-currencies.cent
@@ -33,8 +35,11 @@ extra-source-files:
     test_resources/balance/error/as-is/BE_TRANSACTION_SUM.cent
     test_resources/balance/error/as-is/BE_TRANSACTION_SUM.err
     test_resources/balance/error/as-is/conversion-impossible-rate.cent
+    test_resources/balance/error/as-is/conversion-impossible-rate.err
     test_resources/balance/error/as-is/conversion-without-cost.cent
+    test_resources/balance/error/as-is/conversion-without-cost.err
     test_resources/balance/error/as-is/conversion-wrong-rate.cent
+    test_resources/balance/error/as-is/conversion-wrong-rate.err
     test_resources/balance/error/to-chf/CONVERT_ERROR_INVALID_SUM.cent
     test_resources/balance/error/to-chf/CONVERT_ERROR_INVALID_SUM.err
     test_resources/balance/error/to-chf/CONVERT_ERROR_MISSING_PRICE.cent

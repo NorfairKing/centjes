@@ -37,9 +37,11 @@ import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import qualified Money.ConversionRate as ConversionRate
+import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
-import Numeric.DecimalLiteral as DecimalLiteral
+import qualified Numeric.DecimalLiteral as DecimalLiteral
 
 newtype BalancedLedger ann = BalancedLedger {balancedLedgerTransactions :: Vector (GenLocated ann (Transaction ann), AccountBalances ann)}
   deriving (Show, Eq, Generic)
@@ -62,6 +64,8 @@ data BalanceError ann
   = BalanceErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
   | BalanceErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
   | BalanceErrorCouldNotSumPostings !ann ![Money.MultiAccount (Currency ann)]
+  | BalanceErrorConversionTooBig !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann))
+  | BalanceErrorConversionImpossibleRate !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann)) !(Maybe Money.ConversionRate)
   | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann)) ![GenLocated ann (Posting ann)]
   | BalanceErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Currency ann)) !(Maybe Money.Account)
   | BalanceErrorConvertError !(ConvertError ann)
@@ -128,6 +132,25 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition s, Where $ unlines' $ concatMap multiAccountLines mas)
         ]
         []
+    BalanceErrorConversionTooBig (Located al _) (Located cl _) ->
+      Err
+        (Just "BE_CONVERSION_TOO_BIG")
+        "Could not convert amount because it got too big"
+        [ (toDiagnosePosition cl, Where "Using this cost"),
+          (toDiagnosePosition al, This "Could not convert this amount")
+        ]
+        []
+    BalanceErrorConversionImpossibleRate (Located al _) (Located cl _) mConversionRate ->
+      Err
+        (Just "BE_CONVERSION_IMPOSSIBLE_RATE")
+        "Could not convert amount because the rate made it impossible to convert to an integer number of minimal quantisations."
+        [ (toDiagnosePosition cl, Where "Using this cost"),
+          (toDiagnosePosition al, This "Could not convert this amount")
+        ]
+        [ Hint $ "The closest valid rate is " <> DecimalLiteral.format dl
+          | cr <- maybeToList mConversionRate,
+            dl <- maybeToList $ ConversionRate.toDecimalLiteral cr
+        ]
     BalanceErrorTransactionOffBalance s ma postings ->
       Err
         (Just "BE_OFF_BALANCE")
@@ -317,13 +340,27 @@ balanceTransaction (Located tl Transaction {..}) = do
         AccountBalances ann ->
         GenLocated ann (Posting ann) ->
         Validation (BalanceError ann) (AccountBalances ann)
-      incorporatePosting m (Located _ (Posting (Located pl an) (Located _ currency) (Located _ account))) =
-        let current = MultiAccount.fromAccount currency account
-         in case M.lookup an m of
-              Nothing -> pure $ M.insert an current m
-              Just total -> case MultiAccount.add total current of
-                Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl total current
-                Just acc'' -> pure $ M.insert an acc'' m
+      incorporatePosting m (Located _ (Posting (Located pl an) (Located _ currency) la@(Located _ account) mCost)) = do
+        current <- case mCost of
+          Nothing -> pure $ MultiAccount.fromAccount currency account
+          Just lc@(Located _ Cost {..}) -> do
+            let Located _ newCurrency = costCurrency
+            let Located _ rate = costConversionRate
+            let Located _ qfOld = currencyQuantisationFactor currency
+            let Located _ qfNew = currencyQuantisationFactor newCurrency
+            -- Separate the amount for balancing from the amount for adding to balance
+            let (mNewAccount, mActualRate) = Account.convert Account.RoundNearest qfOld account rate qfNew
+            if mActualRate == Just rate
+              then case mNewAccount of
+                Nothing -> validationFailure $ BalanceErrorConversionTooBig la lc
+                Just newAccount -> pure $ MultiAccount.fromAccount newCurrency newAccount
+              else validationFailure $ BalanceErrorConversionImpossibleRate la lc mActualRate
+
+        case M.lookup an m of
+          Nothing -> pure $ M.insert an current m
+          Just total -> case MultiAccount.add total current of
+            Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl total current
+            Just acc'' -> pure $ M.insert an acc'' m
 
   m <- foldM incorporatePosting M.empty transactionPostings
   let as = M.elems m
