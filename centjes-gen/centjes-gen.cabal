@@ -11,9 +11,13 @@ bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
     test_resources/balance/balanced/conversion.cent
+    test_resources/balance/balanced/conversion.txt
     test_resources/balance/balanced/empty-transaction.cent
+    test_resources/balance/balanced/empty-transaction.txt
     test_resources/balance/balanced/empty.cent
+    test_resources/balance/balanced/empty.txt
     test_resources/balance/balanced/example.cent
+    test_resources/balance/balanced/example.txt
     test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.cent
     test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.err
     test_resources/balance/error/as-is/BE_ASSERTION-wrong-currency.cent
@@ -163,6 +167,7 @@ test-suite centjes-test
     , monad-logger
     , path
     , path-io
+    , safe-coloured-text
     , sydtest
     , text
     , time
