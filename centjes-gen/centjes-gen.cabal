@@ -10,6 +10,9 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
+    test_resources/balance/balanced/empty-transaction.cent
+    test_resources/balance/balanced/empty.cent
+    test_resources/balance/balanced/example.cent
     test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err
     test_resources/errors/balance-report/BE_ASSERTION-wrong-currency.err
     test_resources/errors/balance-report/BE_ASSERTION.err
