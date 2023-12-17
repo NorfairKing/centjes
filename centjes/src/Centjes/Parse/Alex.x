@@ -74,6 +74,7 @@ $alpha = [A-Za-z]
 
 @star = "* "
 @plus = "+ " 
+@at = "@ "
 @import = "import " .* \n
 @currency = "currency "
 @account = "account "
@@ -132,6 +133,7 @@ $white_no_nl+ ;
 <transaction> @star        { lex' TokenStar `andBegin` posting }
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
+<posting> @at              { lexAt }
 <posting> @newline         { lexNl `andBegin` transaction}
 
 
@@ -156,6 +158,9 @@ lexVar = lex (TokenVar . T.pack)
 
 lexDL :: AlexAction Token
 lexDL = lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . DecimalLiteral.fromString))
+
+lexAt :: AlexAction Token
+lexAt = lex' TokenAt
 
 lexNl :: AlexAction Token
 lexNl = lex' TokenNewLine
@@ -189,6 +194,7 @@ data TokenClass
   | TokenStar
   | TokenPlus
   | TokenDot
+  | TokenAt
   | TokenCurrency
   | TokenAccount
   | TokenImport !FilePath

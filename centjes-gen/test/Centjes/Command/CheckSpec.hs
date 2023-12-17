@@ -105,7 +105,8 @@ spec = do
                                     Posting
                                       { postingAccountName = noLoc (AccountName "undeclared"),
                                         postingAccount = noLoc "1",
-                                        postingCurrencySymbol = noLoc usdSymbol
+                                        postingCurrencySymbol = noLoc usdSymbol,
+                                        postingCost = Nothing
                                       }
                                 ],
                               transactionExtras = []

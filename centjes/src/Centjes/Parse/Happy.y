@@ -55,6 +55,7 @@ import qualified Data.Text as T
       decimal_literal { Located _ (TokenDecimalLiteral _) }
       plus            { Located _ TokenPlus }
       star            { Located _ TokenStar }
+      at              { Located _ TokenAt }
       import          { Located _ (TokenImport $$)}
       currency_tok    { Located _ TokenCurrency}
       account_tok     { Located _ TokenAccount}
@@ -111,10 +112,6 @@ price_dec
   :: { LPriceDeclaration }
   : price timestamp currency_symbol cost_exp newline { sBE $1 $5 $ PriceDeclaration $2 $3 $4 }
 
-cost_exp
-  :: { LCostExpression }
-  : conversion_rate currency_symbol { sBE $1 $2 $ CostExpression $1 $2 }
-
 conversion_rate
   :: { Located DecimalLiteral }
   : decimal_literal { parseDecimalLiteral $1 }
@@ -142,7 +139,11 @@ postings
 
 posting
   :: { LPosting }
-  : star account_name account_exp currency_symbol newline { sBE $1 $5 $ Posting $2 $3 $4 }
+  : star account_name account_exp currency_symbol optional(posting_cost) newline { sBE $1 $6 $ Posting $2 $3 $4 $5 }
+
+posting_cost
+  :: { LCostExpression }
+  : at cost_exp { $2 }
 
 account_name
   :: { Located AccountName }
@@ -151,6 +152,10 @@ account_name
 account_exp
   :: { Located DecimalLiteral }
   : decimal_literal { parseDecimalLiteral $1 }
+
+cost_exp
+  :: { LCostExpression }
+  : conversion_rate currency_symbol { sBE $1 $2 $ CostExpression $1 $2 }
 
 transaction_extras
   :: { [LTransactionExtra] }

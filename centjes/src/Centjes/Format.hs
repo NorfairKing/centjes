@@ -131,11 +131,6 @@ priceDeclarationDoc (Located _ PriceDeclaration {..}) =
     <+> lCostExpressionDoc priceDeclarationCost
       <> hardline
 
-lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc ann
-lCostExpressionDoc (Located _ CostExpression {..}) =
-  lConversionRateDoc costExpressionConversionRate
-    <+> lCurrencySymbolDoc costExpressionCurrencySymbol
-
 lConversionRateDoc :: GenLocated l DecimalLiteral -> Doc ann
 lConversionRateDoc = conversionRateDoc . locatedValue
 
@@ -167,10 +162,16 @@ descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedVa
 
 postingDoc :: Posting l -> Doc ann
 postingDoc Posting {..} =
-  "*"
-    <+> lAccountNameDoc postingAccountName
-    <+> accountDoc (locatedValue postingAccount)
-    <+> lCurrencySymbolDoc postingCurrencySymbol
+  maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
+    "*"
+      <+> lAccountNameDoc postingAccountName
+      <+> accountDoc (locatedValue postingAccount)
+      <+> lCurrencySymbolDoc postingCurrencySymbol
+
+lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc ann
+lCostExpressionDoc (Located _ CostExpression {..}) =
+  lConversionRateDoc costExpressionConversionRate
+    <+> lCurrencySymbolDoc costExpressionCurrencySymbol
 
 transactionExtraDoc :: TransactionExtra l -> Doc ann
 transactionExtraDoc =

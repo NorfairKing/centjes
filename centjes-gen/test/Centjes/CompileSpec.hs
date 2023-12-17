@@ -126,7 +126,8 @@ spec = do
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
                                     postingAccount = noLoc "1",
-                                    postingCurrencySymbol = noLoc usdSymbol
+                                    postingCurrencySymbol = noLoc usdSymbol,
+                                    postingCost = Nothing
                                   }
                             ],
                           transactionExtras = []
@@ -171,7 +172,8 @@ spec = do
                                 Posting
                                   { postingAccountName = noLoc (AccountName "assets"),
                                     postingAccount = noLoc "0.001",
-                                    postingCurrencySymbol = noLoc usdSymbol
+                                    postingCurrencySymbol = noLoc usdSymbol,
+                                    postingCost = Nothing
                                   }
                             ],
                           transactionExtras = []

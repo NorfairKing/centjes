@@ -126,18 +126,6 @@ instance Validity ann => Validity (PriceDeclaration ann)
 
 instance NFData ann => NFData (PriceDeclaration ann)
 
-type LCostExpression = LLocated CostExpression
-
-data CostExpression ann = CostExpression
-  { costExpressionConversionRate :: !(GenLocated ann DecimalLiteral),
-    costExpressionCurrencySymbol :: !(GenLocated ann CurrencySymbol)
-  }
-  deriving stock (Show, Eq, Generic)
-
-instance Validity ann => Validity (CostExpression ann)
-
-instance NFData ann => NFData (CostExpression ann)
-
 type LTransaction = LLocated Transaction
 
 data Transaction ann = Transaction
@@ -160,13 +148,26 @@ type LPosting = LLocated Posting
 data Posting ann = Posting
   { postingAccountName :: !(GenLocated ann AccountName),
     postingAccount :: !(GenLocated ann DecimalLiteral),
-    postingCurrencySymbol :: !(GenLocated ann CurrencySymbol)
+    postingCurrencySymbol :: !(GenLocated ann CurrencySymbol),
+    postingCost :: !(Maybe (GenLocated ann (CostExpression ann)))
   }
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (Posting ann)
 
 instance NFData ann => NFData (Posting ann)
+
+type LCostExpression = LLocated CostExpression
+
+data CostExpression ann = CostExpression
+  { costExpressionConversionRate :: !(GenLocated ann DecimalLiteral),
+    costExpressionCurrencySymbol :: !(GenLocated ann CurrencySymbol)
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (CostExpression ann)
+
+instance NFData ann => NFData (CostExpression ann)
 
 type LTransactionExtra = LLocated TransactionExtra
 
