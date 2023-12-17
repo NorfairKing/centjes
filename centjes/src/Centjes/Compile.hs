@@ -219,8 +219,8 @@ compilePriceDeclaration currencies (Located pdl PriceDeclaration {..}) = do
 compileCostExpression ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   ann ->
-  GenLocated l (CostExpression ann) ->
-  Validation (CompileError ann) (GenLocated l (Cost ann))
+  GenLocated ann (CostExpression ann) ->
+  Validation (CompileError ann) (GenLocated ann (Cost ann))
 compileCostExpression currencies pdl (Located cl CostExpression {..}) = do
   costConversionRate <- compileConversionRate pdl costExpressionConversionRate
   costCurrency <- compileCurrencyDeclarationSymbol currencies pdl costExpressionCurrencySymbol
@@ -268,6 +268,7 @@ compilePosting currencies tl (Located l mp) = do
   postingCurrency <- compileCurrencyDeclarationSymbol currencies tl (Module.postingCurrencySymbol mp)
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
+  postingCost <- mapM (compileCostExpression currencies tl) (Module.postingCost mp)
   pure (Located l Ledger.Posting {..})
 
 compileAssertion ::

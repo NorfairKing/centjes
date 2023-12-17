@@ -106,7 +106,8 @@ data Posting ann = Posting
     -- Note: This field will have the source location of the currency _symbol_ that defined it.
     postingCurrency :: !(GenLocated ann (Currency ann)),
     -- Note: This field will have the source location of the decimal literal that defined it.
-    postingAccount :: !(GenLocated ann Money.Account)
+    postingAccount :: !(GenLocated ann Money.Account),
+    postingCost :: !(Maybe (GenLocated ann (Cost ann)))
   }
   deriving stock (Show, Eq, Generic)
 
