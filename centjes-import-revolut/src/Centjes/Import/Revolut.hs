@@ -152,7 +152,8 @@ rowTransaction currencies assetsAccountName expensesAccountName feeAccountName R
           Posting
             { postingAccountName = noLoc accountName,
               postingAccount = noLoc literal,
-              postingCurrencySymbol = noLoc rowCurrency
+              postingCurrencySymbol = noLoc rowCurrency,
+              postingCost = Nothing
             }
   let assetPosting = mkPosting assetsAccountName assetsLiteral
   let mFeePosting =

@@ -13,18 +13,30 @@ extra-source-files:
     test_resources/balance/balanced/empty-transaction.cent
     test_resources/balance/balanced/empty.cent
     test_resources/balance/balanced/example.cent
-    test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err
-    test_resources/errors/balance-report/BE_ASSERTION-wrong-currency.err
-    test_resources/errors/balance-report/BE_ASSERTION.err
-    test_resources/errors/balance-report/BE_OFF_BALANCE-simple.err
-    test_resources/errors/balance-report/BE_OFF_BALANCE-two-currencies.err
-    test_resources/errors/balance-report/BE_OFF_BALANCE-two-postings.err
-    test_resources/errors/balance-report/BE_OFF_BALANCE-two.err
-    test_resources/errors/balance-report/BE_RUNNING_BALANCE.err
-    test_resources/errors/balance-report/BE_TRANSACTION_SUM.err
-    test_resources/errors/balance-report/CONVERT_ERROR_INVALID_SUM.err
-    test_resources/errors/balance-report/CONVERT_ERROR_MISSING_PRICE.err
-    test_resources/errors/balance-report/CONVERT_ERROR_UNKNOWN_TARGET.err
+    test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.cent
+    test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.err
+    test_resources/balance/error/as-is/BE_ASSERTION-wrong-currency.cent
+    test_resources/balance/error/as-is/BE_ASSERTION-wrong-currency.err
+    test_resources/balance/error/as-is/BE_ASSERTION.cent
+    test_resources/balance/error/as-is/BE_ASSERTION.err
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-simple.cent
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-simple.err
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-two-currencies.cent
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-two-currencies.err
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-two-postings.cent
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-two-postings.err
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-two.cent
+    test_resources/balance/error/as-is/BE_OFF_BALANCE-two.err
+    test_resources/balance/error/as-is/BE_RUNNING_BALANCE.cent
+    test_resources/balance/error/as-is/BE_RUNNING_BALANCE.err
+    test_resources/balance/error/as-is/BE_TRANSACTION_SUM.cent
+    test_resources/balance/error/as-is/BE_TRANSACTION_SUM.err
+    test_resources/balance/error/to-chf/CONVERT_ERROR_INVALID_SUM.cent
+    test_resources/balance/error/to-chf/CONVERT_ERROR_INVALID_SUM.err
+    test_resources/balance/error/to-chf/CONVERT_ERROR_MISSING_PRICE.cent
+    test_resources/balance/error/to-chf/CONVERT_ERROR_MISSING_PRICE.err
+    test_resources/balance/error/to-chf/CONVERT_ERROR_UNKNOWN_TARGET.cent
+    test_resources/balance/error/to-chf/CONVERT_ERROR_UNKNOWN_TARGET.err
     test_resources/errors/check/CE_DUPLICATE_ACCOUNT.err
     test_resources/errors/check/CE_MISSING_ATTACHMENT.err
     test_resources/errors/check/CE_UNDECLARED_ACCOUNT.err
