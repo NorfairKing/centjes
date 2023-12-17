@@ -59,6 +59,8 @@ instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
 
 instance GenValid ann => GenValid (Price ann)
 
+instance GenValid ann => GenValid (Cost ann)
+
 instance GenValid ann => GenValid (Transaction ann)
 
 instance GenValid ann => GenValid (Assertion ann)

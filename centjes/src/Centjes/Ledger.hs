@@ -7,6 +7,7 @@ module Centjes.Ledger
     Timestamp (..),
     CurrencySymbol (..),
     Price (..),
+    Cost (..),
     Transaction (..),
     Description (..),
     Posting (..),
@@ -66,17 +67,27 @@ partiallyOrderedBy f v =
 data Price ann = Price
   { priceTimestamp :: !(GenLocated ann Timestamp),
     -- Note: This field will have the source location of the currency _symbol_ in the price declaration.
-    priceNew :: GenLocated ann (Currency ann),
-    -- Note: This field will have the source location of the decimal literal in the price declaration.
-    priceConversionRate :: GenLocated ann ConversionRate,
-    -- Note: This field will have the source location of the currency _symbol_ in the price declaration.
-    priceOld :: GenLocated ann (Currency ann)
+    priceCurrency :: !(GenLocated ann (Currency ann)),
+    -- Note: This field will have the source declaration of the cost wherever it was declared.
+    priceCost :: !(GenLocated ann (Cost ann))
   }
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (Price ann)
 
 instance NFData ann => NFData (Price ann)
+
+data Cost ann = Cost
+  { -- Note: This field will have the source location of the decimal literal in the cost
+    costConversionRate :: !(GenLocated ann ConversionRate),
+    -- Note: This field will have the source location of the currency _symbol_ in the cost
+    costCurrency :: !(GenLocated ann (Currency ann))
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (Cost ann)
+
+instance NFData ann => NFData (Cost ann)
 
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),

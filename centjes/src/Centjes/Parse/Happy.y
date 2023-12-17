@@ -109,7 +109,11 @@ account_dec
 
 price_dec
   :: { LPriceDeclaration }
-  : price timestamp currency_symbol conversion_rate currency_symbol newline { sBE $1 $6 $ PriceDeclaration $2 $3 $4 $5 }
+  : price timestamp currency_symbol cost_exp newline { sBE $1 $5 $ PriceDeclaration $2 $3 $4 }
+
+cost_exp
+  :: { LCostExpression }
+  : conversion_rate currency_symbol { sBE $1 $2 $ CostExpression $1 $2 }
 
 conversion_rate
   :: { Located DecimalLiteral }

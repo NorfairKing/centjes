@@ -125,13 +125,16 @@ lookupConversionRate prices currencyTo l currencyFrom =
     -- TODO this could probably be much faster instead of a linear search.
     matchingPrice :: Price ann -> Maybe Money.ConversionRate
     matchingPrice Price {..} =
-      let new = locatedValue priceNew
-          old = locatedValue priceOld
-          cr = locatedValue priceConversionRate
-       in if currencySymbol old == currencySymbol currencyTo && currencySymbol new == currencySymbol currencyFrom
+      let new = locatedValue priceCurrency
+          cost = locatedValue priceCost
+          old = locatedValue (costCurrency cost)
+          cr = locatedValue (costConversionRate cost)
+       in if currencySymbol old == currencySymbol currencyTo
+            && currencySymbol new == currencySymbol currencyFrom
             then Just cr
             else
-              if currencySymbol old == currencySymbol currencyFrom && currencySymbol new == currencySymbol currencyTo
+              if currencySymbol old == currencySymbol currencyFrom
+                && currencySymbol new == currencySymbol currencyTo
                 then Just (ConversionRate.invert cr)
                 else Nothing -- TODO also more complicated paths.
 

@@ -127,10 +127,14 @@ priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
 priceDeclarationDoc (Located _ PriceDeclaration {..}) =
   "price"
     <+> lTimestampDoc priceDeclarationTimestamp
-    <+> lCurrencySymbolDoc priceDeclarationNew
-    <+> lConversionRateDoc priceDeclarationConversionRate
-    <+> lCurrencySymbolDoc priceDeclarationOld
+    <+> lCurrencySymbolDoc priceDeclarationCurrencySymbol
+    <+> lCostExpressionDoc priceDeclarationCost
       <> hardline
+
+lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc ann
+lCostExpressionDoc (Located _ CostExpression {..}) =
+  lConversionRateDoc costExpressionConversionRate
+    <+> lCurrencySymbolDoc costExpressionCurrencySymbol
 
 lConversionRateDoc :: GenLocated l DecimalLiteral -> Doc ann
 lConversionRateDoc = conversionRateDoc . locatedValue

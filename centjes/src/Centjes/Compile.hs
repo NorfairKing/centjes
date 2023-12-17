@@ -212,10 +212,19 @@ compilePriceDeclaration ::
   Validation (CompileError ann) (GenLocated ann (Price ann))
 compilePriceDeclaration currencies (Located pdl PriceDeclaration {..}) = do
   let priceTimestamp = priceDeclarationTimestamp
-  priceNew <- compileCurrencyDeclarationSymbol currencies pdl priceDeclarationNew
-  priceConversionRate <- compileConversionRate pdl priceDeclarationConversionRate
-  priceOld <- compileCurrencyDeclarationSymbol currencies pdl priceDeclarationOld
+  priceCurrency <- compileCurrencyDeclarationSymbol currencies pdl priceDeclarationCurrencySymbol
+  priceCost <- compileCostExpression currencies pdl priceDeclarationCost
   pure $ Located pdl Price {..}
+
+compileCostExpression ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  ann ->
+  GenLocated l (CostExpression ann) ->
+  Validation (CompileError ann) (GenLocated l (Cost ann))
+compileCostExpression currencies pdl (Located cl CostExpression {..}) = do
+  costConversionRate <- compileConversionRate pdl costExpressionConversionRate
+  costCurrency <- compileCurrencyDeclarationSymbol currencies pdl costExpressionCurrencySymbol
+  pure $ Located cl Cost {..}
 
 compileConversionRate ::
   ann ->

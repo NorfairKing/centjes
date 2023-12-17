@@ -405,9 +405,13 @@ spec = do
                     noLoc $
                       PriceDeclaration
                         { priceDeclarationTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 16)),
-                          priceDeclarationNew = noLoc usdSymbol,
-                          priceDeclarationConversionRate = noLoc "200000000000000000",
-                          priceDeclarationOld = noLoc eurSymbol
+                          priceDeclarationCurrencySymbol = noLoc usdSymbol,
+                          priceDeclarationCost =
+                            noLoc $
+                              CostExpression
+                                { costExpressionConversionRate = noLoc "200000000000000000",
+                                  costExpressionCurrencySymbol = noLoc eurSymbol
+                                }
                         },
                   DeclarationTransaction $
                     noLoc $
