@@ -55,7 +55,7 @@ spec = do
       producesValid2
         (produceBalanceReport @())
 
-    scenarioDir "test_resources/balance/balanced" $ \fp -> do
+    scenarioDir "test_resources/balance/balanced/as-is" $ \fp -> do
       af <- liftIO $ resolveFile' fp
       when (fileExtension af == Just ".cent") $
         it "balances this module" $ do
@@ -67,338 +67,22 @@ spec = do
           br <- shouldValidate diag $ produceBalanceReport Nothing ledger
           shouldBeValid br
 
+    scenarioDir "test_resources/balance/error/as-is" $ \fp -> do
+      af <- liftIO $ resolveFile' fp
+      when (fileExtension af == Just ".cent") $ do
+        resultFile <- liftIO $ replaceExtension ".err" af
+        it "shows the same error when trying to balance this module" $ do
+          goldenTextFile (fromAbsFile resultFile) $ do
+            -- Load the module
+            (ds, diag) <- runNoLoggingT $ loadModules af
+            -- Compile to a ledger
+            ledger <- shouldValidate diag $ compileDeclarations ds
+
+            errs <- shouldFailToValidate $ produceBalanceReport Nothing ledger
+            pure $ renderValidationErrors diag errs
+
+    -- Can't turn these into golden tests yet because they use a currency conversion
     tempDirSpec "centjes-balance-errors" $ do
-      it "shows the same error when an account's total amount balance gets too large" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_RUNNING_BALANCE.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "184467440737095516.15",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "-184467440737095516.15",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        },
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "184467440737095516.15",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "-184467440737095516.15",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "shows the same error when an account's total amount balance gets too large" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_ACCOUNT_TOTAL.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "184467440737095516.15",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "0.02",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "shows the same error when the total transaction balance gets too large" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_TRANSACTION_SUM.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "184467440737095516.15",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "0.02",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "shows the same error when a transaction is off-balance" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_OFF_BALANCE-simple.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "1",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "shows the same error when a transaction with two postings is off-balance" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_OFF_BALANCE-two-postings.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "1",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "-1.5",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "does not show suggestions if postings have a different currency" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_OFF_BALANCE-two-currencies.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  eurDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "1",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "-1",
-                                    postingCurrencySymbol = noLoc eurSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "shows the same TWO errors when a transaction is off-balance" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_OFF_BALANCE-two.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "1",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        },
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "-1",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "shows the same error when an assertion fails" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_ASSERTION.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 09)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "2",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "-2",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras =
-                            [ noLoc $
-                                TransactionAssertion $
-                                  noLoc $
-                                    AssertionEquals
-                                      (noLoc (AccountName "assets"))
-                                      (noLoc "3")
-                                      (noLoc usdSymbol)
-                            ]
-                        }
-                ]
-            }
-
-      it "shows the same error when an assertion fails because of an incorrect currency" $
-        moduleGoldenBalanceError "test_resources/errors/balance-report/BE_ASSERTION-wrong-currency.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ usdDeclaration,
-                  eurDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 09)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "2",
-                                    postingCurrencySymbol = noLoc eurSymbol,
-                                    postingCost = Nothing
-                                  },
-                              noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "income"),
-                                    postingAccount = noLoc "-2",
-                                    postingCurrencySymbol = noLoc eurSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras =
-                            [ noLoc $
-                                TransactionAssertion $
-                                  noLoc $
-                                    AssertionEquals
-                                      (noLoc (AccountName "assets"))
-                                      (noLoc "3")
-                                      (noLoc usdSymbol)
-                            ]
-                        }
-                ]
-            }
-
       it "shows the same error when the currency to convert to is not recognised" $
         moduleGoldenBalanceError' "test_resources/errors/balance-report/CONVERT_ERROR_UNKNOWN_TARGET.err" usdSymbol $
           Module [] []
@@ -478,9 +162,6 @@ spec = do
                         }
                 ]
             }
-
-moduleGoldenBalanceError :: FilePath -> Module ann -> Path Abs Dir -> GoldenTest Text
-moduleGoldenBalanceError fp = moduleGoldenBalanceErrorHelper fp Nothing
 
 moduleGoldenBalanceError' :: FilePath -> CurrencySymbol -> Module ann -> Path Abs Dir -> GoldenTest Text
 moduleGoldenBalanceError' fp cs = moduleGoldenBalanceErrorHelper fp $ Just cs

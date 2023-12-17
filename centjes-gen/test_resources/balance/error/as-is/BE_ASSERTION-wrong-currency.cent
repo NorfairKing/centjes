@@ -1,0 +1,7 @@
+currency USD 0.01
+currency EUR 0.01
+
+2023-12-09
+  * assets +2 EUR
+  * income -2 EUR
+  + assert assets = +3 USD
