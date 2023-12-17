@@ -10,6 +10,7 @@ module Centjes.Report.Balance
     AccountBalances,
     BalanceError (..),
     produceBalanceReport,
+    balanceTransaction,
   )
 where
 

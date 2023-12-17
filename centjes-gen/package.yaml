@@ -13,6 +13,7 @@ library:
   dependencies:
   - QuickCheck
   - centjes
+  - diagnose
   - genvalidity
   - genvalidity-containers
   - genvalidity-path

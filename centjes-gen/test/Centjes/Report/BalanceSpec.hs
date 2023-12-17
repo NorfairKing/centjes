@@ -27,27 +27,65 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  describe "balanceTransaction" $ do
+    it "produces valid balances" $
+      producesValid $
+        balanceTransaction @()
+
+  let usdSymbol = CurrencySymbol "USD"
+  let usdDeclaration =
+        DeclarationCurrency $
+          noLoc $
+            CurrencyDeclaration
+              { currencyDeclarationSymbol = noLoc usdSymbol,
+                currencyDeclarationQuantisationFactor = noLoc "0.01"
+              }
+  let eurSymbol = CurrencySymbol "EUR"
+  let eurDeclaration =
+        DeclarationCurrency $
+          noLoc $
+            CurrencyDeclaration
+              { currencyDeclarationSymbol = noLoc eurSymbol,
+                currencyDeclarationQuantisationFactor = noLoc "0.01"
+              }
+
   describe "produceBalanceReport" $ do
     it "produces valid reports" $
       producesValid2
         (produceBalanceReport @())
+
     tempDirSpec "centjes-balance-errors" $ do
-      let usdSymbol = CurrencySymbol "USD"
-      let usdDeclaration =
-            DeclarationCurrency $
-              noLoc $
-                CurrencyDeclaration
-                  { currencyDeclarationSymbol = noLoc usdSymbol,
-                    currencyDeclarationQuantisationFactor = noLoc "0.01"
-                  }
-      let eurSymbol = CurrencySymbol "EUR"
-      let eurDeclaration =
-            DeclarationCurrency $
-              noLoc $
-                CurrencyDeclaration
-                  { currencyDeclarationSymbol = noLoc eurSymbol,
-                    currencyDeclarationQuantisationFactor = noLoc "0.01"
-                  }
+      it "balances this example transaction" $
+        moduleShouldBalance
+          Module
+            { moduleImports = [],
+              moduleDeclarations =
+                [ usdDeclaration,
+                  DeclarationTransaction $
+                    noLoc $
+                      Transaction
+                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 17)),
+                          transactionDescription = Nothing,
+                          transactionPostings =
+                            [ noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "assets"),
+                                    postingAccount = noLoc "1",
+                                    postingCurrencySymbol = noLoc usdSymbol,
+                                    postingCost = Nothing
+                                  },
+                              noLoc
+                                Posting
+                                  { postingAccountName = noLoc (AccountName "income"),
+                                    postingAccount = noLoc "-1",
+                                    postingCurrencySymbol = noLoc usdSymbol,
+                                    postingCost = Nothing
+                                  }
+                            ],
+                          transactionExtras = []
+                        }
+                ]
+            }
 
       it "shows the same error when an account's total amount balance gets too large" $
         moduleGoldenBalanceError "test_resources/errors/balance-report/BE_RUNNING_BALANCE.err" $
@@ -460,6 +498,23 @@ spec = do
                 ]
             }
 
+moduleShouldBalance :: Module ann -> Path Abs Dir -> IO ()
+moduleShouldBalance m tdir = do
+  -- We have to write the module to a file to get the right source
+  -- locations to produce a nice error.
+  --
+  -- Write the module to a file
+  tfile <- resolveFile tdir "example-module.cent"
+  SB.writeFile (fromAbsFile tfile) (TE.encodeUtf8 (formatModule m))
+
+  -- Load the module
+  (ds, diag) <- runNoLoggingT $ loadModules tfile
+  -- Compile to a ledger
+  ledger <- shouldValidate diag $ compileDeclarations ds
+
+  br <- shouldValidate diag $ produceBalanceReport Nothing ledger
+  shouldBeValid br
+
 moduleGoldenBalanceError :: FilePath -> Module ann -> Path Abs Dir -> GoldenTest Text
 moduleGoldenBalanceError fp = moduleGoldenBalanceErrorHelper fp Nothing
 
@@ -479,7 +534,7 @@ moduleGoldenBalanceErrorHelper file mCurrencyTo m tdir = do
     -- Load the module
     (ds, diag) <- runNoLoggingT $ loadModules tfile
     -- Compile to a ledger
-    ledger <- shouldValidate $ compileDeclarations ds
+    ledger <- shouldValidate diag $ compileDeclarations ds
 
     errs <- shouldFailToValidate $ produceBalanceReport mCurrencyTo ledger
     pure $ renderValidationErrors diag errs

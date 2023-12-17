@@ -92,6 +92,7 @@ library
       QuickCheck
     , base >=4.7 && <5
     , centjes
+    , diagnose
     , genvalidity
     , genvalidity-containers
     , genvalidity-path

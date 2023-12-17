@@ -9,15 +9,14 @@ where
 
 import Centjes.Validation
 import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as NE
+import qualified Data.Text as T
+import Error.Diagnose
 import Test.Syd
 
-shouldValidate :: Show e => Validation e a -> IO a
-shouldValidate = \case
-  Success a -> pure a
-  Failure errs ->
-    expectationFailure $
-      unlines ("Failed:" : map show (NE.toList errs))
+shouldValidate :: ToReport e => Diagnostic String -> Validation e a -> IO a
+shouldValidate diag v = case checkValidationPure diag v of
+  Left e -> expectationFailure $ T.unpack e
+  Right a -> pure a
 
 shouldFailToValidateT :: Show a => ValidationT e IO a -> IO (NonEmpty e)
 shouldFailToValidateT (ValidationT f) = f >>= shouldFailToValidate
