@@ -5,24 +5,17 @@
 module Centjes.Report.BalanceSpec (spec) where
 
 import Centjes.Compile
-import Centjes.Format
 import Centjes.Ledger.Gen ()
 import Centjes.Load
-import Centjes.Location
 import Centjes.Module
 import Centjes.Report.Balance
 import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
 import Control.Monad.Logger
-import qualified Data.ByteString as SB
-import Data.Text (Text)
-import qualified Data.Text.Encoding as TE
-import Data.Time
 import Path
 import Path.IO
 import Test.Syd
-import Test.Syd.Path
 import Test.Syd.Validity
 
 spec :: Spec
@@ -31,23 +24,6 @@ spec = do
     it "produces valid balances" $
       producesValid $
         balanceTransaction @()
-
-  let usdSymbol = CurrencySymbol "USD"
-  let usdDeclaration =
-        DeclarationCurrency $
-          noLoc $
-            CurrencyDeclaration
-              { currencyDeclarationSymbol = noLoc usdSymbol,
-                currencyDeclarationQuantisationFactor = noLoc "0.01"
-              }
-  let eurSymbol = CurrencySymbol "EUR"
-  let eurDeclaration =
-        DeclarationCurrency $
-          noLoc $
-            CurrencyDeclaration
-              { currencyDeclarationSymbol = noLoc eurSymbol,
-                currencyDeclarationQuantisationFactor = noLoc "0.01"
-              }
 
   describe "produceBalanceReport" $ do
     it "produces valid reports" $
