@@ -4,6 +4,7 @@
 
 module Centjes.Report.BalanceSpec (spec) where
 
+import Centjes.Command.Balance (renderBalanceReportTable)
 import Centjes.Compile
 import Centjes.Ledger.Gen ()
 import Centjes.Load
@@ -17,6 +18,7 @@ import Path
 import Path.IO
 import Test.Syd
 import Test.Syd.Validity
+import Text.Colour
 
 spec :: Spec
 spec = do
@@ -32,15 +34,18 @@ spec = do
 
     scenarioDir "test_resources/balance/balanced" $ \fp -> do
       af <- liftIO $ resolveFile' fp
-      when (fileExtension af == Just ".cent") $
-        it "balances this module" $ do
-          -- Load the module
-          (ds, diag) <- runNoLoggingT $ loadModules af
-          -- Compile to a ledger
-          ledger <- shouldValidate diag $ compileDeclarations ds
+      when (fileExtension af == Just ".cent") $ do
+        reportFile <- liftIO $ replaceExtension ".txt" af
+        it "balances this module the same way" $ do
+          goldenTextFile (fromAbsFile reportFile) $ do
+            -- Load the module
+            (ds, diag) <- runNoLoggingT $ loadModules af
+            -- Compile to a ledger
+            ledger <- shouldValidate diag $ compileDeclarations ds
 
-          br <- shouldValidate diag $ produceBalanceReport Nothing ledger
-          shouldBeValid br
+            br <- shouldValidate diag $ produceBalanceReport Nothing ledger
+            shouldBeValid br
+            pure $ renderChunksText With24BitColours $ renderBalanceReportTable br
 
     scenarioDir "test_resources/balance/error/as-is" $ \fp -> do
       af <- liftIO $ resolveFile' fp

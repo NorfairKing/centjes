@@ -2,7 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Centjes.Command.Balance (runCentjesBalance) where
+module Centjes.Command.Balance
+  ( runCentjesBalance,
+    renderBalanceReportTable,
+  )
+where
 
 import Centjes.Compile
 import Centjes.Formatting
@@ -26,13 +30,17 @@ runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   (declarations, diagnostic) <- loadModules settingLedgerFile
   ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
-  accs <-
+  br <-
     liftIO $
       checkValidation diagnostic $
         produceBalanceReport balanceSettingCurrency ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-  let t = table (renderBalanceReport accs)
-  liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
+  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable br
+
+renderBalanceReportTable :: BalanceReport ann -> [Chunk]
+renderBalanceReportTable br =
+  let t = table (renderBalanceReport br)
+   in renderTable t
 
 renderBalanceReport :: BalanceReport ann -> [[Chunk]]
 renderBalanceReport br@(BalanceReport m) =

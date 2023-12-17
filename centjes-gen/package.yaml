@@ -46,7 +46,7 @@ tests:
     - monad-logger
     - path
     - path-io
+    - safe-coloured-text
     - sydtest
     - text
     - time
-    - centjes
