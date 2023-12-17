@@ -62,7 +62,7 @@ instance NFData ann => NFData (BalanceReport ann)
 
 data BalanceError ann
   = BalanceErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
-  | BalanceErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
+  | BalanceErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Currency ann)) !(Currency ann) !Money.Account
   | BalanceErrorCouldNotSumPostings !ann ![Money.MultiAccount (Currency ann)]
   | BalanceErrorConversionTooBig !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann))
   | BalanceErrorConversionImpossibleRate !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann)) !(Maybe Money.ConversionRate)
@@ -97,7 +97,7 @@ instance ToReport (BalanceError SourceSpan) where
           )
         ]
         []
-    BalanceErrorCouldNotAddPostings st an sp ma1 ma2 ->
+    BalanceErrorCouldNotAddPostings st an sp runningTotal c a ->
       Err
         (Just "BE_ACCOUNT_TOTAL")
         "Could not add postings to compute the total amount"
@@ -109,17 +109,14 @@ instance ToReport (BalanceError SourceSpan) where
                 concat
                   [ [unwords ["Account: ", T.unpack (accountNameText an)]],
                     ["Running total:"],
-                    multiAccountLines ma1
+                    multiAccountLines runningTotal
                   ]
           ),
           (toDiagnosePosition sp, Where "while trying to incorporate this posting"),
           ( toDiagnosePosition sp,
             Where $
-              unlines' $
-                concat
-                  [ ["Amount to add:"],
-                    multiAccountLines ma2
-                  ]
+              unlines'
+                ["Amount to add:", accountLine c a]
           )
         ]
         []
@@ -337,37 +334,50 @@ balanceTransaction ::
   Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
 balanceTransaction (Located tl Transaction {..}) = do
   let incorporatePosting ::
-        AccountBalances ann ->
+        -- (Balances for transaction balance checking, balances of acounts)
+        (AccountBalances ann, AccountBalances ann) ->
         GenLocated ann (Posting ann) ->
-        Validation (BalanceError ann) (AccountBalances ann)
-      incorporatePosting m (Located _ (Posting (Located pl an) (Located _ currency) la@(Located _ account) mCost)) = do
-        current <- case mCost of
-          Nothing -> pure $ MultiAccount.fromAccount currency account
-          Just lc@(Located _ Cost {..}) -> do
-            let Located _ newCurrency = costCurrency
-            let Located _ rate = costConversionRate
-            let Located _ qfOld = currencyQuantisationFactor currency
-            let Located _ qfNew = currencyQuantisationFactor newCurrency
-            -- Separate the amount for balancing from the amount for adding to balance
-            let (mNewAccount, mActualRate) = Account.convert Account.RoundNearest qfOld account rate qfNew
-            if mActualRate == Just rate
-              then case mNewAccount of
-                Nothing -> validationFailure $ BalanceErrorConversionTooBig la lc
-                Just newAccount -> pure $ MultiAccount.fromAccount newCurrency newAccount
-              else validationFailure $ BalanceErrorConversionImpossibleRate la lc mActualRate
+        Validation (BalanceError ann) (AccountBalances ann, AccountBalances ann)
+      incorporatePosting
+        (convertedBalances, actualBalances)
+        (Located _ (Posting (Located pl an) (Located _ currency) la@(Located _ account) mCost)) = do
+          (convertedCurrency, convertedAccount) <- case mCost of
+            Nothing -> pure (currency, account)
+            Just lc@(Located _ Cost {..}) -> do
+              let Located _ newCurrency = costCurrency
+              let Located _ rate = costConversionRate
+              let Located _ qfOld = currencyQuantisationFactor currency
+              let Located _ qfNew = currencyQuantisationFactor newCurrency
+              -- Separate the amount for balancing from the amount for adding to balance
+              let (mNewAccount, mActualRate) = Account.convert Account.RoundNearest qfOld account rate qfNew
+              if mActualRate == Just rate
+                then case mNewAccount of
+                  Nothing -> validationFailure $ BalanceErrorConversionTooBig la lc
+                  Just newAccount -> pure (newCurrency, newAccount)
+                else validationFailure $ BalanceErrorConversionImpossibleRate la lc mActualRate
 
-        case M.lookup an m of
-          Nothing -> pure $ M.insert an current m
-          Just total -> case MultiAccount.add total current of
-            Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl total current
-            Just acc'' -> pure $ M.insert an acc'' m
+          let addAccountToBalances ::
+                Currency ann ->
+                Money.Account ->
+                AccountBalances ann ->
+                Validation (BalanceError ann) (AccountBalances ann)
+              addAccountToBalances c a bs = case M.lookup an bs of
+                Nothing -> pure $ M.insert an (MultiAccount.fromAccount c a) bs
+                Just a' ->
+                  case MultiAccount.addAccount a' c a of
+                    Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl a' c a
+                    Just a'' -> pure $ M.insert an a'' bs
 
-  m <- foldM incorporatePosting M.empty transactionPostings
-  let as = M.elems m
+          actualBalances' <- addAccountToBalances currency account actualBalances
+          convertedBalances' <- addAccountToBalances convertedCurrency convertedAccount convertedBalances
+          pure (actualBalances', convertedBalances')
+
+  (mForBalancing, mActual) <- foldM incorporatePosting (M.empty, M.empty) transactionPostings
+  let as = M.elems mForBalancing
   case MultiAccount.sum as of
     Nothing -> validationFailure $ BalanceErrorCouldNotSumPostings tl as
     Just d
-      | d == MultiAccount.zero -> pure (Located tl m)
+      | d == MultiAccount.zero -> pure (Located tl mActual)
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
 
 convertBalancedTransaction ::
