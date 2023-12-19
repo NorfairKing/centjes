@@ -32,6 +32,8 @@ spec = do
 
   centFilesDirSpec "test_resources/balance"
   centFilesDirSpec "test_resources/register"
+  centFilesDirSpec "test_resources/check"
+  centFilesDirSpec "test_resources/compile"
 
 centFilesDirSpec :: FilePath -> Spec
 centFilesDirSpec dir =
