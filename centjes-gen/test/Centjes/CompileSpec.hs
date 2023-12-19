@@ -5,26 +5,20 @@
 module Centjes.CompileSpec (spec) where
 
 import Centjes.Compile
-import Centjes.Format
 import Centjes.Load
 import Centjes.Location
-import Centjes.Module
 import qualified Centjes.Module as Module
 import Centjes.Module.Gen ()
 import Centjes.Validation
 import Centjes.Validation.TestUtils
+import Control.Monad
 import Control.Monad.Logger
-import qualified Data.ByteString as SB
 import Data.GenValidity.Map ()
 import qualified Data.Map.Strict as M
-import Data.Text (Text)
-import qualified Data.Text.Encoding as TE
-import Data.Time
 import Path
 import Path.IO
 import Test.QuickCheck (forAll)
 import Test.Syd
-import Test.Syd.Path
 import Test.Syd.Validity
 
 spec :: Spec
@@ -64,135 +58,13 @@ spec = do
     it "produces valid ledgers" $
       producesValid (compileDeclarations @())
 
-    tempDirSpec "centjes-compile-errors" $ do
-      let usdSymbol = CurrencySymbol "USD"
-      let usdDeclaration =
-            CurrencyDeclaration
-              { currencyDeclarationSymbol = noLoc usdSymbol,
-                currencyDeclarationQuantisationFactor = noLoc "0.01"
-              }
-      let chfSymbol = CurrencySymbol "CHF"
-      let chfDeclaration =
-            CurrencyDeclaration
-              { currencyDeclarationSymbol = noLoc chfSymbol,
-                currencyDeclarationQuantisationFactor = noLoc "0.05"
-              }
-      it "shows the same error when encountering an invalid quantisation factor" $
-        moduleGoldenCompileError "test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ DeclarationCurrency $
-                    noLoc $
-                      CurrencyDeclaration
-                        { currencyDeclarationSymbol = noLoc (CurrencySymbol "INVALID"),
-                          currencyDeclarationQuantisationFactor = noLoc "100"
-                        }
-                ]
-            }
-
-      it "shows the same error when encountering a duplicate currency" $
-        moduleGoldenCompileError "test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                let lSymbol = noLoc (CurrencySymbol "DUPLICATE")
-                 in [ DeclarationCurrency $
-                        noLoc $
-                          CurrencyDeclaration
-                            { currencyDeclarationSymbol = lSymbol,
-                              currencyDeclarationQuantisationFactor = noLoc "0.01"
-                            },
-                      DeclarationCurrency $
-                        noLoc $
-                          CurrencyDeclaration
-                            { currencyDeclarationSymbol = lSymbol,
-                              currencyDeclarationQuantisationFactor = noLoc "0.05"
-                            }
-                    ]
-            }
-      it "shows the same error when encountering an undeclared currency" $
-        moduleGoldenCompileError "test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 24)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "1",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-      it "shows the same error when encountering an invalid amount" $
-        moduleGoldenCompileError "test_resources/errors/compile/CE_INVALID_PRICE.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ DeclarationCurrency $ noLoc usdDeclaration,
-                  DeclarationCurrency $ noLoc chfDeclaration,
-                  DeclarationPrice $
-                    noLoc $
-                      PriceDeclaration
-                        { priceDeclarationTimestamp = noLoc (TimestampDay (fromGregorian 2023 12 11)),
-                          priceDeclarationCurrencySymbol = noLoc usdSymbol,
-                          priceDeclarationCost =
-                            noLoc $
-                              CostExpression
-                                { costExpressionConversionRate = noLoc "-1.05",
-                                  costExpressionCurrencySymbol = noLoc chfSymbol
-                                }
-                        }
-                ]
-            }
-      it "shows the same error when encountering an invalid amount" $
-        moduleGoldenCompileError "test_resources/errors/compile/CE_INVALID_AMOUNT.err" $
-          Module
-            { moduleImports = [],
-              moduleDeclarations =
-                [ DeclarationCurrency $ noLoc usdDeclaration,
-                  DeclarationTransaction $
-                    noLoc $
-                      Transaction
-                        { transactionTimestamp = noLoc (TimestampDay (fromGregorian 2023 11 25)),
-                          transactionDescription = Nothing,
-                          transactionPostings =
-                            [ noLoc
-                                Posting
-                                  { postingAccountName = noLoc (AccountName "assets"),
-                                    postingAccount = noLoc "0.001",
-                                    postingCurrencySymbol = noLoc usdSymbol,
-                                    postingCost = Nothing
-                                  }
-                            ],
-                          transactionExtras = []
-                        }
-                ]
-            }
-
-moduleGoldenCompileError :: FilePath -> Module ann -> Path Abs Dir -> GoldenTest Text
-moduleGoldenCompileError file m tdir = do
-  goldenTextFile file $ do
-    -- We have to write the module to a file to get the right source
-    -- locations to produce a nice error.
-    --
-    -- Write the module to a file
-    tfile <- resolveFile tdir "example-module.cent"
-    SB.writeFile (fromAbsFile tfile) (TE.encodeUtf8 (formatModule m))
-
-    -- Load the module
-    (ds, diag) <- runNoLoggingT $ loadModules tfile
-    -- Try to compil
-    errs <- shouldFailToValidate $ compileDeclarations ds
-    pure $ renderValidationErrors diag errs
+  scenarioDir "test_resources/compile" $ \fp -> do
+    af <- liftIO $ resolveFile' fp
+    when (fileExtension af == Just ".cent") $ do
+      resultFile <- liftIO $ replaceExtension ".err" af
+      it "shows the same error when compiling this module" $ do
+        goldenTextFile (fromAbsFile resultFile) $ do
+          (ds, diag) <- runNoLoggingT $ loadModules af
+          -- Try to check
+          errs <- shouldFailToValidate $ compileDeclarations ds
+          pure $ renderValidationErrors diag errs
