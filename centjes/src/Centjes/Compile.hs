@@ -30,7 +30,6 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
 import Data.Validity (Validity)
-import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
@@ -139,7 +138,7 @@ unlines' = intercalate "\n"
 compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
   ledgerCurrencies <- compileCurrencyDeclarationDeclarations declarations
-  ledgerPrices <- compilePriceDeclarations ledgerCurrencies declarations
+  declarationPrices <- compilePriceDeclarations ledgerCurrencies declarations
   let transactions =
         mapMaybe
           ( \case
@@ -147,17 +146,21 @@ compileDeclarations declarations = do
               _ -> Nothing
           )
           declarations
-  ledgerTransactions <-
-    V.fromList
-      . sortBy
-        ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
-            `on` locatedValue
-              . Ledger.transactionTimestamp
-              . locatedValue
-        )
-      <$> traverse
-        (compileTransaction ledgerCurrencies)
-        transactions
+  transactionTups <-
+    traverse
+      (compileTransaction ledgerCurrencies)
+      transactions
+  let ledgerTransactions =
+        V.fromList
+          . sortBy
+            ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+                `on` locatedValue
+                  . Ledger.transactionTimestamp
+                  . locatedValue
+            )
+          $ map fst transactionTups
+  let transactionPrices = concatMap snd transactionTups
+  let ledgerPrices = V.fromList $ declarationPrices ++ transactionPrices
   pure Ledger {..}
 
 compileCurrencyDeclarationDeclarations ::
@@ -196,10 +199,9 @@ compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
 compilePriceDeclarations ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   [Declaration ann] ->
-  Validation (CompileError ann) (Vector (GenLocated ann (Price ann)))
+  Validation (CompileError ann) [GenLocated ann (Price ann)]
 compilePriceDeclarations currencies =
-  fmap V.fromList
-    . traverse (compilePriceDeclaration currencies)
+  traverse (compilePriceDeclaration currencies)
     . mapMaybe
       ( \case
           DeclarationPrice pd -> Just pd
@@ -238,11 +240,23 @@ compileConversionRate pdl ldl@(Located rl dl) = do
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   GenLocated ann (Module.Transaction ann) ->
-  Validation (CompileError ann) (GenLocated ann (Ledger.Transaction ann))
+  Validation
+    (CompileError ann)
+    ( GenLocated ann (Ledger.Transaction ann),
+      [GenLocated ann (Ledger.Price ann)]
+    )
 compileTransaction currencies (Located l mt) = do
   let transactionTimestamp = Module.transactionTimestamp mt
       transactionDescription = Module.transactionDescription mt
-  transactionPostings <- V.fromList <$> traverse (compilePosting currencies l) (Module.transactionPostings mt)
+  postings <- traverse (compilePosting currencies l) (Module.transactionPostings mt)
+  let transactionPostings = V.fromList postings
+  let prices =
+        mapMaybe
+          ( \(Located pl p) -> do
+              lc <- Ledger.postingCost p
+              pure $ Located pl $ Ledger.Price transactionTimestamp (postingCurrency p) lc
+          )
+          postings
   transactionAssertions <-
     V.fromList
       <$> traverse
@@ -256,13 +270,18 @@ compileTransaction currencies (Located l mt) = do
             )
             (Module.transactionExtras mt)
         )
-  pure $ Located l Ledger.Transaction {..}
+  pure
+    ( Located l Ledger.Transaction {..},
+      prices
+    )
 
 compilePosting ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   ann ->
   GenLocated ann (Module.Posting ann) ->
-  Validation (CompileError ann) (GenLocated ann (Ledger.Posting ann))
+  Validation
+    (CompileError ann)
+    (GenLocated ann (Ledger.Posting ann))
 compilePosting currencies tl (Located l mp) = do
   let postingAccountName = Module.postingAccountName mp
   postingCurrency <- compileCurrencyDeclarationSymbol currencies tl (Module.postingCurrencySymbol mp)
