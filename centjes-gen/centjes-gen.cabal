@@ -66,6 +66,10 @@ extra-source-files:
     test_resources/errors/compile/CE_INVALID_PRICE.err
     test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err
     test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/register/valid/as-is/empty.cent
+    test_resources/register/valid/as-is/empty.txt
+    test_resources/register/valid/as-is/example.cent
+    test_resources/register/valid/as-is/example.txt
     test_resources/syntax/declaration/formatted/comment.cent
     test_resources/syntax/declaration/formatted/currency.cent
     test_resources/syntax/declaration/formatted/price.cent
@@ -156,6 +160,7 @@ test-suite centjes-test
       Centjes.ModuleSpec
       Centjes.ParseSpec
       Centjes.Report.BalanceSpec
+      Centjes.Report.RegisterSpec
       Centjes.TimestampSpec
       Paths_centjes_gen
   hs-source-dirs:
