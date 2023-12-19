@@ -1,0 +1,16 @@
+currency USD 0.01
+currency CHF 0.05
+
+-- Ignored because it comes earlier
+price 2023-12-18 CHF 1 USD
+
+2023-12-19
+  | Convert USD to CHF
+  * investments 100 USD @ 0.5 CHF
+  * investments -50 CHF
+
+
+
+2023-12-20
+  * investments -100 USD
+  * assets 100 USD
