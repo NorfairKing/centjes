@@ -49,4 +49,3 @@ tests:
     - safe-coloured-text
     - sydtest
     - text
-    - time

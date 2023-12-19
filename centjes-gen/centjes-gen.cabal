@@ -64,6 +64,16 @@ extra-source-files:
     test_resources/check/CE_MISSING_ATTACHMENT.err
     test_resources/check/CE_UNDECLARED_ACCOUNT.cent
     test_resources/check/CE_UNDECLARED_ACCOUNT.err
+    test_resources/compile/CE_DUPLICATE_CURRENCY.cent
+    test_resources/compile/CE_DUPLICATE_CURRENCY.err
+    test_resources/compile/CE_INVALID_AMOUNT.cent
+    test_resources/compile/CE_INVALID_AMOUNT.err
+    test_resources/compile/CE_INVALID_PRICE.cent
+    test_resources/compile/CE_INVALID_PRICE.err
+    test_resources/compile/CE_INVALID_QUANTISATION_FACTOR.cent
+    test_resources/compile/CE_INVALID_QUANTISATION_FACTOR.err
+    test_resources/compile/CE_UNDECLARED_CURRENCY.cent
+    test_resources/compile/CE_UNDECLARED_CURRENCY.err
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err
@@ -186,5 +196,4 @@ test-suite centjes-test
     , safe-coloured-text
     , sydtest
     , text
-    , time
   default-language: Haskell2010
