@@ -112,7 +112,7 @@ lookupConversionRate ::
 lookupConversionRate prices currencyTo l currencyFrom =
   if currencySymbol currencyFrom == currencySymbol currencyTo
     then pure (ConversionRate.oneToOne, quantisationFactorTo)
-    else case firstMatch (matchingPrice . locatedValue) prices of
+    else case lastMatch (matchingPrice . locatedValue) prices of
       Nothing ->
         -- Could not convert because we don't have the price info.
         validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom l
@@ -138,11 +138,11 @@ lookupConversionRate prices currencyTo l currencyFrom =
                 then Just (ConversionRate.invert cr)
                 else Nothing -- TODO also more complicated paths.
 
-firstMatch :: (a -> Maybe b) -> Vector a -> Maybe b
-firstMatch f v = go 0
+lastMatch :: (a -> Maybe b) -> Vector a -> Maybe b
+lastMatch f v = go (V.length v - 1)
   where
     go ix = case v V.!? ix of
       Nothing -> Nothing
       Just a -> case f a of
-        Nothing -> go (succ ix)
+        Nothing -> go (pred ix)
         Just b -> Just b

@@ -151,17 +151,23 @@ compileDeclarations declarations = do
       (compileTransaction ledgerCurrencies)
       transactions
   let ledgerTransactions =
-        V.fromList
-          . sortBy
-            ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
-                `on` locatedValue
-                  . Ledger.transactionTimestamp
-                  . locatedValue
-            )
-          $ map fst transactionTups
+        V.fromList . sortOnTimestamp Ledger.transactionTimestamp $
+          map fst transactionTups
   let transactionPrices = concatMap snd transactionTups
-  let ledgerPrices = V.fromList $ declarationPrices ++ transactionPrices
+  let ledgerPrices =
+        V.fromList $
+          sortOnTimestamp Ledger.priceTimestamp $
+            declarationPrices ++ transactionPrices
   pure Ledger {..}
+
+sortOnTimestamp :: (a -> GenLocated ann Timestamp) -> [GenLocated ann a] -> [GenLocated ann a]
+sortOnTimestamp getTimestamp =
+  sortBy
+    ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+        `on` locatedValue
+          . getTimestamp
+          . locatedValue
+    )
 
 compileCurrencyDeclarationDeclarations ::
   [Declaration ann] ->

@@ -47,16 +47,17 @@ instance Validity ann => Validity (Ledger ann) where
       [ genericValidate l,
         -- TODO all the currencies are consistent
         declare "the prices are sorted" $
-          partiallyOrderedBy
-            (Timestamp.comparePartially `on` locatedValue . priceTimestamp . locatedValue)
-            ledgerPrices,
+          partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
         declare "the transactions are sorted" $
-          partiallyOrderedBy
-            (Timestamp.comparePartially `on` locatedValue . transactionTimestamp . locatedValue)
-            ledgerTransactions
+          partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
       ]
 
 instance NFData ann => NFData (Ledger ann)
+
+partiallyOrderedByTimestamp :: (a -> GenLocated ann Timestamp) -> Vector (GenLocated ann a) -> Bool
+partiallyOrderedByTimestamp getTimestamp =
+  partiallyOrderedBy
+    (Timestamp.comparePartially `on` (locatedValue . getTimestamp . locatedValue))
 
 partiallyOrderedBy :: (a -> a -> Maybe Ordering) -> Vector a -> Bool
 partiallyOrderedBy f v =

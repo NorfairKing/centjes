@@ -20,6 +20,10 @@ extra-source-files:
     test_resources/balance/balanced/as-is/empty.txt
     test_resources/balance/balanced/as-is/example.cent
     test_resources/balance/balanced/as-is/example.txt
+    test_resources/balance/balanced/to-chf/conversion-price-before.cent
+    test_resources/balance/balanced/to-chf/conversion-price-before.txt
+    test_resources/balance/balanced/to-chf/conversion-price-sorted.cent
+    test_resources/balance/balanced/to-chf/conversion-price-sorted.txt
     test_resources/balance/balanced/to-chf/conversion-price.cent
     test_resources/balance/balanced/to-chf/conversion-price.txt
     test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.cent
