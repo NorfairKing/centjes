@@ -58,9 +58,12 @@ extra-source-files:
     test_resources/balance/error/to-chf/CONVERT_ERROR_MISSING_PRICE.err
     test_resources/balance/error/to-chf/CONVERT_ERROR_UNKNOWN_TARGET.cent
     test_resources/balance/error/to-chf/CONVERT_ERROR_UNKNOWN_TARGET.err
-    test_resources/errors/check/CE_DUPLICATE_ACCOUNT.err
-    test_resources/errors/check/CE_MISSING_ATTACHMENT.err
-    test_resources/errors/check/CE_UNDECLARED_ACCOUNT.err
+    test_resources/check/CE_DUPLICATE_ACCOUNT.cent
+    test_resources/check/CE_DUPLICATE_ACCOUNT.err
+    test_resources/check/CE_MISSING_ATTACHMENT.cent
+    test_resources/check/CE_MISSING_ATTACHMENT.err
+    test_resources/check/CE_UNDECLARED_ACCOUNT.cent
+    test_resources/check/CE_UNDECLARED_ACCOUNT.err
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err
