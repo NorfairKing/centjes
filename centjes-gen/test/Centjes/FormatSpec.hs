@@ -31,6 +31,7 @@ spec = do
       producesValid (formatModule @())
 
   centFilesDirSpec "test_resources/balance"
+  centFilesDirSpec "test_resources/register"
 
 centFilesDirSpec :: FilePath -> Spec
 centFilesDirSpec dir =
