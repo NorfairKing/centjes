@@ -32,7 +32,7 @@ spec = do
       producesValid2
         (produceBalanceReport @())
 
-    scenarioDir "test_resources/balance/balanced" $ \fp -> do
+    scenarioDir "test_resources/balance/balanced/as-is" $ \fp -> do
       af <- liftIO $ resolveFile' fp
       when (fileExtension af == Just ".cent") $ do
         reportFile <- liftIO $ replaceExtension ".txt" af
@@ -44,6 +44,21 @@ spec = do
             ledger <- shouldValidate diag $ compileDeclarations ds
 
             br <- shouldValidate diag $ produceBalanceReport Nothing ledger
+            shouldBeValid br
+            pure $ renderChunksText With24BitColours $ renderBalanceReportTable br
+
+    scenarioDir "test_resources/balance/balanced/to-chf" $ \fp -> do
+      af <- liftIO $ resolveFile' fp
+      when (fileExtension af == Just ".cent") $ do
+        reportFile <- liftIO $ replaceExtension ".txt" af
+        it "balances this module the same way" $ do
+          goldenTextFile (fromAbsFile reportFile) $ do
+            -- Load the module
+            (ds, diag) <- runNoLoggingT $ loadModules af
+            -- Compile to a ledger
+            ledger <- shouldValidate diag $ compileDeclarations ds
+
+            br <- shouldValidate diag $ produceBalanceReport (Just (CurrencySymbol "CHF")) ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderBalanceReportTable br
 
