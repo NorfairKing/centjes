@@ -6,6 +6,7 @@
 
 module Centjes.Command.Register
   ( runCentjesRegister,
+    renderRegisterTable,
   )
 where
 
@@ -36,8 +37,12 @@ runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
   ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
   register <- liftIO $ checkValidation diag $ produceRegister registerSettingCurrency ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
+  liftIO $ putChunksLocaleWith terminalCapabilities $ renderRegisterTable register
+
+renderRegisterTable :: Register ann -> [Chunk]
+renderRegisterTable register =
   let t = table (renderRegister register)
-  liftIO $ putChunksLocaleWith terminalCapabilities $ renderTable t
+   in renderTable t
 
 renderRegister :: Register ann -> [[Chunk]]
 renderRegister r@(Register v) =
