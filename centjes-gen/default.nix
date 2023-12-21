@@ -1,8 +1,8 @@
 { mkDerivation, base, bytestring, centjes, containers, diagnose
 , genvalidity, genvalidity-containers, genvalidity-path
 , genvalidity-sydtest, genvalidity-text, genvalidity-time
-, genvalidity-vector, lib, monad-logger, path, path-io, QuickCheck
-, really-safe-money-gen, safe-coloured-text, sydtest
+, genvalidity-vector, lib, monad-logger, mtl, path, path-io
+, QuickCheck, really-safe-money-gen, safe-coloured-text, sydtest
 , sydtest-discover, text, vector
 }:
 mkDerivation {
@@ -17,7 +17,7 @@ mkDerivation {
   ];
   testHaskellDepends = [
     base bytestring centjes containers genvalidity-containers
-    genvalidity-sydtest monad-logger path path-io QuickCheck
+    genvalidity-sydtest monad-logger mtl path path-io QuickCheck
     safe-coloured-text sydtest text
   ];
   testToolDepends = [ sydtest-discover ];

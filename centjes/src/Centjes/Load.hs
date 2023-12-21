@@ -7,6 +7,8 @@ module Centjes.Load
   ( loadModules,
     loadModules',
     loadModulesOrErr,
+    LoadError (..),
+    LoadError',
     diagFromFileMap,
   )
 where
@@ -16,7 +18,7 @@ import Centjes.Module
 import Centjes.Parse
 import Centjes.Validation
 import Control.Monad
-import Control.Monad.IO.Class
+import Control.Monad.Except
 import Control.Monad.Logger
 import Control.Monad.State.Strict
 import qualified Data.ByteString as SB
@@ -40,15 +42,22 @@ loadModules firstPath = do
 
 loadModules' :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModules' firstPath = do
-  validation <- unValidationT $ loadModulesOrErr firstPath
-  liftIO $ checkValidation mempty validation
+  errOrRes <- runExceptT $ loadModulesOrErr firstPath
+  case errOrRes of
+    Right a -> pure a
+    Left (LoadError fileMap le) -> do
+      let diag = addReport (diagFromFileMap fileMap) (toReport le)
+      liftIO $ dieWithDiag diag
 
-data LoadError
+data LoadError = LoadError !(Map (Path Rel File) (Text, LModule)) !LoadError'
+  deriving (Show, Eq, Generic)
+
+data LoadError'
   = LoadErrorImportMissing !(Path Rel File) !(Maybe SourceSpan)
   | LoadErrorNotAFile !(Path Rel File) !(Maybe SourceSpan)
   deriving (Show, Eq, Generic)
 
-instance ToReport LoadError where
+instance ToReport LoadError' where
   toReport = \case
     LoadErrorImportMissing rf mL ->
       Err
@@ -63,7 +72,7 @@ instance ToReport LoadError where
         []
         []
 
-loadModulesOrErr :: forall m. MonadLoggerIO m => Path Abs File -> ValidationT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModulesOrErr :: forall m. MonadLoggerIO m => Path Abs File -> ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModulesOrErr firstPath = do
   let base = parent firstPath
   flip runStateT M.empty $ do
@@ -76,7 +85,7 @@ loadModulesOrErr firstPath = do
       LModule ->
       StateT
         (Map (Path Rel File) (Text, LModule))
-        (ValidationT LoadError m)
+        (ExceptT LoadError m)
         [LDeclaration]
     go originalBase currentBase m = do
       restDecls <- forM (moduleImports m) $ \(Located il (Import rf)) -> do
@@ -91,7 +100,7 @@ loadModulesOrErr firstPath = do
       Path Abs File ->
       StateT
         (Map (Path Rel File) (Text, LModule))
-        (ValidationT LoadError m)
+        (ExceptT LoadError m)
         LModule
     readSingle originalBase mIl p = do
       visited <- get
@@ -107,7 +116,8 @@ loadModulesOrErr firstPath = do
                       "This means there is an import cycle."
                     ]
             else do
-              (contents, m) <- lift $ readSingleModule originalBase mIl rf
+              fileMap <- get
+              (contents, m) <- lift $ readSingleModule originalBase fileMap mIl rf
               modify' (M.insert rf (contents, m))
               pure m
 
@@ -121,10 +131,11 @@ diagFromFileMap =
 readSingleModule ::
   MonadLoggerIO m =>
   Path Abs Dir ->
+  Map (Path Rel File) (Text, LModule) ->
   Maybe SourceSpan ->
   Path Rel File ->
-  ValidationT LoadError m (Text, LModule)
-readSingleModule base mIl p = do
+  ExceptT LoadError m (Text, LModule)
+readSingleModule base fileMap mIl p = do
   let fp = fromRelFile p
   let af = base </> p
   occupied <- isLocationOccupied af
@@ -156,5 +167,5 @@ readSingleModule base mIl p = do
                 Right m -> do
                   lift $ logDebugN $ T.pack $ unwords ["Read module:", fp]
                   pure (textContents, m)
-        else validationTFailure $ LoadErrorNotAFile p mIl
-    else validationTFailure $ LoadErrorImportMissing p mIl
+        else throwError $ LoadError fileMap $ LoadErrorNotAFile p mIl
+    else throwError $ LoadError fileMap $ LoadErrorImportMissing p mIl

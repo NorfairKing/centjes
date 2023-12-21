@@ -200,6 +200,7 @@ test-suite centjes-test
     , genvalidity-containers
     , genvalidity-sydtest
     , monad-logger
+    , mtl
     , path
     , path-io
     , safe-coloured-text

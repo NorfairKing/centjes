@@ -90,9 +90,7 @@ mapValidationFailure f = \case
 checkValidation :: ToReport e => Diagnostic String -> Validation e a -> IO a
 checkValidation diag = \case
   Success a -> pure a
-  Failure errs -> do
-    printDiagnostic stderr WithUnicode (TabSize 2) defaultStyle (renderDiagnostic diag errs)
-    exitFailure
+  Failure errs -> dieWithDiag $ renderDiagnostic diag errs
 
 checkValidationPure :: ToReport e => Diagnostic String -> Validation e a -> Either Text a
 checkValidationPure diag = \case
@@ -107,6 +105,11 @@ renderValidationErrors diag errs =
       doc :: Doc AnsiStyle
       doc = defaultStyle <$> prettyDiagnostic WithUnicode (TabSize 2) diag'
    in renderStrict $ layoutPretty defaultLayoutOptions doc
+
+dieWithDiag :: Diagnostic String -> IO a
+dieWithDiag diag = do
+  printDiagnostic stderr WithUnicode (TabSize 2) defaultStyle diag
+  exitFailure
 
 renderDiagnostic :: ToReport e => Diagnostic String -> NonEmpty e -> Diagnostic String
 renderDiagnostic diag errs = foldl' addReport diag (map toReport (NE.toList errs))

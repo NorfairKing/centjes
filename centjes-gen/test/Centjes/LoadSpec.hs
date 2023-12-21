@@ -5,9 +5,10 @@ module Centjes.LoadSpec (spec) where
 
 import Centjes.Load
 import Centjes.Validation
-import Centjes.Validation.TestUtils
 import Control.Monad
+import Control.Monad.Except
 import Control.Monad.Logger
+import Data.List.NonEmpty (NonEmpty (..))
 import Path
 import Path.IO
 import Test.Syd
@@ -21,6 +22,8 @@ spec =
         resultFile <- liftIO $ replaceExtension ".err" af
         it "shows the same error when checking this module" $ do
           goldenTextFile (fromAbsFile resultFile) $ do
-            validation <- runNoLoggingT $ unValidationT $ loadModulesOrErr af
-            errs <- shouldFailToValidate validation
-            pure $ renderValidationErrors mempty errs
+            errOrRes <- runNoLoggingT $ runExceptT $ loadModulesOrErr af
+            case errOrRes of
+              Right _ -> expectationFailure "Should not have succeeded to load."
+              Left (LoadError fileMap le) ->
+                pure $ renderValidationErrors (diagFromFileMap fileMap) (le :| [])
