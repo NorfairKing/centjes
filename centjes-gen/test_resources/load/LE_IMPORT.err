@@ -1,1 +1,7 @@
-[0;91;1m[error LE_IMPORT][0m: Imported module does not exist: foo.cent
+[0;91;1m[error LE_IMPORT_MISSING][0m: Imported module does not exist: foo.cent
+     [0;90;1m╭──▶[0m [0;32;1mLE_IMPORT.cent@1:1-1:12[0m
+     [0;90;1m│[0m
+[0;90;1m   1 │[0m [0;35;1m<no line>[0m
+     [0;90;1m•[0m [0;91m┬[0m[0;91m[0m[0;91m[0m[0;91m[0m[0;91m[0m[0;91m[0m[0;91m[0m[0;91m[0m[0;91m[0m[0;91m[0m[0;91m[0m
+     [0;90;1m•[0m [0;91m╰╸[0m [0;91mImported here[0m
+[0;90;1m─────╯[0m

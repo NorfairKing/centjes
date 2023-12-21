@@ -44,6 +44,7 @@ import qualified Data.Text as T
 %expect 0
 
 %token 
+      import          { Located _ (TokenImport _)}
       comment         { Located _ (TokenComment _) }
       attach          { Located _ TokenAttach }
       assert          { Located _ TokenAssert }
@@ -57,9 +58,8 @@ import qualified Data.Text as T
       plus            { Located _ TokenPlus }
       star            { Located _ TokenStar }
       at              { Located _ TokenAt }
-      import          { Located _ (TokenImport $$)}
       currency_tok    { Located _ TokenCurrency}
-      account_tok     { Located _ TokenAccount}
+      account_tok     { Located _ TokenAccount }
       newline         { Located _ TokenNewLine }
 
 
@@ -70,12 +70,13 @@ module
   : many(newline) many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
 
 import_with_newlines
-  :: { Import }
+  :: { Located Import }
   : import_dec many(newline) { $1 }
 
 import_dec
-  :: { Import }
-  : import {% parseImportFrom $1 }
+  :: { Located Import }
+  : import {% parseImport $1 }
+
 
 declaration_with_newlines
   :: { LDeclaration }
@@ -222,6 +223,9 @@ sBMLL l1 l2 Nothing  [] [] = sBE l1 l2
 sBMLL l1 _ (Just l3) [] [] = sBE l1 l3
 sBMLL l1 _ _         ls [] = sBL l1 ls
 sBMLL l1 _ _         _  ls = sBL l1 ls
+
+parseImport :: Token -> Alex (Located Import)
+parseImport t@(Located _ (TokenImport s)) = sL1 t <$> parseImportFrom s
 
 parseComment :: Token -> Located Text
 parseComment (Located l (TokenComment t)) = Located l t

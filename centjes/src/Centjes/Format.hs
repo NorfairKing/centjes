@@ -39,7 +39,7 @@ moduleDoc :: Module l -> Doc ann
 moduleDoc Module {..} =
   mconcat $
     concat
-      [ map importDoc moduleImports,
+      [ map lImportDoc moduleImports,
         [hardline | not (null moduleImports) && not (null moduleDeclarations)],
         go Nothing moduleDeclarations
       ]
@@ -86,6 +86,9 @@ decType = \case
   DeclarationAccount {} -> DecAccount
   DeclarationPrice {} -> DecPrice
   DeclarationTransaction {} -> DecTransaction
+
+lImportDoc :: GenLocated l Import -> Doc ann
+lImportDoc = importDoc . locatedValue
 
 importDoc :: Import -> Doc ann
 importDoc (Import fp) =
