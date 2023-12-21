@@ -67,6 +67,7 @@ data BalanceError ann
   | BalanceErrorConversionTooBig !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann))
   | BalanceErrorConversionImpossibleRate !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann)) !(Maybe Money.ConversionRate)
   | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann)) ![GenLocated ann (Posting ann)]
+  | BalanceErrorAccountTypeAssertion
   | BalanceErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Currency ann)) !(Maybe Money.Account)
   | BalanceErrorConvertError !(ConvertError ann)
   deriving stock (Show, Eq, Generic)
@@ -159,6 +160,12 @@ instance ToReport (BalanceError SourceSpan) where
               (\(Located _ Posting {..}) -> makePostingSuggestion ma postingCurrency postingAccount)
               postings
         )
+        []
+    BalanceErrorAccountTypeAssertion ->
+      Err
+        (Just "BE_ACCOUNT_TYPE_ASSERTION")
+        "Balance of an account did not match its type"
+        []
         []
     BalanceErrorAssertion s (Located al (AssertionEquals _ (Located _ asserted) (Located _ c))) actual mDifference ->
       Err
@@ -284,6 +291,7 @@ produceBalancedLedger mCurrencyTo ledger = do
         let (lt@(Located tl t), ab) = V.unsafeIndex tups ix
         newTotal <- incorporateAccounts runningTotal ab
 
+        checkAccountTypeAssertions tl newTotal
         traverse_ (checkAssertion tl newTotal) (transactionAssertions t)
 
         pure ((lt, newTotal), (succ ix, newTotal))
@@ -310,6 +318,12 @@ produceBalancedLedger mCurrencyTo ledger = do
       Just total -> case MultiAccount.add total current of
         Nothing -> validationFailure $ BalanceErrorCouldNotAddTransaction l an total current
         Just new -> pure $ M.insert an new totals
+
+checkAccountTypeAssertions ::
+  ann ->
+  AccountBalances ann ->
+  Validation (BalanceError ann) ()
+checkAccountTypeAssertions tl runningTotal = undefined
 
 checkAssertion ::
   Ord ann =>
