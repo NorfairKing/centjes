@@ -275,11 +275,10 @@ alexMonadScan' = do
 
 -- Signal an error, including a commonly accepted source code position.
 alexError' :: SourceSpan -> String -> Alex a
-alexError' (SourceSpan _ _ begin _) msg = do
+alexError' (SourceSpan _ _ begin end) msg = do
   state <- alexGetUserState
-  let l = sourcePositionLine begin
-  let c = sourcePositionColumn begin
-  alexError (fromRelFile (sourceFilePath state) ++ ":" ++ show l ++ ":" ++ show c ++ ": " ++ msg)
+  let showPos pos = show (sourcePositionLine pos) ++ ":" ++ show (sourcePositionColumn pos)
+  alexError (fromRelFile (sourceFilePath state) ++ "@" ++ showPos begin ++ "-" ++ showPos end ++ "  " ++ msg)
 
 maybeParser :: Show b => String -> (b -> Maybe a) -> b -> Alex a
 maybeParser name func b =

@@ -60,7 +60,7 @@ import Path
 type LModule = Module SourceSpan
 
 data Module ann = Module
-  { moduleImports :: [Import],
+  { moduleImports :: [GenLocated ann Import],
     moduleDeclarations :: [Declaration ann]
   }
   deriving stock (Show, Eq, Generic)

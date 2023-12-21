@@ -83,6 +83,11 @@ extra-source-files:
     test_resources/errors/compile/CE_INVALID_PRICE.err
     test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err
     test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/load/dir.cent/dummy.cent
+    test_resources/load/LE_IMPORT.cent
+    test_resources/load/LE_IMPORT.err
+    test_resources/load/LE_IMPORT_DIR.cent
+    test_resources/load/LE_IMPORT_DIR.err
     test_resources/register/valid/as-is/empty.cent
     test_resources/register/valid/as-is/empty.txt
     test_resources/register/valid/as-is/example.cent
@@ -176,6 +181,7 @@ test-suite centjes-test
       Centjes.CurrencySymbolSpec
       Centjes.DescriptionSpec
       Centjes.FormatSpec
+      Centjes.LoadSpec
       Centjes.ModuleSpec
       Centjes.ParseSpec
       Centjes.Report.BalanceSpec
@@ -197,6 +203,7 @@ test-suite centjes-test
     , genvalidity-containers
     , genvalidity-sydtest
     , monad-logger
+    , mtl
     , path
     , path-io
     , safe-coloured-text

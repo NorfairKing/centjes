@@ -30,10 +30,11 @@ spec = do
     it "can format any module" $
       producesValid (formatModule @())
 
+  centFilesDirSpec "test_resources/load"
+  centFilesDirSpec "test_resources/compile"
   centFilesDirSpec "test_resources/balance"
   centFilesDirSpec "test_resources/register"
   centFilesDirSpec "test_resources/check"
-  centFilesDirSpec "test_resources/compile"
 
 centFilesDirSpec :: FilePath -> Spec
 centFilesDirSpec dir =

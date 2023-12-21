@@ -44,6 +44,7 @@ tests:
     - genvalidity-containers
     - genvalidity-sydtest
     - monad-logger
+    - mtl
     - path
     - path-io
     - safe-coloured-text
