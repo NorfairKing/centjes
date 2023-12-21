@@ -1,5 +1,14 @@
 currency USD 0.01
 
+account assets
+account equity
+account expenses
+
+2023-12-16
+  | Opening
+  * assets 2 USD
+  * equity -2 USD
+
 2023-12-17
   | Coffee
   * assets -1 USD

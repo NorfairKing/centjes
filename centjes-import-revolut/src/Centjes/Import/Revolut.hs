@@ -44,7 +44,7 @@ runCentjesImportRevolut = do
   let inputFp = fromAbsFile settingInput
   contents <- SB.readFile inputFp
   (ds, diag) <- runStderrLoggingT $ loadModules settingLedgerFile
-  currencies <- checkValidation diag $ compileCurrencyDeclarationDeclarations ds
+  currencies <- checkValidation diag $ compileCurrencyDeclarations ds
 
   case Csv.decodeByName (LB.fromStrict contents) of
     Left e -> die e

@@ -8,13 +8,15 @@
 module Centjes.Compile
   ( CompileError (..),
     compileDeclarations,
-    compileCurrencyDeclarationDeclarations,
+    compileCurrencyDeclarations,
     compileCurrencyDeclaration,
     compileTransaction,
     compilePosting,
   )
 where
 
+import qualified Centjes.AccountName as AccountName
+import qualified Centjes.AccountType as AccountType
 import Centjes.Format
 import Centjes.Ledger as Ledger
 import Centjes.Location
@@ -43,8 +45,11 @@ import Numeric.DecimalLiteral as DecimalLiteral
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
-  | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingCurrency !ann !(GenLocated ann CurrencySymbol)
+  | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
+  | CompileErrorMissingAccount !ann !(GenLocated ann AccountName)
+  | CompileErrorAccountDeclaredTwice !ann !ann !AccountName
+  | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
   | CompileErrorInvalidPrice !ann !(GenLocated ann DecimalLiteral)
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Eq, Generic)
@@ -67,14 +72,6 @@ instance ToReport (CompileError SourceSpan) where
         )
         [ (toDiagnosePosition fl, This "this number does not represent a valid quantisation factor"),
           (toDiagnosePosition cdl, Where "While trying to compile this currency declaration")
-        ]
-        []
-    CompileErrorCurrencyDeclaredTwice cl1 cl2 symbol ->
-      Err
-        (Just "CE_DUPLICATE_CURRENCY")
-        (unwords ["Currency has been declared twice:", show (currencySymbolText symbol)])
-        [ (toDiagnosePosition cl1, Where "This currency has been declared here first"),
-          (toDiagnosePosition cl2, This "This currency has been declared twice")
         ]
         []
     CompileErrorMissingCurrency dl (Located sl symbol) ->
@@ -104,6 +101,66 @@ instance ToReport (CompileError SourceSpan) where
           )
         ]
         []
+    CompileErrorCurrencyDeclaredTwice cl1 cl2 symbol ->
+      Err
+        (Just "CE_DUPLICATE_CURRENCY")
+        (unwords ["Currency has been declared twice:", show (currencySymbolText symbol)])
+        [ (toDiagnosePosition cl1, Where "This currency has been declared here first"),
+          (toDiagnosePosition cl2, This "This currency has been declared twice")
+        ]
+        []
+    CompileErrorMissingAccount dl (Located anl an) ->
+      Err
+        (Just "CE_UNDECLARED_ACCOUNT")
+        ( unwords
+            [ "Undeclared account:",
+              AccountName.toString an
+            ]
+        )
+        [ (toDiagnosePosition dl, Where "While trying to compile this declaration"),
+          (toDiagnosePosition anl, This "This account is never declared.")
+        ]
+        [ Hint $
+            unlines'
+              [ "You can declare this account with an account declaration:",
+                T.unpack $
+                  T.strip $
+                    formatDeclaration $
+                      DeclarationAccount $
+                        noLoc $
+                          AccountDeclaration
+                            { accountDeclarationName = noLoc an,
+                              accountDeclarationType = case AccountType.fromAccountName an of
+                                Nothing -> Just $ noLoc AccountTypeAssets
+                                Just _ -> Nothing
+                            }
+              ]
+        ]
+    CompileErrorAccountDeclaredTwice al1 al2 an ->
+      Err
+        (Just "CE_DUPLICATE_ACCOUNT")
+        (unwords ["Account has been declared twice:", AccountName.toString an])
+        [ (toDiagnosePosition al1, Where "This account has been declared here first"),
+          (toDiagnosePosition al2, This "This account has been declared twice")
+        ]
+        []
+    CompileErrorCouldNotInferAccountType dl (Located anl an) ->
+      Err
+        (Just "CE_INFER_ACCOUNT_TYPE")
+        "Could not infer account type"
+        [ (toDiagnosePosition anl, This "While trying to infer the account type of this account based on its name."),
+          (toDiagnosePosition dl, Where "While trying to compile this declaration")
+        ]
+        [ Hint $
+            unlines'
+              [ "You can declare the account type explicitly as follows:",
+                unwords
+                  [ "account",
+                    AccountName.toString an,
+                    "assets"
+                  ]
+              ]
+        ]
     CompileErrorInvalidPrice pdl (Located ll dl) ->
       Err
         (Just "CE_INVALID_PRICE")
@@ -137,7 +194,8 @@ unlines' = intercalate "\n"
 
 compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
-  ledgerCurrencies <- compileCurrencyDeclarationDeclarations declarations
+  ledgerCurrencies <- compileCurrencyDeclarations declarations
+  ledgerAccounts <- compileAccountDeclarations declarations
   declarationPrices <- compilePriceDeclarations ledgerCurrencies declarations
   let transactions =
         mapMaybe
@@ -148,7 +206,7 @@ compileDeclarations declarations = do
           declarations
   transactionTups <-
     traverse
-      (compileTransaction ledgerCurrencies)
+      (compileTransaction ledgerCurrencies ledgerAccounts)
       transactions
   let ledgerTransactions =
         V.fromList . sortOnTimestamp Ledger.transactionTimestamp $
@@ -169,10 +227,10 @@ sortOnTimestamp getTimestamp =
           . locatedValue
     )
 
-compileCurrencyDeclarationDeclarations ::
+compileCurrencyDeclarations ::
   [Declaration ann] ->
   Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
-compileCurrencyDeclarationDeclarations declarations = do
+compileCurrencyDeclarations declarations = do
   tups <-
     mapM
       compileCurrencyDeclaration
@@ -201,6 +259,42 @@ compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
     Nothing -> validationFailure $ CompileErrorInvalidQuantisationFactor l symbol currencyDeclarationQuantisationFactor
     Just qf -> pure qf
   pure (symbol, Located l qf)
+
+compileAccountDeclarations ::
+  [Declaration ann] ->
+  Validation (CompileError ann) (Map AccountName (GenLocated ann AccountType))
+compileAccountDeclarations declarations = do
+  tups <-
+    mapM
+      compileAccountDeclaration
+      ( mapMaybe
+          ( \case
+              DeclarationAccount ad -> Just ad
+              _ -> Nothing
+          )
+          declarations
+      )
+  foldM go M.empty tups
+  where
+    go ::
+      Map AccountName (GenLocated ann AccountType) ->
+      (AccountName, GenLocated ann AccountType) ->
+      Validation (CompileError ann) (Map AccountName (GenLocated ann AccountType))
+    go m (an, lat@(Located l2 _)) = case M.lookup an m of
+      Nothing -> pure $ M.insert an lat m
+      Just (Located l1 _) -> validationFailure $ CompileErrorAccountDeclaredTwice l1 l2 an
+
+compileAccountDeclaration ::
+  GenLocated ann (AccountDeclaration ann) ->
+  Validation (CompileError ann) (AccountName, GenLocated ann AccountType)
+compileAccountDeclaration (Located dl AccountDeclaration {..}) = do
+  let Located _ name = accountDeclarationName
+  typ <- case accountDeclarationType of
+    Just (Located _ t) -> pure t
+    Nothing -> case AccountType.fromAccountName name of
+      Just t -> pure t
+      Nothing -> validationFailure $ CompileErrorCouldNotInferAccountType dl accountDeclarationName
+  pure (name, Located dl typ)
 
 compilePriceDeclarations ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
@@ -245,16 +339,20 @@ compileConversionRate pdl ldl@(Located rl dl) = do
 
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map AccountName (GenLocated ann AccountType) ->
   GenLocated ann (Module.Transaction ann) ->
   Validation
     (CompileError ann)
     ( GenLocated ann (Ledger.Transaction ann),
       [GenLocated ann (Ledger.Price ann)]
     )
-compileTransaction currencies (Located l mt) = do
+compileTransaction currencies accounts (Located l mt) = do
   let transactionTimestamp = Module.transactionTimestamp mt
       transactionDescription = Module.transactionDescription mt
-  postings <- traverse (compilePosting currencies l) (Module.transactionPostings mt)
+  postings <-
+    traverse
+      (compilePosting currencies accounts l)
+      (Module.transactionPostings mt)
   let transactionPostings = V.fromList postings
   let prices =
         mapMaybe
@@ -283,18 +381,32 @@ compileTransaction currencies (Located l mt) = do
 
 compilePosting ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map AccountName (GenLocated ann AccountType) ->
   ann ->
   GenLocated ann (Module.Posting ann) ->
   Validation
     (CompileError ann)
     (GenLocated ann (Ledger.Posting ann))
-compilePosting currencies tl (Located l mp) = do
+compilePosting currencies accounts tl (Located l mp) = do
+  -- To make sure the account is declared.
+  _ <- compileAccountName accounts tl $ Module.postingAccountName mp
   let postingAccountName = Module.postingAccountName mp
+
   postingCurrency <- compileCurrencyDeclarationSymbol currencies tl (Module.postingCurrencySymbol mp)
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
   postingCost <- mapM (compileCostExpression currencies tl) (Module.postingCost mp)
   pure (Located l Ledger.Posting {..})
+
+compileAccountName ::
+  Map AccountName (GenLocated ann AccountType) ->
+  ann ->
+  GenLocated ann Module.AccountName ->
+  Validation (CompileError ann) (GenLocated ann AccountType)
+compileAccountName accounts tl lan@(Located _ an) =
+  case M.lookup an accounts of
+    Just at -> pure at
+    Nothing -> validationFailure $ CompileErrorMissingAccount tl lan
 
 compileAssertion ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

@@ -1,6 +1,9 @@
 currency USD 0.01
 currency EUR 0.01
 
+account assets
+account income
+
 2023-12-09
   * assets +2 EUR
   * income -2 EUR

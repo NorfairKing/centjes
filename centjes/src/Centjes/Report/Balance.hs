@@ -14,6 +14,8 @@ module Centjes.Report.Balance
   )
 where
 
+import Centjes.AccountName as AccountName
+import Centjes.AccountType as AccountType
 import Centjes.Convert
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
@@ -66,7 +68,9 @@ data BalanceError ann
   | BalanceErrorCouldNotSumPostings !ann ![Money.MultiAccount (Currency ann)]
   | BalanceErrorConversionTooBig !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann))
   | BalanceErrorConversionImpossibleRate !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann)) !(Maybe Money.ConversionRate)
+  | BalanceErrorUndeclaredAccount !ann !AccountName
   | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann)) ![GenLocated ann (Posting ann)]
+  | BalanceErrorAccountTypeAssertion !ann !ann !AccountType !(Money.MultiAccount (Currency ann))
   | BalanceErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Currency ann)) !(Maybe Money.Account)
   | BalanceErrorConvertError !(ConvertError ann)
   deriving stock (Show, Eq, Generic)
@@ -148,6 +152,12 @@ instance ToReport (BalanceError SourceSpan) where
           | cr <- maybeToList mConversionRate,
             dl <- maybeToList $ ConversionRate.toDecimalLiteral cr
         ]
+    BalanceErrorUndeclaredAccount s an ->
+      Err
+        (Just "BE_UNDECLARED_ACCOUNT")
+        (unwords ["This account has not been declared:", AccountName.toString an])
+        [(toDiagnosePosition s, Where "While trying to balance this transaction")]
+        [Note "This is an internal exception and should never trigger past compilation"]
     BalanceErrorTransactionOffBalance s ma postings ->
       Err
         (Just "BE_OFF_BALANCE")
@@ -159,6 +169,29 @@ instance ToReport (BalanceError SourceSpan) where
               (\(Located _ Posting {..}) -> makePostingSuggestion ma postingCurrency postingAccount)
               postings
         )
+        []
+    BalanceErrorAccountTypeAssertion s adl at bal ->
+      Err
+        (Just "BE_ACCOUNT_TYPE_ASSERTION")
+        "Balance of an account did not match its type"
+        [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
+          ( toDiagnosePosition adl,
+            Where $
+              unlines'
+                [ unwords ["Based on this account and the account type", AccountType.toString at <> ", "],
+                  unwords
+                    [ "Which implies that the balance must be",
+                      case at of
+                        AccountTypeAssets -> "positive"
+                        AccountTypeLiabilities -> "negative"
+                        AccountTypeEquity -> "negative"
+                        AccountTypeExpenses -> "positive"
+                        AccountTypeIncome -> "negative"
+                    ]
+                ]
+          ),
+          (toDiagnosePosition s, This $ unlines' ("The balance was" : multiAccountLines bal))
+        ]
         []
     BalanceErrorAssertion s (Located al (AssertionEquals _ (Located _ asserted) (Located _ c))) actual mDifference ->
       Err
@@ -284,6 +317,7 @@ produceBalancedLedger mCurrencyTo ledger = do
         let (lt@(Located tl t), ab) = V.unsafeIndex tups ix
         newTotal <- incorporateAccounts runningTotal ab
 
+        checkAccountTypeAssertions (ledgerAccounts ledger) tl newTotal
         traverse_ (checkAssertion tl newTotal) (transactionAssertions t)
 
         pure ((lt, newTotal), (succ ix, newTotal))
@@ -310,6 +344,23 @@ produceBalancedLedger mCurrencyTo ledger = do
       Just total -> case MultiAccount.add total current of
         Nothing -> validationFailure $ BalanceErrorCouldNotAddTransaction l an total current
         Just new -> pure $ M.insert an new totals
+
+checkAccountTypeAssertions ::
+  Map AccountName (GenLocated ann AccountType) ->
+  ann ->
+  AccountBalances ann ->
+  Validation (BalanceError ann) ()
+checkAccountTypeAssertions accounts tl =
+  traverse_
+    ( \(an, ab) -> case M.lookup an accounts of
+        Nothing -> validationFailure $ BalanceErrorUndeclaredAccount tl an
+        Just (Located adl at) -> do
+          let predicate = AccountType.assertion at
+          if all predicate (MultiAccount.unMultiAccount ab)
+            then pure ()
+            else validationFailure $ BalanceErrorAccountTypeAssertion tl adl at ab
+    )
+    . M.toList
 
 checkAssertion ::
   Ord ann =>

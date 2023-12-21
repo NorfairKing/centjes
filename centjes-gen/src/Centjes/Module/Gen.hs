@@ -2,6 +2,7 @@
 
 module Centjes.Module.Gen where
 
+import Centjes.AccountType.Gen ()
 import Centjes.CurrencySymbol.Gen ()
 import Centjes.Description.Gen ()
 import Centjes.Location.Gen ()

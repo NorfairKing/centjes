@@ -2,6 +2,16 @@ import foobar
 
 currency USD 100
 
+account equity:starting
+account assets:cash
+account expenses:coffee
+
+2023-12-21
+  | Opening
+  * equity:starting -100 USD
+  * assets:cash 100 USD
+
+
 -- Comment here
 2023-11-15
   | Coffee

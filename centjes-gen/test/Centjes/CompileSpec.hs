@@ -25,24 +25,28 @@ spec :: Spec
 spec = do
   describe "compilePosting" $ do
     it "produces valid ledgers" $
-      producesValid3 (compilePosting @())
+      forAllValid $ \currencies ->
+        forAllValid $ \accounts ->
+          producesValid2 $ compilePosting @() currencies accounts
 
     it "produces valid ledger postings if the currency is known" $
       forAllValid $ \posting ->
         forAllValid $ \factor ->
           let Located () symbol = Module.postingCurrencySymbol posting
-           in case compilePosting (M.singleton symbol factor) () (Located () posting) of
+           in case compilePosting (M.singleton symbol factor) M.empty () (Located () posting) of
                 Failure _ -> pure ()
                 Success p -> shouldBeValid p
 
   describe "compileTransaction" $ do
     it "produces valid ledgers" $
-      producesValid2 (compileTransaction @())
+      forAllValid $ \currencies ->
+        forAllValid $ \accounts ->
+          producesValid $ compileTransaction @() currencies accounts
 
     it "produces valid ledger transactions if all the currencies are known" $
       forAllValid $ \transaction ->
         forAll (sequence (M.fromSet (const genValid) (Module.transactionCurrencySymbols transaction))) $ \currencies -> do
-          case compileTransaction currencies (Located () transaction) of
+          case compileTransaction currencies M.empty (Located () transaction) of
             Failure _ -> pure ()
             Success t -> shouldBeValid t
 
@@ -52,7 +56,7 @@ spec = do
 
   describe "compileCurrencyDeclarationDeclarations" $ do
     it "produces valid ledgers" $
-      producesValid (compileCurrencyDeclarationDeclarations @())
+      producesValid (compileCurrencyDeclarations @())
 
   describe "compileDeclarations" $ do
     it "produces valid ledgers" $

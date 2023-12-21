@@ -10,6 +10,7 @@ module Centjes.Format
 where
 
 import Centjes.AccountName
+import Centjes.AccountType as AccountType
 import Centjes.Location
 import Centjes.Module
 import qualified Centjes.Timestamp as Timestamp
@@ -60,7 +61,7 @@ moduleDoc Module {..} =
             -- Group account declarations together
             (DecAccount, DecAccount) -> False
             -- Group price declarations together
-            (DecPrice, DecPrice) -> True
+            (DecPrice, DecPrice) -> False
             -- Don't group transactions together
             (DecTransaction, DecTransaction) -> True
             _ -> dt /= dt'
@@ -119,9 +120,17 @@ quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . loc
 
 accountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
 accountDeclarationDoc (Located _ AccountDeclaration {..}) =
-  "account"
-    <+> lAccountNameDoc accountDeclarationName
-      <> hardline
+  maybe
+    id
+    (\at -> (<+> lAccountTypeDoc at))
+    accountDeclarationType
+    ( "account"
+        <+> lAccountNameDoc accountDeclarationName
+    )
+    <> hardline
+
+lAccountTypeDoc :: GenLocated l AccountType -> Doc ann
+lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at
 
 priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
 priceDeclarationDoc (Located _ PriceDeclaration {..}) =

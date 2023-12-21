@@ -11,9 +11,6 @@ module Centjes.Command.Check
     doCompleteCheck,
     CheckError (..),
     checkDeclarations,
-    checkAccounts,
-    checkAccountsUnique,
-    checkAccountsDeclared,
   )
 where
 
@@ -30,9 +27,6 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Data.Foldable
-import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Maybe
 import Data.Validity (Validity)
 import Error.Diagnose
 import GHC.Generics (Generic)
@@ -56,9 +50,7 @@ doCompleteCheck declarations = do
   liftValidation $ checkLedger ledger
 
 data CheckError ann
-  = CheckErrorAccountDeclaredTwice !ann !ann !AccountName
-  | CheckErrorUndeclaredAccount !ann !ann !(GenLocated ann AccountName)
-  | CheckErrorMissingAttachment !ann !(Attachment ann)
+  = CheckErrorMissingAttachment !ann !(Attachment ann)
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
   deriving (Show, Eq, Generic)
@@ -69,31 +61,6 @@ instance NFData ann => NFData (CheckError ann)
 
 instance ToReport (CheckError SourceSpan) where
   toReport = \case
-    CheckErrorAccountDeclaredTwice adl1 adl2 an ->
-      Err
-        (Just "CE_DUPLICATE_ACCOUNT")
-        ( unwords
-            [ "Account has been declared twice:",
-              show (accountNameText an)
-            ]
-        )
-        [ (toDiagnosePosition adl1, Where "This account has been declared here first"),
-          (toDiagnosePosition adl2, This "This account has been declared twice")
-        ]
-        []
-    CheckErrorUndeclaredAccount tl pl (Located al an) ->
-      Err
-        (Just "CE_UNDECLARED_ACCOUNT")
-        ( unwords
-            [ "Account has not been declared:",
-              show (accountNameText an)
-            ]
-        )
-        [ (toDiagnosePosition tl, Where "While trying to check this transaction"),
-          (toDiagnosePosition al, This "This account has not been declared"),
-          (toDiagnosePosition pl, Where "While trying to check this posting")
-        ]
-        []
     CheckErrorMissingAttachment tl (Attachment (Located fl fp)) ->
       Err
         (Just "CE_MISSING_ATTACHMENT")
@@ -106,49 +73,7 @@ instance ToReport (CheckError SourceSpan) where
     CheckErrorBalanceError be -> toReport be
 
 checkDeclarations :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
-checkDeclarations ds = do
-  liftValidation $ checkAccounts ds
-  traverse_ checkDeclaration ds
-
-checkAccounts :: [Declaration ann] -> Checker ann ()
-checkAccounts ds = do
-  as <- checkAccountsUnique ds
-  checkAccountsDeclared as ds
-
-checkAccountsUnique :: [Declaration ann] -> Validation (CheckError ann) (Map AccountName ann)
-checkAccountsUnique ds =
-  validateUniquesMap CheckErrorAccountDeclaredTwice $
-    mapMaybe
-      ( \case
-          DeclarationAccount (Located l AccountDeclaration {..}) -> Just (locatedValue accountDeclarationName, l)
-          _ -> Nothing
-      )
-      ds
-
-checkAccountsDeclared :: Map AccountName ann -> [Declaration ann] -> Checker ann ()
-checkAccountsDeclared as = traverse_ $ \case
-  DeclarationComment _ -> pure ()
-  DeclarationCurrency _ -> pure ()
-  DeclarationAccount _ -> pure ()
-  DeclarationPrice _ -> pure ()
-  DeclarationTransaction (Located tl t) -> for_ (Module.transactionPostings t) $ \(Located pl p) ->
-    let Located _ an = Module.postingAccountName p
-     in case M.lookup an as of
-          Just _ -> pure ()
-          Nothing -> validationFailure $ CheckErrorUndeclaredAccount tl pl (Module.postingAccountName p)
-
-validateUniquesMap ::
-  forall a l e.
-  Ord a =>
-  (l -> l -> a -> e) ->
-  [(a, l)] ->
-  Validation e (Map a l)
-validateUniquesMap errFunc = foldM go M.empty
-  where
-    go :: Map a l -> (a, l) -> Validation e (Map a l)
-    go m (a, l) = case M.lookup a m of
-      Nothing -> pure $ M.insert a l m
-      Just l' -> validationFailure $ errFunc l' l a
+checkDeclarations = traverse_ checkDeclaration
 
 checkDeclaration :: Declaration SourceSpan -> CheckerT SourceSpan ()
 checkDeclaration = \case

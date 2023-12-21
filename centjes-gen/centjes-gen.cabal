@@ -28,6 +28,8 @@ extra-source-files:
     test_resources/balance/balanced/to-chf/conversion-price.txt
     test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.cent
     test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.err
+    test_resources/balance/error/as-is/BE_ACCOUNT_TYPE_ASSERTION.cent
+    test_resources/balance/error/as-is/BE_ACCOUNT_TYPE_ASSERTION.err
     test_resources/balance/error/as-is/BE_ASSERTION-wrong-currency.cent
     test_resources/balance/error/as-is/BE_ASSERTION-wrong-currency.err
     test_resources/balance/error/as-is/BE_ASSERTION.cent
@@ -58,20 +60,22 @@ extra-source-files:
     test_resources/balance/error/to-chf/CONVERT_ERROR_MISSING_PRICE.err
     test_resources/balance/error/to-chf/CONVERT_ERROR_UNKNOWN_TARGET.cent
     test_resources/balance/error/to-chf/CONVERT_ERROR_UNKNOWN_TARGET.err
-    test_resources/check/CE_DUPLICATE_ACCOUNT.cent
-    test_resources/check/CE_DUPLICATE_ACCOUNT.err
     test_resources/check/CE_MISSING_ATTACHMENT.cent
     test_resources/check/CE_MISSING_ATTACHMENT.err
-    test_resources/check/CE_UNDECLARED_ACCOUNT.cent
-    test_resources/check/CE_UNDECLARED_ACCOUNT.err
+    test_resources/compile/CE_DUPLICATE_ACCOUNT.cent
+    test_resources/compile/CE_DUPLICATE_ACCOUNT.err
     test_resources/compile/CE_DUPLICATE_CURRENCY.cent
     test_resources/compile/CE_DUPLICATE_CURRENCY.err
+    test_resources/compile/CE_INFER_ACCOUNT_TYPE.cent
+    test_resources/compile/CE_INFER_ACCOUNT_TYPE.err
     test_resources/compile/CE_INVALID_AMOUNT.cent
     test_resources/compile/CE_INVALID_AMOUNT.err
     test_resources/compile/CE_INVALID_PRICE.cent
     test_resources/compile/CE_INVALID_PRICE.err
     test_resources/compile/CE_INVALID_QUANTISATION_FACTOR.cent
     test_resources/compile/CE_INVALID_QUANTISATION_FACTOR.err
+    test_resources/compile/CE_UNDECLARED_ACCOUNT.cent
+    test_resources/compile/CE_UNDECLARED_ACCOUNT.err
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
     test_resources/compile/CE_UNDECLARED_CURRENCY.err
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
@@ -129,6 +133,7 @@ source-repository head
 library
   exposed-modules:
       Centjes.AccountName.Gen
+      Centjes.AccountType.Gen
       Centjes.CurrencySymbol.Gen
       Centjes.Description.Gen
       Centjes.Ledger.Gen
@@ -164,6 +169,7 @@ test-suite centjes-test
   main-is: Spec.hs
   other-modules:
       Centjes.AccountNameSpec
+      Centjes.AccountTypeSpec
       Centjes.Command.CheckSpec
       Centjes.Command.FormatSpec
       Centjes.CompileSpec

@@ -1,6 +1,16 @@
 currency USD 0.01
 currency CHF 0.05
 
+account equity
+account investments assets
+account assets
+
+2023-12-16
+  | Opening
+  * equity -100 CHF
+  * investments 100 CHF
+
+
 2023-12-17
   | Convert USD to CHF
   * investments 100 USD

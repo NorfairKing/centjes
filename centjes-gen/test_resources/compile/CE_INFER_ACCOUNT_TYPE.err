@@ -1,0 +1,11 @@
+[0;91;1m[error CE_INFER_ACCOUNT_TYPE][0m: Could not infer account type
+     [0;90;1m╭──▶[0m [0;32;1mCE_INFER_ACCOUNT_TYPE.cent@1:9-1:16[0m
+     [0;90;1m│[0m
+[0;90;1m   1 │[0m [0;34;1ma[0m[0;34;1mc[0m[0;34;1mc[0m[0;34;1mo[0m[0;34;1mu[0m[0;34;1mn[0m[0;34;1mt[0m[0;34;1m [0m[0;91;1mu[0m[0;91;1mn[0m[0;91;1mk[0m[0;91;1mn[0m[0;91;1mo[0m[0;91;1mw[0m[0;91;1mn[0m
+     [0;90;1m•[0m [0;34m┬[0m[0;34m─[0m[0;34m─[0m[0;34m─[0m[0;34m─[0m[0;34m─[0m[0;34m─[0m[0;34m─[0m[0;91m┬[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;34m[0m
+     [0;90;1m•[0m [0;34m│[0m       [0;91m╰╸[0m [0;91mWhile trying to infer the account type of this account based on its name.[0m
+     [0;90;1m•[0m [0;34m╰╸[0m [0;34mWhile trying to compile this declaration[0m
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: You can declare the account type explicitly as follows:
+     [0;90;1m│[0;96m       account unknown assets[0m
+[0;90;1m─────╯[0m

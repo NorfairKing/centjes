@@ -5,6 +5,8 @@
 module Centjes.AccountName
   ( AccountName (..),
     fromText,
+    toString,
+    toText,
   )
 where
 
@@ -51,3 +53,11 @@ instance HasCodec AccountName where
 
 fromText :: Text -> Maybe AccountName
 fromText = constructValid . AccountName
+
+-- | Prefer 'toText' over 'toString'.
+toText :: AccountName -> Text
+toText = accountNameText
+
+-- | Prefer 'toText' over 'toString'.
+toString :: AccountName -> String
+toString = T.unpack . toText

@@ -1,6 +1,9 @@
 currency USD 0.01
 currency CHF 0.05
 
+account assets
+account income
+
 2023-12-15
   * assets +1.0 USD
   * income -1.0 USD
