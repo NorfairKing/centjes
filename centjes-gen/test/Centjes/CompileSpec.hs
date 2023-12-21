@@ -52,7 +52,7 @@ spec = do
 
   describe "compileCurrencyDeclarationDeclarations" $ do
     it "produces valid ledgers" $
-      producesValid (compileCurrencyDeclarationDeclarations @())
+      producesValid (compileCurrencyDeclarations @())
 
   describe "compileDeclarations" $ do
     it "produces valid ledgers" $

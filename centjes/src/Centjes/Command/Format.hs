@@ -43,7 +43,7 @@ formatFromLedger :: Path Abs File -> LoggingT IO ()
 formatFromLedger l = do
   (ds, fileMap) <- loadModules' l
   let diag = diagFromFileMap fileMap
-  currencies <- liftIO $ checkValidation diag $ compileCurrencyDeclarationDeclarations ds
+  currencies <- liftIO $ checkValidation diag $ compileCurrencyDeclarations ds
 
   let base = parent l
   forM_ (M.toList fileMap) $ \(fp, (textContents, m)) ->

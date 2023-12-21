@@ -18,6 +18,7 @@ module Centjes.Ledger
 where
 
 import Centjes.AccountName (AccountName (..))
+import Centjes.AccountType (AccountType (..))
 import Centjes.Location
 import Centjes.Module (CurrencySymbol (..), Description (..))
 import Centjes.Timestamp as Timestamp
@@ -35,7 +36,10 @@ import Money.ConversionRate (ConversionRate)
 import Money.QuantisationFactor
 
 data Ledger ann = Ledger
-  { ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
+  { -- This field will have the source location of the currency _declaration_ that defined it.
+    ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
+    -- This field will have the source location of the account _ declaration_ that defined it.
+    ledgerAccounts :: !(Map AccountName (GenLocated ann AccountType)),
     ledgerPrices :: !(Vector (GenLocated ann (Price ann))),
     ledgerTransactions :: !(Vector (GenLocated ann (Transaction ann)))
   }
@@ -46,6 +50,7 @@ instance Validity ann => Validity (Ledger ann) where
     mconcat
       [ genericValidate l,
         -- TODO all the currencies are consistent
+        -- TODO all the account names are declared
         declare "the prices are sorted" $
           partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
         declare "the transactions are sorted" $

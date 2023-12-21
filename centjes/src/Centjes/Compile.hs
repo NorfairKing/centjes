@@ -8,7 +8,7 @@
 module Centjes.Compile
   ( CompileError (..),
     compileDeclarations,
-    compileCurrencyDeclarationDeclarations,
+    compileCurrencyDeclarations,
     compileCurrencyDeclaration,
     compileTransaction,
     compilePosting,
@@ -137,7 +137,8 @@ unlines' = intercalate "\n"
 
 compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
-  ledgerCurrencies <- compileCurrencyDeclarationDeclarations declarations
+  ledgerCurrencies <- compileCurrencyDeclarations declarations
+  ledgerAccounts <- compileAccountDeclarations declarations
   declarationPrices <- compilePriceDeclarations ledgerCurrencies declarations
   let transactions =
         mapMaybe
@@ -169,10 +170,10 @@ sortOnTimestamp getTimestamp =
           . locatedValue
     )
 
-compileCurrencyDeclarationDeclarations ::
+compileCurrencyDeclarations ::
   [Declaration ann] ->
   Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
-compileCurrencyDeclarationDeclarations declarations = do
+compileCurrencyDeclarations declarations = do
   tups <-
     mapM
       compileCurrencyDeclaration
@@ -201,6 +202,26 @@ compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
     Nothing -> validationFailure $ CompileErrorInvalidQuantisationFactor l symbol currencyDeclarationQuantisationFactor
     Just qf -> pure qf
   pure (symbol, Located l qf)
+
+compileAccountDeclarations ::
+  [Declaration ann] ->
+  Validation (CompileError ann) (Map AccountName (GenLocated ann AccountType))
+compileAccountDeclarations =
+  fmap M.fromList
+    . traverse compileAccountDeclaration
+    . mapMaybe
+      ( \case
+          DeclarationAccount ad -> Just ad
+          _ -> Nothing
+      )
+
+compileAccountDeclaration ::
+  GenLocated ann (AccountDeclaration ann) ->
+  Validation (CompileError ann) (AccountName, GenLocated ann AccountType)
+compileAccountDeclaration (Located l AccountDeclaration {..}) = do
+  let Located _ name = accountDeclarationName
+  let Located _ typ = accountDeclarationType
+  pure (name, Located l typ)
 
 compilePriceDeclarations ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
