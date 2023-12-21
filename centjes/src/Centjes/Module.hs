@@ -15,6 +15,7 @@ module Centjes.Module
     CurrencySymbol (..),
     LAccountDeclaration,
     AccountDeclaration (..),
+    AccountType (..),
     LPriceDeclaration,
     PriceDeclaration (..),
     LCostExpression,
@@ -39,6 +40,7 @@ where
 
 import Autodocodec
 import Centjes.AccountName
+import Centjes.AccountType
 import Centjes.CurrencySymbol
 import Centjes.Description
 import Centjes.Location
@@ -102,8 +104,9 @@ instance NFData ann => NFData (CurrencyDeclaration ann)
 
 type LAccountDeclaration = LLocated AccountDeclaration
 
-newtype AccountDeclaration ann = AccountDeclaration
-  { accountDeclarationName :: GenLocated ann AccountName
+data AccountDeclaration ann = AccountDeclaration
+  { accountDeclarationName :: !(GenLocated ann AccountName),
+    accountDeclarationType :: !(GenLocated ann AccountType)
   }
   deriving stock (Show, Eq, Generic)
 

@@ -28,8 +28,8 @@ spec = do
       producesValid (checkAccountsUnique @())
     it "finds duplicate accounts" $
       forAllValid $ \an -> do
-        let ad1 = AccountDeclaration {accountDeclarationName = noLoc an}
-        let ad2 = AccountDeclaration {accountDeclarationName = noLoc an}
+        let ad1 = AccountDeclaration {accountDeclarationName = noLoc an, accountDeclarationType = noLoc AccountTypeAssets}
+        let ad2 = AccountDeclaration {accountDeclarationName = noLoc an, accountDeclarationType = noLoc AccountTypeAssets}
         errs <- shouldFailToValidate $ checkAccountsUnique [DeclarationAccount $ noLoc ad1, DeclarationAccount $ noLoc ad2]
         errs `shouldBe` CheckErrorAccountDeclaredTwice () () an :| []
 

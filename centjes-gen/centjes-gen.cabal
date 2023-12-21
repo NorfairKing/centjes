@@ -129,6 +129,7 @@ source-repository head
 library
   exposed-modules:
       Centjes.AccountName.Gen
+      Centjes.AccountType.Gen
       Centjes.CurrencySymbol.Gen
       Centjes.Description.Gen
       Centjes.Ledger.Gen
@@ -164,6 +165,7 @@ test-suite centjes-test
   main-is: Spec.hs
   other-modules:
       Centjes.AccountNameSpec
+      Centjes.AccountTypeSpec
       Centjes.Command.CheckSpec
       Centjes.Command.FormatSpec
       Centjes.CompileSpec

@@ -8,6 +8,7 @@ module Centjes.Parse.Happy
   ) where
 
 import Centjes.AccountName as AccountName
+import Centjes.AccountType as AccountType
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Description as Description
 import Centjes.Location
@@ -106,7 +107,11 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : account_tok account_name newline { sBE $1 $3 $ AccountDeclaration $2 }
+  : account_tok account_name account_type newline { sBE $1 $4 $ AccountDeclaration $2 $3 }
+
+account_type
+  :: { Located AccountType }
+  : var {% parseAccountType $1 }
 
 price_dec
   :: { LPriceDeclaration }
@@ -236,6 +241,9 @@ parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountNa
 
 parseCurrencySymbol :: Token -> Alex (Located CurrencySymbol)
 parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "CurrencySymbol" (CurrencySymbol.fromText) ans
+
+parseAccountType :: Token -> Alex (Located AccountType)
+parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountType" (AccountType.fromText) ats
 
 parseDecimalLiteral :: Token -> Located DecimalLiteral
 parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl

@@ -10,6 +10,7 @@ module Centjes.Format
 where
 
 import Centjes.AccountName
+import Centjes.AccountType as AccountType
 import Centjes.Location
 import Centjes.Module
 import qualified Centjes.Timestamp as Timestamp
@@ -121,7 +122,11 @@ accountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
 accountDeclarationDoc (Located _ AccountDeclaration {..}) =
   "account"
     <+> lAccountNameDoc accountDeclarationName
+    <+> lAccountTypeDoc accountDeclarationType
       <> hardline
+
+lAccountTypeDoc :: GenLocated l AccountType -> Doc ann
+lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at
 
 priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
 priceDeclarationDoc (Located _ PriceDeclaration {..}) =
