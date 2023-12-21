@@ -39,19 +39,21 @@ centFilesDirSpec :: FilePath -> Spec
 centFilesDirSpec dir =
   scenarioDirRecur dir $ \fp -> do
     af <- liftIO $ resolveFile' fp
-    when (fileExtension af == Just ".cent") $ do
-      it (unwords ["can parse and format", fp, "idempotently"]) $ do
-        here <- getCurrentDir
-        rf <- makeRelative here af
-        contents <- T.readFile (fromAbsFile af)
-        context (show contents) $ do
-          expected <- shouldParse parseModule here rf contents
-          shouldBeValid expected
-          context (show expected) $ do
-            let rendered = formatModule expected
-            context (unlines ["Rendered:", T.unpack rendered]) $ do
-              actual <- shouldParse parseModule here rf rendered
-              formatModule actual `shouldBe` formatModule expected
+    when (fileExtension af == Just ".cent") $
+      it "can parse and format idempotently" $
+        goldenTextFile fp $ do
+          here <- getCurrentDir
+          rf <- makeRelative here af
+          contents <- T.readFile (fromAbsFile af)
+          context (show contents) $ do
+            expected <- shouldParse parseModule here rf contents
+            shouldBeValid expected
+            context (show expected) $ do
+              let rendered = formatModule expected
+              context (unlines ["Rendered:", T.unpack rendered]) $ do
+                actual <- shouldParse parseModule here rf rendered
+                formatModule actual `shouldBe` formatModule expected
+                pure rendered
 
 parseFormatRoundtrip ::
   forall s.
