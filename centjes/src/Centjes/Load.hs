@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Load
@@ -34,6 +35,7 @@ import GHC.Generics (Generic)
 import Path
 import Path.IO
 import System.Exit
+import Text.Read (readMaybe)
 
 loadModules :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Diagnostic String)
 loadModules firstPath = do
@@ -46,15 +48,17 @@ loadModules' firstPath = do
   case errOrRes of
     Right a -> pure a
     Left (LoadError fileMap le) -> do
-      let diag = addReport (diagFromFileMap fileMap) (toReport le)
+      let diag = addReport (diagFromFileMap' fileMap) (toReport le)
       liftIO $ dieWithDiag diag
 
-data LoadError = LoadError !(Map (Path Rel File) (Text, LModule)) !LoadError'
+data LoadError = LoadError !(Map (Path Rel File) Text) !LoadError'
   deriving (Show, Eq, Generic)
 
 data LoadError'
   = LoadErrorImportMissing !(Path Rel File) !(Maybe SourceSpan)
   | LoadErrorNotAFile !(Path Rel File) !(Maybe SourceSpan)
+  | LoadErrorNotUtf8 !(Path Rel File) !(Maybe SourceSpan)
+  | LoadErrorParseError !(Path Rel File) !(Maybe SourceSpan) !String
   deriving (Show, Eq, Generic)
 
 instance ToReport LoadError' where
@@ -65,11 +69,44 @@ instance ToReport LoadError' where
         (unwords ["Imported module does not exist:", fromRelFile rf])
         [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL]
         []
-    LoadErrorNotAFile rf _ ->
+    LoadErrorNotAFile rf mL ->
       Err
         (Just "LE_IMPORT_FILE")
         (unwords ["Imported module is not a file:", fromRelFile rf])
+        [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL]
         []
+    LoadErrorNotUtf8 rf mL ->
+      Err
+        (Just "LE_UTF8")
+        (unwords ["Imported module is not utf-8 encoded:", fromRelFile rf])
+        [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL]
+        []
+    LoadErrorParseError rf mL e ->
+      Err
+        (Just "LE_UTF8")
+        (unwords ["Could not parse:", fromRelFile rf])
+        ( concat
+            [ [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL],
+              -- Maybe we don't need to unpack and repack here. Then we can also have columns in filenames.
+              let maybePos = case T.splitOn "  " (T.pack e) of
+                    diagPart : errPart : _ -> case T.splitOn "@" diagPart of
+                      _file : rest : _ -> case T.splitOn "-" rest of
+                        beginStr : endStr : _ ->
+                          let readPos s = case T.splitOn ":" s of
+                                lineStr : colStr : _ ->
+                                  (,) <$> readMaybe (T.unpack lineStr) <*> readMaybe (T.unpack colStr)
+                                _ -> Nothing
+                           in (,,) errPart <$> readPos beginStr <*> readPos endStr
+                        _ -> Nothing
+                      _ -> Nothing
+                    _ -> Nothing
+               in [ ( Position beginTup endTup (fromRelFile rf),
+                      This (T.unpack errPart)
+                    )
+                    | (errPart, beginTup, endTup) <- maybeToList maybePos
+                  ]
+            ]
+        )
         []
 
 loadModulesOrErr :: forall m. MonadLoggerIO m => Path Abs File -> ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
@@ -117,27 +154,31 @@ loadModulesOrErr firstPath = do
                     ]
             else do
               fileMap <- get
-              (contents, m) <- lift $ readSingleModule originalBase fileMap mIl rf
+              (contents, m) <- lift $ readSingleModule originalBase (M.map fst fileMap) mIl rf
               modify' (M.insert rf (contents, m))
               pure m
 
 diagFromFileMap :: Map (Path Rel File) (Text, LModule) -> Diagnostic String
-diagFromFileMap =
+diagFromFileMap = diagFromFileMap' . M.map fst
+
+diagFromFileMap' :: Map (Path Rel File) Text -> Diagnostic String
+diagFromFileMap' =
   foldl'
-    (\d (f, (c, _)) -> addFile d (fromRelFile f) (T.unpack c))
+    (\d (f, c) -> addFile d (fromRelFile f) (T.unpack c))
     mempty
     . M.toList
 
 readSingleModule ::
   MonadLoggerIO m =>
   Path Abs Dir ->
-  Map (Path Rel File) (Text, LModule) ->
+  Map (Path Rel File) Text ->
   Maybe SourceSpan ->
   Path Rel File ->
   ExceptT LoadError m (Text, LModule)
 readSingleModule base fileMap mIl p = do
   let fp = fromRelFile p
   let af = base </> p
+  let loadError = throwError . LoadError fileMap
   occupied <- isLocationOccupied af
   if occupied
     then do
@@ -146,24 +187,10 @@ readSingleModule base fileMap mIl p = do
         then do
           contents <- liftIO $ SB.readFile $ fromAbsFile af
           case TE.decodeUtf8' contents of
-            Left e ->
-              liftIO $
-                die $
-                  unlines
-                    [ "Could not read file because it does not look like Utf-8: ",
-                      show fp,
-                      show e
-                    ]
+            Left _ -> loadError $ LoadErrorNotUtf8 p mIl
             Right textContents -> do
               case parseModule base p textContents of
-                Left e ->
-                  liftIO $
-                    die $
-                      unlines
-                        [ "Cannot parse file: ",
-                          show fp,
-                          e
-                        ]
+                Left e -> throwError $ LoadError (M.insert p textContents fileMap) $ LoadErrorParseError p mIl e
                 Right m -> do
                   lift $ logDebugN $ T.pack $ unwords ["Read module:", fp]
                   pure (textContents, m)
