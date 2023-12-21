@@ -61,7 +61,14 @@ runCentjesImportRevolut = do
                 DeclarationTransaction . noLoc
                   <$> mapValidationFailure
                     (ImportError inputFp rowIx)
-                    (rowTransaction currencies settingAssetsAccountName settingExpensesAccountName settingFeesAccountName row)
+                    ( rowTransaction
+                        currencies
+                        settingAssetsAccountName
+                        settingExpensesAccountName
+                        settingIncomeAccountName
+                        settingFeesAccountName
+                        row
+                    )
             )
             (zip [1 ..] (sortOn (\r -> fromMaybe (rowStartedDate r) (rowCompletedDate r)) (V.toList v)))
       let m = Module {moduleImports = [], moduleDeclarations = ts}
@@ -112,9 +119,10 @@ rowTransaction ::
   AccountName ->
   AccountName ->
   AccountName ->
+  AccountName ->
   Row ->
   Validation ImportError' (Transaction ())
-rowTransaction currencies assetsAccountName expensesAccountName feeAccountName Row {..} = do
+rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName feeAccountName Row {..} = do
   -- TODO dont import non-completed transactions?
   -- rowAccount is the amount the expense
   -- rowFee is the fee on top of that amount
@@ -160,7 +168,10 @@ rowTransaction currencies assetsAccountName expensesAccountName feeAccountName R
         if feeAccount == Account.zero
           then Nothing
           else Just $ mkPosting feeAccountName feeLiteral
-  let expensePosting = mkPosting expensesAccountName expensesLiteral
+  let expensePosting =
+        mkPosting
+          (if expensesAccount < Account.zero then incomeAccountName else expensesAccountName)
+          expensesLiteral
   let transactionPostings =
         concat
           [ [assetPosting],

@@ -33,6 +33,7 @@ data Settings = Settings
     settingOutput :: !(Path Abs File),
     settingAssetsAccountName :: !AccountName,
     settingExpensesAccountName :: !AccountName,
+    settingIncomeAccountName :: !AccountName,
     settingFeesAccountName :: !AccountName
   }
   deriving (Show, Eq, Generic)
@@ -44,6 +45,7 @@ combineToSettings Flags {..} Environment {..} mConf = do
   settingOutput <- resolveFile' $ fromMaybe "revolut.cent" $ flagOutput <|> envOutput
   let settingAssetsAccountName = fromMaybe (AccountName "assets:revolut") $ flagAssetsAccountName <|> envAssetsAccountName <|> mc configAssetsAccountName
   let settingExpensesAccountName = fromMaybe (AccountName "expenses:unknown:revolut") $ flagExpensesAccountName <|> envExpensesAccountName <|> mc configExpensesAccountName
+  let settingIncomeAccountName = fromMaybe (AccountName "income:unknown:revolut") $ flagIncomeAccountName <|> envIncomeAccountName <|> mc configIncomeAccountName
   let settingFeesAccountName = fromMaybe (AccountName "expenses:banking:revolut") $ flagFeesAccountName <|> envFeesAccountName <|> mc configFeesAccountName
   pure Settings {..}
   where
@@ -54,6 +56,7 @@ data Configuration = Configuration
   { configLedger :: !(Maybe FilePath),
     configAssetsAccountName :: !(Maybe AccountName),
     configExpensesAccountName :: !(Maybe AccountName),
+    configIncomeAccountName :: !(Maybe AccountName),
     configFeesAccountName :: !(Maybe AccountName)
   }
   deriving stock (Show, Eq, Generic)
@@ -70,6 +73,8 @@ instance HasCodec Configuration where
           .= configAssetsAccountName
         <*> optionalField "expenses-account" "Expenses account name"
           .= configExpensesAccountName
+        <*> optionalField "income-account" "Income account name"
+          .= configIncomeAccountName
         <*> optionalField "fees-account" "Fees account name"
           .= configFeesAccountName
 
@@ -88,6 +93,7 @@ data Environment = Environment
     envOutput :: !(Maybe FilePath),
     envAssetsAccountName :: !(Maybe AccountName),
     envExpensesAccountName :: !(Maybe AccountName),
+    envIncomeAccountName :: !(Maybe AccountName),
     envFeesAccountName :: !(Maybe AccountName)
   }
   deriving (Show, Eq, Generic)
@@ -106,6 +112,7 @@ environmentParser =
       <*> optional (Env.var Env.str "OUTPUT" (Env.help "Output file"))
       <*> optional (Env.var (fmap AccountName . Env.str) "ASSETS_ACCOUNT" (Env.help "Assets account name"))
       <*> optional (Env.var (fmap AccountName . Env.str) "EXPENSES_ACCOUNT" (Env.help "Expenses account name"))
+      <*> optional (Env.var (fmap AccountName . Env.str) "INCOME_ACCOUNT" (Env.help "Income account name"))
       <*> optional (Env.var (fmap AccountName . Env.str) "FEES_ACCOUNT" (Env.help "Fees account name"))
 
 -- | Get the command-line flags
@@ -145,6 +152,7 @@ data Flags = Flags
     flagOutput :: !(Maybe FilePath),
     flagAssetsAccountName :: !(Maybe AccountName),
     flagExpensesAccountName :: !(Maybe AccountName),
+    flagIncomeAccountName :: !(Maybe AccountName),
     flagFeesAccountName :: !(Maybe AccountName)
   }
   deriving (Show, Eq, Generic)
@@ -204,6 +212,16 @@ parseFlags =
                 [ long "expenses-account",
                   short 'e',
                   help "Expenses account name"
+                ]
+            )
+      )
+    <*> optional
+      ( AccountName
+          <$> strOption
+            ( mconcat
+                [ long "income-account",
+                  short 'e',
+                  help "Income account name"
                 ]
             )
       )
