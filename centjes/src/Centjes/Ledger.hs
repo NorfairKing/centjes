@@ -110,7 +110,8 @@ instance Validity ann => Validity (Transaction ann)
 instance NFData ann => NFData (Transaction ann)
 
 data Posting ann = Posting
-  { postingAccountName :: !(GenLocated ann AccountName),
+  { postingReal :: !Bool,
+    postingAccountName :: !(GenLocated ann AccountName),
     -- Note: This field will have the source location of the currency _symbol_ that defined it.
     postingCurrency :: !(GenLocated ann (Currency ann)),
     -- Note: This field will have the source location of the decimal literal that defined it.

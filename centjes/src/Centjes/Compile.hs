@@ -398,6 +398,7 @@ compilePosting ::
     (CompileError ann)
     (GenLocated ann (Ledger.Posting ann))
 compilePosting currencies accounts tl (Located l mp) = do
+  let postingReal = Module.postingReal mp
   -- To make sure the account is declared.
   _ <- compileAccountName accounts tl $ Module.postingAccountName mp
   let postingAccountName = Module.postingAccountName mp

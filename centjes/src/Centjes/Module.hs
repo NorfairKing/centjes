@@ -149,7 +149,8 @@ transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySym
 type LPosting = LLocated Posting
 
 data Posting ann = Posting
-  { postingAccountName :: !(GenLocated ann AccountName),
+  { postingReal :: !Bool,
+    postingAccountName :: !(GenLocated ann AccountName),
     postingAccount :: !(GenLocated ann DecimalLiteral),
     postingCurrencySymbol :: !(GenLocated ann CurrencySymbol),
     postingCost :: !(Maybe (GenLocated ann (CostExpression ann)))

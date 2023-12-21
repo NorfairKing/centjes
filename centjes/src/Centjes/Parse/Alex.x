@@ -73,6 +73,7 @@ $alpha = [A-Za-z]
 @file_path = [$alpha $digit \_ \- \: .]+
 
 @star = "* "
+@bang = "! "
 @plus = "+ " 
 @at = "@ "
 @import = "import " .* \n
@@ -131,6 +132,7 @@ $white_no_nl+ ;
 
 
 <transaction> @star        { lex' TokenStar `andBegin` posting }
+<transaction> @bang        { lex' TokenBang `andBegin` posting }
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
 <posting> @at              { lexAt }
@@ -192,6 +194,7 @@ data TokenClass
   | TokenDecimalLiteral !DecimalLiteral
   | TokenFloat !Double
   | TokenStar
+  | TokenBang
   | TokenPlus
   | TokenDot
   | TokenAt

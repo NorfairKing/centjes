@@ -57,6 +57,7 @@ import qualified Data.Text as T
       decimal_literal { Located _ (TokenDecimalLiteral _) }
       plus            { Located _ TokenPlus }
       star            { Located _ TokenStar }
+      bang            { Located _ TokenBang }
       at              { Located _ TokenAt }
       currency_tok    { Located _ TokenCurrency}
       account_tok     { Located _ TokenAccount }
@@ -145,7 +146,12 @@ postings
 
 posting
   :: { LPosting }
-  : star account_name account_exp currency_symbol optional(posting_cost) newline { sBE $1 $6 $ Posting $2 $3 $4 $5 }
+  : posting_header account_name account_exp currency_symbol optional(posting_cost) newline { sBE $1 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 }
+
+posting_header
+  :: { Located Bool }
+  : star { sL1 $1 True }
+  | bang { sL1 $1 False }
 
 posting_cost
   :: { LCostExpression }

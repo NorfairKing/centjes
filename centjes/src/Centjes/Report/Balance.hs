@@ -399,7 +399,7 @@ balanceTransaction (Located tl Transaction {..}) = do
         Validation (BalanceError ann) (AccountBalances ann, AccountBalances ann)
       incorporatePosting
         (convertedBalances, actualBalances)
-        (Located _ (Posting (Located pl an) (Located _ currency) la@(Located _ account) mCost)) = do
+        (Located _ (Posting real (Located pl an) (Located _ currency) la@(Located _ account) mCost)) = do
           (convertedCurrency, convertedAccount) <- case mCost of
             Nothing -> pure (currency, account)
             Just lc@(Located _ Cost {..}) -> do
@@ -427,7 +427,10 @@ balanceTransaction (Located tl Transaction {..}) = do
                     Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl a' c a
                     Just a'' -> pure $ M.insert an a'' bs
 
-          actualBalances' <- addAccountToBalances currency account actualBalances
+          actualBalances' <-
+            if real
+              then addAccountToBalances currency account actualBalances
+              else pure actualBalances
           convertedBalances' <- addAccountToBalances convertedCurrency convertedAccount convertedBalances
           pure (actualBalances', convertedBalances')
 

@@ -175,7 +175,7 @@ descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedVa
 postingDoc :: Posting l -> Doc ann
 postingDoc Posting {..} =
   maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
-    "*"
+    (if postingReal then "*" else "!")
       <+> lAccountNameDoc postingAccountName
       <+> accountDoc (locatedValue postingAccount)
       <+> lCurrencySymbolDoc postingCurrencySymbol
