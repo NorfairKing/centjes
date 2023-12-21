@@ -61,7 +61,7 @@ moduleDoc Module {..} =
             -- Group account declarations together
             (DecAccount, DecAccount) -> False
             -- Group price declarations together
-            (DecPrice, DecPrice) -> True
+            (DecPrice, DecPrice) -> False
             -- Don't group transactions together
             (DecTransaction, DecTransaction) -> True
             _ -> dt /= dt'
