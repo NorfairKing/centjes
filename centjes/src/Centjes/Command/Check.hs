@@ -21,6 +21,7 @@ import Centjes.Location
 import Centjes.Module as Module
 import Centjes.OptParse
 import Centjes.Report.Balance
+import Centjes.Report.Register
 import Centjes.Validation
 import Control.DeepSeq
 import Control.Monad
@@ -53,6 +54,7 @@ data CheckError ann
   = CheckErrorMissingAttachment !ann !(Attachment ann)
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
+  | CheckErrorRegisterError !(RegisterError ann)
   deriving (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (CheckError ann)
@@ -71,6 +73,7 @@ instance ToReport (CheckError SourceSpan) where
         []
     CheckErrorCompileError ce -> toReport ce
     CheckErrorBalanceError be -> toReport be
+    CheckErrorRegisterError re -> toReport re
 
 checkDeclarations :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 checkDeclarations = traverse_ checkDeclaration
@@ -104,4 +107,5 @@ checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
 checkLedger :: Ord ann => Ledger ann -> Checker ann ()
 checkLedger l = do
   _ <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport Nothing l
+  _ <- mapValidationFailure CheckErrorRegisterError $ produceRegister Nothing l
   pure ()
