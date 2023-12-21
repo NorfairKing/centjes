@@ -14,6 +14,7 @@ module Centjes.Report.Balance
   )
 where
 
+import Centjes.AccountType as AccountType
 import Centjes.Convert
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
@@ -291,7 +292,7 @@ produceBalancedLedger mCurrencyTo ledger = do
         let (lt@(Located tl t), ab) = V.unsafeIndex tups ix
         newTotal <- incorporateAccounts runningTotal ab
 
-        checkAccountTypeAssertions tl newTotal
+        checkAccountTypeAssertions (ledgerAccounts ledger) tl newTotal
         traverse_ (checkAssertion tl newTotal) (transactionAssertions t)
 
         pure ((lt, newTotal), (succ ix, newTotal))
@@ -320,10 +321,22 @@ produceBalancedLedger mCurrencyTo ledger = do
         Just new -> pure $ M.insert an new totals
 
 checkAccountTypeAssertions ::
+  Ord ann =>
+  Map AccountName (GenLocated ann AccountType) ->
   ann ->
   AccountBalances ann ->
   Validation (BalanceError ann) ()
-checkAccountTypeAssertions tl runningTotal = undefined
+checkAccountTypeAssertions accounts tl =
+  traverse_
+    ( \(an, ab) -> case M.lookup an accounts of
+        Nothing -> undefined -- TODO error
+        Just (Located adl at) -> case at of
+          AccountTypeAssets ->
+            if ab < MultiAccount.zero
+              then undefined -- TODO error
+              else pure ()
+    )
+    . M.toList
 
 checkAssertion ::
   Ord ann =>

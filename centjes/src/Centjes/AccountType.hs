@@ -8,6 +8,7 @@ module Centjes.AccountType
     fromTextM,
     fromText,
     toText,
+    assertion,
   )
 where
 
@@ -15,6 +16,8 @@ import Control.DeepSeq
 import Data.Text (Text)
 import Data.Validity
 import GHC.Generics (Generic)
+import qualified Money.Account as Account
+import qualified Money.Account as Money (Account)
 
 data AccountType
   = -- | Never negative
@@ -54,3 +57,6 @@ toText = \case
   AccountTypeEquity -> "equity"
   AccountTypeExpenses -> "expenses"
   AccountTypeIncome -> "income"
+
+assertion :: AccountType -> (Money.Account -> Bool)
+assertion = undefined
