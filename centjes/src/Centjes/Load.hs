@@ -1,14 +1,20 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Load
   ( loadModules,
     loadModules',
+    loadModulesOrErr,
     diagFromFileMap,
   )
 where
 
+import Centjes.Location
 import Centjes.Module
 import Centjes.Parse
+import Centjes.Validation
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Logger
@@ -21,7 +27,9 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Error.Diagnose
+import GHC.Generics (Generic)
 import Path
+import Path.IO
 import System.Exit
 
 loadModules :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Diagnostic String)
@@ -31,12 +39,36 @@ loadModules firstPath = do
 
 loadModules' :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModules' firstPath = do
+  validation <- unValidationT $ loadModulesOrErr firstPath
+  liftIO $ checkValidation mempty validation
+
+data LoadError ann = LoadErrorImportMissing !(Path Rel File)
+  deriving (Show, Eq, Generic)
+
+instance ToReport (LoadError SourceSpan) where
+  toReport = \case
+    LoadErrorImportMissing rf ->
+      Err
+        (Just "LE_IMPORT")
+        (unwords ["Imported module does not exist:", fromRelFile rf])
+        []
+        []
+
+loadModulesOrErr :: forall m. MonadLoggerIO m => Path Abs File -> ValidationT (LoadError SourceSpan) m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModulesOrErr firstPath = do
   let base = parent firstPath
   flip runStateT M.empty $ do
     m <- readSingle base firstPath
     go base base m
   where
-    go :: Path Abs Dir -> Path Abs Dir -> LModule -> StateT (Map (Path Rel File) (Text, LModule)) m [LDeclaration]
+    go ::
+      Path Abs Dir ->
+      Path Abs Dir ->
+      LModule ->
+      StateT
+        (Map (Path Rel File) (Text, LModule))
+        (ValidationT (LoadError ann) m)
+        [LDeclaration]
     go originalBase currentBase m = do
       restDecls <- forM (moduleImports m) $ \(Import rf) -> do
         let af = currentBase </> rf
@@ -44,7 +76,13 @@ loadModules' firstPath = do
         go originalBase (parent af) m'
       pure $ concat (moduleDeclarations m : restDecls)
 
-    readSingle :: Path Abs Dir -> Path Abs File -> StateT (Map (Path Rel File) (Text, LModule)) m LModule
+    readSingle ::
+      Path Abs Dir ->
+      Path Abs File ->
+      StateT
+        (Map (Path Rel File) (Text, LModule))
+        (ValidationT (LoadError ann) m)
+        LModule
     readSingle originalBase p = do
       visited <- get
       case stripProperPrefix originalBase p of
@@ -70,29 +108,34 @@ diagFromFileMap =
     mempty
     . M.toList
 
-readSingleModule :: MonadLoggerIO m => Path Abs Dir -> Path Rel File -> m (Text, LModule)
+readSingleModule :: MonadLoggerIO m => Path Abs Dir -> Path Rel File -> ValidationT (LoadError ann) m (Text, LModule)
 readSingleModule base p = do
   let fp = fromRelFile p
-  contents <- liftIO $ SB.readFile $ fromAbsFile $ base </> p
-  case TE.decodeUtf8' contents of
-    Left e ->
-      liftIO $
-        die $
-          unlines
-            [ "Could not read file because it does not look like Utf-8: ",
-              show fp,
-              show e
-            ]
-    Right textContents -> do
-      case parseModule base p textContents of
+  let af = base </> p
+  fileExist <- doesFileExist af
+  if fileExist
+    then do
+      contents <- liftIO $ SB.readFile $ fromAbsFile af
+      case TE.decodeUtf8' contents of
         Left e ->
           liftIO $
             die $
               unlines
-                [ "Cannot parse file: ",
+                [ "Could not read file because it does not look like Utf-8: ",
                   show fp,
-                  e
+                  show e
                 ]
-        Right m -> do
-          logDebugN $ T.pack $ unwords ["Read module:", fp]
-          pure (textContents, m)
+        Right textContents -> do
+          case parseModule base p textContents of
+            Left e ->
+              liftIO $
+                die $
+                  unlines
+                    [ "Cannot parse file: ",
+                      show fp,
+                      e
+                    ]
+            Right m -> do
+              lift $ logDebugN $ T.pack $ unwords ["Read module:", fp]
+              pure (textContents, m)
+    else validationTFailure $ LoadErrorImportMissing p
