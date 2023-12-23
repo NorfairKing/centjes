@@ -61,15 +61,12 @@ library
   build-tool-depends:
       autoexporter:autoexporter
   build-depends:
-      aeson
-    , autodocodec
+      autodocodec
     , autodocodec-yaml
     , base >=4.7
     , bytestring
     , centjes
-    , centjes-gen
     , centjes-import-revolut
-    , centjes-switzerland
     , cmark-gfm
     , containers
     , data-default
@@ -80,18 +77,14 @@ library
     , optparse-applicative
     , path
     , path-io
-    , raw-strings-qq
-    , semver
     , shakespeare
     , template-haskell
     , template-haskell-reload
     , text
     , th-lift-instances
     , time
-    , typed-process
     , wai-extra
     , warp
-    , yaml
     , yesod
     , yesod-autoreload
     , yesod-sitemap

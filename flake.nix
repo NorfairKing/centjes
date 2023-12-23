@@ -21,6 +21,16 @@
     sydtest.flake = false;
     really-safe-money.url = "github:NorfairKing/really-safe-money";
     really-safe-money.flake = false;
+    yesod-autoreload.url = "github:NorfairKing/yesod-autoreload";
+    yesod-autoreload.flake = false;
+    yesod-static-remote.url = "github:NorfairKing/yesod-static-remote";
+    yesod-static-remote.flake = false;
+    template-haskell-reload.url = "github:NorfairKing/template-haskell-reload";
+    template-haskell-reload.flake = false;
+    linkcheck.url = "github:NorfairKing/linkcheck";
+    linkcheck.flake = false;
+    seocheck.url = "github:NorfairKing/seocheck";
+    seocheck.flake = false;
   };
 
   outputs =
@@ -33,7 +43,11 @@
     , sydtest
     , autodocodec
     , really-safe-money
-
+    , yesod-autoreload
+    , yesod-static-remote
+    , template-haskell-reload
+    , linkcheck
+    , seocheck
     }:
     let
       system = "x86_64-linux";
@@ -46,6 +60,11 @@
           (import (sydtest + "/nix/overlay.nix"))
           (import (autodocodec + "/nix/overlay.nix"))
           (import (really-safe-money + "/nix/overlay.nix"))
+          (import (yesod-autoreload + "/nix/overlay.nix"))
+          (import (yesod-static-remote + "/nix/overlay.nix"))
+          (import (template-haskell-reload + "/nix/overlay.nix"))
+          (import (linkcheck + "/nix/overlay.nix"))
+          (import (seocheck + "/nix/overlay.nix"))
           (_:_: { makeDependencyGraph = haskell-dependency-graph-nix.lib.${system}.makeDependencyGraph; })
           self.overlays.${system}
         ];

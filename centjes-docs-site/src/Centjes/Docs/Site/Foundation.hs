@@ -31,7 +31,6 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Time
 import Language.Haskell.TH.Load
 import Text.Hamlet
 import Yesod

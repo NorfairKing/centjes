@@ -11,18 +11,10 @@ module Centjes.Docs.Site.Handler.Centjes
   )
 where
 
-import Autodocodec
 import Centjes.Docs.Site.Handler.Import hiding (Header)
 import Centjes.OptParse as CLI
-import Data.Map (Map)
-import qualified Data.Map as M
-import Data.Set (Set)
-import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import Data.Time
-import Data.Yaml.Builder as Yaml
 import qualified Env
 import Options.Applicative
 import Options.Applicative.Help

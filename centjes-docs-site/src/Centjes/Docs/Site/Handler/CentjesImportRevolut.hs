@@ -12,8 +12,6 @@ where
 
 import Centjes.Docs.Site.Handler.Import
 import Centjes.Import.Revolut.OptParse as CLI
-import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Env
 import Options.Applicative
 import Options.Applicative.Help

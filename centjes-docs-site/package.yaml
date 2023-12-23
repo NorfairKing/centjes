@@ -17,7 +17,6 @@ library:
   source-dirs: src
   build-tools: autoexporter
   dependencies:
-  - aeson
   - autodocodec
   - autodocodec-yaml
   - base >= 4.7
@@ -32,22 +31,16 @@ library:
   - optparse-applicative
   - path
   - path-io
-  - raw-strings-qq
-  - semver
   - shakespeare
   - centjes
-  - centjes-gen
   - centjes-import-revolut
-  - centjes-switzerland
   - template-haskell
   - template-haskell-reload
   - text
   - th-lift-instances
   - time
-  - typed-process
   - wai-extra
   - warp
-  - yaml
   - yesod
   - yesod-autoreload
   - yesod-sitemap

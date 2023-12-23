@@ -10,12 +10,10 @@ import Autodocodec.Yaml
 import Centjes.Module
 import Control.Applicative
 import Data.Maybe
-import qualified Data.Text as T
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
 import GHC.Generics (Generic)
 import Options.Applicative as OptParse
-import qualified Options.Applicative.Help as OptParse (string)
 import Path
 import Path.IO
 import qualified System.Environment as System
