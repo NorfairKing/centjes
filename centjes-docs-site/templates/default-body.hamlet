@@ -1,0 +1,17 @@
+<section .hero>
+  <div .hero-body>
+    <div .container>
+      <h1 .title>
+        <a href=@{HomeR}>
+          Centjes
+
+
+<section .section .container>
+  <div .columns>
+    <div .column .is-3>
+      <div .box>
+        ^{menu}
+
+    <div .column .is-9>
+      <div .box>
+        ^{widget}

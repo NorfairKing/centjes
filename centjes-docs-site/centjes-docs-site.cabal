@@ -1,0 +1,105 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           centjes-docs-site
+version:        0.0.0
+homepage:       https://github.com/NorfairKing/centjes#readme
+bug-reports:    https://github.com/NorfairKing/centjes/issues
+author:         Tom Sydney Kerckhove
+maintainer:     syd@cs-syd.eu
+license:        MIT
+build-type:     Simple
+extra-source-files:
+    routes
+    content/pages/centjes-import-revolut.markdown
+    content/pages/centjes.markdown
+    content/pages/centjes/balance.markdown
+    content/pages/centjes/check.markdown
+    content/pages/centjes/format.markdown
+    content/pages/centjes/register.markdown
+    content/pages/development.markdown
+    content/unreleased.markdown
+    templates/args.hamlet
+    templates/default-body.hamlet
+    templates/default-page.hamlet
+    templates/home.hamlet
+    templates/menu.hamlet
+    templates/page.hamlet
+
+source-repository head
+  type: git
+  location: https://github.com/NorfairKing/centjes
+
+library
+  exposed-modules:
+      Centjes.Docs.Site
+      Centjes.Docs.Site.Application
+      Centjes.Docs.Site.Assets
+      Centjes.Docs.Site.Constants
+      Centjes.Docs.Site.DependencyGraph
+      Centjes.Docs.Site.Foundation
+      Centjes.Docs.Site.Handler
+      Centjes.Docs.Site.Handler.Centjes
+      Centjes.Docs.Site.Handler.CentjesImportRevolut
+      Centjes.Docs.Site.Handler.DependencyGraph
+      Centjes.Docs.Site.Handler.Import
+      Centjes.Docs.Site.Handler.Page
+      Centjes.Docs.Site.Handler.Reload
+      Centjes.Docs.Site.Handler.Sitemap
+      Centjes.Docs.Site.OptParse
+      Centjes.Docs.Site.OptParse.Types
+      Centjes.Docs.Site.Static
+      Centjes.Docs.Site.Static.TH
+      Centjes.Docs.Site.Widget
+  other-modules:
+      Paths_centjes_docs_site
+  hs-source-dirs:
+      src
+  build-tool-depends:
+      autoexporter:autoexporter
+  build-depends:
+      autodocodec
+    , autodocodec-yaml
+    , base >=4.7
+    , bytestring
+    , centjes
+    , centjes-import-revolut
+    , cmark-gfm
+    , containers
+    , data-default
+    , envparse
+    , file-embed
+    , filepath
+    , fsnotify
+    , optparse-applicative
+    , path
+    , path-io
+    , shakespeare
+    , template-haskell
+    , template-haskell-reload
+    , text
+    , th-lift-instances
+    , time
+    , wai-extra
+    , warp
+    , yesod
+    , yesod-autoreload
+    , yesod-sitemap
+    , yesod-static
+    , yesod-static-remote
+  default-language: Haskell2010
+
+executable centjes-docs-site
+  main-is: Main.hs
+  other-modules:
+      Paths_centjes_docs_site
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , centjes-docs-site
+  default-language: Haskell2010

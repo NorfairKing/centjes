@@ -1,0 +1,13 @@
+<h1 .title .is-1>
+  Centjes
+
+<div .content>
+  <p>
+    <b>
+      Centjes is a personal finances system that helps you file taxes.
+
+
+  <p>
+    You can find the source code
+    <a href="https://github.com/NorfairKing/centjes">
+      on GitHub.

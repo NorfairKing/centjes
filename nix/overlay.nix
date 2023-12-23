@@ -4,8 +4,19 @@ with final.haskell.lib;
 {
   centjes = final.symlinkJoin {
     name = "centjes";
-    paths = attrValues (builtins.mapAttrs (_: v: justStaticExecutables v) final.haskellPackages.centjesPackages);
+    paths = attrValues final.centjesReleasePackages;
   };
+
+  centjesDependencyGraph = final.makeDependencyGraph {
+    name = "centjes-dependency-graph";
+    packages = builtins.attrNames final.centjesReleasePackages;
+    format = "svg";
+    inherit (final) haskellPackages;
+  };
+
+  centjesReleasePackages = mapAttrs
+    (_: pkg: justStaticExecutables pkg)
+    final.haskellPackages.centjesPackages;
 
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (
@@ -37,11 +48,73 @@ with final.haskell.lib;
                   "--ghc-options=-optP-Wno-nonportable-include-path" # For macos
                 ];
               }));
+          centjes-docs-site-pkg = overrideCabal (centjesPkg "centjes-docs-site") (old: {
+            preConfigure = ''
+              ${old.preConfigure or ""}
+              export CENTJES_DOCS_DEPENDENCY_GRAPH="${final.centjesDependencyGraph}/centjes-dependency-graph.svg"                  
+            '';
+          });
+          withLinksChecked = exeName: pkg:
+            overrideCabal pkg (old: {
+              postInstall = ''
+                ${old.postInstall or ""}
+        
+                $out/bin/${exeName} &
+                sleep 1                             
+                ${final.linkcheck}/bin/linkcheck http://localhost:8080 --fetchers 2 --log-level Info --check-fragments
+                ${final.seocheck}/bin/seocheck http://localhost:8080   --fetchers 2 --log-level Info
+                ${final.killall}/bin/killall ${exeName}   
+              '';
+            });
+          withStaticResources = pkg: resources: overrideCabal pkg (
+            old:
+            {
+              preConfigure =
+                let
+                  copyResource = path: resource:
+                    ''
+                      local path="${path}"
+                      mkdir --parents $(dirname "''$path")
+                      ln -s ${resource} "''$path"             
+                    '';
+                  copyScript = concatStringsSep "\n" (mapAttrsToList copyResource resources);
+                in
+                ''
+                  ${old.preConfigure or ""}                    
+                  ${copyScript}
+                '';
+            }
+          );
+
+          centjes-docs-site = withLinksChecked "centjes-docs-site" (
+            withStaticResources centjes-docs-site-pkg (
+              {
+                "static/bulma.css" = builtins.fetchurl {
+                  url = "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css";
+                  sha256 = "sha256:1vyg9drv44nn3awqymkrkn1yjqq7mpp741z0mmlj616p84xmsfmd";
+                };
+                "static/favicon.ico" = builtins.fetchurl {
+                  url = "https://cs-syd.eu/logo/res/favicon.ico";
+                  sha256 = "sha256:0ahvcky6lrcpk2vd41558bjgh3x80mpkz4cl7smka534ypm5arz9";
+                };
+                "static/asciinema-player.js" = builtins.fetchurl {
+                  url = "https://github.com/asciinema/asciinema-player/releases/download/v2.6.1/asciinema-player.js";
+                  sha256 = "sha256:092y2zl51z23jrl6mcqfxb64xaf9f2dx0j8kp69hp07m0935cz2p";
+                };
+                "static/asciinema-player.css" = builtins.fetchurl {
+                  url = "https://github.com/asciinema/asciinema-player/releases/download/v2.6.1/asciinema-player.css";
+                  sha256 = "sha256:1yi45fdps5mjqdwjhqwwzvlwxb4j7fb8451z7s6sdqmi7py8dksj";
+                };
+              }
+            )
+          );
+
           centjesPackages = {
             centjes = centjesPkg "centjes";
             centjes-gen = centjesPkg "centjes-gen";
             centjes-import-revolut = centjesPkg "centjes-import-revolut";
             centjes-switzerland = centjesPkg "centjes-switzerland";
+            inherit centjes-docs-site;
           };
           centjesRelease = final.symlinkJoin {
             name = "centjes-release";

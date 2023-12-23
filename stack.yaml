@@ -1,15 +1,35 @@
 resolver: lts-21.22
 packages:
+
 - centjes
 - centjes-gen
+
 - centjes-import-revolut
+
 - centjes-switzerland
+
+- centjes-docs-site
+
 
 ghc-options:
   "$locals": -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Widentities -Wredundant-constraints -Wcpp-undef -O0 -Wunused-packages
 
 extra-deps:
 - diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
+
+                  
+- github: NorfairKing/yesod-static-remote
+  commit: 7eda644dc369e16c3591847f6c7cad30846bf6b0
+                 
+- github: NorfairKing/yesod-autoreload
+  commit: 796def9af50cd7b053c9fb4a065c55603d4a8399
+            
+- github: NorfairKing/template-haskell-reload
+  commit: c416550db3f353bad65980a8ecd9b3b81fa504bd
+  subdirs:    
+    - template-haskell-reload
+                
+
 
 - github: NorfairKing/really-safe-money
   commit: 954209a8bf1f4c9843fc789cde8cd44955ac92f1

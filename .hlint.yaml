@@ -83,11 +83,11 @@
 
   # Still to add
   - {name: decodeUtf8, within: []} # Partial, use decodeUtf8' instead.
-  - {name: Prelude.putStrLn, within: []}
+  - name: Prelude.putStrLn
+    within:
+      - Centjes.Docs.Site.DependencyGraph
+      - Centjes.Docs.Site.Handler.Reload
 
-  # We don't disallow 'undefined' because of the undefined trick.
-  # It wolud be nice if there was a way to automatically check that all usages of undefined were because of the undefined trick...
-  - {name: 'error', within: []} # Purposely fails
 
   # Does unexpected things, see
   # https://github.com/NorfairKing/haskell-WAT#real-double

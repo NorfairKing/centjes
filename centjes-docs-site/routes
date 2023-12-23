@@ -1,0 +1,20 @@
+/ HomeR GET
+
+/centjes CentjesR GET
+/centjes/#Text CentjesCommandR GET
+
+
+/centjes-import-revolut CentjesImportRevolutR GET
+
+
+/sitemap.xml SitemapR GET
+/robots.txt RobotsR GET
+
+/dependency-graph DependencyGraphR GET
+
+/assets/*Texts AssetsR GET
+/assets-static AssetsStaticR EmbeddedStatic appAssets
+
+/ws/reload ReloadR GET
+
+!/*Texts PageR GET
