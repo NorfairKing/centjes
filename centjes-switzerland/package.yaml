@@ -7,6 +7,18 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - autodocodec
+  - autodocodec-yaml
+  - centjes
+  - containers
+  - envparse
+  - monad-logger
+  - optparse-applicative
+  - path
+  - path-io
+  - really-safe-money
+  - yaml
 
 executables:
   centjes-switzerland:

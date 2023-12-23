@@ -17,12 +17,24 @@ source-repository head
 library
   exposed-modules:
       Centjes.Switzerland
+      Centjes.Switzerland.OptParse
   other-modules:
       Paths_centjes_switzerland
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      autodocodec
+    , autodocodec-yaml
+    , base >=4.7 && <5
+    , centjes
+    , containers
+    , envparse
+    , monad-logger
+    , optparse-applicative
+    , path
+    , path-io
+    , really-safe-money
+    , yaml
   default-language: Haskell2010
 
 executable centjes-switzerland

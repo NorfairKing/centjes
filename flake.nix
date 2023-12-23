@@ -107,6 +107,7 @@
         buildInputs = (with pkgs; [
           zlib
           cabal-install
+          typst
         ]) ++ (with pre-commit-hooks.packages.${system};
           [
             hlint

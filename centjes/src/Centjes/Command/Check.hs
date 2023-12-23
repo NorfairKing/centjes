@@ -38,17 +38,25 @@ runCentjesCheck :: Settings -> CheckSettings -> IO ()
 runCentjesCheck Settings {..} CheckSettings = runStderrLoggingT $ do
   (declarations, diag) <- loadModules settingLedgerFile
   val <- liftIO $ runValidationT $ doCompleteCheck declarations
-  liftIO $ checkValidation diag val
+  void $ liftIO $ checkValidation diag val
 
 type CheckerT ann a = ValidationT (CheckError ann) IO a
 
 type Checker ann a = Validation (CheckError ann) a
 
-doCompleteCheck :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
+doCompleteCheck ::
+  [Declaration SourceSpan] ->
+  CheckerT
+    SourceSpan
+    ( Ledger SourceSpan,
+      BalanceReport SourceSpan,
+      Register SourceSpan
+    )
 doCompleteCheck declarations = do
   () <- checkDeclarations declarations
   ledger <- liftValidation $ mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
-  liftValidation $ checkLedger ledger
+  (balanceReport, register) <- liftValidation $ checkLedger ledger
+  pure (ledger, balanceReport, register)
 
 data CheckError ann
   = CheckErrorMissingAttachment !ann !(Attachment ann)
@@ -104,8 +112,8 @@ checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
   -- TODO error when attachment exists but is not readable.
   when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a
 
-checkLedger :: Ord ann => Ledger ann -> Checker ann ()
+checkLedger :: Ord ann => Ledger ann -> Checker ann (BalanceReport ann, Register ann)
 checkLedger l = do
-  _ <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport Nothing l
-  _ <- mapValidationFailure CheckErrorRegisterError $ produceRegister Nothing l
-  pure ()
+  balanceReport <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport Nothing l
+  register <- mapValidationFailure CheckErrorRegisterError $ produceRegister Nothing l
+  pure (balanceReport, register)
