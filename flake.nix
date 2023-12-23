@@ -8,6 +8,9 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-23.11";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
+    haskell-dependency-graph-nix.url = "github:NorfairKing/haskell-dependency-graph-nix";
+    haskell-dependency-graph-nix.inputs.nixpkgs.follows = "nixpkgs";
+    haskell-dependency-graph-nix.inputs.pre-commit-hooks.follows = "pre-commit-hooks";
     validity.url = "github:NorfairKing/validity";
     validity.flake = false;
     autodocodec.url = "github:NorfairKing/autodocodec";
@@ -24,6 +27,7 @@
     { self
     , nixpkgs
     , pre-commit-hooks
+    , haskell-dependency-graph-nix
     , validity
     , safe-coloured-text
     , sydtest
@@ -42,6 +46,7 @@
           (import (sydtest + "/nix/overlay.nix"))
           (import (autodocodec + "/nix/overlay.nix"))
           (import (really-safe-money + "/nix/overlay.nix"))
+          (_:_: { makeDependencyGraph = haskell-dependency-graph-nix.lib.${system}.makeDependencyGraph; })
           self.overlays.${system}
         ];
       };
@@ -84,6 +89,8 @@
             cabal2nix
           ]);
         shellHook = self.checks.${system}.pre-commit.shellHook;
+
+        CENTJES_DOCS_DEPENDENCY_GRAPH = "${pkgs.centjesDependencyGraph}/centjes-dependency-graph.svg";
       };
       nix-ci.cachix = {
         name = "centjes";

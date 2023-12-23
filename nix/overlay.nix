@@ -4,8 +4,19 @@ with final.haskell.lib;
 {
   centjes = final.symlinkJoin {
     name = "centjes";
-    paths = attrValues (builtins.mapAttrs (_: v: justStaticExecutables v) final.haskellPackages.centjesPackages);
+    paths = attrValues final.centjesReleasePackages;
   };
+
+  centjesDependencyGraph = final.makeDependencyGraph {
+    name = "centjes-dependency-graph";
+    packages = builtins.attrNames final.centjesReleasePackages;
+    format = "svg";
+    inherit (final) haskellPackages;
+  };
+
+  centjesReleasePackages = mapAttrs
+    (_: pkg: justStaticExecutables pkg)
+    final.haskellPackages.centjesPackages;
 
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (

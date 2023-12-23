@@ -14,6 +14,7 @@ license:        MIT
 build-type:     Simple
 extra-source-files:
     routes
+    content/pages/development.markdown
     content/unreleased.markdown
     templates/args.hamlet
     templates/changelog.hamlet
@@ -61,8 +62,6 @@ library
       Centjes.Docs.Site.Handler.Page
       Centjes.Docs.Site.Handler.Reload
       Centjes.Docs.Site.Handler.Sitemap
-      Centjes.Docs.Site.ModuleDocs
-      Centjes.Docs.Site.ModuleDocs.TH
       Centjes.Docs.Site.OptParse
       Centjes.Docs.Site.OptParse.Types
       Centjes.Docs.Site.Static

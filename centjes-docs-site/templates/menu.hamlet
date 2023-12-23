@@ -13,5 +13,8 @@
 
   <ul .menu-list>
     <li>
+      <a href=@{PageR ["development"]}>
+        Development
+    <li>
       <a href="https://cs-syd.eu">
         CS SYD
