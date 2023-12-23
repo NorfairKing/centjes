@@ -70,7 +70,9 @@
         ];
       };
       pkgs = pkgsFor nixpkgs;
-
+      mkNixOSModule = import ./nix/nixos-module.nix {
+        inherit (pkgs.centjesReleasePackages) centjes-docs-site;
+      };
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
@@ -79,10 +81,15 @@
         package = self.packages.${system}.default;
         release = pkgs.haskellPackages.centjes;
         shell = self.devShells.${system}.default;
-        pre-commit = pre-commit-hooks.lib.${system}.run {
+        e2e-test = import ./nix/e2e-test.nix {
+          inherit (pkgs) nixosTest;
+          centjes-nixos-module = self.nixosModules.${system}.default;
+          inherit system;
+        };
+        pre-commit = pre-commit-hooks.lib.${ system}.run {
           src = ./.;
           hooks = {
-            hlint.enable = true;
+            hlint. enable = true;
             hpack.enable = true;
             ormolu.enable = true;
             nixpkgs-fmt.enable = true;
@@ -110,6 +117,12 @@
         shellHook = self.checks.${system}.pre-commit.shellHook;
 
         CENTJES_DOCS_DEPENDENCY_GRAPH = "${pkgs.centjesDependencyGraph}/centjes-dependency-graph.svg";
+      };
+      nixosModules.${system} = {
+        default = mkNixOSModule { envname = "production"; };
+      };
+      nixosModuleFactories.${system} = {
+        default = mkNixOSModule;
       };
       nix-ci.cachix = {
         name = "centjes";
