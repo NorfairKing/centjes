@@ -13,7 +13,6 @@
 module Centjes.Docs.Site.Foundation
   ( module Centjes.Docs.Site.Foundation,
     module Centjes.Docs.Site.Assets,
-    module Centjes.Docs.Site.Casts,
     module Centjes.Docs.Site.Static,
     module Centjes.Docs.Site.Widget,
     module Yesod,
@@ -23,7 +22,6 @@ where
 import Autodocodec
 import Autodocodec.Yaml
 import Centjes.Docs.Site.Assets
-import Centjes.Docs.Site.Casts
 import Centjes.Docs.Site.Constants
 import Centjes.Docs.Site.Static
 import Centjes.Docs.Site.Widget
@@ -42,7 +40,6 @@ import Yesod.EmbeddedStatic
 
 data App = App
   { appAssets :: !EmbeddedStatic,
-    appCasts :: !EmbeddedStatic,
     appGoogleAnalyticsTracking :: !(Maybe Text),
     appGoogleSearchConsoleVerification :: !(Maybe Text)
   }
@@ -75,11 +72,6 @@ getHomeR = defaultLayout $ do
   setTitle "Centjes Documentation"
   setDescriptionIdemp "Documentation for Centjes"
   $(widgetFile "home")
-
-getCastsR :: [Text] -> Handler Html
-getCastsR t = do
-  neverExpires
-  redirect $ T.intercalate "/" $ "/casts-static/res" : t
 
 getAssetsR :: [Text] -> Handler Html
 getAssetsR t = do

@@ -1,7 +1,0 @@
-<h1 .title .is-1>
-  #{title}
-
-<h2 .subtitle .is-4>
-  #{description}
-
-^{optionDocs}

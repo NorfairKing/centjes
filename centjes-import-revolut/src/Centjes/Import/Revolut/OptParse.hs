@@ -2,7 +2,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Centjes.Import.Revolut.OptParse where
 
@@ -143,16 +142,7 @@ flagsParser :: OptParse.ParserInfo Flags
 flagsParser =
   OptParse.info
     (OptParse.helper <*> parseFlags)
-    (OptParse.fullDesc <> OptParse.footerDoc (Just $ OptParse.string footerStr))
-  where
-    -- Show the variables from the environment that we parse and the config file format
-    footerStr =
-      unlines
-        [ Env.helpDoc environmentParser,
-          "",
-          "Configuration file format:",
-          T.unpack (renderColouredSchemaViaCodec @Configuration)
-        ]
+    OptParse.fullDesc
 
 -- | The flags that are common across commands.
 data Flags = Flags

@@ -5,8 +5,28 @@
 
   <ul .menu-list>
     <li>
-      <a href="https://cs-syd.eu">
-        CS SYD
+      <a href=@{CentjesR}>
+        Centjes
+    <li>
+      <a href=@{CentjesCommandR "balance"}>
+        Balance
+    <li>
+      <a href=@{CentjesCommandR "register"}>
+        Register
+    <li>
+      <a href=@{CentjesCommandR "check"}>
+        Check
+    <li>
+      <a href=@{CentjesCommandR "format"}>
+        Format
+
+  <p .menu-label>
+    Centjes Importers
+
+  <ul .menu-list>
+    <li>
+      <a href=@{CentjesImportRevolutR}>
+        Revolut
 
   <p .menu-label>
     Support

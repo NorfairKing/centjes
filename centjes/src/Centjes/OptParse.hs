@@ -2,7 +2,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Centjes.OptParse where
 
@@ -174,16 +173,7 @@ argParser :: OptParse.ParserInfo Arguments
 argParser =
   OptParse.info
     (OptParse.helper <*> parseArgs)
-    (OptParse.fullDesc <> OptParse.footerDoc (Just $ OptParse.string footerStr))
-  where
-    -- Show the variables from the environment that we parse and the config file format
-    footerStr =
-      unlines
-        [ Env.helpDoc environmentParser,
-          "",
-          "Configuration file format:",
-          T.unpack (renderColouredSchemaViaCodec @Configuration)
-        ]
+    OptParse.fullDesc
 
 parseArgs :: OptParse.Parser Arguments
 parseArgs = Arguments <$> parseCommand <*> parseFlags

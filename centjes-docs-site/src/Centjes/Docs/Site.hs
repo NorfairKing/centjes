@@ -18,7 +18,6 @@ centjesDocsSite = do
   let app =
         App
           { appAssets = assets,
-            appCasts = casts,
             appGoogleAnalyticsTracking = settingGoogleAnalyticsTracking,
             appGoogleSearchConsoleVerification = settingGoogleSearchConsoleVerification
           }

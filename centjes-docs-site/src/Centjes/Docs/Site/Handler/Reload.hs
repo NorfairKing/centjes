@@ -29,7 +29,7 @@ getReloadR = getAutoReloadRWith $
                       "4913" -- https://github.com/neovim/neovim/issues/3460
                     ] -- Editors make files like this, no need to refresh when they are written.
                in not $ any (`isSuffixOf` eventPath e) suffixes
-          act e = putMVar sendRefreshVar e
+          act = putMVar sendRefreshVar
       let dirs = ["content", "static"]
       forM_ dirs $ \d -> do
         ad <- resolveDir' d

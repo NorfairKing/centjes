@@ -7,6 +7,7 @@
 
 module Centjes.Docs.Site.Handler.Centjes
   ( getCentjesR,
+    getCentjesCommandR,
   )
 where
 
@@ -18,6 +19,7 @@ import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
 import Data.Yaml.Builder as Yaml
@@ -34,6 +36,17 @@ getCentjesR = do
   defaultLayout $ do
     setCentjesTitle "centjes"
     setDescriptionIdemp "Documentation for the Centjes tool"
+    $(widgetFile "args")
+
+getCentjesCommandR :: Text -> Handler Html
+getCentjesCommandR cmd = do
+  DocPage {..} <- lookupPage' ["centjes", cmd]
+  let argsHelpText = getHelpPageOf [T.unpack cmd]
+      envHelpText = "This command does not use any extra environment variables." :: String
+      confHelpText = "This command admits no extra configuration." :: String
+  defaultLayout $ do
+    setCentjesTitle $ toHtml docPageTitle
+    setDescriptionIdemp $ "Documentation for the " <> cmd <> " subcommand of the centjes tool"
     $(widgetFile "args")
 
 getHelpPageOf :: [String] -> String
