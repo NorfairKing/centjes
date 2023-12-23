@@ -1,0 +1,33 @@
+<div .content>
+  <h3>
+    Options
+  $forall (name, mo) <- options
+    <h4>
+      <code>
+        #{name}
+    <p>
+      #{moduleOptionDescription mo}
+
+    <p>
+      Type:
+      <code>
+        #{moduleOptionType mo}
+
+    $maybe d <- moduleOptionDefault mo
+      <p>
+        Default:
+        <code>
+          #{nixValueText d}
+
+    $maybe e <- moduleOptionExample mo
+      <p>
+        Example:
+        <code>
+          #{nixValueText e}
+
+    $if moduleOptionReadOnly mo
+      <p>
+        Read only
+
+    <br>
+

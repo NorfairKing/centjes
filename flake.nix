@@ -66,6 +66,7 @@
           (import (linkcheck + "/nix/overlay.nix"))
           (import (seocheck + "/nix/overlay.nix"))
           (_:_: { makeDependencyGraph = haskell-dependency-graph-nix.lib.${system}.makeDependencyGraph; })
+          (_:_: { evalNixOSConfig = args: import (nixpkgs + "/nixos/lib/eval-config.nix") (args // { inherit system; }); })
           self.overlays.${system}
         ];
       };
@@ -117,6 +118,7 @@
         shellHook = self.checks.${system}.pre-commit.shellHook;
 
         CENTJES_DOCS_DEPENDENCY_GRAPH = "${pkgs.centjesDependencyGraph}/centjes-dependency-graph.svg";
+        CENTJES_DOCS_NIXOS_MODULE_DOCS = "${pkgs.centjesNixosModuleDocs}/share/doc/nixos/options.json";
       };
       nixosModules.${system} = {
         default = mkNixOSModule { envname = "production"; };

@@ -27,6 +27,8 @@ extra-source-files:
     templates/default-page.hamlet
     templates/home.hamlet
     templates/menu.hamlet
+    templates/nixos-module.hamlet
+    templates/option-docs.hamlet
     templates/page.hamlet
 
 source-repository head
@@ -46,9 +48,12 @@ library
       Centjes.Docs.Site.Handler.CentjesImportRevolut
       Centjes.Docs.Site.Handler.DependencyGraph
       Centjes.Docs.Site.Handler.Import
+      Centjes.Docs.Site.Handler.Nix
       Centjes.Docs.Site.Handler.Page
       Centjes.Docs.Site.Handler.Reload
       Centjes.Docs.Site.Handler.Sitemap
+      Centjes.Docs.Site.ModuleDocs
+      Centjes.Docs.Site.ModuleDocs.TH
       Centjes.Docs.Site.OptParse
       Centjes.Docs.Site.OptParse.Types
       Centjes.Docs.Site.Static
@@ -61,7 +66,8 @@ library
   build-tool-depends:
       autoexporter:autoexporter
   build-depends:
-      autodocodec
+      aeson
+    , autodocodec
     , autodocodec-yaml
     , base >=4.7
     , bytestring

@@ -29,12 +29,20 @@
         Revolut
 
   <p .menu-label>
-    Support
+    Contribution
 
   <ul .menu-list>
     <li>
       <a href=@{PageR ["development"]}>
         Development
+    <li>
+      <a href=@{NixosModuleR}>
+        Nixos Module Docs
+
+  <p .menu-label>
+    Support
+
+  <ul .menu-list>
     <li>
       <a href="https://cs-syd.eu">
         CS SYD

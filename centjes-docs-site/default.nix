@@ -1,5 +1,5 @@
-{ mkDerivation, autodocodec, autodocodec-yaml, autoexporter, base
-, bytestring, centjes, centjes-import-revolut, cmark-gfm
+{ mkDerivation, aeson, autodocodec, autodocodec-yaml, autoexporter
+, base, bytestring, centjes, centjes-import-revolut, cmark-gfm
 , containers, data-default, envparse, file-embed, filepath
 , fsnotify, lib, optparse-applicative, path, path-io, shakespeare
 , template-haskell, template-haskell-reload, text
@@ -13,7 +13,7 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    autodocodec autodocodec-yaml base bytestring centjes
+    aeson autodocodec autodocodec-yaml base bytestring centjes
     centjes-import-revolut cmark-gfm containers data-default envparse
     file-embed filepath fsnotify optparse-applicative path path-io
     shakespeare template-haskell template-haskell-reload text

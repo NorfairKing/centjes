@@ -18,6 +18,28 @@ with final.haskell.lib;
     (_: pkg: justStaticExecutables pkg)
     final.haskellPackages.centjesPackages;
 
+  centjesNixosModuleDocs =
+    let
+      smos-module = import ./nixos-module.nix
+        {
+          inherit (final.centjesReleasePackages) centjes-docs-site;
+        }
+        {
+          envname = "production";
+        };
+      eval = final.evalNixOSConfig {
+        pkgs = final;
+        modules = [
+          smos-module
+          { system.stateVersion = "23.05"; }
+        ];
+      };
+    in
+    (final.nixosOptionsDoc {
+      options = eval.options;
+    }).optionsJSON;
+
+
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (
       self: super:
@@ -51,7 +73,9 @@ with final.haskell.lib;
           centjes-docs-site-pkg = overrideCabal (centjesPkg "centjes-docs-site") (old: {
             preConfigure = ''
               ${old.preConfigure or ""}
-              export CENTJES_DOCS_DEPENDENCY_GRAPH="${final.centjesDependencyGraph}/centjes-dependency-graph.svg"                  
+
+              export CENTJES_DOCS_DEPENDENCY_GRAPH="${final.centjesDependencyGraph}/centjes-dependency-graph.svg"
+              export CENTJES_DOCS_NIXOS_MODULE_DOCS="${final.centjesNixosModuleDocs}/share/doc/nixos/options.json"
             '';
           });
           withLinksChecked = exeName: pkg:

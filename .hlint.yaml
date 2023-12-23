@@ -85,6 +85,7 @@
   - {name: decodeUtf8, within: []} # Partial, use decodeUtf8' instead.
   - name: Prelude.putStrLn
     within:
+      - Centjes.Docs.Site.ModuleDocs
       - Centjes.Docs.Site.DependencyGraph
       - Centjes.Docs.Site.Handler.Reload
 
