@@ -1,0 +1,26 @@
+<h1 .title .is-1>
+  Changelog
+
+<h2 .subtitle .is-4>
+  The changelog for all of the Smos tools and libraries
+
+<div .buttons>
+  $maybe _ <- mUnreleased
+    <a .button .is-secondary href=@{ChangelogUnreleasedR}>
+      Unreleased changes
+
+  <a .button href=@{ChangelogLatestR}>
+    Latest Release: #{showReleaseDay latestReleaseDay}
+
+  <a .button href=@{ChangelogAllR}>
+    All Changelogs
+
+<div .content>
+  <h3 .title .is-5>
+    Older Releases
+
+  <ul>
+    $forall day <- sortOn Down $ M.keys releases
+      <li>
+        <a href=@{ChangelogReleaseR day}>
+          #{formatTime defaultTimeLocale "%F" day}

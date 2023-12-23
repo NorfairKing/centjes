@@ -18,6 +18,7 @@ import Options.Applicative as OptParse
 import qualified Options.Applicative.Help as OptParse (string)
 import Path
 import Path.IO
+import qualified System.Environment as System
 import System.Exit
 
 data Instructions
@@ -133,14 +134,16 @@ data Environment = Environment
   deriving (Show, Eq, Generic)
 
 getEnvironment :: IO Environment
-getEnvironment = Env.parse (Env.header "Environment") environmentParser
+getEnvironment = Env.parse (Env.header "Environment") prefixedEnvironmentParser
+
+prefixedEnvironmentParser :: Env.Parser Env.Error Environment
+prefixedEnvironmentParser = Env.prefixed "CENTJES_" environmentParser
 
 environmentParser :: Env.Parser Env.Error Environment
 environmentParser =
-  Env.prefixed "CENTJES_" $
-    Environment
-      <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
-      <*> optional (Env.var Env.str "LEDGER" (Env.help "Ledger file"))
+  Environment
+    <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
+    <*> optional (Env.var Env.str "LEDGER" (Env.help "Ledger file"))
 
 data Arguments
   = Arguments !Command !Flags
@@ -148,16 +151,23 @@ data Arguments
 
 -- | Get the command-line arguments
 getArguments :: IO Arguments
-getArguments = customExecParser prefs_ argParser
+getArguments = do
+  args <- System.getArgs
+  let result = runArgumentsParser args
+  handleParseResult result
 
--- | The 'optparse-applicative' parsing preferences
-prefs_ :: OptParse.ParserPrefs
-prefs_ =
-  -- I like these preferences. Use what you like.
-  OptParse.defaultPrefs
-    { OptParse.prefShowHelpOnError = True,
-      OptParse.prefShowHelpOnEmpty = True
-    }
+runArgumentsParser :: [String] -> ParserResult Arguments
+runArgumentsParser = execParserPure ps argParser
+  where
+    ps :: ParserPrefs
+    ps =
+      prefs $
+        mconcat
+          [ showHelpOnError,
+            showHelpOnEmpty,
+            subparserInline,
+            helpShowGlobals
+          ]
 
 -- | The @optparse-applicative@ parser for 'Arguments'
 argParser :: OptParse.ParserInfo Arguments

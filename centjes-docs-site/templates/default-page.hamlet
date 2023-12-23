@@ -1,0 +1,30 @@
+$doctype 5
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>#{pageTitle pageContent}
+    ^{pageHead pageContent}
+    $maybe description <- pageDescription pageContent
+      <meta name="description" content=#{description}>
+
+    <link rel="stylesheet" href=@{AssetsStaticR bulma_css}>
+    <link rel="icon" href=@{AssetsStaticR favicon_ico} type="image/x-icon">
+
+    $maybe verification <- appGoogleSearchConsoleVerification app
+      <meta name="google-site-verification" content="#{verification}"/>
+
+    $maybe trackingId <- appGoogleAnalyticsTracking app
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=#{trackingId}">
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', '#{trackingId}');
+
+  <body>
+    ^{pageBody pageContent}
+

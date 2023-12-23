@@ -1,0 +1,126 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           centjes-docs-site
+version:        0.0.0
+homepage:       https://github.com/NorfairKing/centjes#readme
+bug-reports:    https://github.com/NorfairKing/centjes/issues
+author:         Tom Sydney Kerckhove
+maintainer:     syd@cs-syd.eu
+license:        MIT
+build-type:     Simple
+extra-source-files:
+    routes
+    content/unreleased.markdown
+    templates/args.hamlet
+    templates/changelog.hamlet
+    templates/changelog/all.hamlet
+    templates/changelog/release.hamlet
+    templates/changelog/unreleased.hamlet
+    templates/current-versions.hamlet
+    templates/default-body.hamlet
+    templates/default-body.lucius
+    templates/default-page.hamlet
+    templates/home-manager-module.hamlet
+    templates/home.hamlet
+    templates/menu.hamlet
+    templates/nixos-module.hamlet
+    templates/option-docs.hamlet
+    templates/page.hamlet
+    templates/smos-actions.hamlet
+    templates/smos-asciinema/spec.hamlet
+    templates/smos-file.hamlet
+    templates/smos-keybindings.hamlet
+    templates/smos-query/column.hamlet
+    templates/smos-query/filter.hamlet
+    templates/smos-query/sorter.hamlet
+    templates/smos-scheduler/template.hamlet
+
+source-repository head
+  type: git
+  location: https://github.com/NorfairKing/centjes
+
+library
+  exposed-modules:
+      Centjes.Docs.Site
+      Centjes.Docs.Site.Application
+      Centjes.Docs.Site.Assets
+      Centjes.Docs.Site.Casts
+      Centjes.Docs.Site.Casts.TH
+      Centjes.Docs.Site.Constants
+      Centjes.Docs.Site.DependencyGraph
+      Centjes.Docs.Site.Foundation
+      Centjes.Docs.Site.Handler
+      Centjes.Docs.Site.Handler.Centjes
+      Centjes.Docs.Site.Handler.CentjesImportRevolut
+      Centjes.Docs.Site.Handler.DependencyGraph
+      Centjes.Docs.Site.Handler.Import
+      Centjes.Docs.Site.Handler.Page
+      Centjes.Docs.Site.Handler.Reload
+      Centjes.Docs.Site.Handler.Sitemap
+      Centjes.Docs.Site.ModuleDocs
+      Centjes.Docs.Site.ModuleDocs.TH
+      Centjes.Docs.Site.OptParse
+      Centjes.Docs.Site.OptParse.Types
+      Centjes.Docs.Site.Static
+      Centjes.Docs.Site.Static.TH
+      Centjes.Docs.Site.Widget
+  other-modules:
+      Paths_centjes_docs_site
+  hs-source-dirs:
+      src
+  build-tool-depends:
+      autoexporter:autoexporter
+  build-depends:
+      aeson
+    , autodocodec
+    , autodocodec-yaml
+    , base >=4.7
+    , bytestring
+    , centjes
+    , centjes-gen
+    , centjes-import-revolut
+    , centjes-switzerland
+    , cmark-gfm
+    , containers
+    , data-default
+    , envparse
+    , file-embed
+    , filepath
+    , fsnotify
+    , optparse-applicative
+    , path
+    , path-io
+    , raw-strings-qq
+    , semver
+    , shakespeare
+    , template-haskell
+    , template-haskell-reload
+    , text
+    , th-lift-instances
+    , time
+    , typed-process
+    , wai-extra
+    , warp
+    , yaml
+    , yesod
+    , yesod-autoreload
+    , yesod-sitemap
+    , yesod-static
+    , yesod-static-remote
+  default-language: Haskell2010
+
+executable centjes-docs-site
+  main-is: Main.hs
+  other-modules:
+      Paths_centjes_docs_site
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , centjes-docs-site
+  default-language: Haskell2010

@@ -12,6 +12,41 @@ packages:
   original:
     hackage: diagnose-2.5.1@sha256:853fd268d7fe0191b79d73187104bf7b4bc5ce3bc3483cb088dc10b09f18abc8,5977
 - completed:
+    name: yesod-static-remote
+    pantry-tree:
+      sha256: 2f3bc57045ff7f04ab9e067195e750d01e52123f8232826d95ceaff12a5af272
+      size: 918
+    sha256: 97144600fefa27b9f6585ed495ae525cf6c7f411ac8f797f0bfa1ed7333f9262
+    size: 7163
+    url: https://github.com/NorfairKing/yesod-static-remote/archive/7eda644dc369e16c3591847f6c7cad30846bf6b0.tar.gz
+    version: 0.0.0.0
+  original:
+    url: https://github.com/NorfairKing/yesod-static-remote/archive/7eda644dc369e16c3591847f6c7cad30846bf6b0.tar.gz
+- completed:
+    name: yesod-autoreload
+    pantry-tree:
+      sha256: 08b06fb215b988082992a6c9ff61ebf04827f22058aa4861cb8e20b90f11c4bb
+      size: 596
+    sha256: d279123e608c3fbab61e20d0443d80280a3ee7e3e31ff2958b350449e3bda05b
+    size: 3988
+    url: https://github.com/NorfairKing/yesod-autoreload/archive/796def9af50cd7b053c9fb4a065c55603d4a8399.tar.gz
+    version: 0.0.0.0
+  original:
+    url: https://github.com/NorfairKing/yesod-autoreload/archive/796def9af50cd7b053c9fb4a065c55603d4a8399.tar.gz
+- completed:
+    name: template-haskell-reload
+    pantry-tree:
+      sha256: af1b442b6fd16ed369ff936b9116200ef2d17c13b4d09cd55520072ed59ece38
+      size: 375
+    sha256: b28b10441ee5faf5234a3acebabbcfd18c63b88db2e3a6bfb5730c023f057c90
+    size: 4335
+    subdir: template-haskell-reload
+    url: https://github.com/NorfairKing/template-haskell-reload/archive/c416550db3f353bad65980a8ecd9b3b81fa504bd.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: template-haskell-reload
+    url: https://github.com/NorfairKing/template-haskell-reload/archive/c416550db3f353bad65980a8ecd9b3b81fa504bd.tar.gz
+- completed:
     name: really-safe-money
     pantry-tree:
       sha256: 0631b2c0d873a7b3e56814f071b63527b4bda6e05261445d60702ce9ec3af241
