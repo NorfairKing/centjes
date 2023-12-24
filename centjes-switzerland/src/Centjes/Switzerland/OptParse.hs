@@ -18,6 +18,7 @@ import GHC.Generics (Generic)
 import Options.Applicative as OptParse
 import Path
 import Path.IO
+import qualified System.Environment as System
 import System.Exit
 
 getSettings :: IO Settings
@@ -92,27 +93,36 @@ data Environment = Environment
   deriving (Show, Eq, Generic)
 
 getEnvironment :: IO Environment
-getEnvironment = Env.parse (Env.header "Environment") environmentParser
+getEnvironment = Env.parse (Env.header "Environment") prefixedEnvironmentParser
+
+prefixedEnvironmentParser :: Env.Parser Env.Error Environment
+prefixedEnvironmentParser = Env.prefixed "CENTJES_SWITZERLAND_" environmentParser
 
 -- | The 'envparse' parser for the 'Environment'
 environmentParser :: Env.Parser Env.Error Environment
 environmentParser =
-  Env.prefixed "CENTJES_SWITZERLAND_" $
-    Environment
-      <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
+  Environment
+    <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
 
 -- | Get the command-line flags
 getFlags :: IO Flags
-getFlags = customExecParser prefs_ flagsParser
+getFlags = do
+  args <- System.getArgs
+  let result = runFlagsParser args
+  handleParseResult result
 
--- | The 'optparse-applicative' parsing preferences
-prefs_ :: OptParse.ParserPrefs
-prefs_ =
-  -- I like these preferences. Use what you like.
-  OptParse.defaultPrefs
-    { OptParse.prefShowHelpOnError = True,
-      OptParse.prefShowHelpOnEmpty = True
-    }
+runFlagsParser :: [String] -> ParserResult Flags
+runFlagsParser = execParserPure ps flagsParser
+  where
+    ps :: ParserPrefs
+    ps =
+      prefs $
+        mconcat
+          [ showHelpOnError,
+            showHelpOnEmpty,
+            subparserInline,
+            helpShowGlobals
+          ]
 
 -- | The @optparse-applicative@ parser for 'Flags'
 flagsParser :: OptParse.ParserInfo Flags

@@ -21,12 +21,20 @@
         Format
 
   <p .menu-label>
-    Centjes Importers
+    Importers
 
   <ul .menu-list>
     <li>
       <a href=@{CentjesImportRevolutR}>
         Revolut
+
+  <p .menu-label>
+    Reporters
+
+  <ul .menu-list>
+    <li>
+      <a href=@{CentjesSwitzerlandR}>
+        Switzerland
 
   <p .menu-label>
     Contribution

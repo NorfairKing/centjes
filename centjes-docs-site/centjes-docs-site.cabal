@@ -15,6 +15,7 @@ build-type:     Simple
 extra-source-files:
     routes
     content/pages/centjes-import-revolut.markdown
+    content/pages/centjes-switzerland.markdown
     content/pages/centjes.markdown
     content/pages/centjes/balance.markdown
     content/pages/centjes/check.markdown
@@ -46,6 +47,7 @@ library
       Centjes.Docs.Site.Handler
       Centjes.Docs.Site.Handler.Centjes
       Centjes.Docs.Site.Handler.CentjesImportRevolut
+      Centjes.Docs.Site.Handler.CentjesSwitzerland
       Centjes.Docs.Site.Handler.DependencyGraph
       Centjes.Docs.Site.Handler.Import
       Centjes.Docs.Site.Handler.Nix
@@ -73,6 +75,7 @@ library
     , bytestring
     , centjes
     , centjes-import-revolut
+    , centjes-switzerland
     , cmark-gfm
     , containers
     , data-default
