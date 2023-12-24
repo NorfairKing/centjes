@@ -12,6 +12,7 @@ module Centjes.Ledger
     Description (..),
     Posting (..),
     Assertion (..),
+    Attachment (..),
     Currency (..),
     AccountName (..),
   )
@@ -20,7 +21,7 @@ where
 import Centjes.AccountName (AccountName (..))
 import Centjes.AccountType (AccountType (..))
 import Centjes.Location
-import Centjes.Module (CurrencySymbol (..), Description (..))
+import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..))
 import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
@@ -99,6 +100,7 @@ data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
     transactionPostings :: !(Vector (GenLocated ann (Posting ann))),
+    transactionAttachments :: !(Vector (GenLocated ann (Attachment ann))),
     transactionAssertions :: !(Vector (GenLocated ann (Assertion ann)))
   }
   deriving stock (Show, Eq, Generic)

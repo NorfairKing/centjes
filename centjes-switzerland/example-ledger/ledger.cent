@@ -1,0 +1,10 @@
+currency CHF 0.05
+
+account assets:bank
+account income:consulting
+
+2023-01-31
+  | Client: Foobar
+  * assets:bank 1000 CHF
+  * income:consulting -1000 CHF
+  + attach foobar-jan.txt

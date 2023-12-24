@@ -2,15 +2,22 @@ name: centjes-switzerland
 version: 0.0.0.0
 github: "NorfairKing/centjes"
 
+extra-source-files:
+- templates/**/*
+
 dependencies:
 - base >= 4.7 && < 5
+
 
 library:
   source-dirs: src
   dependencies:
+  - aeson
   - autodocodec
   - autodocodec-yaml
+  - bytestring
   - centjes
+  - containers
   - containers
   - envparse
   - monad-logger
@@ -18,6 +25,10 @@ library:
   - path
   - path-io
   - really-safe-money
+  - text
+  - time
+  - typed-process
+  - vector
   - yaml
 
 executables:

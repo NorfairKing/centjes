@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -13,6 +14,7 @@ module Centjes.Timestamp
     fromText,
     toString,
     toText,
+    toDay,
     minuteFromLocalTime,
     secondFromLocalTime,
   )
@@ -85,6 +87,12 @@ fromString s =
   (secondFromLocalTime <$> parseTimeEither defaultTimeLocale "%F %H:%M:%S" s)
     <|> (minuteFromLocalTime <$> parseTimeEither defaultTimeLocale "%F %H:%M" s)
     <|> (TimestampDay <$> parseTimeEither defaultTimeLocale "%F" s)
+
+toDay :: Timestamp -> Day
+toDay = \case
+  TimestampDay d -> d
+  TimestampMinute d _ -> d
+  TimestampSecond d _ -> d
 
 minuteFromLocalTime :: LocalTime -> Timestamp
 minuteFromLocalTime (LocalTime d tod) = TimestampMinute d (MinuteOfDay (floor (timeOfDayToTime tod / 60)))

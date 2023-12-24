@@ -374,6 +374,16 @@ compileTransaction currencies accounts (Located l mt) = do
             )
             (Module.transactionExtras mt)
         )
+  let transactionAttachments =
+        V.fromList $
+          mapMaybe
+            ( ( \case
+                  TransactionAttachment a -> Just a
+                  TransactionAssertion _ -> Nothing
+              )
+                . locatedValue
+            )
+            (Module.transactionExtras mt)
   pure
     ( Located l Ledger.Transaction {..},
       prices
