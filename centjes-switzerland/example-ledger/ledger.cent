@@ -17,7 +17,7 @@ account income:consulting
   + attach receipt-computer.txt
 
 2024-01-31
-  | Client: Foobar
+  | Foobar Jan
   * assets:bank 1000 CHF
   * income:consulting -1000 CHF
   + attach foobar-jan.txt

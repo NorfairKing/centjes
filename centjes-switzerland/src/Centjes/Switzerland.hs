@@ -7,6 +7,7 @@ module Centjes.Switzerland (runCentjesSwitzerland) where
 
 import Centjes.Command.Check
 import qualified Centjes.CurrencySymbol as CurrencySymbol
+import qualified Centjes.Description as Description
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
@@ -18,7 +19,6 @@ import Control.Monad.Logger
 import Data.Aeson as JSON
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
-import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
 import Data.Time
@@ -65,11 +65,14 @@ produceInput Setup {..} ledger = do
     case V.toList relevantAccounts of
       [] -> pure Nothing
       [incomeAmount] -> do
-        let incomeDay = Timestamp.toDay timestamp
         incomeEvidence <- case V.toList transactionAttachments of
           [] -> undefined -- TODO error
           [Located _ (Attachment (Located _ path))] -> pure path
           _ -> undefined -- TODO error
+        let incomeDay = Timestamp.toDay timestamp
+        incomeDescription <- case transactionDescription of
+          Nothing -> undefined -- TODO error
+          Just (Located _ d) -> pure d
         pure $ Just Income {..}
       _ -> undefined -- TODO Error
   pure Input {..}
@@ -94,9 +97,10 @@ instance ToJSON (Input ann) where
       ]
 
 data Income ann = Income
-  { incomeDay :: Day,
-    incomeAmount :: AmountWithCurrency ann,
-    incomeEvidence :: Path Rel File
+  { incomeDay :: !Day,
+    incomeDescription :: !Description,
+    incomeAmount :: !(AmountWithCurrency ann),
+    incomeEvidence :: !(Path Rel File)
   }
   deriving (Show)
 
@@ -104,6 +108,7 @@ instance ToJSON (Income ann) where
   toJSON Income {..} =
     object
       [ "day" .= incomeDay,
+        "description" .= Description.toText incomeDescription,
         "amount" .= incomeAmount,
         -- TODO prepend the income evidence directory
         "evidence" .= incomeEvidence

@@ -11,6 +11,7 @@ module Centjes.Description
     nullDescription,
     fromTextM,
     fromText,
+    toText,
     combine,
   )
 where
@@ -43,6 +44,9 @@ fromTextM t = case fromText t of
 
 fromText :: Text -> Maybe Description
 fromText = constructValid . Description
+
+toText :: Description -> Text
+toText = unDescription
 
 combine :: [Description] -> Maybe Description
 combine = \case

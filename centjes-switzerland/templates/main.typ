@@ -9,10 +9,11 @@ Name: #{input.name}
 
 
 #table(
-  columns: (auto, auto, auto,auto),
-  ..("Day", "Amount", "Currency", "File").map(h => text(h, weight: "bold")),
+  columns: (auto, 1fr, auto, auto,auto),
+  ..("Day", "Description", "Amount", "Currency", "File").map(h => text(h, weight: "bold")),
   ..input.income.map(income => (
       income.day,
+      income.description,
       income.amount.formatted,
       income.amount.symbol,
       raw(income.evidence)
