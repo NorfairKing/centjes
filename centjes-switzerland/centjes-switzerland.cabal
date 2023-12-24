@@ -10,6 +10,7 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
+    templates/input.json
     templates/main.typ
     test_resources/scenarios/empty/input.json
     test_resources/scenarios/empty/ledger.cent

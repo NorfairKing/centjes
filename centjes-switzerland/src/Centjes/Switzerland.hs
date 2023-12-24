@@ -147,9 +147,9 @@ instance HasCodec AmountWithCurrency where
   codec =
     object "AmountWithCurrency" $
       AmountWithCurrency
-        <$> requiredField "amount" "amount"
+        <$> requiredField "formatted" "formatted amount"
           .= amountWithCurrencyAmount
-        <*> requiredField "currency" "currency"
+        <*> requiredField "symbol" "currency symbol"
           .= amountWithCurrencyCurrency
 
 compileTypstWithData :: Input -> Path Abs File -> Path Abs File -> IO ()
