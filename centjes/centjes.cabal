@@ -53,7 +53,8 @@ library
   build-tool-depends:
       autoexporter:autoexporter
   build-depends:
-      array
+      aeson
+    , array
     , autodocodec
     , autodocodec-yaml
     , base >=4.7 && <5

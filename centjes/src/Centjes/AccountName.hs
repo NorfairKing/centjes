@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.AccountName
@@ -12,6 +13,7 @@ where
 
 import Autodocodec
 import Control.DeepSeq
+import Data.Aeson (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
 import qualified Data.Char as Char
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -23,6 +25,8 @@ import GHC.Generics (Generic)
 
 newtype AccountName = AccountName {accountNameText :: Text}
   deriving (Show, Eq, Ord, Generic)
+  deriving newtype (FromJSONKey, ToJSONKey)
+  deriving (FromJSON, ToJSON) via (Autodocodec AccountName)
 
 instance Validity AccountName where
   validate an@(AccountName t) =

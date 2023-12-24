@@ -1,3 +1,9 @@
 name: John Doe
-income-accounts:
-- income:consulting
+
+income:
+  - income:consulting
+
+assets:
+  bank: 
+    name: assets:bank
+    evidence: bank-statement.txt

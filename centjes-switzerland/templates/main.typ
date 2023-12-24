@@ -4,6 +4,21 @@
 
 Name: #{ input.name }
 
+#pagebreak()
+== Assets
+
+#table(
+  columns: (1fr, auto, auto, auto),
+  ..("Account", "Amount", "Currency", "File").map(h => text(h, weight: "bold")),
+  ..input.assets.map(asset => (
+    asset.name,
+    asset.amount.formatted,
+    asset.amount.symbol,
+    raw(asset.evidence),
+  )).flatten(),
+)
+
+#pagebreak()
 == Income
 
 #table(

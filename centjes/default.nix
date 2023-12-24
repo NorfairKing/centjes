@@ -1,4 +1,4 @@
-{ mkDerivation, alex, array, autodocodec, autodocodec-yaml
+{ mkDerivation, aeson, alex, array, autodocodec, autodocodec-yaml
 , autoexporter, base, bytestring, containers, deepseq, diagnose
 , envparse, happy, lib, monad-logger, mtl, optparse-applicative
 , path, path-io, prettyprinter, prettyprinter-ansi-terminal
@@ -14,7 +14,7 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    array autodocodec autodocodec-yaml base bytestring containers
+    aeson array autodocodec autodocodec-yaml base bytestring containers
     deepseq diagnose envparse monad-logger mtl optparse-applicative
     path path-io prettyprinter prettyprinter-ansi-terminal
     really-safe-money safe-coloured-text safe-coloured-text-layout

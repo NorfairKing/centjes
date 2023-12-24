@@ -12,6 +12,7 @@ import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
 import Centjes.Module (Declaration)
+import Centjes.Report.Balance
 import Centjes.Switzerland.OptParse
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
@@ -21,13 +22,17 @@ import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
+import qualified Data.Map as M
 import qualified Data.Set as S
 import Data.Text (Text)
 import Data.Time
+import Data.Traversable
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Money.Account as Money (Account (..))
+import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
+import qualified Money.MultiAccount as MultiAccount
 import Path
 import Path.IO
 import System.Process.Typed
@@ -37,7 +42,7 @@ runCentjesSwitzerland = do
   Settings {..} <- getSettings
   runStderrLoggingT $ do
     (declarations, diag) <- loadModules settingLedgerFile
-    validation <- liftIO $ runValidationT $ produceInputFromDeclarations settingSetup declarations
+    validation <- liftIO $ runValidationT $ produceInputFromDeclarations (parent settingLedgerFile) settingSetup declarations
     input <- liftIO $ checkValidation diag validation
     -- TODO Compile the templates into the binary
     mainTyp <- resolveFile' "templates/main.typ"
@@ -54,14 +59,21 @@ instance ToReport (AnyError SourceSpan) where
     AnyErrorCheck ce -> toReport ce
     AnyErrorInput ie -> toReport ie
 
-produceInputFromDeclarations :: Setup -> [Declaration SourceSpan] -> ValidationT (AnyError SourceSpan) IO Input
-produceInputFromDeclarations settingSetup declarations = do
-  (ledger, _, _) <- mapValidationTFailure AnyErrorCheck $ doCompleteCheck declarations
-  liftValidation $ mapValidationFailure AnyErrorInput $ produceInput settingSetup ledger
+produceInputFromDeclarations :: Path Abs Dir -> Setup -> [Declaration SourceSpan] -> ValidationT (AnyError SourceSpan) IO Input
+produceInputFromDeclarations setupDir setup declarations = do
+  (ledger, balanceReport, _) <- mapValidationTFailure AnyErrorCheck $ doCompleteCheck declarations
+  mapValidationTFailure AnyErrorInput $ produceInput setupDir setup ledger balanceReport
 
-produceInput :: Setup -> Ledger ann -> Validation (InputError ann) Input
-produceInput Setup {..} ledger = do
+produceInput ::
+  Show ann =>
+  Path Abs Dir ->
+  Setup ->
+  Ledger ann ->
+  BalanceReport ann ->
+  ValidationT (InputError ann) IO Input
+produceInput setupDir Setup {..} ledger (BalanceReport accountBalances) = do
   let inputName = setupName
+
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
     let Located _ timestamp = transactionTimestamp
     relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
@@ -70,10 +82,8 @@ produceInput Setup {..} ledger = do
         then do
           let Located _ account = postingAccount
           let Located _ currency = postingCurrency
-          let Located _ qf = currencyQuantisationFactor currency
-          let symbol = currencySymbol currency
           amount <- case account of
-            Negative amount -> pure $ AmountWithCurrency (Amount.format qf amount) symbol
+            Negative amount -> pure $ amountToAmountWithCurrency currency amount
             Positive _ -> undefined -- TODO error
           pure $ Just amount
         else pure Nothing
@@ -89,8 +99,32 @@ produceInput Setup {..} ledger = do
           Nothing -> undefined -- TODO error
           Just (Located _ d) -> pure d
         pure $ Just Income {..}
-      _ -> undefined -- TODO Error
+      -- TODO Error
+      _ -> undefined
+
+  inputAssets <- fmap V.fromList $ for (M.toList setupAssetsAccounts) $ \(name, AssetSetup {..}) -> do
+    let assetName = name
+    -- TODO check that file exists
+    evidenceFile <- liftIO $ resolveFile setupDir assetSetupEvidence
+    -- TODO prefix the assets directory name
+    let assetEvidence = filename evidenceFile
+    assetAmount <- case M.lookup assetSetupAccountName accountBalances of
+      Nothing -> undefined -- TODO error
+      Just ma -> case M.toList (MultiAccount.unMultiAccount ma) of
+        [] -> undefined -- TODO error
+        [(currency, account)] -> case account of
+          Positive amount -> pure $ amountToAmountWithCurrency currency amount
+          _ -> undefined -- TODO error
+        m -> error (show m) -- TODO error
+    pure Asset {..}
+
   pure Input {..}
+
+amountToAmountWithCurrency :: Currency ann -> Money.Amount -> AmountWithCurrency
+amountToAmountWithCurrency currency amount =
+  let Located _ qf = currencyQuantisationFactor currency
+      symbol = currencySymbol currency
+   in AmountWithCurrency (Amount.format qf amount) symbol
 
 data InputError ann = InputError
 
@@ -100,7 +134,8 @@ instance ToReport (InputError SourceSpan) where
 
 data Input = Input
   { inputName :: Text,
-    inputIncome :: Vector Income
+    inputIncome :: Vector Income,
+    inputAssets :: Vector Asset
   }
   deriving (Show, Eq)
   deriving (FromJSON, ToJSON) via (Autodocodec Input)
@@ -113,6 +148,8 @@ instance HasCodec Input where
           .= inputName
         <*> requiredField "income" "income"
           .= inputIncome
+        <*> requiredField "assets" "assets"
+          .= inputAssets
 
 data Income = Income
   { incomeDay :: !Day,
@@ -135,6 +172,25 @@ instance HasCodec Income where
           .= incomeAmount
         <*> requiredField "evidence" "evidence"
           .= incomeEvidence
+
+data Asset = Asset
+  { assetName :: !Text,
+    assetAmount :: !AmountWithCurrency,
+    assetEvidence :: !(Path Rel File)
+  }
+  deriving (Show, Eq)
+  deriving (FromJSON, ToJSON) via (Autodocodec Asset)
+
+instance HasCodec Asset where
+  codec =
+    object "Asset" $
+      Asset
+        <$> requiredField "name" "asset account name"
+          .= assetName
+        <*> requiredField "amount" "amount"
+          .= assetAmount
+        <*> requiredField "evidence" "evidence"
+          .= assetEvidence
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: String,

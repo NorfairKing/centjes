@@ -2,6 +2,7 @@ currency USD 0.01
 currency CHF 0.05
 
 account equity:starting
+account assets:bank:usd
 account assets:bank
 account expenses:hardware
 account income:consulting
@@ -25,7 +26,7 @@ account income:consulting
 
 2024-02-15
   | Quux Jan
-  * assets:bank 1000 USD
+  * assets:bank:usd 1000 USD
   * income:consulting -1000 USD
   + attach quux-jan.txt
 

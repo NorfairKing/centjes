@@ -9,6 +9,7 @@ import Autodocodec
 import Autodocodec.Yaml
 import Centjes.AccountName (AccountName)
 import Control.Applicative
+import Data.Map (Map)
 import Data.Maybe
 import Data.Set (Set)
 import Data.Text
@@ -61,7 +62,8 @@ instance HasCodec Configuration where
 
 data Setup = Setup
   { setupName :: !Text,
-    setupIncomeAccounts :: Set AccountName
+    setupIncomeAccounts :: !(Set AccountName),
+    setupAssetsAccounts :: !(Map Text AssetSetup)
   }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Setup)
@@ -74,8 +76,26 @@ instance HasObjectCodec Setup where
     Setup
       <$> requiredField "name" "name"
         .= setupName
-      <*> requiredField "income-accounts" "income accounts"
+      <*> requiredField "income" "income"
         .= setupIncomeAccounts
+      <*> requiredField "assets" "assets"
+        .= setupAssetsAccounts
+
+data AssetSetup = AssetSetup
+  { assetSetupAccountName :: !AccountName,
+    assetSetupEvidence :: !FilePath
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving (FromJSON, ToJSON) via (Autodocodec AssetSetup)
+
+instance HasCodec AssetSetup where
+  codec =
+    object "AssetSetup" $
+      AssetSetup
+        <$> requiredField "name" "account name"
+          .= assetSetupAccountName
+        <*> requiredField "evidence" "account statement file"
+          .= assetSetupEvidence
 
 getConfiguration :: Flags -> Environment -> IO (Maybe (Path Abs File, Configuration))
 getConfiguration Flags {..} Environment {..} = do
