@@ -96,6 +96,11 @@
             nixpkgs-fmt.enable = true;
             nixpkgs-fmt.excludes = [ ".*/default.nix" ];
             cabal2nix.enable = true;
+            typstfmt = {
+              enable = true;
+              files = "\\.typ$";
+              entry = "${pkgs.typstfmt}/bin/typstfmt";
+            };
           };
         };
       };
@@ -108,6 +113,7 @@
           zlib
           cabal-install
           typst
+          typstfmt
         ]) ++ (with pre-commit-hooks.packages.${system};
           [
             hlint
