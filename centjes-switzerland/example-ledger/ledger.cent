@@ -1,10 +1,24 @@
 currency CHF 0.05
 
+account equity:starting
 account assets:bank
+account expenses:hardware
 account income:consulting
 
-2023-01-31
+2023-12-31
+  | Opening balances
+  * equity:starting -10000 CHF
+  * assets:bank 10000 CHF
+
+2024-01-15
+  | Computer
+  * assets:bank -5000 CHF
+  * expenses:hardware 5000 CHF
+  + attach receipt-computer.txt
+
+2024-01-31
   | Client: Foobar
   * assets:bank 1000 CHF
   * income:consulting -1000 CHF
   + attach foobar-jan.txt
+

@@ -7,64 +7,87 @@ module Centjes.Switzerland.OptParse where
 
 import Autodocodec
 import Autodocodec.Yaml
+import Centjes.AccountName (AccountName)
 import Control.Applicative
 import Data.Maybe
+import Data.Set (Set)
+import Data.Text
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
 import GHC.Generics (Generic)
 import Options.Applicative as OptParse
 import Path
 import Path.IO
+import System.Exit
 
 getSettings :: IO Settings
 getSettings = do
   flags <- getFlags
   env <- getEnvironment
-  config <- getConfiguration flags env
-  combineToSettings flags env config
+  mConfig <- getConfiguration flags env
+  (configPath, config) <- case mConfig of
+    Nothing -> die "No config file specified."
+    Just (path, config) -> pure (path, config)
+  combineToSettings configPath config
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File)
+  { settingLedgerFile :: !(Path Abs File),
+    settingSetup :: !Setup
   }
   deriving (Show, Eq, Generic)
 
--- | Combine everything to 'Settings'
-combineToSettings :: Flags -> Environment -> Maybe Configuration -> IO Settings
-combineToSettings Flags {..} Environment {..} mConf = do
-  settingLedgerFile <- resolveFile' $ fromMaybe "ledger.yaml" $ flagLedgerFile <|> envLedgerFile <|> mc configLedgerFile
+combineToSettings :: Path Abs File -> Configuration -> IO Settings
+combineToSettings configFilePath Configuration {..} = do
+  settingLedgerFile <- resolveFile (parent configFilePath) $ fromMaybe "ledger.cent" configLedgerFile
+  let settingSetup = configSetup
   pure Settings {..}
-  where
-    mc :: (Configuration -> Maybe a) -> Maybe a
-    mc f = mConf >>= f
 
 data Configuration = Configuration
-  { configLedgerFile :: !(Maybe FilePath)
+  { configLedgerFile :: !(Maybe FilePath),
+    configSetup :: !Setup
   }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Configuration)
 
--- | We use @autodocodec@ for parsing a YAML config.
 instance HasCodec Configuration where
   codec =
     object "Configuration" $
       Configuration
         <$> optionalField "ledger" "The ledger file"
           .= configLedgerFile
+        <*> objectCodec
+          .= configSetup
 
-getConfiguration :: Flags -> Environment -> IO (Maybe Configuration)
-getConfiguration Flags {..} Environment {..} =
-  case flagConfigFile <|> envConfigFile of
-    Nothing -> defaultConfigFile >>= readYamlConfigFile
-    Just cf -> do
-      afp <- resolveFile' cf
-      readYamlConfigFile afp
+data Setup = Setup
+  { setupName :: !Text,
+    setupIncomeAccounts :: Set AccountName
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving (FromJSON, ToJSON) via (Autodocodec Setup)
+
+instance HasCodec Setup where
+  codec = object "Setup" objectCodec
+
+instance HasObjectCodec Setup where
+  objectCodec =
+    Setup
+      <$> requiredField "name" "name"
+        .= setupName
+      <*> requiredField "income-accounts" "income accounts"
+        .= setupIncomeAccounts
+
+getConfiguration :: Flags -> Environment -> IO (Maybe (Path Abs File, Configuration))
+getConfiguration Flags {..} Environment {..} = do
+  p <- case flagConfigFile <|> envConfigFile of
+    Nothing -> defaultConfigFile
+    Just cf -> resolveFile' cf
+  fmap ((,) p) <$> readYamlConfigFile p
 
 defaultConfigFile :: IO (Path Abs File)
 defaultConfigFile = resolveFile' "centjes-switzerland.yaml"
 
 data Environment = Environment
-  { envConfigFile :: !(Maybe FilePath),
-    envLedgerFile :: !(Maybe FilePath)
+  { envConfigFile :: !(Maybe FilePath)
   }
   deriving (Show, Eq, Generic)
 
@@ -77,7 +100,6 @@ environmentParser =
   Env.prefixed "CENTJES_SWITZERLAND_" $
     Environment
       <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
-      <*> optional (Env.var Env.auto "LEDGER_FILE" (Env.help "The ledger file"))
 
 -- | Get the command-line flags
 getFlags :: IO Flags
@@ -101,8 +123,7 @@ flagsParser =
 
 -- | The flags that are common across commands.
 data Flags = Flags
-  { flagConfigFile :: !(Maybe FilePath),
-    flagLedgerFile :: !(Maybe FilePath)
+  { flagConfigFile :: !(Maybe FilePath)
   }
   deriving (Show, Eq, Generic)
 
@@ -116,15 +137,6 @@ parseFlags =
               [ long "config-file",
                 help "Path to an altenative config file",
                 metavar "FILEPATH"
-              ]
-          )
-      )
-    <*> optional
-      ( strOption
-          ( mconcat
-              [ long "ledger-file",
-                short 'l',
-                help "The port to serve requests on"
               ]
           )
       )

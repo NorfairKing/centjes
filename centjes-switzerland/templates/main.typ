@@ -15,7 +15,7 @@ Name: #{input.name}
       income.day,
       income.amount.formatted,
       income.amount.symbol,
-      raw("1_income/" + income.evidence)
+      raw(income.evidence)
       )).flatten()
 )
 

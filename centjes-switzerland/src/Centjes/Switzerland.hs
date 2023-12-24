@@ -39,22 +39,21 @@ runCentjesSwitzerland = do
     validation <- liftIO $ runValidationT $ doCompleteCheck declarations
     (ledger, _, _) <- liftIO $ checkValidation diag validation
 
-    let incomeAccounts = S.fromList [AccountName "income:consulting"]
-    input <- liftIO $ checkValidation diag $ produceInput incomeAccounts ledger
+    input <- liftIO $ checkValidation diag $ produceInput settingSetup ledger
     -- TODO Compile the templates into the binary
     mainTyp <- resolveFile' "templates/main.typ"
     outFile <- resolveFile' "example.pdf"
     liftIO $ compileTypstWithData input mainTyp outFile
     pure ()
 
-produceInput :: Set AccountName -> Ledger ann -> Validation (InputError ann) (Input ann)
-produceInput incomeAccounts ledger = do
-  let inputName = "Tom Sydney Kerckhove"
+produceInput :: Setup -> Ledger ann -> Validation (InputError ann) (Input ann)
+produceInput Setup {..} ledger = do
+  let inputName = setupName
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
     let Located _ timestamp = transactionTimestamp
     relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
       let Located _ accountName = postingAccountName
-      if S.member accountName incomeAccounts
+      if S.member accountName setupIncomeAccounts
         then do
           let Located _ account = postingAccount
           let Located _ currency = postingCurrency
@@ -106,6 +105,7 @@ instance ToJSON (Income ann) where
     object
       [ "day" .= incomeDay,
         "amount" .= incomeAmount,
+        -- TODO prepend the income evidence directory
         "evidence" .= incomeEvidence
       ]
 
