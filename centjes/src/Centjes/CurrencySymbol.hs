@@ -11,6 +11,7 @@ module Centjes.CurrencySymbol
   )
 where
 
+import Autodocodec
 import Control.DeepSeq
 import qualified Data.Char as Char
 import Data.Text (Text)
@@ -41,13 +42,16 @@ instance Validity CurrencySymbol where
 
 instance NFData CurrencySymbol
 
+instance HasCodec CurrencySymbol where
+  codec = bimapCodec fromText currencySymbolText codec
+
 fromTextM :: MonadFail m => Text -> m CurrencySymbol
 fromTextM t = case fromText t of
-  Nothing -> fail $ "Invalid currency symbol: " <> show t
-  Just cs -> pure cs
+  Left e -> fail $ unlines [unwords ["Invalid currency symbol:", show t], e]
+  Right cs -> pure cs
 
-fromText :: Text -> Maybe CurrencySymbol
-fromText = constructValid . CurrencySymbol
+fromText :: Text -> Either String CurrencySymbol
+fromText = prettyValidate . CurrencySymbol
 
 toText :: CurrencySymbol -> Text
 toText = currencySymbolText

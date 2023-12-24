@@ -234,7 +234,7 @@ parseTimestamp :: Token -> Alex (Located Timestamp)
 parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Timestamp" Timestamp.fromString ds
 
 parseDescription :: Token -> Alex (Located Description)
-parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> maybeParser "Description" Description.fromText ds 
+parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> eitherParser "Description" Description.fromText ds 
 
 combineDescriptions :: [Located Description] -> Maybe (Located Description)
 combineDescriptions [] = Nothing
@@ -244,7 +244,7 @@ parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
 
 parseCurrencySymbol :: Token -> Alex (Located CurrencySymbol)
-parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "CurrencySymbol" (CurrencySymbol.fromText) ans
+parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "CurrencySymbol" (CurrencySymbol.fromText) ans
 
 parseAccountType :: Token -> Alex (Located AccountType)
 parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountType" (AccountType.fromText) ats

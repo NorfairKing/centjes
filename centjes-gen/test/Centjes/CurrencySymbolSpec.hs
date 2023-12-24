@@ -11,11 +11,6 @@ spec :: Spec
 spec = do
   genValidSpec @CurrencySymbol
 
-  describe "fromTextM" $
-    it "does the same as fromText" $
-      forAllValid $ \t ->
-        CurrencySymbol.fromText t `shouldBe` CurrencySymbol.fromTextM t
-
   describe "fromText" $
     it "produces valid currency symbols" $
       producesValid CurrencySymbol.fromText

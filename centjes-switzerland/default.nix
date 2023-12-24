@@ -1,6 +1,7 @@
 { mkDerivation, aeson, autodocodec, autodocodec-yaml, base
-, bytestring, centjes, containers, envparse, lib, monad-logger
-, optparse-applicative, path, path-io, really-safe-money, text
+, bytestring, centjes, centjes-gen, containers, envparse, filepath
+, lib, monad-logger, optparse-applicative, path, path-io
+, really-safe-money, sydtest, sydtest-aeson, sydtest-discover, text
 , time, typed-process, vector, yaml
 }:
 mkDerivation {
@@ -15,6 +16,11 @@ mkDerivation {
     really-safe-money text time typed-process vector yaml
   ];
   executableHaskellDepends = [ base ];
+  testHaskellDepends = [
+    autodocodec-yaml base centjes centjes-gen filepath monad-logger
+    path path-io sydtest sydtest-aeson
+  ];
+  testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";
   license = "unknown";
   mainProgram = "centjes-switzerland";

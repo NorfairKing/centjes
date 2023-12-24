@@ -16,6 +16,7 @@ module Centjes.Description
   )
 where
 
+import Autodocodec
 import Control.DeepSeq
 import Data.String
 import Data.Text (Text)
@@ -34,16 +35,19 @@ instance Validity Description
 
 instance NFData Description
 
+instance HasCodec Description where
+  codec = bimapCodec fromText unDescription codec
+
 nullDescription :: Description -> Bool
 nullDescription = T.null . unDescription
 
 fromTextM :: MonadFail m => Text -> m Description
 fromTextM t = case fromText t of
-  Nothing -> fail $ "Invalid description: " <> show t
-  Just d -> pure d
+  Left err -> fail $ unlines ["Invalid description:", show t, err]
+  Right d -> pure d
 
-fromText :: Text -> Maybe Description
-fromText = constructValid . Description
+fromText :: Text -> Either String Description
+fromText = prettyValidate . Description
 
 toText :: Description -> Text
 toText = unDescription

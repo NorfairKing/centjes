@@ -4,6 +4,7 @@ github: "NorfairKing/centjes"
 
 extra-source-files:
 - templates/**/*
+- test_resources/**/*
 
 dependencies:
 - base >= 4.7 && < 5
@@ -42,3 +43,23 @@ executables:
     dependencies:
     - centjes-switzerland
 
+tests:                       
+  centjes-switzerland-test:
+    main: Spec.hs
+    source-dirs: test
+    build-tools: sydtest-discover
+    ghc-options:   
+    - -threaded      
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies: 
+    - autodocodec-yaml
+    - centjes
+    - centjes-gen
+    - centjes-switzerland
+    - filepath
+    - monad-logger  
+    - path            
+    - path-io
+    - sydtest
+    - sydtest-aeson

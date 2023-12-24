@@ -216,7 +216,7 @@ parseCommandRegister = OptParse.info parser modifier
       RegisterArgs
         <$> optional
           ( option
-              (maybeReader (CurrencySymbol.fromText . T.pack))
+              (eitherReader (CurrencySymbol.fromText . T.pack))
               ( mconcat
                   [ long "convert",
                     metavar "CURRENCY",
@@ -237,7 +237,7 @@ parseCommandBalance = OptParse.info parser modifier
       BalanceArgs
         <$> optional
           ( option
-              (maybeReader (CurrencySymbol.fromText . T.pack))
+              (eitherReader (CurrencySymbol.fromText . T.pack))
               ( mconcat
                   [ long "convert",
                     metavar "CURRENCY",
