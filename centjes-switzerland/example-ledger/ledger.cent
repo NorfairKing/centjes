@@ -1,3 +1,4 @@
+currency USD 0.01
 currency CHF 0.05
 
 account equity:starting
@@ -21,4 +22,10 @@ account income:consulting
   * assets:bank 1000 CHF
   * income:consulting -1000 CHF
   + attach foobar-jan.txt
+
+2024-02-15
+  | Quux Jan
+  * assets:bank 1000 USD
+  * income:consulting -1000 USD
+  + attach quux-jan.txt
 
