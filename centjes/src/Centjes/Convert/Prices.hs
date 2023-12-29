@@ -4,6 +4,7 @@
 module Centjes.Convert.Prices
   ( Prices (..),
     FromTo (..),
+    Hops,
     empty,
     singleton,
     insert,
@@ -23,7 +24,7 @@ import Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.QuantisationFactor as Money (QuantisationFactor)
 
-newtype Prices cur = Prices {unPrices :: Map (FromTo cur) Money.ConversionRate}
+newtype Prices cur = Prices {unPrices :: Map (FromTo cur) (Hops cur)}
   deriving (Show, Eq, Generic)
 
 instance (Validity cur, Show cur, Ord cur) => Validity (Prices cur)
@@ -33,6 +34,11 @@ data FromTo cur = FromTo !cur !cur
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity cur => Validity (FromTo cur)
+
+data Hops cur = HopFinal Money.ConversionRate
+  deriving (Show, Eq, Generic)
+
+instance Validity cur => Validity (Hops cur)
 
 fromToInverted :: Ord a => a -> a -> Bool
 fromToInverted = (>)
@@ -61,12 +67,12 @@ empty = Prices M.empty
 singleton :: Ord cur => cur -> cur -> Money.ConversionRate -> Prices cur
 singleton from to rate =
   let (f, fromTo) = mkFromTo' from to
-   in Prices $ M.singleton fromTo $ f rate
+   in Prices $ M.singleton fromTo (HopFinal (f rate))
 
 insert :: Ord cur => cur -> cur -> Money.ConversionRate -> Prices cur -> Prices cur
 insert from to rate (Prices m) =
   let (f, fromTo) = mkFromTo' from to
-   in Prices $ M.insert fromTo (f rate) m
+   in Prices $ M.insert fromTo (HopFinal (f rate)) m
 
 fromList :: Ord cur => [((cur, cur), Money.ConversionRate)] -> Prices cur
 fromList = foldl' (\ps ((c1, c2), r) -> insert c1 c2 r ps) empty
@@ -74,6 +80,8 @@ fromList = foldl' (\ps ((c1, c2), r) -> insert c1 c2 r ps) empty
 lookupConversionFactor :: Ord cur => Prices cur -> cur -> cur -> Maybe Money.ConversionRate
 lookupConversionFactor (Prices m) from to
   | from == to = Just ConversionRate.oneToOne
-  | otherwise =
+  | otherwise = do
       let (f, fromTo) = mkFromTo' from to
-       in f <$> M.lookup fromTo m
+      mH <- M.lookup fromTo m
+      pure $ case mH of
+        HopFinal r -> f r
