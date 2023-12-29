@@ -7,12 +7,14 @@ module Centjes.Convert.Prices
     empty,
     singleton,
     insert,
+    fromList,
     lookupConversionFactor,
   )
 where
 
 import Centjes.Ledger (Currency (currencyQuantisationFactor))
 import Centjes.Location
+import Data.Foldable
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Validity
@@ -65,6 +67,9 @@ insert :: Ord cur => cur -> cur -> Money.ConversionRate -> Prices cur -> Prices 
 insert from to rate (Prices m) =
   let (f, fromTo) = mkFromTo' from to
    in Prices $ M.insert fromTo (f rate) m
+
+fromList :: Ord cur => [((cur, cur), Money.ConversionRate)] -> Prices cur
+fromList = foldl' (\ps ((c1, c2), r) -> insert c1 c2 r ps) empty
 
 lookupConversionFactor :: Ord cur => Prices cur -> cur -> cur -> Maybe Money.ConversionRate
 lookupConversionFactor (Prices m) from to
