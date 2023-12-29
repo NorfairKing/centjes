@@ -13,6 +13,8 @@ module Centjes.Convert
   )
 where
 
+import Centjes.Convert.PriceGraph (PriceGraph)
+import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
 import Centjes.Location
@@ -25,7 +27,6 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
-import qualified Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
@@ -84,6 +85,7 @@ lookupConversionCurrency currencies currencySymbolTo =
     Just lqf -> pure $ Currency currencySymbolTo lqf
 
 convertMultiAccount ::
+  Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   ann ->
@@ -104,45 +106,28 @@ convertMultiAccount prices currencyTo l ma = do
 
 lookupConversionRate ::
   forall ann.
+  Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   ann ->
   Currency ann ->
   Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-lookupConversionRate prices currencyTo l currencyFrom =
-  if currencySymbol currencyFrom == currencySymbol currencyTo
-    then pure (ConversionRate.oneToOne, quantisationFactorTo)
-    else case lastMatch (matchingPrice . locatedValue) prices of
-      Nothing ->
-        -- Could not convert because we don't have the price info.
-        validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom l
-      Just rate ->
-        pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
-  where
-    quantisationFactorTo :: Money.QuantisationFactor
-    quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+lookupConversionRate prices currencyTo l currencyFrom = do
+  let graph = toPriceGraph prices
+  case PriceGraph.lookup graph currencyFrom currencyTo of
+    Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom l
+    Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
 
-    -- TODO this could probably be much faster instead of a linear search.
-    matchingPrice :: Price ann -> Maybe Money.ConversionRate
-    matchingPrice Price {..} =
-      let new = locatedValue priceCurrency
-          cost = locatedValue priceCost
-          old = locatedValue (costCurrency cost)
-          cr = locatedValue (costConversionRate cost)
-       in if currencySymbol old == currencySymbol currencyTo
-            && currencySymbol new == currencySymbol currencyFrom
-            then Just cr
-            else
-              if currencySymbol old == currencySymbol currencyFrom
-                && currencySymbol new == currencySymbol currencyTo
-                then Just (ConversionRate.invert cr)
-                else Nothing -- TODO also more complicated paths.
-
-lastMatch :: (a -> Maybe b) -> Vector a -> Maybe b
-lastMatch f v = go (V.length v - 1)
+-- TODO speed this up by not recomputing this entire graph for every conversion
+toPriceGraph ::
+  Ord ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  PriceGraph (Currency ann)
+toPriceGraph = V.foldl go PriceGraph.empty
   where
-    go ix = case v V.!? ix of
-      Nothing -> Nothing
-      Just a -> case f a of
-        Nothing -> go (pred ix)
-        Just b -> Just b
+    go g (Located _ Price {..}) =
+      let Located _ currencyFrom = priceCurrency
+          Located _ Cost {..} = priceCost
+          Located _ rate = costConversionRate
+          Located _ currencyTo = costCurrency
+       in PriceGraph.insert currencyFrom currencyTo rate g

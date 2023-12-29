@@ -1,5 +1,6 @@
 currency USD 0.01
 currency CHF 0.05
+currency EUR 0.01
 
 account equity
 account investments assets
@@ -13,3 +14,8 @@ account investments assets
   | Convert CHF to USD
   * investments +100 USD @ 0.5 CHF
   * investments -50 CHF
+
+2023-12-30
+  | Convert USD to EUR
+  * investments +50 EUR @ 1 USD
+  * investments -50 USD

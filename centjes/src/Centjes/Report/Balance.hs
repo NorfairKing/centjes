@@ -432,6 +432,7 @@ balanceTransaction (Located tl Transaction {..}) = do
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
 
 convertBalancedTransaction ::
+  Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   GenLocated ann (AccountBalances ann) ->
@@ -441,6 +442,7 @@ convertBalancedTransaction prices currencyTo (Located l m) =
     Located l <$> convertAccountBalances prices currencyTo l m
 
 convertAccountBalances ::
+  Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   ann ->

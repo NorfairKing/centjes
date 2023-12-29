@@ -1,0 +1,2 @@
+[37mequity[m      [31m-100.00[m [31mCHF[m
+[37minvestments[m [32m100.00[m  [32mCHF[m

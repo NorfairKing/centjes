@@ -128,6 +128,7 @@ produceRegister mCurrencySymbolTo ledger = do
   pure $ Register ts'
 
 registerTransaction ::
+  Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Maybe (Currency ann) ->
   GenLocated ann (Transaction ann) ->
@@ -149,6 +150,7 @@ registerTransaction prices mCurrencyTo (Located _ t) = do
     )
 
 registerPosting ::
+  Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Maybe (Currency ann) ->
   GenLocated ann (Posting ann) ->
@@ -160,6 +162,7 @@ registerPosting prices mCurrencyTo (Located l p) = do
   pure (Located l p')
 
 convertPosting ::
+  Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   ann ->
