@@ -139,6 +139,7 @@ library
   exposed-modules:
       Centjes.AccountName.Gen
       Centjes.AccountType.Gen
+      Centjes.Convert.Prices.Gen
       Centjes.CurrencySymbol.Gen
       Centjes.Description.Gen
       Centjes.Ledger.Gen
@@ -178,6 +179,7 @@ test-suite centjes-test
       Centjes.Command.CheckSpec
       Centjes.Command.FormatSpec
       Centjes.CompileSpec
+      Centjes.Convert.PricesSpec
       Centjes.CurrencySymbolSpec
       Centjes.DescriptionSpec
       Centjes.FormatSpec
@@ -206,6 +208,7 @@ test-suite centjes-test
     , mtl
     , path
     , path-io
+    , really-safe-money
     , safe-coloured-text
     , sydtest
     , text

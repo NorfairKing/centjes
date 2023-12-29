@@ -47,6 +47,7 @@ tests:
     - mtl
     - path
     - path-io
+    - really-safe-money
     - safe-coloured-text
     - sydtest
     - text

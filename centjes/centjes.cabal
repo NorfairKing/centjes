@@ -26,6 +26,7 @@ library
       Centjes.Command.Register
       Centjes.Compile
       Centjes.Convert
+      Centjes.Convert.Prices
       Centjes.CurrencySymbol
       Centjes.Description
       Centjes.Format
