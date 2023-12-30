@@ -300,12 +300,10 @@ convertBalanceReport ::
   Currency ann ->
   BalanceReport ann ->
   Validation (ConvertError ann) (BalanceReport ann)
-convertBalanceReport mpg currencyTo = fmap BalanceReport . traverse go . unBalanceReport
-  where
-    go ::
-      Money.MultiAccount (Currency ann) ->
-      Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-    go = convertMultiAccount' mpg currencyTo
+convertBalanceReport mpg currencyTo =
+  fmap BalanceReport
+    . traverse (convertMultiAccount mpg currencyTo)
+    . unBalanceReport
 
 produceBalancedLedger ::
   forall ann.

@@ -9,7 +9,6 @@ module Centjes.Convert
   ( ConvertError (..),
     lookupConversionCurrency,
     convertMultiAccount,
-    convertMultiAccount',
     lookupConversionRate,
     pricesToPriceGraph,
   )
@@ -85,67 +84,33 @@ lookupConversionCurrency currencies currencySymbolTo =
     Nothing -> validationFailure $ ConvertErrorUnknownTarget currencySymbolTo
     Just lqf -> pure $ Currency currencySymbolTo lqf
 
--- TODO get rid of this function and use convertMultiAccount' instead
 convertMultiAccount ::
-  Ord ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  Money.MultiAccount (Currency ann) ->
-  Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-convertMultiAccount prices currencyTo ma = do
-  let quantisationFactorTo :: Money.QuantisationFactor
-      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
-  (mResult, _) <-
-    MultiAccount.convertAllA
-      MultiAccount.RoundNearest
-      quantisationFactorTo
-      (lookupConversionRate prices currencyTo)
-      ma
-  case mResult of
-    Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
-    Just result -> pure $ MultiAccount.fromAccount currencyTo result
-
-convertMultiAccount' ::
   Ord ann =>
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
   Money.MultiAccount (Currency ann) ->
   Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-convertMultiAccount' graph currencyTo ma = do
+convertMultiAccount graph currencyTo ma = do
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
   (mResult, _) <-
     MultiAccount.convertAllA
       MultiAccount.RoundNearest
       quantisationFactorTo
-      (lookupConversionRate' graph currencyTo)
+      (lookupConversionRate graph currencyTo)
       ma
   case mResult of
     Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
     Just result -> pure $ MultiAccount.fromAccount currencyTo result
 
--- TODO get rid of this function and use lookupConversionRate' instead.
 lookupConversionRate ::
   forall ann.
   Ord ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  Currency ann ->
-  Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-lookupConversionRate prices currencyTo currencyFrom = do
-  let graph = pricesToPriceGraph prices
-  case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
-    Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom
-    Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
-
-lookupConversionRate' ::
-  forall ann.
-  Ord ann =>
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
   Currency ann ->
   Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-lookupConversionRate' graph currencyTo currencyFrom = do
+lookupConversionRate graph currencyTo currencyFrom = do
   case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
     Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))

@@ -13,6 +13,7 @@ module Centjes.Report.Register
 where
 
 import Centjes.Convert
+import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Validation
@@ -21,7 +22,6 @@ import Data.Validity (Validity (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
-import qualified Money.Account as Account
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 
@@ -56,6 +56,44 @@ instance ToReport (RegisterError SourceSpan) where
     RegisterErrorAddError -> undefined
     RegisterErrorConvertError ce -> toReport ce
 
+convertRegister ::
+  forall ann.
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Currency ann ->
+  Register ann ->
+  Validation (ConvertError ann) (Register ann)
+convertRegister mpg currencyTo = fmap Register . traverse goT . registerTransactions
+  where
+    goT ::
+      ( GenLocated ann Timestamp,
+        Maybe (GenLocated ann Description),
+        Vector
+          ( GenLocated ann (Posting ann),
+            Money.MultiAccount (Currency ann)
+          )
+      ) ->
+      Validation
+        (ConvertError ann)
+        ( GenLocated ann Timestamp,
+          Maybe (GenLocated ann Description),
+          Vector
+            ( GenLocated ann (Posting ann),
+              Money.MultiAccount (Currency ann)
+            )
+        )
+    goT (lt, mld, vps) = (,,) lt mld <$> traverse goP vps
+    goP ::
+      ( GenLocated ann (Posting ann),
+        Money.MultiAccount (Currency ann)
+      ) ->
+      Validation
+        (ConvertError ann)
+        ( GenLocated ann (Posting ann),
+          Money.MultiAccount (Currency ann)
+        )
+    goP (p, ma) = (,) p <$> convertMultiAccount mpg currencyTo ma
+
 produceRegister ::
   forall ann.
   Ord ann =>
@@ -63,20 +101,7 @@ produceRegister ::
   Ledger ann ->
   Validation (RegisterError ann) (Register ann)
 produceRegister mCurrencySymbolTo ledger = do
-  mCurrencyTo <-
-    mapM
-      ( mapValidationFailure RegisterErrorConvertError
-          . lookupConversionCurrency (ledgerCurrencies ledger)
-      )
-      mCurrencySymbolTo
-
-  ts <-
-    mapM
-      ( registerTransaction
-          (ledgerPrices ledger)
-          mCurrencyTo
-      )
-      (ledgerTransactions ledger)
+  ts <- mapM registerTransaction (ledgerTransactions ledger)
   let goTransaction ::
         (Int, Money.MultiAccount (Currency ann)) ->
         Validation
@@ -125,12 +150,18 @@ produceRegister mCurrencySymbolTo ledger = do
 
   ts' <- V.unfoldrExactNM (V.length ts) goTransaction (0, MultiAccount.zero)
 
-  pure $ Register ts'
+  let r = Register ts'
+
+  mapValidationFailure RegisterErrorConvertError $ case mCurrencySymbolTo of
+    Nothing -> pure r
+    Just currencySymbolTo -> do
+      currencyTo <- lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
+      convertRegister
+        (pricesToPriceGraph (ledgerPrices ledger))
+        currencyTo
+        r
 
 registerTransaction ::
-  Ord ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Maybe (Currency ann) ->
   GenLocated ann (Transaction ann) ->
   Validation
     (RegisterError ann)
@@ -138,51 +169,9 @@ registerTransaction ::
       Maybe (GenLocated ann Description),
       Vector (GenLocated ann (Posting ann))
     )
-registerTransaction prices mCurrencyTo (Located _ t) = do
-  ps' <-
-    traverse
-      (registerPosting prices mCurrencyTo)
-      (transactionPostings t)
+registerTransaction (Located _ t) = do
   pure
     ( transactionTimestamp t,
       transactionDescription t,
-      ps'
+      transactionPostings t
     )
-
-registerPosting ::
-  Ord ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Maybe (Currency ann) ->
-  GenLocated ann (Posting ann) ->
-  Validation (RegisterError ann) (GenLocated ann (Posting ann))
-registerPosting prices mCurrencyTo (Located l p) = do
-  p' <- case mCurrencyTo of
-    Nothing -> pure p
-    Just currencyTo -> convertPosting prices currencyTo p
-  pure (Located l p')
-
-convertPosting ::
-  Ord ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  Posting ann ->
-  Validation (RegisterError ann) (Posting ann)
-convertPosting prices currencyTo p =
-  if currencySymbol (locatedValue (postingCurrency p)) == currencySymbol currencyTo
-    then pure p
-    else do
-      let Located cl currencyFrom = postingCurrency p
-      (cr, qfFrom) <-
-        mapValidationFailure RegisterErrorConvertError $
-          lookupConversionRate prices currencyTo currencyFrom
-      let Located al a = postingAccount p
-      let qfTo = locatedValue (currencyQuantisationFactor currencyTo)
-      let (mResult, _) = Account.convert Account.RoundNearest qfFrom a cr qfTo
-      case mResult of
-        Nothing -> validationFailure $ RegisterErrorConvertError $ ConvertErrorInvalidSum currencyTo
-        Just result ->
-          pure $
-            p
-              { postingAccount = Located al result,
-                postingCurrency = Located cl currencyTo
-              }
