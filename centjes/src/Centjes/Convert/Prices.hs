@@ -17,6 +17,7 @@ where
 
 import Centjes.Ledger (Currency (currencyQuantisationFactor))
 import Centjes.Location
+import Control.Monad
 import Data.Foldable
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -55,11 +56,14 @@ hopsRate = \case
   HopFinal r -> r
   HopVia _ r -> r
 
+hopsShorter :: Hops cur -> Hops cur -> Bool
+hopsShorter h1 h2 = case (h1, h2) of
+  (HopFinal _, HopFinal _) -> False
+  (HopFinal _, HopVia _ _) -> True
+  (HopVia _ _, _) -> False
+
 fromToInverted :: Ord a => a -> a -> Bool
 fromToInverted = (>)
-
-fromToRate :: Ord a => a -> a -> Money.ConversionRate -> Money.ConversionRate
-fromToRate a1 a2 = fst $ mkFromTo' a1 a2
 
 mkFromTo :: Ord a => a -> a -> FromTo a
 mkFromTo a1 a2 = snd $ mkFromTo' a1 a2
@@ -97,27 +101,42 @@ insert from to rate p@(Prices m) =
           directInserted = M.insert fromTo (HopFinal (f rate)) m
           allCurrencies = S.toList $ currencies p
 
+          insertShorter ::
+            forall cur.
+            Ord cur =>
+            FromTo cur ->
+            Hops cur ->
+            Map (FromTo cur) (Hops cur) ->
+            Map (FromTo cur) (Hops cur)
+          insertShorter fromTo hops m = case M.lookup fromTo m of
+            Nothing -> M.insert fromTo hops m
+            Just alreadyThere ->
+              if alreadyThere `hopsShorter` hops
+                then m
+                else M.insert fromTo hops m
+
           insertAll ::
             [(FromTo cur, Hops cur)] ->
             Map (FromTo cur) (Hops cur) ->
             Map (FromTo cur) (Hops cur)
-          insertAll tups m = foldl' (\m' (ft, h) -> M.insert ft h m') m tups
+          insertAll tups m = foldl' (\m' (ft, h) -> insertShorter ft h m') m tups
 
-          -- Hops that arrive at the from'
-          singleHopsArriving :: [(FromTo cur, Hops cur)]
-          singleHopsArriving = do
+          -- If we have AB and add BC, then we also want to add AC via B
+          singleHops :: [(FromTo cur, Hops cur)]
+          singleHops = do
+            -- For every currency that we already know about: ['A', 'B']
             c <- allCurrencies
-            let (arrivingF, arrivingFromTo) = mkFromTo' c from'
-            arrivingRate <- maybeToList $ arrivingF . hopsRate <$> M.lookup arrivingFromTo m
-            pure (arrivingFromTo, HopVia from' (ConversionRate.compose arrivingRate rate))
-          -- Hops that arrive at the from'
-          singleHopsDeparting :: [(FromTo cur, Hops cur)]
-          singleHopsDeparting = do
-            c <- allCurrencies
-            let (departingF, departingFromTo) = mkFromTo' to' c
-            departingRate <- maybeToList $ departingF . hopsRate <$> M.lookup departingFromTo m
-            pure (departingFromTo, HopVia to' (ConversionRate.compose rate departingRate))
-       in Prices $ insertAll singleHopsArriving $ insertAll singleHopsDeparting directInserted
+            -- That isn't one of the ones we are adding now, so not ['B', 'C']
+            guard $ c /= from' && c /= to'
+            -- For each of the ones in the pair, and the other: [('B', 'C'), ('C', 'B')]
+            (via, other) <- [(from', to'), (to', from')]
+            -- Make the connecting fromTo: [FromTo 'A' 'B', FromTo 'A' 'C']
+            -- to look up the rate of that connector
+            let (connectingF, connectingFromTo) = mkFromTo' c via
+            let (hoppingF, hoppingFromTo) = mkFromTo' c other
+            connectingRate <- maybeToList $ connectingF . hopsRate <$> M.lookup connectingFromTo m
+            pure (hoppingFromTo, HopVia via $ hoppingF $ ConversionRate.compose connectingRate rate)
+       in Prices $ insertAll singleHops directInserted
 
 fromList :: Ord cur => [((cur, cur), Money.ConversionRate)] -> Prices cur
 fromList = foldl' (\ps ((c1, c2), r) -> insert c1 c2 r ps) empty
