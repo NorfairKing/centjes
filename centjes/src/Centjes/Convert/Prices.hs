@@ -91,19 +91,17 @@ breadthFirstSearch getEdges start goal =
          in if currentNode == goal
               then Just currentPath
               else
-                let considerEdge (node, edge) =
+                let considerEdge (v, q) (node, edge) =
                       -- If this node is already explored, don't consider this edge
                       if S.member node visited
-                        then Nothing
+                        then (v, q)
                         else do
                           -- Consider this node explored now and
                           -- make a path and add it to the queue
                           let p = PathFrom node edge currentPath
-                          Just (node, p)
+                          (S.insert node v, q |> p)
 
-                    tups = mapMaybe considerEdge (M.toList (getEdges currentNode))
-                    newVisited = foldl' (\v (node, _) -> S.insert node v) visited tups
-                    newQueue = foldl' (\q (_, path) -> q |> path) restQueue tups
+                    (newVisited, newQueue) = foldl' considerEdge (visited, restQueue) (M.toList (getEdges currentNode))
                  in go newVisited newQueue
 
 -- Path from start to goal
