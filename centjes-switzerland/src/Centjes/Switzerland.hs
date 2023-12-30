@@ -41,8 +41,8 @@ runCentjesSwitzerland :: IO ()
 runCentjesSwitzerland = do
   Settings {..} <- getSettings
   runStderrLoggingT $ do
-    (declarations, diag) <- loadModules settingLedgerFile
-    validation <- liftIO $ runValidationT $ produceInputFromDeclarations (parent settingLedgerFile) settingSetup declarations
+    (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
+    validation <- liftIO $ runValidationT $ produceInputFromDeclarations settingBaseDir settingSetup declarations
     input <- liftIO $ checkValidation diag validation
     -- TODO Compile the templates into the binary
     mainTyp <- resolveFile' "templates/main.typ"

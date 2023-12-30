@@ -33,14 +33,16 @@ getSettings = do
   combineToSettings configPath config
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File),
+  { settingBaseDir :: !(Path Abs Dir),
+    settingLedgerFile :: !(Path Rel File),
     settingSetup :: !Setup
   }
   deriving (Show, Eq, Generic)
 
 combineToSettings :: Path Abs File -> Configuration -> IO Settings
 combineToSettings configFilePath Configuration {..} = do
-  settingLedgerFile <- resolveFile (parent configFilePath) $ fromMaybe "ledger.cent" configLedgerFile
+  let settingBaseDir = parent configFilePath
+  settingLedgerFile <- parseRelFile $ fromMaybe "ledger.cent" configLedgerFile
   let settingSetup = configSetup
   pure Settings {..}
 
