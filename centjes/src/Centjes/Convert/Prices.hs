@@ -78,14 +78,13 @@ breadthFirstSearch ::
   -- Reverse path from goal to start
   Maybe (Path node edge)
 breadthFirstSearch getEdges start goal =
-  -- Start from the goal and go to the start so the path is not reversed.
   go (S.singleton start) (Seq.singleton (PathStart start))
   where
     go visited queue = case Seq.viewl queue of
       -- If the queue is empty, there's no path from the goal to the start
       EmptyL -> Nothing
       (currentPath :< restQueue) ->
-        -- If the head is the starting node, this is path to the goal and we're
+        -- If the head is the goal node, this is path to the start and we're
         -- done.
         let currentNode = pathHead currentPath
          in if currentNode == goal
