@@ -158,29 +158,28 @@ registerPosting ::
 registerPosting prices mCurrencyTo (Located l p) = do
   p' <- case mCurrencyTo of
     Nothing -> pure p
-    Just currencyTo -> convertPosting prices currencyTo l p
+    Just currencyTo -> convertPosting prices currencyTo p
   pure (Located l p')
 
 convertPosting ::
   Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
-  ann ->
   Posting ann ->
   Validation (RegisterError ann) (Posting ann)
-convertPosting prices currencyTo l p =
+convertPosting prices currencyTo p =
   if currencySymbol (locatedValue (postingCurrency p)) == currencySymbol currencyTo
     then pure p
     else do
       let Located cl currencyFrom = postingCurrency p
       (cr, qfFrom) <-
         mapValidationFailure RegisterErrorConvertError $
-          lookupConversionRate prices currencyTo l currencyFrom
+          lookupConversionRate prices currencyTo currencyFrom
       let Located al a = postingAccount p
       let qfTo = locatedValue (currencyQuantisationFactor currencyTo)
       let (mResult, _) = Account.convert Account.RoundNearest qfFrom a cr qfTo
       case mResult of
-        Nothing -> validationFailure $ RegisterErrorConvertError $ ConvertErrorInvalidSum currencyTo l
+        Nothing -> validationFailure $ RegisterErrorConvertError $ ConvertErrorInvalidSum currencyTo
         Just result ->
           pure $
             p

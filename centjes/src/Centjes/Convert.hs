@@ -9,11 +9,14 @@ module Centjes.Convert
   ( ConvertError (..),
     lookupConversionCurrency,
     convertMultiAccount,
+    convertMultiAccount',
     lookupConversionRate,
+    pricesToPriceGraph,
   )
 where
 
-import Centjes.Convert.PriceGraph (PriceGraph)
+import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
+import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
@@ -34,8 +37,8 @@ import qualified Money.QuantisationFactor as Money (QuantisationFactor)
 
 data ConvertError ann
   = ConvertErrorUnknownTarget !CurrencySymbol
-  | ConvertErrorMissingPrice !(Currency ann) !(Currency ann) !ann
-  | ConvertErrorInvalidSum !(Currency ann) !ann
+  | ConvertErrorMissingPrice !(Currency ann) !(Currency ann)
+  | ConvertErrorInvalidSum !(Currency ann)
   deriving (Show, Eq, Generic)
 
 instance Validity ann => Validity (ConvertError ann)
@@ -50,7 +53,7 @@ instance ToReport (ConvertError SourceSpan) where
         ("Unknown currency to convert to: " <> CurrencySymbol.toString cs)
         []
         []
-    ConvertErrorMissingPrice (Currency fromSymbol (Located fromL _)) (Currency toSymbol (Located toL _)) tl ->
+    ConvertErrorMissingPrice (Currency fromSymbol (Located fromL _)) (Currency toSymbol (Located toL _)) ->
       Err
         (Just "CONVERT_ERROR_MISSING_PRICE")
         ( unwords
@@ -62,16 +65,14 @@ instance ToReport (ConvertError SourceSpan) where
             ]
         )
         [ (toDiagnosePosition fromL, Where "Trying to convert from this currency"),
-          (toDiagnosePosition toL, Where "Trying to convert to this currency"),
-          (toDiagnosePosition tl, Where "Trying to convert these amounts")
+          (toDiagnosePosition toL, Where "Trying to convert to this currency")
         ]
         []
-    ConvertErrorInvalidSum (Currency _ (Located cl _)) tl ->
+    ConvertErrorInvalidSum (Currency _ (Located cl _)) ->
       Err
         (Just "CONVERT_ERROR_INVALID_SUM")
         "Could not sum converted amounts together because the result became too big."
-        [ (toDiagnosePosition cl, Where "Trying to convert to this currency"),
-          (toDiagnosePosition tl, Where "Trying to convert these amounts")
+        [ (toDiagnosePosition cl, Where "Trying to convert to this currency")
         ]
         []
 
@@ -84,46 +85,77 @@ lookupConversionCurrency currencies currencySymbolTo =
     Nothing -> validationFailure $ ConvertErrorUnknownTarget currencySymbolTo
     Just lqf -> pure $ Currency currencySymbolTo lqf
 
+-- TODO get rid of this function and use convertMultiAccount' instead
 convertMultiAccount ::
   Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
-  ann ->
   Money.MultiAccount (Currency ann) ->
   Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-convertMultiAccount prices currencyTo l ma = do
+convertMultiAccount prices currencyTo ma = do
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
   (mResult, _) <-
     MultiAccount.convertAllA
       MultiAccount.RoundNearest
       quantisationFactorTo
-      (lookupConversionRate prices currencyTo l)
+      (lookupConversionRate prices currencyTo)
       ma
   case mResult of
-    Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo l
+    Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
     Just result -> pure $ MultiAccount.fromAccount currencyTo result
 
+convertMultiAccount' ::
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Currency ann ->
+  Money.MultiAccount (Currency ann) ->
+  Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
+convertMultiAccount' graph currencyTo ma = do
+  let quantisationFactorTo :: Money.QuantisationFactor
+      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+  (mResult, _) <-
+    MultiAccount.convertAllA
+      MultiAccount.RoundNearest
+      quantisationFactorTo
+      (lookupConversionRate' graph currencyTo)
+      ma
+  case mResult of
+    Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
+    Just result -> pure $ MultiAccount.fromAccount currencyTo result
+
+-- TODO get rid of this function and use lookupConversionRate' instead.
 lookupConversionRate ::
   forall ann.
   Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
-  ann ->
   Currency ann ->
   Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-lookupConversionRate prices currencyTo l currencyFrom = do
-  let graph = toPriceGraph prices
-  case PriceGraph.lookup graph currencyFrom currencyTo of
-    Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom l
+lookupConversionRate prices currencyTo currencyFrom = do
+  let graph = pricesToPriceGraph prices
+  case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
+    Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom
+    Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
+
+lookupConversionRate' ::
+  forall ann.
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Currency ann ->
+  Currency ann ->
+  Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
+lookupConversionRate' graph currencyTo currencyFrom = do
+  case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
+    Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
 
 -- TODO speed this up by not recomputing this entire graph for every conversion
-toPriceGraph ::
+pricesToPriceGraph ::
   Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
-  PriceGraph (Currency ann)
-toPriceGraph = V.foldl go PriceGraph.empty
+  MemoisedPriceGraph (Currency ann)
+pricesToPriceGraph = MemoisedPriceGraph.fromPriceGraph . V.foldl go PriceGraph.empty
   where
     go g (Located _ Price {..}) =
       let Located _ currencyFrom = priceCurrency

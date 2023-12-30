@@ -14,6 +14,7 @@ import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Maybe
+import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Containers ()
 import GHC.Generics (Generic)
@@ -37,9 +38,12 @@ instance (Validity cur, Show cur, Ord cur) => Validity (MemoisedPriceGraph cur)
 -- this graph.
 fromPriceGraph :: Ord cur => PriceGraph cur -> MemoisedPriceGraph cur
 fromPriceGraph pg@(PriceGraph m) =
-  let allRates = do
-        (from, tos) <- M.toList m
-        (to, _) <- M.toList tos
+  let allCurrencies = S.fromList $ do
+        (from, m') <- M.toList m
+        from : M.keys m'
+      allRates = do
+        from <- S.toList allCurrencies
+        to <- S.toList allCurrencies
         rate <- maybeToList $ PriceGraph.lookup pg from to
         pure ((from, to), rate)
    in MemoisedPriceGraph $ M.fromList allRates

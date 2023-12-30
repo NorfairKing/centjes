@@ -17,6 +17,7 @@ where
 import Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Convert
+import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
 import Centjes.Location
@@ -275,36 +276,45 @@ produceBalanceReport ::
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
 produceBalanceReport mCurrencySymbolTo l = do
-  mCurrencyTo <-
-    mapM
-      ( mapValidationFailure BalanceErrorConvertError
-          . lookupConversionCurrency (ledgerCurrencies l)
-      )
-      mCurrencySymbolTo
+  bl <- produceBalancedLedger l
+  let v = balancedLedgerTransactions bl
+  let br =
+        BalanceReport $
+          if V.null v
+            then M.empty
+            else snd (V.last v)
 
-  ( \bl ->
-      let v = balancedLedgerTransactions bl
-       in BalanceReport $
-            if V.null v
-              then M.empty
-              else snd (V.last v)
-    )
-    <$> produceBalancedLedger mCurrencyTo l
+  mapValidationFailure BalanceErrorConvertError $ case mCurrencySymbolTo of
+    Nothing -> pure br
+    Just currencySymbolTo -> do
+      currencyTo <- lookupConversionCurrency (ledgerCurrencies l) currencySymbolTo
+      convertBalanceReport
+        (pricesToPriceGraph (ledgerPrices l))
+        currencyTo
+        br
+
+convertBalanceReport ::
+  forall ann.
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Currency ann ->
+  BalanceReport ann ->
+  Validation (ConvertError ann) (BalanceReport ann)
+convertBalanceReport mpg currencyTo = fmap BalanceReport . traverse go . unBalanceReport
+  where
+    go ::
+      Money.MultiAccount (Currency ann) ->
+      Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
+    go = convertMultiAccount' mpg currencyTo
 
 produceBalancedLedger ::
   forall ann.
   Ord ann =>
-  Maybe (Currency ann) ->
   Ledger ann ->
   Validation (BalanceError ann) (BalancedLedger ann)
-produceBalancedLedger mCurrencyTo ledger = do
-  tups <- for (ledgerTransactions ledger) $ \t -> do
-    m <- balanceTransaction t
-    m' <-
-      case mCurrencyTo of
-        Nothing -> pure m
-        Just currencyTo -> convertBalancedTransaction (ledgerPrices ledger) currencyTo m
-    pure (t, m')
+produceBalancedLedger ledger = do
+  tups <- for (ledgerTransactions ledger) $ \t ->
+    (,) t <$> balanceTransaction t
 
   let constructBalancedVector ::
         (Int, AccountBalances ann) ->
@@ -430,26 +440,6 @@ balanceTransaction (Located tl Transaction {..}) = do
     Just d
       | d == MultiAccount.zero -> pure (Located tl mActual)
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
-
-convertBalancedTransaction ::
-  Ord ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  GenLocated ann (AccountBalances ann) ->
-  Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
-convertBalancedTransaction prices currencyTo (Located l m) =
-  mapValidationFailure BalanceErrorConvertError $
-    Located l <$> convertAccountBalances prices currencyTo l m
-
-convertAccountBalances ::
-  Ord ann =>
-  Vector (GenLocated ann (Price ann)) ->
-  Currency ann ->
-  ann ->
-  AccountBalances ann ->
-  Validation (ConvertError ann) (AccountBalances ann)
-convertAccountBalances prices currencyTo l =
-  traverse $ convertMultiAccount prices currencyTo l
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
