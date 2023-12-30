@@ -7,6 +7,4 @@ import Data.GenValidity
 import Data.GenValidity.Containers ()
 import Money.ConversionRate.Gen ()
 
-instance (Ord cur, GenValid cur) => GenValid (FromTo cur)
-
 instance (Show cur, Ord cur, GenValid cur) => GenValid (Prices cur)

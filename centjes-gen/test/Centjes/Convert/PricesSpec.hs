@@ -99,7 +99,7 @@ spec = do
                   let ps = Prices.fromList [((c1, c2), r1), ((c2, c3), r2), ((c1, c3), r3)]
                    in Prices.lookupConversionFactor @CurrencySymbol ps c1 c3 `shouldBe` Just r3
 
-    xit "can a find a two-hop rate" $
+    it "can a find a two-hop rate" $
       forAllValid $ \c1 ->
         forAllValid $ \c2 ->
           forAllValid $ \c3 ->
