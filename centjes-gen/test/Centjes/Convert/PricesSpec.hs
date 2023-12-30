@@ -8,6 +8,7 @@ import Centjes.Convert.Prices.Gen ()
 import Centjes.CurrencySymbol
 import Centjes.CurrencySymbol.Gen ()
 import qualified Money.ConversionRate as ConversionRate
+import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
@@ -66,14 +67,14 @@ spec = do
 
     it "can find a single rate in one direction" $
       forAllValid $ \from ->
-        forAllValid $ \to ->
+        forAll (genValid `suchThat` (/= from)) $ \to ->
           forAllValid $ \rate ->
             Prices.lookupConversionFactor @CurrencySymbol (Prices.singleton from to rate) from to
               `shouldBe` Just rate
 
     it "can find a single rate in the reverse direction" $
       forAllValid $ \from ->
-        forAllValid $ \to ->
+        forAll (genValid `suchThat` (/= from)) $ \to ->
           forAllValid $ \rate ->
             Prices.lookupConversionFactor @CurrencySymbol (Prices.singleton from to rate) to from
               `shouldBe` Just (ConversionRate.invert rate)
