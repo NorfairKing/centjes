@@ -1,7 +1,6 @@
 name: John Doe
 
-income-accounts:
+income:
   - income:consulting
 
-assets-accounts:
-  'assets:bank': bank-statement.txt
+assets: {}

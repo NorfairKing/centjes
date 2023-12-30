@@ -11,13 +11,9 @@ where
 
 import Centjes.Convert.PriceGraph (PriceGraph (..))
 import qualified Centjes.Convert.PriceGraph as PriceGraph
-import Data.Foldable
 import Data.Map.Lazy (Map)
 import qualified Data.Map.Lazy as M
 import Data.Maybe
-import Data.Sequence (ViewL (..), (|>))
-import qualified Data.Sequence as Seq
-import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Containers ()
 import GHC.Generics (Generic)
