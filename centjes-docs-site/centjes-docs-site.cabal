@@ -16,6 +16,7 @@ extra-source-files:
     routes
     content/pages/centjes-import-revolut.markdown
     content/pages/centjes-switzerland.markdown
+    content/pages/centjes-switzerland/taxes.markdown
     content/pages/centjes.markdown
     content/pages/centjes/balance.markdown
     content/pages/centjes/check.markdown

@@ -7,11 +7,14 @@
 
 module Centjes.Docs.Site.Handler.CentjesSwitzerland
   ( getCentjesSwitzerlandR,
+    getCentjesSwitzerlandCommandR,
   )
 where
 
 import Centjes.Docs.Site.Handler.Import
 import Centjes.Switzerland.OptParse as CLI
+import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Env
 import Options.Applicative
 import Options.Applicative.Help
@@ -25,6 +28,17 @@ getCentjesSwitzerlandR = do
   defaultLayout $ do
     setCentjesTitle "centjes-switzerland"
     setDescriptionIdemp "Documentation for the Centjes Reporter for Revolut"
+    $(widgetFile "args")
+
+getCentjesSwitzerlandCommandR :: Text -> Handler Html
+getCentjesSwitzerlandCommandR cmd = do
+  DocPage {..} <- lookupPage' ["centjes-switzerland", cmd]
+  let argsHelpText = getHelpPageOf [T.unpack cmd]
+      envHelpText = "This command does not use any extra environment variables." :: String
+      confHelpText = "This command admits no extra configuration." :: String
+  defaultLayout $ do
+    setCentjesTitle $ toHtml docPageTitle
+    setDescriptionIdemp $ "Documentation for the " <> cmd <> " subcommand of the centjes tool"
     $(widgetFile "args")
 
 getHelpPageOf :: [String] -> String

@@ -35,6 +35,10 @@
     <li>
       <a href=@{CentjesSwitzerlandR}>
         Switzerland
+      <ul .menu-list>
+        <li>
+          <a href=@{CentjesSwitzerlandCommandR "taxes"}>
+            Taxes
 
   <p .menu-label>
     Contribution
