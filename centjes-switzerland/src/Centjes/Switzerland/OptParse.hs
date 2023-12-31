@@ -43,7 +43,9 @@ data Settings = Settings
   }
   deriving (Show, Eq, Generic)
 
-data Dispatch = DispatchTaxes TaxesSettings
+data Dispatch
+  = DispatchTaxes TaxesSettings
+  | DispatchDownloadRates
   deriving (Show, Eq, Generic)
 
 data TaxesSettings = TaxesSettings
@@ -71,6 +73,8 @@ combineToInstructions
         taxesSettingZipFile <- resolveFile' $ fromMaybe "packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
         taxesSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ taxesArgReadmeFile <|> envReadmeFile <|> configReadmeFile
         pure $ DispatchTaxes TaxesSettings {..}
+      CommandDownloadRates _ ->
+        pure DispatchDownloadRates
     pure $ Instructions dispatch Settings {..}
 
 data Configuration = Configuration
@@ -200,13 +204,15 @@ parseArguments = Arguments <$> parseCommand <*> parseFlags
 -- | A sum type for the commands and their specific arguments
 data Command
   = CommandTaxes !TaxesArgs
+  | CommandDownloadRates !DownloadRatesArgs
   deriving (Show, Eq, Generic)
 
 parseCommand :: OptParse.Parser Command
 parseCommand =
   OptParse.hsubparser $
     mconcat
-      [ OptParse.command "taxes" $ CommandTaxes <$> parseCommandTaxes
+      [ OptParse.command "taxes" $ CommandTaxes <$> parseCommandTaxes,
+        OptParse.command "download-rates" $ CommandDownloadRates <$> parseCommandDownloadRates
       ]
 
 data TaxesArgs = TaxesArgs
@@ -239,6 +245,16 @@ parseCommandTaxes = OptParse.info parser modifier
                   ]
               )
           )
+
+data DownloadRatesArgs = DownloadRatesArgs
+  deriving (Show, Eq, Generic)
+
+parseCommandDownloadRates :: OptParse.ParserInfo DownloadRatesArgs
+parseCommandDownloadRates = OptParse.info parser modifier
+  where
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Download exchange rates"
+    parser =
+      pure DownloadRatesArgs
 
 -- | The flags that are common across commands.
 data Flags = Flags

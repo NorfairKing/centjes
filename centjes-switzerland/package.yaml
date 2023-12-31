@@ -18,9 +18,13 @@ library:
   - autodocodec-yaml
   - bytestring
   - centjes
+  - conduit
   - containers
   - containers
   - envparse
+  - http-client
+  - http-client-tls
+  - http-types
   - monad-logger
   - mtl
   - optparse-applicative
@@ -33,6 +37,7 @@ library:
   - time
   - typed-process
   - vector
+  - xml-conduit
   - yaml
   - zip
 

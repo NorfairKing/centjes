@@ -39,6 +39,9 @@
         <li>
           <a href=@{CentjesSwitzerlandCommandR "taxes"}>
             Taxes
+        <li>
+          <a href=@{CentjesSwitzerlandCommandR "download-rates"}>
+            Download Exchangerates
 
   <p .menu-label>
     Contribution
