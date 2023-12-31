@@ -22,7 +22,9 @@ source-repository head
 library
   exposed-modules:
       Centjes.Switzerland
+      Centjes.Switzerland.Constants
       Centjes.Switzerland.OptParse
+      Centjes.Switzerland.Templates
   other-modules:
       Paths_centjes_switzerland
   hs-source-dirs:
@@ -43,6 +45,8 @@ library
     , path-io
     , really-safe-money
     , tar
+    , template-haskell
+    , template-haskell-reload
     , text
     , time
     , typed-process

@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland (runCentjesSwitzerland, produceInputFromDeclarations) where
@@ -14,6 +15,7 @@ import Centjes.Location
 import Centjes.Module (Declaration)
 import Centjes.Report.Balance
 import Centjes.Switzerland.OptParse
+import Centjes.Switzerland.Templates
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import qualified Codec.Archive.Tar as Tar
@@ -28,36 +30,91 @@ import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import Data.Time
 import Data.Traversable
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import Language.Haskell.TH.Load
 import Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import qualified Money.MultiAccount as MultiAccount
 import Path
 import Path.IO
+import System.Exit
 import System.Process.Typed
 
 runCentjesSwitzerland :: IO ()
 runCentjesSwitzerland = do
   Settings {..} <- getSettings
-  runStderrLoggingT $ do
-    (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
-    validation <- liftIO $ runValidationT $ produceInputFromDeclarations settingSetup declarations
-    (input, files) <- liftIO $ checkValidation diag validation
-    -- TODO Compile the templates into the binary
-    mainTyp <- resolveFile' "templates/main.typ"
-    outFileName <- liftIO $ parseRelFile "README.pdf"
-    let outFile = settingBaseDir </> outFileName
-    liftIO $ compileTypstWithData input mainTyp outFile
-    liftIO $
-      Tar.create
-        "packet.tar"
-        (fromAbsDir settingBaseDir)
-        (map fromRelFile (outFileName : S.toList files))
-    pure ()
+  templatesMap <- loadIO templateFileMap
+  mainTypContents <- case M.lookup [relfile|main.typ|] templatesMap of
+    Nothing -> die "main.typ template not found."
+    Just t -> pure t
+
+  readmeOutFile <- resolveFile' "README.pdf"
+  packetOutFile <- resolveFile' "2024-packet.tar"
+  withSystemTempDir "centjes-switzerland" $ \tdir -> do
+    runStderrLoggingT $ do
+      -- Produce the input.json structure
+      (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
+      validation <- liftIO $ runValidationT $ produceInputFromDeclarations settingSetup declarations
+      (input, files) <- liftIO $ checkValidation diag validation
+
+      -- Write the input to a file
+      jsonInputFile <- liftIO $ do
+        jif <- resolveFile tdir "input.json"
+        SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
+        pure jif
+      logInfoN $
+        T.pack $
+          unwords
+            [ "Succesfully compiled information into",
+              fromAbsFile jsonInputFile
+            ]
+
+      -- Write the template to a file
+      mainTypFile <- liftIO $ do
+        mtf <- resolveFile tdir "main.typ"
+        SB.writeFile (fromAbsFile mtf) $ TE.encodeUtf8 mainTypContents
+        pure mtf
+
+      -- Compile the README.pdf using typst
+      runProcess_ $
+        setWorkingDir (fromAbsDir (parent mainTypFile)) $
+          setStdout inherit $
+            setStderr inherit $
+              proc
+                "typst"
+                [ "-v",
+                  "compile",
+                  fromAbsFile mainTypFile,
+                  fromAbsFile readmeOutFile,
+                  "--root",
+                  fromAbsDir tdir
+                ]
+      logInfoN $
+        T.pack $
+          unwords
+            [ "Typst compilation succesfully created",
+              fromAbsFile readmeOutFile
+            ]
+
+      -- Create a nice tarball
+      liftIO $
+        Tar.create
+          (fromAbsFile packetOutFile)
+          (fromAbsDir settingBaseDir)
+          (map fromRelFile (S.toList files))
+      logInfoN $
+        T.pack $
+          unwords
+            [ "Succesfully created packet",
+              fromAbsFile packetOutFile
+            ]
+      pure ()
 
 data AnyError ann
   = AnyErrorCheck (CheckError ann)
@@ -232,20 +289,3 @@ instance HasCodec AmountWithCurrency where
           .= amountWithCurrencyAmount
         <*> requiredField "symbol" "currency symbol"
           .= amountWithCurrencyCurrency
-
-compileTypstWithData :: Input -> Path Abs File -> Path Abs File -> IO ()
-compileTypstWithData input rootFile outputFile = do
-  print rootFile
-  print outputFile
-  jsonInputFile <- resolveFile (parent rootFile) "input.json"
-  SB.writeFile (fromAbsFile jsonInputFile) (LB.toStrict (JSON.encode input))
-  runProcess_ $
-    setWorkingDir (fromAbsDir (parent rootFile)) $
-      proc
-        "typst"
-        [ "compile",
-          fromAbsFile rootFile,
-          fromAbsFile outputFile,
-          "--root",
-          fromAbsDir (parent rootFile)
-        ]

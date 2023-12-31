@@ -2,7 +2,8 @@
 , bytestring, centjes, centjes-gen, containers, envparse, filepath
 , lib, monad-logger, mtl, optparse-applicative, path, path-io
 , really-safe-money, sydtest, sydtest-aeson, sydtest-discover, tar
-, text, time, typed-process, vector, yaml
+, template-haskell, template-haskell-reload, text, time
+, typed-process, vector, yaml
 }:
 mkDerivation {
   pname = "centjes-switzerland";
@@ -13,7 +14,8 @@ mkDerivation {
   libraryHaskellDepends = [
     aeson autodocodec autodocodec-yaml base bytestring centjes
     containers envparse monad-logger mtl optparse-applicative path
-    path-io really-safe-money tar text time typed-process vector yaml
+    path-io really-safe-money tar template-haskell
+    template-haskell-reload text time typed-process vector yaml
   ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [

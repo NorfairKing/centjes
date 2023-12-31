@@ -28,6 +28,8 @@ library:
   - path-io
   - really-safe-money
   - tar
+  - template-haskell
+  - template-haskell-reload
   - text
   - time
   - typed-process
