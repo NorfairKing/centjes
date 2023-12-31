@@ -18,7 +18,7 @@ import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Templates
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
-import qualified Codec.Archive.Tar as Tar
+import qualified Codec.Archive.Zip as Zip
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Control.Monad.Writer
@@ -26,8 +26,8 @@ import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
+import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -55,7 +55,7 @@ runCentjesSwitzerland = do
     Just t -> pure t
 
   readmeOutFile <- resolveFile' "README.pdf"
-  packetOutFile <- resolveFile' "2024-packet.tar"
+  packetOutFile <- resolveFile' "2024-packet.zip"
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
@@ -102,19 +102,25 @@ runCentjesSwitzerland = do
               fromAbsFile readmeOutFile
             ]
 
-      -- Create a nice tarball
+      let allFilesToInclude =
+            (readmeOutFile, [relfile|README.pdf|])
+              : (jsonInputFile, [relfile|raw-input.json|])
+              : [(settingBaseDir </> fromRel, to) | (fromRel, to) <- M.toList files]
+
+      -- Create a nice zip file
       liftIO $
-        Tar.create
-          (fromAbsFile packetOutFile)
-          (fromAbsDir settingBaseDir)
-          (map fromRelFile (S.toList files))
+        Zip.createArchive (fromAbsFile packetOutFile) $
+          forM_ allFilesToInclude $ \(filePathFrom, filePathTo) -> do
+            contents <- liftIO $ SB.readFile $ fromAbsFile filePathFrom
+            selector <- Zip.mkEntrySelector $ fromRelFile filePathTo
+            Zip.addEntry Zip.Deflate contents selector
+            pure ()
       logInfoN $
         T.pack $
           unwords
             [ "Succesfully created packet",
               fromAbsFile packetOutFile
             ]
-      pure ()
 
 data AnyError ann
   = AnyErrorCheck (CheckError ann)
@@ -128,7 +134,7 @@ instance ToReport (AnyError SourceSpan) where
 produceInputFromDeclarations ::
   Setup ->
   [Declaration SourceSpan] ->
-  ValidationT (AnyError SourceSpan) IO (Input, Set (Path Rel File))
+  ValidationT (AnyError SourceSpan) IO (Input, Map (Path Rel File) (Path Rel File))
 produceInputFromDeclarations setup declarations = do
   (ledger, balanceReport, _) <- mapValidationTFailure AnyErrorCheck $ doCompleteCheck declarations
   transformValidationT
@@ -139,10 +145,10 @@ produceInputFromDeclarations setup declarations = do
     $ mapValidationTFailure AnyErrorInput
     $ produceInput setup ledger balanceReport
 
-type P ann a = ValidationT (InputError ann) (WriterT (Set (Path Rel File)) IO) a
+type P ann a = ValidationT (InputError ann) (WriterT (Map (Path Rel File) (Path Rel File)) IO) a
 
-addEvidence :: Path Rel File -> P ann ()
-addEvidence = lift . tell . S.singleton
+addEvidence :: Path Rel File -> Path Rel File -> P ann ()
+addEvidence locationOnDisk locationInTarball = lift $ tell $ M.singleton locationOnDisk locationInTarball
 
 produceInput ::
   Show ann =>
@@ -172,8 +178,9 @@ produceInput Setup {..} ledger (BalanceReport accountBalances) = do
         incomeEvidence <- case V.toList transactionAttachments of
           [] -> undefined -- TODO error
           [Located _ (Attachment (Located _ path))] -> do
-            addEvidence path
-            pure path
+            let fileInTarball = [reldir|income|] </> path
+            addEvidence path fileInTarball
+            pure fileInTarball
           _ -> undefined -- TODO error
         let incomeDay = Timestamp.toDay timestamp
         incomeDescription <- case transactionDescription of
@@ -187,9 +194,8 @@ produceInput Setup {..} ledger (BalanceReport accountBalances) = do
     let assetName = name
     -- TODO check that file exists
     evidenceFile <- liftIO $ parseRelFile assetSetupEvidence
-    addEvidence evidenceFile
-    -- TODO prefix the assets directory name
-    let assetEvidence = evidenceFile
+    let assetEvidence = [reldir|assets|] </> evidenceFile
+    addEvidence evidenceFile assetEvidence
     assetAmount <- case M.lookup assetSetupAccountName accountBalances of
       Nothing -> undefined -- TODO error
       Just ma -> case M.toList (MultiAccount.unMultiAccount ma) of

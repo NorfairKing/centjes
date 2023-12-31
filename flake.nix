@@ -110,10 +110,11 @@
         withHoogle = true;
         doBenchmark = true;
         buildInputs = (with pkgs; [
-          zlib
           cabal-install
+          pkg-config
           typst
           typstfmt
+          zlib
         ]) ++ (with pre-commit-hooks.packages.${system};
           [
             hlint

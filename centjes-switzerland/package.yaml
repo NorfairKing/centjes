@@ -27,7 +27,6 @@ library:
   - path
   - path-io
   - really-safe-money
-  - tar
   - template-haskell
   - template-haskell-reload
   - text
@@ -35,6 +34,7 @@ library:
   - typed-process
   - vector
   - yaml
+  - zip
 
 executables:
   centjes-switzerland:
