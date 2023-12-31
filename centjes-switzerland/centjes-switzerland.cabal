@@ -22,6 +22,9 @@ source-repository head
 library
   exposed-modules:
       Centjes.Switzerland
+      Centjes.Switzerland.Command
+      Centjes.Switzerland.Command.DownloadRates
+      Centjes.Switzerland.Command.Taxes
       Centjes.Switzerland.Constants
       Centjes.Switzerland.OptParse
       Centjes.Switzerland.Templates
@@ -75,7 +78,7 @@ test-suite centjes-switzerland-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Centjes.SwitzerlandSpec
+      Centjes.Switzerland.Command.TaxesSpec
       Paths_centjes_switzerland
   hs-source-dirs:
       test
