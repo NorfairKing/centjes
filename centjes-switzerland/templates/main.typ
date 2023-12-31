@@ -32,7 +32,3 @@ Name: #{ input.name }
     raw(income.evidence),
   )).flatten(),
 )
-
-== Appendix: Raw input
-
-#{ input }
