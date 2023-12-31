@@ -5,6 +5,22 @@ with final.haskell.lib;
   centjes = final.symlinkJoin {
     name = "centjes";
     paths = attrValues final.centjesReleasePackages;
+    passthru = {
+      makeSwitzerlandPacket = src: final.stdenv.mkDerivation {
+        name = "switzerland";
+        inherit src;
+        buildInputs = [
+          final.typst
+        ];
+        buildCommand = ''
+          mkdir -p $out
+          ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
+            --config-file $src/switzerland.yaml \
+            --zip-file $out/packet.zip \
+            --readme-file $out/README.pdf
+        '';
+      };
+    };
   };
 
   centjesDependencyGraph = final.makeDependencyGraph {

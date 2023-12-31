@@ -54,8 +54,6 @@ runCentjesSwitzerland = do
     Nothing -> die "main.typ template not found."
     Just t -> pure t
 
-  readmeOutFile <- resolveFile' "README.pdf"
-  packetOutFile <- resolveFile' "2024-packet.zip"
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
@@ -91,7 +89,7 @@ runCentjesSwitzerland = do
                 [ "-v",
                   "compile",
                   fromAbsFile mainTypFile,
-                  fromAbsFile readmeOutFile,
+                  fromAbsFile settingReadmeFile,
                   "--root",
                   fromAbsDir tdir
                 ]
@@ -99,17 +97,17 @@ runCentjesSwitzerland = do
         T.pack $
           unwords
             [ "Typst compilation succesfully created",
-              fromAbsFile readmeOutFile
+              fromAbsFile settingReadmeFile
             ]
 
       let allFilesToInclude =
-            (readmeOutFile, [relfile|README.pdf|])
+            (settingReadmeFile, [relfile|README.pdf|])
               : (jsonInputFile, [relfile|raw-input.json|])
               : [(settingBaseDir </> fromRel, to) | (fromRel, to) <- M.toList files]
 
       -- Create a nice zip file
       liftIO $
-        Zip.createArchive (fromAbsFile packetOutFile) $
+        Zip.createArchive (fromAbsFile settingZipFile) $
           forM_ allFilesToInclude $ \(filePathFrom, filePathTo) -> do
             contents <- liftIO $ SB.readFile $ fromAbsFile filePathFrom
             selector <- Zip.mkEntrySelector $ fromRelFile filePathTo
@@ -119,7 +117,7 @@ runCentjesSwitzerland = do
         T.pack $
           unwords
             [ "Succesfully created packet",
-              fromAbsFile packetOutFile
+              fromAbsFile settingZipFile
             ]
 
 data AnyError ann

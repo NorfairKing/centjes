@@ -30,24 +30,30 @@ getSettings = do
   (configPath, config) <- case mConfig of
     Nothing -> die "No config file specified."
     Just (path, config) -> pure (path, config)
-  combineToSettings configPath config
+  combineToSettings flags env configPath config
 
 data Settings = Settings
-  { settingBaseDir :: !(Path Abs Dir),
+  { settingZipFile :: !(Path Abs File),
+    settingReadmeFile :: !(Path Abs File),
+    settingBaseDir :: !(Path Abs Dir),
     settingLedgerFile :: !(Path Rel File),
     settingSetup :: !Setup
   }
   deriving (Show, Eq, Generic)
 
-combineToSettings :: Path Abs File -> Configuration -> IO Settings
-combineToSettings configFilePath Configuration {..} = do
+combineToSettings :: Flags -> Environment -> Path Abs File -> Configuration -> IO Settings
+combineToSettings Flags {..} Environment {..} configFilePath Configuration {..} = do
+  settingZipFile <- resolveFile' $ fromMaybe "packet.zip" $ flagZipFile <|> envZipFile <|> configZipFile
+  settingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ flagReadmeFile <|> envReadmeFile <|> configReadmeFile
   let settingBaseDir = parent configFilePath
   settingLedgerFile <- parseRelFile $ fromMaybe "ledger.cent" configLedgerFile
   let settingSetup = configSetup
   pure Settings {..}
 
 data Configuration = Configuration
-  { configLedgerFile :: !(Maybe FilePath),
+  { configZipFile :: !(Maybe FilePath),
+    configReadmeFile :: !(Maybe FilePath),
+    configLedgerFile :: !(Maybe FilePath),
     configSetup :: !Setup
   }
   deriving stock (Show, Eq, Generic)
@@ -57,7 +63,11 @@ instance HasCodec Configuration where
   codec =
     object "Configuration" $
       Configuration
-        <$> optionalField "ledger" "The ledger file"
+        <$> optionalField "zip" "The zip file to produce"
+          .= configZipFile
+        <*> optionalField "readme" "The readme file to produce"
+          .= configReadmeFile
+        <*> optionalField "ledger" "The ledger file"
           .= configLedgerFile
         <*> objectCodec
           .= configSetup
@@ -110,7 +120,9 @@ defaultConfigFile :: IO (Path Abs File)
 defaultConfigFile = resolveFile' "centjes-switzerland.yaml"
 
 data Environment = Environment
-  { envConfigFile :: !(Maybe FilePath)
+  { envZipFile :: !(Maybe FilePath),
+    envReadmeFile :: !(Maybe FilePath),
+    envConfigFile :: !(Maybe FilePath)
   }
   deriving (Show, Eq, Generic)
 
@@ -124,7 +136,9 @@ prefixedEnvironmentParser = Env.prefixed "CENTJES_SWITZERLAND_" environmentParse
 environmentParser :: Env.Parser Env.Error Environment
 environmentParser =
   Environment
-    <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
+    <$> optional (Env.var Env.str "ZIP_FILE" (Env.help "Zip file to create"))
+    <*> optional (Env.var Env.str "README_FILE" (Env.help "README file to create"))
+    <*> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
 
 -- | Get the command-line flags
 getFlags :: IO Flags
@@ -155,7 +169,9 @@ flagsParser =
 
 -- | The flags that are common across commands.
 data Flags = Flags
-  { flagConfigFile :: !(Maybe FilePath)
+  { flagZipFile :: !(Maybe FilePath),
+    flagReadmeFile :: !(Maybe FilePath),
+    flagConfigFile :: !(Maybe FilePath)
   }
   deriving (Show, Eq, Generic)
 
@@ -164,6 +180,24 @@ parseFlags :: OptParse.Parser Flags
 parseFlags =
   Flags
     <$> optional
+      ( strOption
+          ( mconcat
+              [ long "zip-file",
+                help "Path to the zip file to create",
+                metavar "FILEPATH"
+              ]
+          )
+      )
+    <*> optional
+      ( strOption
+          ( mconcat
+              [ long "readme-file",
+                help "Path to the readme file to create",
+                metavar "FILEPATH"
+              ]
+          )
+      )
+    <*> optional
       ( strOption
           ( mconcat
               [ long "config-file",
