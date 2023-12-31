@@ -16,13 +16,16 @@ import Centjes.Report.Balance
 import Centjes.Switzerland.OptParse
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
+import qualified Codec.Archive.Tar as Tar
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import Control.Monad.Writer
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.Map as M
+import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
 import Data.Time
@@ -42,12 +45,18 @@ runCentjesSwitzerland = do
   Settings {..} <- getSettings
   runStderrLoggingT $ do
     (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
-    validation <- liftIO $ runValidationT $ produceInputFromDeclarations settingBaseDir settingSetup declarations
-    input <- liftIO $ checkValidation diag validation
+    validation <- liftIO $ runValidationT $ produceInputFromDeclarations settingSetup declarations
+    (input, files) <- liftIO $ checkValidation diag validation
     -- TODO Compile the templates into the binary
     mainTyp <- resolveFile' "templates/main.typ"
-    outFile <- resolveFile' "example.pdf"
+    outFileName <- liftIO $ parseRelFile "README.pdf"
+    let outFile = settingBaseDir </> outFileName
     liftIO $ compileTypstWithData input mainTyp outFile
+    liftIO $
+      Tar.create
+        "packet.tar"
+        (fromAbsDir settingBaseDir)
+        (map fromRelFile (outFileName : S.toList files))
     pure ()
 
 data AnyError ann
@@ -59,19 +68,32 @@ instance ToReport (AnyError SourceSpan) where
     AnyErrorCheck ce -> toReport ce
     AnyErrorInput ie -> toReport ie
 
-produceInputFromDeclarations :: Path Abs Dir -> Setup -> [Declaration SourceSpan] -> ValidationT (AnyError SourceSpan) IO Input
-produceInputFromDeclarations setupDir setup declarations = do
+produceInputFromDeclarations ::
+  Setup ->
+  [Declaration SourceSpan] ->
+  ValidationT (AnyError SourceSpan) IO (Input, Set (Path Rel File))
+produceInputFromDeclarations setup declarations = do
   (ledger, balanceReport, _) <- mapValidationTFailure AnyErrorCheck $ doCompleteCheck declarations
-  mapValidationTFailure AnyErrorInput $ produceInput setupDir setup ledger balanceReport
+  transformValidationT
+    ( \f -> do
+        (v, fs) <- runWriterT f
+        pure $ (,) <$> v <*> pure fs
+    )
+    $ mapValidationTFailure AnyErrorInput
+    $ produceInput setup ledger balanceReport
+
+type P ann a = ValidationT (InputError ann) (WriterT (Set (Path Rel File)) IO) a
+
+addEvidence :: Path Rel File -> P ann ()
+addEvidence = lift . tell . S.singleton
 
 produceInput ::
   Show ann =>
-  Path Abs Dir ->
   Setup ->
   Ledger ann ->
   BalanceReport ann ->
-  ValidationT (InputError ann) IO Input
-produceInput setupDir Setup {..} ledger (BalanceReport accountBalances) = do
+  P ann Input
+produceInput Setup {..} ledger (BalanceReport accountBalances) = do
   let inputName = setupName
 
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
@@ -92,7 +114,9 @@ produceInput setupDir Setup {..} ledger (BalanceReport accountBalances) = do
       [incomeAmount] -> do
         incomeEvidence <- case V.toList transactionAttachments of
           [] -> undefined -- TODO error
-          [Located _ (Attachment (Located _ path))] -> pure path
+          [Located _ (Attachment (Located _ path))] -> do
+            addEvidence path
+            pure path
           _ -> undefined -- TODO error
         let incomeDay = Timestamp.toDay timestamp
         incomeDescription <- case transactionDescription of
@@ -105,9 +129,10 @@ produceInput setupDir Setup {..} ledger (BalanceReport accountBalances) = do
   inputAssets <- fmap V.fromList $ for (M.toList setupAssetsAccounts) $ \(name, AssetSetup {..}) -> do
     let assetName = name
     -- TODO check that file exists
-    evidenceFile <- liftIO $ resolveFile setupDir assetSetupEvidence
+    evidenceFile <- liftIO $ parseRelFile assetSetupEvidence
+    addEvidence evidenceFile
     -- TODO prefix the assets directory name
-    let assetEvidence = filename evidenceFile
+    let assetEvidence = evidenceFile
     assetAmount <- case M.lookup assetSetupAccountName accountBalances of
       Nothing -> undefined -- TODO error
       Just ma -> case M.toList (MultiAccount.unMultiAccount ma) of

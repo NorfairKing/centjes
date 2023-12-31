@@ -28,7 +28,8 @@ spec = do
             Just c -> pure c
         ledgerFile <- resolveFile dir $ fromMaybe "ledger.cent" $ configLedgerFile config
         (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
-        shouldValidateT diag $ produceInputFromDeclarations dir (configSetup config) declarations
+        (input, _) <- shouldValidateT diag $ produceInputFromDeclarations (configSetup config) declarations
+        pure input
 
 dirScenarioDir :: FilePath -> (FilePath -> TestDefM outers inner ()) -> TestDefM outers inner ()
 dirScenarioDir dp func = do

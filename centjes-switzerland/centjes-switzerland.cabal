@@ -37,10 +37,12 @@ library
     , containers
     , envparse
     , monad-logger
+    , mtl
     , optparse-applicative
     , path
     , path-io
     , really-safe-money
+    , tar
     , text
     , time
     , typed-process

@@ -51,6 +51,9 @@ validationTFailure = ValidationT . pure . validationFailure
 mapValidationTFailure :: Functor m => (e1 -> e2) -> ValidationT e1 m a -> ValidationT e2 m a
 mapValidationTFailure f (ValidationT m) = ValidationT $ mapValidationFailure f <$> m
 
+transformValidationT :: (m (Validation e a) -> n (Validation f b)) -> ValidationT e m a -> ValidationT f n b
+transformValidationT func (ValidationT t) = ValidationT $ func t
+
 data Validation e a
   = Failure !(NonEmpty e)
   | Success !a

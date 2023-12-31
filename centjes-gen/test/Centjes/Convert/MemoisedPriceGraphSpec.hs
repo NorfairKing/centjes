@@ -2,15 +2,11 @@
 
 module Centjes.Convert.MemoisedPriceGraphSpec (spec) where
 
-import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph (..))
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
-import Centjes.Convert.PriceGraph (PriceGraph (..))
 import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.Convert.PriceGraph.Gen ()
 import Centjes.CurrencySymbol
 import Centjes.CurrencySymbol.Gen ()
-import qualified Money.ConversionRate as ConversionRate
-import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
