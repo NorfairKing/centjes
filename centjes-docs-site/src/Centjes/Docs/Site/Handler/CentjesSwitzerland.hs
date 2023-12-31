@@ -29,7 +29,7 @@ getCentjesSwitzerlandR = do
 
 getHelpPageOf :: [String] -> String
 getHelpPageOf args =
-  let res = runFlagsParser $ args ++ ["--help"]
+  let res = runArgumentsParser $ args ++ ["--help"]
    in case res of
         Failure fr ->
           let (ph, _, cols) = execFailure fr "centjes-switzerland"

@@ -48,12 +48,16 @@ import System.Process.Typed
 
 runCentjesSwitzerland :: IO ()
 runCentjesSwitzerland = do
-  Settings {..} <- getSettings
+  Instructions d settings <- getInstructions
+  case d of
+    DispatchTaxes taxesSettings -> runCentjesSwitzerlandTaxes settings taxesSettings
+
+runCentjesSwitzerlandTaxes :: Settings -> TaxesSettings -> IO ()
+runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   templatesMap <- loadIO templateFileMap
   mainTypContents <- case M.lookup [relfile|main.typ|] templatesMap of
     Nothing -> die "main.typ template not found."
     Just t -> pure t
-
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
@@ -89,7 +93,7 @@ runCentjesSwitzerland = do
                 [ "-v",
                   "compile",
                   fromAbsFile mainTypFile,
-                  fromAbsFile settingReadmeFile,
+                  fromAbsFile taxesSettingReadmeFile,
                   "--root",
                   fromAbsDir tdir
                 ]
@@ -97,17 +101,17 @@ runCentjesSwitzerland = do
         T.pack $
           unwords
             [ "Typst compilation succesfully created",
-              fromAbsFile settingReadmeFile
+              fromAbsFile taxesSettingReadmeFile
             ]
 
       let allFilesToInclude =
-            (settingReadmeFile, [relfile|README.pdf|])
+            (taxesSettingReadmeFile, [relfile|README.pdf|])
               : (jsonInputFile, [relfile|raw-input.json|])
               : [(settingBaseDir </> fromRel, to) | (fromRel, to) <- M.toList files]
 
       -- Create a nice zip file
       liftIO $
-        Zip.createArchive (fromAbsFile settingZipFile) $
+        Zip.createArchive (fromAbsFile taxesSettingZipFile) $
           forM_ allFilesToInclude $ \(filePathFrom, filePathTo) -> do
             contents <- liftIO $ SB.readFile $ fromAbsFile filePathFrom
             selector <- Zip.mkEntrySelector $ fromRelFile filePathTo
@@ -117,7 +121,7 @@ runCentjesSwitzerland = do
         T.pack $
           unwords
             [ "Succesfully created packet",
-              fromAbsFile settingZipFile
+              fromAbsFile taxesSettingZipFile
             ]
 
 data AnyError ann

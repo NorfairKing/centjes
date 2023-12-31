@@ -6,7 +6,7 @@ with final.haskell.lib;
     name = "centjes";
     paths = attrValues final.centjesReleasePackages;
     passthru = {
-      makeSwitzerlandPacket = src: final.stdenv.mkDerivation {
+      makeSwitzerlandTaxesPacket = src: final.stdenv.mkDerivation {
         name = "switzerland";
         inherit src;
         buildInputs = [
@@ -15,6 +15,7 @@ with final.haskell.lib;
         buildCommand = ''
           mkdir -p $out
           ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
+            taxes \
             --config-file $src/switzerland.yaml \
             --zip-file $out/packet.zip \
             --readme-file $out/README.pdf

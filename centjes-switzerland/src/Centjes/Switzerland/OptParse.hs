@@ -22,33 +22,56 @@ import Path.IO
 import qualified System.Environment as System
 import System.Exit
 
-getSettings :: IO Settings
-getSettings = do
-  flags <- getFlags
+data Instructions
+  = Instructions !Dispatch !Settings
+  deriving (Show, Eq, Generic)
+
+getInstructions :: IO Instructions
+getInstructions = do
+  arguments@(Arguments _ flags) <- getArguments
   env <- getEnvironment
   mConfig <- getConfiguration flags env
   (configPath, config) <- case mConfig of
     Nothing -> die "No config file specified."
     Just (path, config) -> pure (path, config)
-  combineToSettings flags env configPath config
+  combineToInstructions arguments env configPath config
 
 data Settings = Settings
-  { settingZipFile :: !(Path Abs File),
-    settingReadmeFile :: !(Path Abs File),
-    settingBaseDir :: !(Path Abs Dir),
+  { settingBaseDir :: !(Path Abs Dir),
     settingLedgerFile :: !(Path Rel File),
     settingSetup :: !Setup
   }
   deriving (Show, Eq, Generic)
 
-combineToSettings :: Flags -> Environment -> Path Abs File -> Configuration -> IO Settings
-combineToSettings Flags {..} Environment {..} configFilePath Configuration {..} = do
-  settingZipFile <- resolveFile' $ fromMaybe "packet.zip" $ flagZipFile <|> envZipFile <|> configZipFile
-  settingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ flagReadmeFile <|> envReadmeFile <|> configReadmeFile
-  let settingBaseDir = parent configFilePath
-  settingLedgerFile <- parseRelFile $ fromMaybe "ledger.cent" configLedgerFile
-  let settingSetup = configSetup
-  pure Settings {..}
+data Dispatch = DispatchTaxes TaxesSettings
+  deriving (Show, Eq, Generic)
+
+data TaxesSettings = TaxesSettings
+  { taxesSettingZipFile :: !(Path Abs File),
+    taxesSettingReadmeFile :: !(Path Abs File)
+  }
+  deriving (Show, Eq, Generic)
+
+combineToInstructions ::
+  Arguments ->
+  Environment ->
+  Path Abs File ->
+  Configuration ->
+  IO Instructions
+combineToInstructions
+  (Arguments cmd Flags {})
+  Environment {..}
+  configFilePath
+  Configuration {..} = do
+    let settingBaseDir = parent configFilePath
+    settingLedgerFile <- parseRelFile $ fromMaybe "ledger.cent" configLedgerFile
+    let settingSetup = configSetup
+    dispatch <- case cmd of
+      CommandTaxes TaxesArgs {..} -> do
+        taxesSettingZipFile <- resolveFile' $ fromMaybe "packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
+        taxesSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ taxesArgReadmeFile <|> envReadmeFile <|> configReadmeFile
+        pure $ DispatchTaxes TaxesSettings {..}
+    pure $ Instructions dispatch Settings {..}
 
 data Configuration = Configuration
   { configZipFile :: !(Maybe FilePath),
@@ -140,15 +163,19 @@ environmentParser =
     <*> optional (Env.var Env.str "README_FILE" (Env.help "README file to create"))
     <*> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
 
+data Arguments
+  = Arguments !Command !Flags
+  deriving (Show, Eq, Generic)
+
 -- | Get the command-line flags
-getFlags :: IO Flags
-getFlags = do
+getArguments :: IO Arguments
+getArguments = do
   args <- System.getArgs
-  let result = runFlagsParser args
+  let result = runArgumentsParser args
   handleParseResult result
 
-runFlagsParser :: [String] -> ParserResult Flags
-runFlagsParser = execParserPure ps flagsParser
+runArgumentsParser :: [String] -> ParserResult Arguments
+runArgumentsParser = execParserPure ps argumentsParser
   where
     ps :: ParserPrefs
     ps =
@@ -161,17 +188,61 @@ runFlagsParser = execParserPure ps flagsParser
           ]
 
 -- | The @optparse-applicative@ parser for 'Flags'
-flagsParser :: OptParse.ParserInfo Flags
-flagsParser =
+argumentsParser :: OptParse.ParserInfo Arguments
+argumentsParser =
   OptParse.info
-    (OptParse.helper <*> parseFlags)
+    (OptParse.helper <*> parseArguments)
     OptParse.fullDesc
+
+parseArguments :: OptParse.Parser Arguments
+parseArguments = Arguments <$> parseCommand <*> parseFlags
+
+-- | A sum type for the commands and their specific arguments
+data Command
+  = CommandTaxes !TaxesArgs
+  deriving (Show, Eq, Generic)
+
+parseCommand :: OptParse.Parser Command
+parseCommand =
+  OptParse.hsubparser $
+    mconcat
+      [ OptParse.command "taxes" $ CommandTaxes <$> parseCommandTaxes
+      ]
+
+data TaxesArgs = TaxesArgs
+  { taxesArgZipFile :: !(Maybe FilePath),
+    taxesArgReadmeFile :: !(Maybe FilePath)
+  }
+  deriving (Show, Eq, Generic)
+
+parseCommandTaxes :: OptParse.ParserInfo TaxesArgs
+parseCommandTaxes = OptParse.info parser modifier
+  where
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Prepare a tax packet"
+    parser =
+      TaxesArgs
+        <$> optional
+          ( strOption
+              ( mconcat
+                  [ long "zip-file",
+                    help "Path to the zip file to create",
+                    metavar "FILEPATH"
+                  ]
+              )
+          )
+        <*> optional
+          ( strOption
+              ( mconcat
+                  [ long "readme-file",
+                    help "Path to the readme file to create",
+                    metavar "FILEPATH"
+                  ]
+              )
+          )
 
 -- | The flags that are common across commands.
 data Flags = Flags
-  { flagZipFile :: !(Maybe FilePath),
-    flagReadmeFile :: !(Maybe FilePath),
-    flagConfigFile :: !(Maybe FilePath)
+  { flagConfigFile :: !(Maybe FilePath)
   }
   deriving (Show, Eq, Generic)
 
@@ -180,24 +251,6 @@ parseFlags :: OptParse.Parser Flags
 parseFlags =
   Flags
     <$> optional
-      ( strOption
-          ( mconcat
-              [ long "zip-file",
-                help "Path to the zip file to create",
-                metavar "FILEPATH"
-              ]
-          )
-      )
-    <*> optional
-      ( strOption
-          ( mconcat
-              [ long "readme-file",
-                help "Path to the readme file to create",
-                metavar "FILEPATH"
-              ]
-          )
-      )
-    <*> optional
       ( strOption
           ( mconcat
               [ long "config-file",
