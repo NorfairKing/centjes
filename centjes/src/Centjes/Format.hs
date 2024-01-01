@@ -174,16 +174,22 @@ descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedVa
 
 postingDoc :: Posting l -> Doc ann
 postingDoc Posting {..} =
-  maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
-    (if postingReal then "*" else "!")
-      <+> lAccountNameDoc postingAccountName
-      <+> accountDoc (locatedValue postingAccount)
-      <+> lCurrencySymbolDoc postingCurrencySymbol
+  maybe id (\pe -> (<+> ("~" <+> lPercentageExpressionDoc pe))) postingPercentage $
+    maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
+      (if postingReal then "*" else "!")
+        <+> lAccountNameDoc postingAccountName
+        <+> accountDoc (locatedValue postingAccount)
+        <+> lCurrencySymbolDoc postingCurrencySymbol
 
 lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc ann
 lCostExpressionDoc (Located _ CostExpression {..}) =
   lConversionRateDoc costExpressionConversionRate
     <+> lCurrencySymbolDoc costExpressionCurrencySymbol
+
+lPercentageExpressionDoc :: GenLocated l (PercentageExpression l) -> Doc ann
+lPercentageExpressionDoc (Located _ PercentageExpression {..}) =
+  lConversionRateDoc unPercentageExpression
+    <> "%"
 
 transactionExtraDoc :: TransactionExtra l -> Doc ann
 transactionExtraDoc =

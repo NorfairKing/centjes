@@ -29,6 +29,7 @@ import Data.List (intercalate)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -36,6 +37,7 @@ import Data.Traversable
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import Debug.Trace
 import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
@@ -45,6 +47,7 @@ import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import qualified Numeric.DecimalLiteral as DecimalLiteral
+import Numeric.Natural
 
 newtype BalancedLedger ann = BalancedLedger {balancedLedgerTransactions :: Vector (GenLocated ann (Transaction ann), AccountBalances ann)}
   deriving (Show, Eq, Generic)
@@ -71,6 +74,10 @@ data BalanceError ann
   | BalanceErrorConversionImpossibleRate !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann)) !(Maybe Money.ConversionRate)
   | BalanceErrorUndeclaredAccount !ann !AccountName
   | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann)) ![GenLocated ann (Posting ann)]
+  | BalanceErrorPercentageNoPrevious !ann !ann
+  | BalanceErrorPercentageCurrency !ann !ann !ann
+  | BalanceErrorPercentageFraction !ann !ann !ann !Bool
+  | BalanceErrorPercentage !ann !ann !ann !ann !(Currency ann) !(GenLocated ann Money.Account) !(Currency ann) !(Maybe (GenLocated ann Money.Account)) !(Maybe (GenLocated ann (Ratio Natural)))
   | BalanceErrorAccountTypeAssertion !ann !ann !AccountType !(Money.MultiAccount (Currency ann))
   | BalanceErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Currency ann)) !(Maybe Money.Account)
   | BalanceErrorConvertError !(ConvertError ann)
@@ -171,6 +178,75 @@ instance ToReport (BalanceError SourceSpan) where
               postings
         )
         []
+    BalanceErrorPercentageNoPrevious s pctl ->
+      Err
+        (Just "BE_PERCENTAGE_NO_PREVIOUS")
+        "Posting with a percentage has no previous posting"
+        [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
+          (toDiagnosePosition pctl, This "This percentage requires a previous posting")
+        ]
+        []
+    BalanceErrorPercentageCurrency s pcl cl ->
+      Err
+        (Just "BE_PERCENTAGE_CURRENCY")
+        "Posting with percentage has different currency than the previous posting"
+        [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
+          (toDiagnosePosition pcl, This "This currency is different ..."),
+          (toDiagnosePosition cl, This "... from this currency")
+        ]
+        []
+    BalanceErrorPercentageFraction s al rl isInverse ->
+      Err
+        (Just "BE_PERCENTAGE_FRACTION")
+        ""
+        [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
+          (toDiagnosePosition al, This $ unwords ["Could not", if isInverse then "divide" else "multiply", "this amount"]),
+          (toDiagnosePosition rl, This "... by this percentage because the amount would get too big.")
+        ]
+        []
+    BalanceErrorPercentage s pl ppl pctl oldCurrency (Located al expectedAccount) newCurrency mExpectedOriginal mExpectedRatio ->
+      let Located _ oldQf = currencyQuantisationFactor oldCurrency
+          Located _ newQf = currencyQuantisationFactor newCurrency
+       in Err
+            (Just "BE_PERCENTAGE")
+            "The given percentage does not match the amount it describes."
+            ( concat
+                [ [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
+                    (toDiagnosePosition pctl, This "Using this percentage")
+                  ],
+                  [ ( toDiagnosePosition rl,
+                      Maybe $
+                        unlines
+                          [ "Perhaps this percentage needs to be",
+                            DecimalLiteral.format dl <> "%"
+                          ]
+                    )
+                    | Located rl expectedRatio <- maybeToList mExpectedRatio,
+                      dl <- maybeToList $ DecimalLiteral.fromRatio (expectedRatio * 100)
+                  ],
+                  [ ( toDiagnosePosition al,
+                      Maybe $
+                        unlines
+                          [ "Perhaps this amount needs to be",
+                            Account.format oldQf expectedAccount
+                          ]
+                    )
+                  ],
+                  [ ( toDiagnosePosition el,
+                      Maybe $
+                        unlines
+                          [ "Perhaps this amount needs to be",
+                            Account.format newQf expectedOriginal
+                          ]
+                    )
+                    | Located el expectedOriginal <- maybeToList mExpectedOriginal
+                  ],
+                  [ (toDiagnosePosition pl, Where "While checking the percentage in this posting"),
+                    (toDiagnosePosition ppl, Where "Which relates to the amount in this posting")
+                  ]
+                ]
+            )
+            []
     BalanceErrorAccountTypeAssertion s adl at bal ->
       Err
         (Just "BE_ACCOUNT_TYPE_ASSERTION")
@@ -395,20 +471,22 @@ balanceTransaction (Located tl Transaction {..}) = do
   let incorporatePosting ::
         -- (Balances for transaction balance checking, balances of acounts)
         (AccountBalances ann, AccountBalances ann) ->
+        Int ->
         GenLocated ann (Posting ann) ->
         Validation (BalanceError ann) (AccountBalances ann, AccountBalances ann)
       incorporatePosting
         (convertedBalances, actualBalances)
-        (Located _ (Posting real (Located pl an) (Located _ currency) la@(Located _ account) mCost)) = do
+        ix
+        (Located pl (Posting real (Located _ an) (Located cl currency) la@(Located al account) mCost mPercentage)) = do
+          let Located _ qf = currencyQuantisationFactor currency
           (convertedCurrency, convertedAccount) <- case mCost of
             Nothing -> pure (currency, account)
             Just lc@(Located _ Cost {..}) -> do
               let Located _ newCurrency = costCurrency
               let Located _ rate = costConversionRate
-              let Located _ qfOld = currencyQuantisationFactor currency
               let Located _ qfNew = currencyQuantisationFactor newCurrency
               -- Separate the amount for balancing from the amount for adding to balance
-              let (mNewAccount, mActualRate) = Account.convert Account.RoundNearest qfOld account rate qfNew
+              let (mNewAccount, mActualRate) = Account.convert Account.RoundNearest qf account rate qfNew
               if mActualRate == Just rate
                 then case mNewAccount of
                   Nothing -> validationFailure $ BalanceErrorConversionTooBig la lc
@@ -427,6 +505,36 @@ balanceTransaction (Located tl Transaction {..}) = do
                     Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl a' c a
                     Just a'' -> pure $ M.insert an a'' bs
 
+          for_ mPercentage $ \(Located pctl (Percentage (Located rl ratio))) -> do
+            case transactionPostings V.!? pred ix of
+              Nothing -> validationFailure $ BalanceErrorPercentageNoPrevious tl pctl
+              Just (Located ppl p) -> do
+                let Located oal originalAccount = postingAccount p
+                let Located pcl newCurrency = postingCurrency p
+                if newCurrency == currency
+                  then do
+                    -- TODO let the user determine the rounding?
+                    calculatedPostingAccount <- case fst $ Account.fractionRatio Account.RoundNearest originalAccount ratio of
+                      Nothing -> validationFailure $ BalanceErrorPercentageFraction tl oal rl False
+                      Just a -> pure a
+
+                    if ratio == 0
+                      then
+                        if account == Account.zero
+                          then pure ()
+                          else validationFailure $ BalanceErrorPercentage tl pl ppl pctl newCurrency (Located al calculatedPostingAccount) currency Nothing Nothing
+                      else do
+                        let inverseRatio = 1 / ratio
+                        calculatedOriginalAccount <- case fst $ Account.fractionRatio Account.RoundNearest account inverseRatio of
+                          Nothing -> validationFailure $ BalanceErrorPercentageFraction tl al rl True
+                          Just a -> pure a
+
+                        let mActualRatio = Located rl . ConversionRate.toRatio <$> Account.rate qf originalAccount qf account
+                        if traceShowId calculatedPostingAccount == traceShowId account
+                          then pure ()
+                          else validationFailure $ BalanceErrorPercentage tl pl ppl pctl newCurrency (Located al calculatedPostingAccount) currency (Just (Located oal calculatedOriginalAccount)) mActualRatio
+                  else validationFailure $ BalanceErrorPercentageCurrency tl pcl cl
+
           actualBalances' <-
             if real
               then addAccountToBalances currency account actualBalances
@@ -434,7 +542,7 @@ balanceTransaction (Located tl Transaction {..}) = do
           convertedBalances' <- addAccountToBalances convertedCurrency convertedAccount convertedBalances
           pure (actualBalances', convertedBalances')
 
-  (mForBalancing, mActual) <- foldM incorporatePosting (M.empty, M.empty) transactionPostings
+  (mForBalancing, mActual) <- V.ifoldM incorporatePosting (M.empty, M.empty) transactionPostings
   let as = M.elems mForBalancing
   case MultiAccount.sum as of
     Nothing -> validationFailure $ BalanceErrorCouldNotSumPostings tl as

@@ -7,11 +7,12 @@ module Centjes.Ledger
     Timestamp (..),
     CurrencySymbol (..),
     Price (..),
-    Cost (..),
     Transaction (..),
+    Assertion (..),
     Description (..),
     Posting (..),
-    Assertion (..),
+    Cost (..),
+    Percentage (..),
     Attachment (..),
     Currency (..),
     AccountName (..),
@@ -26,6 +27,7 @@ import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
 import Data.Map.Strict (Map)
+import Data.Ratio
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Vector ()
@@ -35,6 +37,7 @@ import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
 import Money.ConversionRate (ConversionRate)
 import Money.QuantisationFactor
+import Numeric.Natural
 
 data Ledger ann = Ledger
   { -- This field will have the source location of the currency _declaration_ that defined it.
@@ -84,18 +87,6 @@ instance Validity ann => Validity (Price ann)
 
 instance NFData ann => NFData (Price ann)
 
-data Cost ann = Cost
-  { -- Note: This field will have the source location of the decimal literal in the cost
-    costConversionRate :: !(GenLocated ann ConversionRate),
-    -- Note: This field will have the source location of the currency _symbol_ in the cost
-    costCurrency :: !(GenLocated ann (Currency ann))
-  }
-  deriving stock (Show, Eq, Generic)
-
-instance Validity ann => Validity (Cost ann)
-
-instance NFData ann => NFData (Cost ann)
-
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
@@ -109,21 +100,6 @@ instance Validity ann => Validity (Transaction ann)
 
 instance NFData ann => NFData (Transaction ann)
 
-data Posting ann = Posting
-  { postingReal :: !Bool,
-    postingAccountName :: !(GenLocated ann AccountName),
-    -- Note: This field will have the source location of the currency _symbol_ that defined it.
-    postingCurrency :: !(GenLocated ann (Currency ann)),
-    -- Note: This field will have the source location of the decimal literal that defined it.
-    postingAccount :: !(GenLocated ann Money.Account),
-    postingCost :: !(Maybe (GenLocated ann (Cost ann)))
-  }
-  deriving stock (Show, Eq, Generic)
-
-instance Validity ann => Validity (Posting ann)
-
-instance NFData ann => NFData (Posting ann)
-
 data Assertion ann
   = AssertionEquals
       !(GenLocated ann AccountName)
@@ -136,6 +112,52 @@ data Assertion ann
 instance Validity ann => Validity (Assertion ann)
 
 instance NFData ann => NFData (Assertion ann)
+
+data Posting ann = Posting
+  { postingReal :: !Bool,
+    postingAccountName :: !(GenLocated ann AccountName),
+    -- Note: This field will have the source location of the currency _symbol_
+    -- that defined it.
+    postingCurrency :: !(GenLocated ann (Currency ann)),
+    -- Note: This field will have the source location of the decimal literal
+    -- that defined it.
+    postingAccount :: !(GenLocated ann Money.Account),
+    postingCost :: !(Maybe (GenLocated ann (Cost ann))),
+    -- Note: This field will have the source location of the percentage
+    -- expression that defined it.
+    postingPercentage :: !(Maybe (GenLocated ann (Percentage ann)))
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (Posting ann)
+
+instance NFData ann => NFData (Posting ann)
+
+data Cost ann = Cost
+  { -- Note: This field will have the source location of the decimal literal in the cost
+    costConversionRate :: !(GenLocated ann ConversionRate),
+    -- Note: This field will have the source location of the currency _symbol_ in the cost
+    costCurrency :: !(GenLocated ann (Currency ann))
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (Cost ann)
+
+instance NFData ann => NFData (Cost ann)
+
+newtype Percentage ann = Percentage
+  { -- Note: This field will have the source location of the decimal literal in
+    -- the percentage expression
+    -- Note: This field does not contain a percentage anymore. I.e. the /100
+    -- has already been applied. It is just called this because of what it's
+    -- called in the module. TODO maybe we want to rename it?
+    unPercentage :: GenLocated ann (Ratio Natural)
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (Percentage ann)
+
+instance NFData ann => NFData (Percentage ann)
 
 data Currency ann = Currency
   { currencySymbol :: !CurrencySymbol,

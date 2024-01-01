@@ -1,0 +1,17 @@
+currency CHF 0.05
+
+account equity:starting
+account assets:cash
+account expenses:coffee
+account expenses:vat
+
+2023-01-01
+  | Opening balances
+  * equity:starting -100 CHF
+  * assets:cash +100 CHF
+
+2023-01-02
+  | VAT example
+  * assets:cash -10 CHF
+  * expenses:coffee +10 CHF
+  ! expenses:vat +0.90 CHF ~ 0.000000000000000000001%

@@ -50,6 +50,18 @@ extra-source-files:
     test_resources/balance/error/as-is/BE_OFF_BALANCE-two-postings.err
     test_resources/balance/error/as-is/BE_OFF_BALANCE-two.cent
     test_resources/balance/error/as-is/BE_OFF_BALANCE-two.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE-zero.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE-zero.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE_CURRENCY.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE_CURRENCY.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE_FRACTION-inverse.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE_FRACTION-inverse.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE_FRACTION.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE_FRACTION.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE_NO_PREVIOUS.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE_NO_PREVIOUS.err
     test_resources/balance/error/as-is/BE_RUNNING_BALANCE.cent
     test_resources/balance/error/as-is/BE_RUNNING_BALANCE.err
     test_resources/balance/error/as-is/BE_TRANSACTION_SUM.cent
@@ -76,6 +88,8 @@ extra-source-files:
     test_resources/compile/CE_INFER_ACCOUNT_TYPE.err
     test_resources/compile/CE_INVALID_AMOUNT.cent
     test_resources/compile/CE_INVALID_AMOUNT.err
+    test_resources/compile/CE_INVALID_PERCENTAGE.cent
+    test_resources/compile/CE_INVALID_PERCENTAGE.err
     test_resources/compile/CE_INVALID_PRICE.cent
     test_resources/compile/CE_INVALID_PRICE.err
     test_resources/compile/CE_INVALID_QUANTISATION_FACTOR.cent
@@ -129,6 +143,7 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/timestamp-with-second.cent
     test_resources/syntax/transaction/formatted/with-assertion.cent
     test_resources/syntax/transaction/formatted/with-attachment.cent
+    test_resources/syntax/transaction/formatted/with-percentage.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
     test_resources/syntax/transaction/valid/example.cent
     test_resources/syntax/transaction/valid/multiline-description.cent
@@ -136,6 +151,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/timestamp-with-second.cent
     test_resources/syntax/transaction/valid/with-assertion.cent
     test_resources/syntax/transaction/valid/with-attachment.cent
+    test_resources/syntax/transaction/valid/with-percentage.cent
 
 source-repository head
   type: git
