@@ -144,7 +144,7 @@ getConfiguration Flags {..} Environment {..} = do
   fmap ((,) p) <$> readYamlConfigFile p
 
 defaultConfigFile :: IO (Path Abs File)
-defaultConfigFile = resolveFile' "centjes-switzerland.yaml"
+defaultConfigFile = resolveFile' "switzerland.yaml"
 
 data Environment = Environment
   { envZipFile :: !(Maybe FilePath),
