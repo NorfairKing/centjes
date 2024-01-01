@@ -12,6 +12,7 @@ dependencies:
 
 library:
   source-dirs: src
+  build-tools: autoexporter
   dependencies:
   - aeson
   - autodocodec

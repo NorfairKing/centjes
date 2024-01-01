@@ -32,6 +32,8 @@ library
       Paths_centjes_switzerland
   hs-source-dirs:
       src
+  build-tool-depends:
+      autoexporter:autoexporter
   build-depends:
       aeson
     , autodocodec

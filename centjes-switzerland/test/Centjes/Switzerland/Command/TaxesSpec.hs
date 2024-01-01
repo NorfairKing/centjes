@@ -1,4 +1,4 @@
-module Centjes.Switzerland.Command.TaxesSpecSpec (spec) where
+module Centjes.Switzerland.Command.TaxesSpec (spec) where
 
 import Autodocodec.Yaml
 import Centjes.Load
