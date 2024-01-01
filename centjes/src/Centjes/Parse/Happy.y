@@ -59,6 +59,8 @@ import qualified Data.Text as T
       star            { Located _ TokenStar }
       bang            { Located _ TokenBang }
       at              { Located _ TokenAt }
+      tilde           { Located _ TokenTilde }
+      percent         { Located _ TokenPercent }
       currency_tok    { Located _ TokenCurrency}
       account_tok     { Located _ TokenAccount }
       newline         { Located _ TokenNewLine }
@@ -146,7 +148,7 @@ postings
 
 posting
   :: { LPosting }
-  : posting_header account_name account_exp currency_symbol optional(posting_cost) newline { sBE $1 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 }
+  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) newline { sBE $1 $7 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
 
 posting_header
   :: { Located Bool }
@@ -156,6 +158,14 @@ posting_header
 posting_cost
   :: { LCostExpression }
   : at cost_exp { $2 }
+
+posting_percentage
+  :: { LPercentageExpression }
+  : tilde percentage percent { sBE $1 $3 $ PercentageExpression $2 }
+
+percentage
+  :: { Located DecimalLiteral }
+  : decimal_literal { parseDecimalLiteral $1 }
 
 account_name
   :: { Located AccountName }

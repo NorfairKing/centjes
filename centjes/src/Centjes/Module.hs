@@ -20,6 +20,8 @@ module Centjes.Module
     PriceDeclaration (..),
     LCostExpression,
     CostExpression (..),
+    LPercentageExpression,
+    PercentageExpression (..),
     LTransaction,
     Transaction (..),
     transactionCurrencySymbols,
@@ -153,7 +155,8 @@ data Posting ann = Posting
     postingAccountName :: !(GenLocated ann AccountName),
     postingAccount :: !(GenLocated ann DecimalLiteral),
     postingCurrencySymbol :: !(GenLocated ann CurrencySymbol),
-    postingCost :: !(Maybe (GenLocated ann (CostExpression ann)))
+    postingCost :: !(Maybe (GenLocated ann (CostExpression ann))),
+    postingPercentage :: !(Maybe (GenLocated ann (PercentageExpression ann)))
   }
   deriving stock (Show, Eq, Generic)
 
@@ -172,6 +175,17 @@ data CostExpression ann = CostExpression
 instance Validity ann => Validity (CostExpression ann)
 
 instance NFData ann => NFData (CostExpression ann)
+
+type LPercentageExpression = LLocated PercentageExpression
+
+newtype PercentageExpression ann = PercentageExpression
+  { unPercentageExpression :: GenLocated ann DecimalLiteral
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (PercentageExpression ann)
+
+instance NFData ann => NFData (PercentageExpression ann)
 
 type LTransactionExtra = LLocated TransactionExtra
 

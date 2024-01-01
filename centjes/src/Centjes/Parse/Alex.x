@@ -76,6 +76,8 @@ $alpha = [A-Za-z]
 @bang = "! "
 @plus = "+ " 
 @at = "@ "
+@percent = "%"
+@tilde = "~"
 @import = "import " .* \n
 @currency = "currency "
 @account = "account "
@@ -136,6 +138,8 @@ $white_no_nl+ ;
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
 <posting> @at              { lexAt }
+<posting> @tilde           { lexTilde }
+<posting> @percent         { lexPercent }
 <posting> @newline         { lexNl `andBegin` transaction}
 
 
@@ -163,6 +167,12 @@ lexDL = lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . DecimalLi
 
 lexAt :: AlexAction Token
 lexAt = lex' TokenAt
+
+lexTilde :: AlexAction Token
+lexTilde = lex' TokenTilde
+
+lexPercent :: AlexAction Token
+lexPercent = lex' TokenPercent
 
 lexNl :: AlexAction Token
 lexNl = lex' TokenNewLine
@@ -198,6 +208,8 @@ data TokenClass
   | TokenPlus
   | TokenDot
   | TokenAt
+  | TokenTilde
+  | TokenPercent
   | TokenCurrency
   | TokenAccount
   | TokenImport !FilePath

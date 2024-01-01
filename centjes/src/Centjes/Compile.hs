@@ -30,6 +30,7 @@ import Data.List (intercalate, sortBy)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Ratio
 import qualified Data.Text as T
 import Data.Validity (Validity)
 import qualified Data.Vector as V
@@ -42,6 +43,7 @@ import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor
 import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
+import Numeric.Natural
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
@@ -51,6 +53,7 @@ data CompileError ann
   | CompileErrorAccountDeclaredTwice !ann !ann !AccountName
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
   | CompileErrorInvalidPrice !ann !(GenLocated ann DecimalLiteral)
+  | CompileErrorInvalidPercentage !ann !ann !(GenLocated ann DecimalLiteral)
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Eq, Generic)
 
@@ -171,6 +174,19 @@ instance ToReport (CompileError SourceSpan) where
         )
         [ (toDiagnosePosition ll, This "This rate is invalid"),
           (toDiagnosePosition pdl, Where "While compiling this price declaration")
+        ]
+        []
+    CompileErrorInvalidPercentage tl pel (Located ll dl) ->
+      Err
+        (Just "CE_INVALID_PERCENTAGE")
+        ( unwords
+            [ "Invalid percentage:",
+              DecimalLiteral.format dl
+            ]
+        )
+        [ (toDiagnosePosition ll, This "This percentage is invalid"),
+          (toDiagnosePosition pel, Where "While compiling this posting percentage"),
+          (toDiagnosePosition tl, Where "While compiling this transaction")
         ]
         []
     CompileErrorUnparseableAmount tl (Located cl qf) (Located al dl) ->
@@ -337,6 +353,24 @@ compileConversionRate pdl ldl@(Located rl dl) = do
     Nothing -> validationFailure $ CompileErrorInvalidPrice pdl ldl
     Just cr -> pure (Located rl cr)
 
+compilePercentageExpression ::
+  ann ->
+  GenLocated ann (PercentageExpression ann) ->
+  Validation (CompileError ann) (GenLocated ann (Percentage ann))
+compilePercentageExpression pl (Located pel PercentageExpression {..}) = do
+  unPercentage <- compilePercentage pl pel unPercentageExpression
+  pure $ Located pel Percentage {..}
+
+compilePercentage ::
+  ann ->
+  ann ->
+  GenLocated ann DecimalLiteral ->
+  Validation (CompileError ann) (GenLocated ann (Ratio Natural))
+compilePercentage pl pel ldl@(Located dll dl) =
+  case DecimalLiteral.toRatio dl of
+    Nothing -> validationFailure $ CompileErrorInvalidPercentage pl pel ldl
+    Just r -> pure (Located dll (r / 100)) -- We undo the percentage-ness here
+
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map AccountName (GenLocated ann AccountType) ->
@@ -407,6 +441,7 @@ compilePosting currencies accounts tl (Located l mp) = do
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
   postingCost <- mapM (compileCostExpression currencies tl) (Module.postingCost mp)
+  postingPercentage <- mapM (compilePercentageExpression tl) (Module.postingPercentage mp)
   pure (Located l Ledger.Posting {..})
 
 compileAccountName ::

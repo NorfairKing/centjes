@@ -1,3 +1,3 @@
 [37mequity:starting[m [31m-10.00[m [31mUSD[m
 [37mexpenses:coffee[m [32m10.00[m  [32mUSD[m
-[37mexpenses:vat[m    [32m 0.78[m  [32mUSD[m
+[37mexpenses:vat[m    [32m 0.72[m  [32mUSD[m

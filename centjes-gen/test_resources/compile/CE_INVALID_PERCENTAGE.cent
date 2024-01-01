@@ -1,0 +1,11 @@
+currency CHF 0.05
+
+account assets:cash
+account expenses:coffee
+account expenses:vat
+
+2024-01-02
+  | Invalid percentage
+  * assets:cash +10 CHF
+  * expenses:coffee +10 CHF
+  ! expenses:vat +0.80 CHF ~ -7.7%

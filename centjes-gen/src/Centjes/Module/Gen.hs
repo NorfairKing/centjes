@@ -35,6 +35,8 @@ instance GenValid ann => GenValid (PriceDeclaration ann)
 
 instance GenValid ann => GenValid (CostExpression ann)
 
+instance GenValid ann => GenValid (PercentageExpression ann)
+
 instance GenValid ann => GenValid (Transaction ann)
 
 instance GenValid ann => GenValid (TransactionExtra ann)

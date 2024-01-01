@@ -58,14 +58,16 @@ instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
         )
       $ shrinkValidStructurally l
 
-instance GenValid ann => GenValid (Price ann)
-
-instance GenValid ann => GenValid (Cost ann)
-
 instance GenValid ann => GenValid (Transaction ann)
 
 instance GenValid ann => GenValid (Assertion ann)
 
 instance GenValid ann => GenValid (Posting ann)
+
+instance GenValid ann => GenValid (Cost ann)
+
+instance GenValid ann => GenValid (Price ann)
+
+instance GenValid ann => GenValid (Percentage ann)
 
 instance GenValid ann => GenValid (Currency ann)
