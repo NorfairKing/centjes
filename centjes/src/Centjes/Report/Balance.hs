@@ -509,6 +509,25 @@ balanceTransaction (Located tl Transaction {..}) = do
             case transactionPostings V.!? pred ix of
               Nothing -> validationFailure $ BalanceErrorPercentageNoPrevious tl pctl
               Just (Located ppl p) -> do
+                -- T: Total (previous posting's amount)
+                -- P: Part (this posting's amount)
+                -- f: Fraction (The percentage)
+                -- E: Exclusive (The exclusive version of T)
+                --
+                -- These are defined as:
+                -- T = (E + E * f) and P = E * f
+                --
+                -- Rewritten as:
+                -- T = E * (1 + f)
+                -- E = T / (1 + f)
+                --
+                -- E = P / f
+                --
+                -- Each defined in terms of the other two:
+                -- T = P * (1 + f) / f
+                -- P = T / (1 + f) * f
+                -- f = P / (T / (1 + f))
+                --   = P * (1 + f) / T
                 let Located oal originalAccount = postingAccount p
                 let Located pcl newCurrency = postingCurrency p
                 if newCurrency == currency
