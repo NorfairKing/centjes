@@ -154,6 +154,7 @@ with final.haskell.lib;
             centjes = centjesPkg "centjes";
             centjes-gen = centjesPkg "centjes-gen";
             centjes-import-revolut = centjesPkg "centjes-import-revolut";
+            centjes-import-neon = centjesPkg "centjes-import-neon";
             centjes-switzerland = centjesPkg "centjes-switzerland";
             inherit centjes-docs-site;
           };

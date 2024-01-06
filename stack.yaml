@@ -5,6 +5,7 @@ packages:
 - centjes-gen
 
 - centjes-import-revolut
+- centjes-import-neon
 
 - centjes-switzerland
 

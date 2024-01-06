@@ -33,6 +33,7 @@ library:
   - shakespeare
   - centjes
   - centjes-import-revolut
+  - centjes-import-neon
   - centjes-switzerland
   - template-haskell
   - template-haskell-reload

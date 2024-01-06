@@ -27,6 +27,9 @@
     <li>
       <a href=@{CentjesImportRevolutR}>
         Revolut
+    <li>
+      <a href=@{CentjesImportNeonR}>
+        Neon
 
   <p .menu-label>
     Reporters

@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Centjes.Import.Revolut.OptParse where
+module Centjes.Import.Neon.OptParse where
 
 import Autodocodec
 import Autodocodec.Yaml
@@ -26,13 +26,12 @@ getSettings = do
   combineToSettings flags env config
 
 data Settings = Settings
-  { settingInput :: !(Path Abs File),
-    settingLedgerFile :: !(Path Abs File),
+  { settingLedgerFile :: !(Path Abs File),
+    settingInput :: !(Path Abs File),
     settingOutput :: !(Path Abs File),
     settingAssetsAccountName :: !AccountName,
     settingExpensesAccountName :: !AccountName,
-    settingIncomeAccountName :: !AccountName,
-    settingFeesAccountName :: !AccountName
+    settingIncomeAccountName :: !AccountName
   }
   deriving (Show, Eq, Generic)
 
@@ -40,11 +39,10 @@ combineToSettings :: Flags -> Environment -> Maybe Configuration -> IO Settings
 combineToSettings Flags {..} Environment {..} mConf = do
   settingInput <- resolveFile' flagInput
   settingLedgerFile <- resolveFile' $ fromMaybe "ledger.cent" $ flagLedger <|> envLedger <|> mc configLedger
-  settingOutput <- resolveFile' $ fromMaybe "revolut.cent" $ flagOutput <|> envOutput
-  let settingAssetsAccountName = fromMaybe (AccountName "assets:revolut") $ flagAssetsAccountName <|> envAssetsAccountName <|> mc configAssetsAccountName
-  let settingExpensesAccountName = fromMaybe (AccountName "expenses:unknown:revolut") $ flagExpensesAccountName <|> envExpensesAccountName <|> mc configExpensesAccountName
-  let settingIncomeAccountName = fromMaybe (AccountName "income:unknown:revolut") $ flagIncomeAccountName <|> envIncomeAccountName <|> mc configIncomeAccountName
-  let settingFeesAccountName = fromMaybe (AccountName "expenses:banking:revolut") $ flagFeesAccountName <|> envFeesAccountName <|> mc configFeesAccountName
+  settingOutput <- resolveFile' $ fromMaybe "neon.cent" $ flagOutput <|> envOutput
+  let settingAssetsAccountName = fromMaybe (AccountName "assets:neon") $ flagAssetsAccountName <|> envAssetsAccountName <|> mc configAssetsAccountName
+  let settingExpensesAccountName = fromMaybe (AccountName "expenses:unknown:neon") $ flagExpensesAccountName <|> envExpensesAccountName <|> mc configExpensesAccountName
+  let settingIncomeAccountName = fromMaybe (AccountName "income:unknown:neon") $ flagIncomeAccountName <|> envIncomeAccountName <|> mc configIncomeAccountName
   pure Settings {..}
   where
     mc :: (Configuration -> Maybe a) -> Maybe a
@@ -54,8 +52,7 @@ data Configuration = Configuration
   { configLedger :: !(Maybe FilePath),
     configAssetsAccountName :: !(Maybe AccountName),
     configExpensesAccountName :: !(Maybe AccountName),
-    configIncomeAccountName :: !(Maybe AccountName),
-    configFeesAccountName :: !(Maybe AccountName)
+    configIncomeAccountName :: !(Maybe AccountName)
   }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Configuration)
@@ -73,13 +70,11 @@ instance HasCodec Configuration where
           .= configExpensesAccountName
         <*> optionalField "income-account" "Income account name"
           .= configIncomeAccountName
-        <*> optionalField "fees-account" "Fees account name"
-          .= configFeesAccountName
 
 getConfiguration :: Flags -> Environment -> IO (Maybe Configuration)
 getConfiguration Flags {..} Environment {..} =
   case flagConfigFile <|> envConfigFile of
-    Nothing -> resolveFile' "revolut.yaml" >>= readYamlConfigFile
+    Nothing -> resolveFile' "neon.yaml" >>= readYamlConfigFile
     Just cf -> do
       afp <- resolveFile' cf
       readYamlConfigFile afp
@@ -90,8 +85,7 @@ data Environment = Environment
     envOutput :: !(Maybe FilePath),
     envAssetsAccountName :: !(Maybe AccountName),
     envExpensesAccountName :: !(Maybe AccountName),
-    envIncomeAccountName :: !(Maybe AccountName),
-    envFeesAccountName :: !(Maybe AccountName)
+    envIncomeAccountName :: !(Maybe AccountName)
   }
   deriving (Show, Eq, Generic)
 
@@ -111,7 +105,6 @@ environmentParser =
     <*> optional (Env.var (fmap AccountName . Env.str) "ASSETS_ACCOUNT" (Env.help "Assets account name"))
     <*> optional (Env.var (fmap AccountName . Env.str) "EXPENSES_ACCOUNT" (Env.help "Expenses account name"))
     <*> optional (Env.var (fmap AccountName . Env.str) "INCOME_ACCOUNT" (Env.help "Income account name"))
-    <*> optional (Env.var (fmap AccountName . Env.str) "FEES_ACCOUNT" (Env.help "Fees account name"))
 
 -- | Get the command-line flags
 getFlags :: IO Flags
@@ -148,8 +141,7 @@ data Flags = Flags
     flagOutput :: !(Maybe FilePath),
     flagAssetsAccountName :: !(Maybe AccountName),
     flagExpensesAccountName :: !(Maybe AccountName),
-    flagIncomeAccountName :: !(Maybe AccountName),
-    flagFeesAccountName :: !(Maybe AccountName)
+    flagIncomeAccountName :: !(Maybe AccountName)
   }
   deriving (Show, Eq, Generic)
 
@@ -217,16 +209,6 @@ parseFlags =
                 [ long "income-account",
                   short 'e',
                   help "Income account name"
-                ]
-            )
-      )
-    <*> optional
-      ( AccountName
-          <$> strOption
-            ( mconcat
-                [ long "fees-account",
-                  short 'f',
-                  help "Fees account name"
                 ]
             )
       )

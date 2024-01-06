@@ -1,0 +1,39 @@
+name: centjes-import-neon
+version: 0.0.0.0
+github: "NorfairKing/centjes"
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  dependencies:
+  - autodocodec
+  - autodocodec-yaml
+  - bytestring
+  - cassava
+  - centjes
+  - containers
+  - diagnose
+  - envparse
+  - monad-logger
+  - optparse-applicative
+  - path
+  - path-io
+  - really-safe-money
+  - text
+  - time
+  - vector
+  - yaml
+
+executables:
+  centjes-import-neon:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - centjes-import-neon
+
