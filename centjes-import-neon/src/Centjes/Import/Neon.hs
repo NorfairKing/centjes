@@ -132,9 +132,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
                 (not . T.null . unDescription)
                 [ "Date: " <> fromString (formatTime defaultTimeLocale "%F" rowDate),
                   rowDescription,
-                  rowSubject,
-                  rowCategory,
-                  rowTags
+                  rowSubject
                 ]
             )
 
