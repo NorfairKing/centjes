@@ -25,6 +25,7 @@ import Control.Monad.Logger
 import Control.Monad.Writer
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as JSON
+import Data.Aeson.Encode.Pretty as JSON
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
 import Data.Map (Map)
@@ -71,6 +72,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
             [ "Succesfully compiled information into",
               fromAbsFile jsonInputFile
             ]
+      logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
 
       -- Write the template to a file
       mainTypFile <- liftIO $ do
@@ -187,6 +189,37 @@ produceInput Setup {..} ledger (BalanceReport accountBalances) = do
       -- TODO Error
       _ -> undefined
 
+  inputExpenses <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
+    let Located _ timestamp = transactionTimestamp
+    relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
+      let Located _ accountName = postingAccountName
+      if S.member accountName setupExpensesAccounts
+        then do
+          let Located _ account = postingAccount
+          let Located _ currency = postingCurrency
+          amount <- case account of
+            Negative _ -> undefined -- TODO error
+            Positive amount -> pure $ amountToAmountWithCurrency currency amount
+          pure $ Just amount
+        else pure Nothing
+    case V.toList relevantAccounts of
+      [] -> pure Nothing
+      [expenseAmount] -> do
+        expenseEvidence <- case V.toList transactionAttachments of
+          [] -> undefined -- TODO error
+          [Located _ (Attachment (Located _ path))] -> do
+            let fileInTarball = [reldir|expense|] </> path
+            addEvidence path fileInTarball
+            pure fileInTarball
+          _ -> undefined -- TODO error
+        let expenseDay = Timestamp.toDay timestamp
+        expenseDescription <- case transactionDescription of
+          Nothing -> undefined -- TODO error
+          Just (Located _ d) -> pure d
+        pure $ Just Expense {..}
+      -- TODO Error
+      _ -> undefined
+
   inputAssets <- fmap V.fromList $ for (M.toList setupAssetsAccounts) $ \(name, AssetSetup {..}) -> do
     let assetName = name
     -- TODO check that file exists
@@ -220,7 +253,8 @@ instance ToReport (InputError SourceSpan) where
 data Input = Input
   { inputName :: Text,
     inputIncome :: Vector Income,
-    inputAssets :: Vector Asset
+    inputAssets :: Vector Asset,
+    inputExpenses :: Vector Expense
   }
   deriving (Show, Eq)
   deriving (FromJSON, ToJSON) via (Autodocodec Input)
@@ -235,6 +269,8 @@ instance HasCodec Input where
           .= inputIncome
         <*> requiredField "assets" "assets"
           .= inputAssets
+        <*> requiredField "expenses" "expenses"
+          .= inputExpenses
 
 data Income = Income
   { incomeDay :: !Day,
@@ -276,6 +312,28 @@ instance HasCodec Asset where
           .= assetAmount
         <*> requiredField "evidence" "evidence"
           .= assetEvidence
+
+data Expense = Expense
+  { expenseDay :: !Day,
+    expenseDescription :: !Description,
+    expenseAmount :: !AmountWithCurrency,
+    expenseEvidence :: !(Path Rel File)
+  }
+  deriving (Show, Eq)
+  deriving (FromJSON, ToJSON) via (Autodocodec Expense)
+
+instance HasCodec Expense where
+  codec =
+    object "Expense" $
+      Expense
+        <$> requiredField "day" "expense day"
+          .= expenseDay
+        <*> requiredField "description" "expense description"
+          .= expenseDescription
+        <*> requiredField "amount" "amount"
+          .= expenseAmount
+        <*> requiredField "evidence" "evidence"
+          .= expenseEvidence
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: String,

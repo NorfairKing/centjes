@@ -126,6 +126,7 @@
           ]);
         shellHook = self.checks.${system}.pre-commit.shellHook;
 
+        DEVELOPMENT = "True";
         CENTJES_DOCS_DEPENDENCY_GRAPH = "${pkgs.centjesDependencyGraph}/centjes-dependency-graph.svg";
         CENTJES_DOCS_NIXOS_MODULE_DOCS = "${pkgs.centjesNixosModuleDocs}/share/doc/nixos/options.json";
       };

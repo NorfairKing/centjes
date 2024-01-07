@@ -15,6 +15,7 @@ library:
   build-tools: autoexporter
   dependencies:
   - aeson
+  - aeson-pretty
   - autodocodec
   - autodocodec-yaml
   - bytestring

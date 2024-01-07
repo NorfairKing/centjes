@@ -102,7 +102,8 @@ instance HasCodec Configuration where
 data Setup = Setup
   { setupName :: !Text,
     setupIncomeAccounts :: !(Set AccountName),
-    setupAssetsAccounts :: !(Map Text AssetSetup)
+    setupAssetsAccounts :: !(Map Text AssetSetup),
+    setupExpensesAccounts :: !(Set AccountName)
   }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Setup)
@@ -119,6 +120,8 @@ instance HasObjectCodec Setup where
         .= setupIncomeAccounts
       <*> requiredField "assets" "assets"
         .= setupAssetsAccounts
+      <*> requiredField "expenses" "expenses"
+        .= setupExpensesAccounts
 
 data AssetSetup = AssetSetup
   { assetSetupAccountName :: !AccountName,

@@ -32,3 +32,15 @@ Name: #{ input.name }
     raw(income.evidence),
   )).flatten(),
 )
+#pagebreak()
+== Expenses
+
+#list(..input.expenses.map(expense => [
+  === #{ expense.day }
+  #{ expense.description }
+  #linebreak()
+  #{ expense.amount.formatted }
+  #{ expense.amount.symbol }
+  #linebreak()
+  #raw(expense.evidence)
+]))

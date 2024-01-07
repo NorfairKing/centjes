@@ -1,10 +1,10 @@
-{ mkDerivation, aeson, autodocodec, autodocodec-yaml, autoexporter
-, base, bytestring, centjes, centjes-gen, conduit, containers
-, envparse, filepath, http-client, http-client-tls, http-types, lib
-, monad-logger, mtl, optparse-applicative, path, path-io
-, really-safe-money, sydtest, sydtest-aeson, sydtest-discover
-, template-haskell, template-haskell-reload, text, time
-, typed-process, vector, xml-conduit, yaml, zip
+{ mkDerivation, aeson, aeson-pretty, autodocodec, autodocodec-yaml
+, autoexporter, base, bytestring, centjes, centjes-gen, conduit
+, containers, envparse, filepath, http-client, http-client-tls
+, http-types, lib, monad-logger, mtl, optparse-applicative, path
+, path-io, really-safe-money, sydtest, sydtest-aeson
+, sydtest-discover, template-haskell, template-haskell-reload, text
+, time, typed-process, vector, xml-conduit, yaml, zip
 }:
 mkDerivation {
   pname = "centjes-switzerland";
@@ -13,9 +13,9 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson autodocodec autodocodec-yaml base bytestring centjes conduit
-    containers envparse http-client http-client-tls http-types
-    monad-logger mtl optparse-applicative path path-io
+    aeson aeson-pretty autodocodec autodocodec-yaml base bytestring
+    centjes conduit containers envparse http-client http-client-tls
+    http-types monad-logger mtl optparse-applicative path path-io
     really-safe-money template-haskell template-haskell-reload text
     time typed-process vector xml-conduit yaml zip
   ];

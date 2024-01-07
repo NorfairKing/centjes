@@ -81,8 +81,9 @@
   - {name: nub, within: []} # O(n^2)
 
 
-  # Still to add
-  - {name: decodeUtf8, within: []} # Partial, use decodeUtf8' instead.
+  - name: decodeUtf8 # Partial, use decodeUtf8' instead.
+    within:
+      - Centjes.Switzerland.Command.Taxes
   - name: Prelude.putStrLn
     within:
       - Centjes.Docs.Site.ModuleDocs

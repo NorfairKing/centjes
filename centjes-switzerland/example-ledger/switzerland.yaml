@@ -7,3 +7,5 @@ assets:
   bank: 
     name: assets:bank
     evidence: bank-statement.txt
+
+expenses: []
