@@ -106,8 +106,7 @@ checkTransactionExtra tl = \case
 checkAttachment :: SourceSpan -> LAttachment -> CheckerT SourceSpan ()
 checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
   let base = sourceSpanBase l
-  let curFile = sourceSpanFile l
-  let af = base </> parent curFile </> fp
+  let af = base </> fp
   exists <- liftIO $ doesFileExist af
   -- TODO error when attachment exists but is not readable.
   when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a
