@@ -7,8 +7,11 @@ module Centjes.Import.Neon.OptParse where
 
 import Autodocodec
 import Autodocodec.Yaml
+import Centjes.AccountName (AccountName)
+import qualified Centjes.AccountName as AccountName
 import Centjes.Module
 import Control.Applicative
+import Control.Arrow (left)
 import Data.Maybe
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
@@ -40,9 +43,9 @@ combineToSettings Flags {..} Environment {..} mConf = do
   settingInput <- resolveFile' flagInput
   settingLedgerFile <- resolveFile' $ fromMaybe "ledger.cent" $ flagLedger <|> envLedger <|> mc configLedger
   settingOutput <- resolveFile' $ fromMaybe "neon.cent" $ flagOutput <|> envOutput
-  let settingAssetsAccountName = fromMaybe (AccountName "assets:neon") $ flagAssetsAccountName <|> envAssetsAccountName <|> mc configAssetsAccountName
-  let settingExpensesAccountName = fromMaybe (AccountName "expenses:unknown:neon") $ flagExpensesAccountName <|> envExpensesAccountName <|> mc configExpensesAccountName
-  let settingIncomeAccountName = fromMaybe (AccountName "income:unknown:neon") $ flagIncomeAccountName <|> envIncomeAccountName <|> mc configIncomeAccountName
+  let settingAssetsAccountName = fromMaybe "assets:neon" $ flagAssetsAccountName <|> envAssetsAccountName <|> mc configAssetsAccountName
+  let settingExpensesAccountName = fromMaybe "expenses:unknown:neon" $ flagExpensesAccountName <|> envExpensesAccountName <|> mc configExpensesAccountName
+  let settingIncomeAccountName = fromMaybe "income:unknown:neon" $ flagIncomeAccountName <|> envIncomeAccountName <|> mc configIncomeAccountName
   pure Settings {..}
   where
     mc :: (Configuration -> Maybe a) -> Maybe a
@@ -102,9 +105,9 @@ environmentParser =
     <$> optional (Env.var Env.str "CONFIG_FILE" (Env.help "Config file"))
     <*> optional (Env.var Env.str "LEDGER_FILE" (Env.help "Ledger file"))
     <*> optional (Env.var Env.str "OUTPUT" (Env.help "Output file"))
-    <*> optional (Env.var (fmap AccountName . Env.str) "ASSETS_ACCOUNT" (Env.help "Assets account name"))
-    <*> optional (Env.var (fmap AccountName . Env.str) "EXPENSES_ACCOUNT" (Env.help "Expenses account name"))
-    <*> optional (Env.var (fmap AccountName . Env.str) "INCOME_ACCOUNT" (Env.help "Income account name"))
+    <*> optional (Env.var (left Env.UnreadError . AccountName.fromStringOrError) "ASSETS_ACCOUNT" (Env.help "Assets account name"))
+    <*> optional (Env.var (left Env.UnreadError . AccountName.fromStringOrError) "EXPENSES_ACCOUNT" (Env.help "Expenses account name"))
+    <*> optional (Env.var (left Env.UnreadError . AccountName.fromStringOrError) "INCOME_ACCOUNT" (Env.help "Income account name"))
 
 -- | Get the command-line flags
 getFlags :: IO Flags
@@ -183,32 +186,32 @@ parseFlags =
           )
       )
     <*> optional
-      ( AccountName
-          <$> strOption
-            ( mconcat
-                [ long "asset-account",
-                  short 'a',
-                  help "Asset account name"
-                ]
-            )
+      ( option
+          (eitherReader AccountName.fromStringOrError)
+          ( mconcat
+              [ long "asset-account",
+                short 'a',
+                help "Asset account name"
+              ]
+          )
       )
     <*> optional
-      ( AccountName
-          <$> strOption
-            ( mconcat
-                [ long "expenses-account",
-                  short 'e',
-                  help "Expenses account name"
-                ]
-            )
+      ( option
+          (eitherReader AccountName.fromStringOrError)
+          ( mconcat
+              [ long "expenses-account",
+                short 'e',
+                help "Expenses account name"
+              ]
+          )
       )
     <*> optional
-      ( AccountName
-          <$> strOption
-            ( mconcat
-                [ long "income-account",
-                  short 'e',
-                  help "Income account name"
-                ]
-            )
+      ( option
+          (eitherReader AccountName.fromStringOrError)
+          ( mconcat
+              [ long "income-account",
+                short 'e',
+                help "Income account name"
+              ]
+          )
       )

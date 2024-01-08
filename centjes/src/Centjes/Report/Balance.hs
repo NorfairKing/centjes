@@ -14,7 +14,8 @@ module Centjes.Report.Balance
   )
 where
 
-import Centjes.AccountName as AccountName
+import Centjes.AccountName (AccountName)
+import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Convert
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
@@ -99,7 +100,7 @@ instance ToReport (BalanceError SourceSpan) where
             Where
               ( unlines' $
                   concat
-                    [ [unwords ["Account: ", T.unpack (accountNameText an)]],
+                    [ [unwords ["Account: ", AccountName.toString an]],
                       ["Running total:"],
                       multiAccountLines subtotal,
                       ["Balance to add:"],
@@ -119,7 +120,7 @@ instance ToReport (BalanceError SourceSpan) where
             Where $
               unlines' $
                 concat
-                  [ [unwords ["Account: ", T.unpack (accountNameText an)]],
+                  [ [unwords ["Account: ", AccountName.toString an]],
                     ["Running total:"],
                     multiAccountLines runningTotal
                   ]

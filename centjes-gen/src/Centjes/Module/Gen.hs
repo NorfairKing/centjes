@@ -2,6 +2,7 @@
 
 module Centjes.Module.Gen where
 
+import Centjes.AccountName.Gen ()
 import Centjes.AccountType.Gen ()
 import Centjes.CurrencySymbol.Gen ()
 import Centjes.Description.Gen ()
@@ -10,9 +11,8 @@ import Centjes.Module
 import Centjes.Timestamp.Gen ()
 import Data.GenValidity
 import Data.GenValidity.Path ()
-import Data.GenValidity.Text
+import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
-import qualified Data.Text as T
 import Money.Account.Gen ()
 import Money.QuantisationFactor.Gen ()
 import Numeric.DecimalLiteral.Gen ()
@@ -42,23 +42,6 @@ instance GenValid ann => GenValid (Transaction ann)
 instance GenValid ann => GenValid (TransactionExtra ann)
 
 instance GenValid ann => GenValid (Posting ann)
-
-instance GenValid AccountName where
-  genValid =
-    fmap AccountName $ do
-      let alpha =
-            oneof
-              [ choose ('a', 'z'),
-                choose ('A', 'Z')
-              ]
-      let rest =
-            oneof
-              [ choose ('a', 'z'),
-                choose ('A', 'Z'),
-                choose ('0', '9'),
-                elements [':', '_']
-              ]
-      T.cons <$> alpha <*> genTextBy rest
 
 instance GenValid ann => GenValid (Attachment ann)
 

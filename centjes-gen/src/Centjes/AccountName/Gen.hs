@@ -23,6 +23,7 @@ instance GenValid AccountName where
               [ choose ('a', 'z'),
                 choose ('A', 'Z'),
                 choose ('0', '9'),
-                elements [':', '_', '-']
+                elements ['-', '_']
               ]
-      T.cons <$> alpha <*> genTextBy rest
+      let piece = T.cons <$> alpha <*> genTextBy rest
+      genNonEmptyOf piece

@@ -11,6 +11,6 @@ spec :: Spec
 spec = do
   genValidSpec @AccountName
   describe "fromText" $
-    it "roundtrips with accountNameText" $
+    it "roundtrips with toText" $
       forAllValid $ \an ->
-        AccountName.fromText (accountNameText an) `shouldBe` Just an
+        AccountName.fromText (AccountName.toText an) `shouldBe` Just an

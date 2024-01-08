@@ -2,6 +2,7 @@
 
 module Centjes.Formatting where
 
+import qualified Centjes.AccountName as AccountName
 import Centjes.Ledger
 import Centjes.Location
 import qualified Centjes.Timestamp as Timestamp
@@ -19,7 +20,7 @@ import Text.Colour
 import Text.Printf
 
 accountNameChunk :: AccountName -> Chunk
-accountNameChunk = fore white . chunk . accountNameText
+accountNameChunk = fore white . chunk . AccountName.toText
 
 multiAccountMaxWidth :: Money.MultiAccount currency -> Max Word8
 multiAccountMaxWidth = foldMap accountWidth . MultiAccount.unMultiAccount

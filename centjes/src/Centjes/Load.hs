@@ -25,6 +25,7 @@ import Control.Monad.Logger
 import Control.Monad.State.Strict
 import qualified Data.ByteString as SB
 import Data.Foldable
+import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -85,30 +86,39 @@ instance ToReport LoadError' where
     LoadErrorParseError rf mL e ->
       Err
         (Just "LE_UTF8")
-        (unwords ["Could not parse:", fromRelFile rf])
+        ( case maybePos of
+            Just _ -> unwords ["Could not parse:", fromRelFile rf]
+            Nothing ->
+              intercalate
+                "\n"
+                [ unwords ["Could not parse:", fromRelFile rf],
+                  e
+                ]
+        )
         ( concat
             [ [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL],
               -- Maybe we don't need to unpack and repack here. Then we can also have columns in filenames.
-              let maybePos = case T.splitOn "  " (T.pack e) of
-                    diagPart : errPart : _ -> case T.splitOn "@" diagPart of
-                      _file : rest : _ -> case T.splitOn "-" rest of
-                        beginStr : endStr : _ ->
-                          let readPos s = case T.splitOn ":" s of
-                                lineStr : colStr : _ ->
-                                  (,) <$> readMaybe (T.unpack lineStr) <*> readMaybe (T.unpack colStr)
-                                _ -> Nothing
-                           in (,,) errPart <$> readPos beginStr <*> readPos endStr
-                        _ -> Nothing
-                      _ -> Nothing
-                    _ -> Nothing
-               in [ ( Position beginTup endTup (fromRelFile rf),
-                      This (T.unpack errPart)
-                    )
-                    | (errPart, beginTup, endTup) <- maybeToList maybePos
-                  ]
+              [ ( Position beginTup endTup (fromRelFile rf),
+                  This (T.unpack errPart)
+                )
+                | (errPart, beginTup, endTup) <- maybeToList maybePos
+              ]
             ]
         )
         []
+      where
+        maybePos = case T.splitOn "  " (T.pack e) of
+          diagPart : errPart : _ -> case T.splitOn "@" diagPart of
+            _file : rest : _ -> case T.splitOn "-" rest of
+              beginStr : endStr : _ ->
+                let readPos s = case T.splitOn ":" s of
+                      lineStr : colStr : _ ->
+                        (,) <$> readMaybe (T.unpack lineStr) <*> readMaybe (T.unpack colStr)
+                      _ -> Nothing
+                 in (,,) errPart <$> readPos beginStr <*> readPos endStr
+              _ -> Nothing
+            _ -> Nothing
+          _ -> Nothing
 
 loadModulesOrErr :: forall m. MonadLoggerIO m => Path Abs File -> ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModulesOrErr firstPath = do

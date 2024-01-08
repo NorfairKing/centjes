@@ -9,7 +9,8 @@ module Centjes.Format
   )
 where
 
-import Centjes.AccountName
+import Centjes.AccountName (AccountName)
+import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Location
 import Centjes.Module
@@ -208,7 +209,7 @@ lAccountNameDoc :: GenLocated l AccountName -> Doc ann
 lAccountNameDoc = accountNameDoc . locatedValue
 
 accountNameDoc :: AccountName -> Doc ann
-accountNameDoc = pretty . accountNameText
+accountNameDoc = pretty . AccountName.toText
 
 accountDoc :: DecimalLiteral -> Doc ann
 accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
