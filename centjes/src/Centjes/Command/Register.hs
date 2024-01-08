@@ -87,7 +87,7 @@ renderTransaction maxWidth ix timestamp mDescription postings =
    in hCatTable
         [ [[fore white $ chunk $ T.pack $ show ix]],
           [[timestampChunk timestamp]],
-          maybe [] (map (: []) . descriptionChunks) mDescription,
+          maybe [] descriptionChunks mDescription,
           postingLines
         ]
 

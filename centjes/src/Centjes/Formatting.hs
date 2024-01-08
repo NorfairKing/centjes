@@ -64,6 +64,6 @@ accountChunkWithWidth mWidth qf acc =
 timestampChunk :: Timestamp -> Chunk
 timestampChunk = fore blue . chunk . Timestamp.toText
 
-descriptionChunks :: Description -> [Chunk]
+descriptionChunks :: Description -> [[Chunk]]
 descriptionChunks (Description t) =
-  map (fore yellow . chunk) (T.lines t)
+  map ((: []) . fore yellow . chunk) (T.lines t)
