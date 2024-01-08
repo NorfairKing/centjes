@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Command.Balance
   ( runCentjesBalance,
@@ -8,6 +9,7 @@ module Centjes.Command.Balance
   )
 where
 
+import qualified Centjes.AccountName as AccountName
 import Centjes.Compile
 import Centjes.Formatting
 import Centjes.Ledger
@@ -17,11 +19,14 @@ import Centjes.Report.Balance
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import Data.Foldable
+import Data.List (sortOn)
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Semigroup
 import Data.Word
 import qualified Money.MultiAccount as Money (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
@@ -35,7 +40,26 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
       checkValidation diagnostic $
         produceBalanceReport balanceSettingCurrency ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable br
+  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable $ fillBalanceReport br
+
+-- Should this be in Centjes.Report.Balance?
+fillBalanceReport :: forall ann. Ord ann => BalanceReport ann -> BalanceReport ann
+fillBalanceReport = BalanceReport . go . unBalanceReport
+  where
+    go :: AccountBalances ann -> AccountBalances ann
+    go as = foldl' go' as (M.toList as)
+    go' :: AccountBalances ann -> (AccountName, Money.MultiAccount (Currency ann)) -> AccountBalances ann
+    go' as (an, am) = foldl' (go'' am) as (AccountName.ancestors an)
+    go'' ::
+      Money.MultiAccount (Currency ann) ->
+      AccountBalances ann ->
+      AccountName ->
+      AccountBalances ann
+    go'' am as an = case M.lookup an as of
+      Nothing -> M.insert an am as
+      Just am' -> case MultiAccount.add am am' of
+        Nothing -> as -- TODO error somehow
+        Just am'' -> M.insert an am'' as
 
 renderBalanceReportTable :: BalanceReport ann -> [Chunk]
 renderBalanceReportTable br =
@@ -66,4 +90,5 @@ renderBalances width =
             (accountNameChunk an : firstChunks)
               : map (chunk " " :) rest
     )
+    . sortOn fst
     . M.toList

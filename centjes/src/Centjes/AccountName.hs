@@ -9,6 +9,8 @@ module Centjes.AccountName
     fromStringOrError,
     toString,
     toText,
+    parent,
+    ancestors,
   )
 where
 
@@ -18,6 +20,7 @@ import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Char as Char
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Ord (comparing)
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -28,7 +31,7 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
 newtype AccountName = AccountName {unAccountName :: NonEmpty Text}
-  deriving (Show, Eq, Ord, Generic)
+  deriving (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec AccountName)
 
 instance Validity AccountName where
@@ -53,6 +56,9 @@ instance Validity AccountName where
 
 instance NFData AccountName
 
+instance Ord AccountName where
+  compare = comparing toText
+
 instance HasCodec AccountName where
   codec = bimapCodec f toText codec
     where
@@ -69,7 +75,7 @@ fromText :: Text -> Maybe AccountName
 fromText = either (const Nothing) Just . fromTextOrError
 
 fromTextOrError :: Text -> Either String AccountName
-fromTextOrError = prettyValidate . AccountName . NE.fromList . T.splitOn ":"
+fromTextOrError = prettyValidate . AccountName . NE.fromList . reverse . T.splitOn ":"
 
 -- | Prefer 'fromTextOrErr' over 'fromStringOrErr'
 fromStringOrError :: String -> Either String AccountName
@@ -77,8 +83,18 @@ fromStringOrError = fromTextOrError . T.pack
 
 -- | Prefer 'toText' over 'toString'.
 toText :: AccountName -> Text
-toText = T.intercalate ":" . NE.toList . unAccountName
+toText = T.intercalate ":" . reverse . NE.toList . unAccountName
 
 -- | Prefer 'toText' over 'toString'.
 toString :: AccountName -> String
 toString = T.unpack . toText
+
+parent :: AccountName -> Maybe AccountName
+parent (AccountName (_ :| ts)) = do
+  ts' <- NE.nonEmpty ts
+  pure $ AccountName ts'
+
+ancestors :: AccountName -> [AccountName]
+ancestors an = case parent an of
+  Nothing -> []
+  Just an' -> an' : ancestors an'
