@@ -24,7 +24,6 @@ import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -56,10 +55,10 @@ runCentjesImportRevolut = do
               inputFp
               (T.unpack (fromRight "No file info because it was not UTF8" (TE.decodeUtf8' contents)))
           )
-          $ traverse
-            ( \(rowIx, row) ->
-                DeclarationTransaction . noLoc
-                  <$> mapValidationFailure
+          $ concat
+            <$> traverse
+              ( \(rowIx, row) ->
+                  mapValidationFailure
                     (ImportError inputFp rowIx)
                     ( rowTransaction
                         currencies
@@ -69,8 +68,20 @@ runCentjesImportRevolut = do
                         settingFeesAccountName
                         row
                     )
-            )
-            (zip [1 ..] (sortOn (\r -> fromMaybe (rowStartedDate r) (rowCompletedDate r)) (V.toList v)))
+              )
+              ( zip
+                  [1 ..]
+                  ( sortOn
+                      (\r -> fromMaybe (rowStartedDate r) (rowCompletedDate r))
+                      ( filter
+                          (isJust . rowCompletedDate)
+                          ( filter
+                              (\r -> rowState r /= "REVERTED")
+                              (V.toList v)
+                          )
+                      )
+                  )
+              )
       let m = Module {moduleImports = [], moduleDeclarations = ts}
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 
@@ -121,7 +132,7 @@ rowTransaction ::
   AccountName ->
   AccountName ->
   Row ->
-  Validation ImportError' (Transaction ())
+  Validation ImportError' [Declaration ()]
 rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName feeAccountName Row {..} = do
   -- TODO dont import non-completed transactions?
   -- rowAccount is the amount the expense
@@ -132,10 +143,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
           <$> Description.combine
             ( filter
                 (not . T.null . unDescription)
-                [ "Started date: " <> fromString (formatTime defaultTimeLocale "%F %T" rowStartedDate),
-                  "Completed date: " <> fromString (maybe "" (formatTime defaultTimeLocale "%F %T") rowCompletedDate),
-                  rowDescription
-                ]
+                [rowDescription]
             )
 
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
@@ -193,7 +201,11 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
                   (noLoc rowCurrency)
           | bl <- maybeToList mbl
         ]
-  pure Transaction {..}
+  pure
+    [ DeclarationComment $ noLoc $ T.pack $ "Started date: " <> formatTime defaultTimeLocale "%F %T" rowStartedDate,
+      DeclarationComment $ noLoc $ T.pack $ "Completed date: " <> maybe "" (formatTime defaultTimeLocale "%F %T") rowCompletedDate,
+      DeclarationTransaction $ noLoc $ Transaction {..}
+    ]
 
 data Row = Row
   { rowType :: !Text,
