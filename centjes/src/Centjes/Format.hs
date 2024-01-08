@@ -9,7 +9,6 @@ module Centjes.Format
   )
 where
 
-import Centjes.AccountName (AccountName)
 import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Location

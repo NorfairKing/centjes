@@ -20,9 +20,9 @@ import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Data.Foldable
-import Data.List (sortOn)
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
+import Data.Maybe
 import Data.Semigroup
 import Data.Word
 import qualified Money.MultiAccount as Money (MultiAccount)
@@ -61,15 +61,17 @@ fillBalanceReport = BalanceReport . go . unBalanceReport
         Nothing -> as -- TODO error somehow
         Just am'' -> M.insert an am'' as
 
-renderBalanceReportTable :: BalanceReport ann -> [Chunk]
+renderBalanceReportTable :: Ord ann => BalanceReport ann -> [Chunk]
 renderBalanceReportTable br =
   let t = table (renderBalanceReport br)
    in renderTable t
 
-renderBalanceReport :: BalanceReport ann -> [[Chunk]]
+renderBalanceReport :: Ord ann => BalanceReport ann -> [[Chunk]]
 renderBalanceReport br@(BalanceReport m) =
   let width = balanceReportMaxWidth br
+      totalAmount = fromMaybe (error "Error somehow?") (MultiAccount.sum m)
    in renderBalances width m
+        ++ amountLines (fore blue (accountNameChunk "Total")) (multiAccountChunksWithWidth (Just width) totalAmount)
 
 balanceReportMaxWidth :: BalanceReport ann -> Max Word8
 balanceReportMaxWidth = accountBalancesMaxWidth . unBalanceReport
@@ -83,12 +85,11 @@ renderBalances ::
   [[Chunk]]
 renderBalances width =
   concatMap
-    ( \(an, acc) ->
-        case multiAccountChunksWithWidth (Just width) acc of
-          [] -> []
-          (firstChunks : rest) ->
-            (accountNameChunk an : firstChunks)
-              : map (chunk " " :) rest
-    )
-    . sortOn fst
+    (\(an, acc) -> amountLines (accountNameChunk an) $ multiAccountChunksWithWidth (Just width) acc)
     . M.toList
+
+-- TODO use the hCatTable
+amountLines :: Chunk -> [[Chunk]] -> [[Chunk]]
+amountLines header cs = case cs of
+  [] -> [[header]]
+  (firstChunks : rest) -> (header : firstChunks) : map (chunk " " :) rest

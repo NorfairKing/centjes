@@ -14,7 +14,6 @@ module Centjes.Report.Balance
   )
 where
 
-import Centjes.AccountName (AccountName)
 import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Convert

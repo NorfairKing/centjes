@@ -7,7 +7,6 @@ module Centjes.Import.Revolut.OptParse where
 
 import Autodocodec
 import Autodocodec.Yaml
-import Centjes.AccountName (AccountName)
 import qualified Centjes.AccountName as AccountName
 import Centjes.Module
 import Control.Applicative

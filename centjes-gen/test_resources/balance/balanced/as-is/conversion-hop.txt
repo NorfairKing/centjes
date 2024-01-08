@@ -2,3 +2,6 @@
 [37minvestments[m [32m 50.00[m  [32mCHF[m
             [32m 50.00[m  [32mEUR[m
             [32m 50.00[m  [32mUSD[m
+[34mTotal[m       [31m-50.00[m  [31mCHF[m
+            [32m 50.00[m  [32mEUR[m
+            [32m 50.00[m  [32mUSD[m
