@@ -19,6 +19,8 @@ import Centjes.AccountType as AccountType
 import Centjes.Convert
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import Centjes.CurrencySymbol as CurrencySymbol
+import Centjes.Filter (Filter)
+import qualified Centjes.Filter as Filter
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Validation
@@ -362,11 +364,12 @@ accountLine c a =
 produceBalanceReport ::
   forall ann.
   Ord ann =>
+  Filter ->
   Maybe CurrencySymbol ->
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
-produceBalanceReport mCurrencySymbolTo l = do
-  bl <- produceBalancedLedger l
+produceBalanceReport f mCurrencySymbolTo l = do
+  bl <- produceBalancedLedger f l
   let v = balancedLedgerTransactions bl
   let br =
         BalanceReport $
@@ -398,11 +401,12 @@ convertBalanceReport mpg currencyTo =
 produceBalancedLedger ::
   forall ann.
   Ord ann =>
+  Filter ->
   Ledger ann ->
   Validation (BalanceError ann) (BalancedLedger ann)
-produceBalancedLedger ledger = do
+produceBalancedLedger f ledger = do
   tups <- for (ledgerTransactions ledger) $ \t ->
-    (,) t <$> balanceTransaction t
+    (,) t <$> balanceTransaction f t
 
   let constructBalancedVector ::
         (Int, AccountBalances ann) ->
@@ -479,9 +483,10 @@ checkAssertion tl runningTotal a@(Located _ (AssertionEquals lan la lcs)) = do
 balanceTransaction ::
   forall ann.
   Ord ann =>
+  Filter ->
   GenLocated ann (Transaction ann) ->
   Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
-balanceTransaction (Located tl Transaction {..}) = do
+balanceTransaction f (Located tl Transaction {..}) = do
   let incorporatePosting ::
         -- (Balances for transaction balance checking, balances of acounts)
         (AccountBalances ann, AccountBalances ann) ->
@@ -530,7 +535,10 @@ balanceTransaction (Located tl Transaction {..}) = do
             if real
               then addAccountToBalances currency account actualBalances
               else pure actualBalances
-          convertedBalances' <- addAccountToBalances convertedCurrency convertedAccount convertedBalances
+          convertedBalances' <-
+            if Filter.predicate f an
+              then addAccountToBalances convertedCurrency convertedAccount convertedBalances
+              else pure convertedBalances
           pure (actualBalances', convertedBalances')
 
   (mForBalancing, mActual) <- V.ifoldM incorporatePosting (M.empty, M.empty) transactionPostings

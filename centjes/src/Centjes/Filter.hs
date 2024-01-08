@@ -3,8 +3,8 @@
 
 module Centjes.Filter
   ( Filter (..),
-    filterArgs,
-    filterPredicate,
+    args,
+    predicate,
   )
 where
 
@@ -27,19 +27,19 @@ instance Validity Filter
 
 instance NFData Filter
 
-filterPredicate :: Filter -> (AccountName -> Bool)
-filterPredicate = \case
+predicate :: Filter -> (AccountName -> Bool)
+predicate = \case
   FilterAny -> const True
   FilterSubstring t -> \(AccountName ts) -> any (T.isInfixOf t) ts
-  FilterOr fs -> \an -> any (`filterPredicate` an) fs
+  FilterOr fs -> \an -> any (`predicate` an) fs
 
-filterArgs :: OptParse.Parser Filter
-filterArgs =
-  (FilterOr <$> some filterArg)
+args :: OptParse.Parser Filter
+args =
+  (FilterOr <$> some arg)
     <|> pure FilterAny
 
-filterArg :: OptParse.Parser Filter
-filterArg =
+arg :: OptParse.Parser Filter
+arg =
   FilterSubstring
     <$> strArgument
       ( mconcat

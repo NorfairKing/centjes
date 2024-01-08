@@ -8,7 +8,8 @@ module Centjes.OptParse where
 import Autodocodec
 import Autodocodec.Yaml
 import Centjes.CurrencySymbol as CurrencySymbol
-import Centjes.Filter
+import Centjes.Filter (Filter)
+import qualified Centjes.Filter as Filter
 import Control.Applicative
 import qualified Data.Text as T
 import Data.Yaml (FromJSON, ToJSON)
@@ -221,7 +222,7 @@ parseCommandRegister = OptParse.info parser modifier
     modifier = OptParse.fullDesc <> OptParse.progDesc "Show a register of all transactions"
     parser =
       RegisterArgs
-        <$> filterArgs
+        <$> Filter.args
         <*> optional
           ( option
               (eitherReader (CurrencySymbol.fromText . T.pack))
@@ -245,7 +246,7 @@ parseCommandBalance = OptParse.info parser modifier
     modifier = OptParse.fullDesc <> OptParse.progDesc "Show a balance of accounts"
     parser =
       BalanceArgs
-        <$> filterArgs
+        <$> Filter.args
         <*> optional
           ( option
               (eitherReader (CurrencySymbol.fromText . T.pack))
