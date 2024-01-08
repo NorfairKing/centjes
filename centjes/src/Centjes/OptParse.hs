@@ -8,6 +8,7 @@ module Centjes.OptParse where
 import Autodocodec
 import Autodocodec.Yaml
 import Centjes.CurrencySymbol as CurrencySymbol
+import Centjes.Filter
 import Control.Applicative
 import qualified Data.Text as T
 import Data.Yaml (FromJSON, ToJSON)
@@ -46,12 +47,14 @@ data CheckSettings = CheckSettings
   deriving (Show, Eq, Generic)
 
 data RegisterSettings = RegisterSettings
-  { registerSettingCurrency :: !(Maybe CurrencySymbol)
+  { registerSettingFilter :: !Filter,
+    registerSettingCurrency :: !(Maybe CurrencySymbol)
   }
   deriving (Show, Eq, Generic)
 
 data BalanceSettings = BalanceSettings
-  { balanceSettingCurrency :: !(Maybe CurrencySymbol)
+  { balanceSettingFilter :: !Filter,
+    balanceSettingCurrency :: !(Maybe CurrencySymbol)
   }
   deriving (Show, Eq, Generic)
 
@@ -88,9 +91,11 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
       CommandCheck CheckArgs -> do
         pure $ DispatchCheck CheckSettings
       CommandRegister RegisterArgs {..} -> do
+        let registerSettingFilter = registerArgFilter
         let registerSettingCurrency = registerArgConversionCurrency
         pure $ DispatchRegister RegisterSettings {..}
       CommandBalance BalanceArgs {..} -> do
+        let balanceSettingFilter = balanceArgFilter
         let balanceSettingCurrency = balanceArgConversionCurrency
         pure $ DispatchBalance BalanceSettings {..}
       CommandFormat FormatArgs {..} -> do
@@ -205,7 +210,9 @@ parseCommandCheck = OptParse.info parser modifier
     parser = pure CheckArgs
 
 data RegisterArgs = RegisterArgs
-  {registerArgConversionCurrency :: !(Maybe CurrencySymbol)}
+  { registerArgFilter :: !Filter,
+    registerArgConversionCurrency :: !(Maybe CurrencySymbol)
+  }
   deriving (Show, Eq, Generic)
 
 parseCommandRegister :: OptParse.ParserInfo RegisterArgs
@@ -214,7 +221,8 @@ parseCommandRegister = OptParse.info parser modifier
     modifier = OptParse.fullDesc <> OptParse.progDesc "Show a register of all transactions"
     parser =
       RegisterArgs
-        <$> optional
+        <$> filterArgs
+        <*> optional
           ( option
               (eitherReader (CurrencySymbol.fromText . T.pack))
               ( mconcat
@@ -226,7 +234,9 @@ parseCommandRegister = OptParse.info parser modifier
           )
 
 data BalanceArgs = BalanceArgs
-  {balanceArgConversionCurrency :: !(Maybe CurrencySymbol)}
+  { balanceArgFilter :: !Filter,
+    balanceArgConversionCurrency :: !(Maybe CurrencySymbol)
+  }
   deriving (Show, Eq, Generic)
 
 parseCommandBalance :: OptParse.ParserInfo BalanceArgs
@@ -235,7 +245,8 @@ parseCommandBalance = OptParse.info parser modifier
     modifier = OptParse.fullDesc <> OptParse.progDesc "Show a balance of accounts"
     parser =
       BalanceArgs
-        <$> optional
+        <$> filterArgs
+        <*> optional
           ( option
               (eitherReader (CurrencySymbol.fromText . T.pack))
               ( mconcat
