@@ -38,9 +38,22 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   br <-
     liftIO $
       checkValidation diagnostic $
-        produceBalanceReport balanceSettingCurrency ledger
+        produceBalanceReport balanceSettingFilter balanceSettingCurrency ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable $ fillBalanceReport br
+  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable br
+
+renderBalanceReportTable :: Ord ann => BalanceReport ann -> [Chunk]
+renderBalanceReportTable br =
+  let t = table (renderBalanceReport br)
+   in renderTable t
+
+renderBalanceReport :: Ord ann => BalanceReport ann -> [[Chunk]]
+renderBalanceReport br@(BalanceReport m) =
+  let width = balanceReportMaxWidth br
+      totalAmount = fromMaybe (error "Error somehow?") (MultiAccount.sum m)
+      BalanceReport m' = fillBalanceReport br
+   in renderBalances width m'
+        ++ amountLines (fore blue (accountNameChunk "Total")) (multiAccountChunksWithWidth (Just width) totalAmount)
 
 -- Should this be in Centjes.Report.Balance?
 fillBalanceReport :: forall ann. Ord ann => BalanceReport ann -> BalanceReport ann
@@ -60,18 +73,6 @@ fillBalanceReport = BalanceReport . go . unBalanceReport
       Just am' -> case MultiAccount.add am am' of
         Nothing -> as -- TODO error somehow
         Just am'' -> M.insert an am'' as
-
-renderBalanceReportTable :: Ord ann => BalanceReport ann -> [Chunk]
-renderBalanceReportTable br =
-  let t = table (renderBalanceReport br)
-   in renderTable t
-
-renderBalanceReport :: Ord ann => BalanceReport ann -> [[Chunk]]
-renderBalanceReport br@(BalanceReport m) =
-  let width = balanceReportMaxWidth br
-      totalAmount = fromMaybe (error "Error somehow?") (MultiAccount.sum m)
-   in renderBalances width m
-        ++ amountLines (fore blue (accountNameChunk "Total")) (multiAccountChunksWithWidth (Just width) totalAmount)
 
 balanceReportMaxWidth :: BalanceReport ann -> Max Word8
 balanceReportMaxWidth = accountBalancesMaxWidth . unBalanceReport

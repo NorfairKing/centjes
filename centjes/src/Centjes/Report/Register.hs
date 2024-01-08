@@ -14,6 +14,8 @@ where
 
 import Centjes.Convert
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
+import Centjes.Filter (Filter)
+import qualified Centjes.Filter as Filter
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Validation
@@ -97,11 +99,12 @@ convertRegister mpg currencyTo = fmap Register . traverse goT . registerTransact
 produceRegister ::
   forall ann.
   Ord ann =>
+  Filter ->
   Maybe CurrencySymbol ->
   Ledger ann ->
   Validation (RegisterError ann) (Register ann)
-produceRegister mCurrencySymbolTo ledger = do
-  ts <- mapM registerTransaction (ledgerTransactions ledger)
+produceRegister f mCurrencySymbolTo ledger = do
+  ts <- mapM (registerTransaction f) (ledgerTransactions ledger)
   let goTransaction ::
         (Int, Money.MultiAccount (Currency ann)) ->
         Validation
@@ -162,6 +165,7 @@ produceRegister mCurrencySymbolTo ledger = do
         r
 
 registerTransaction ::
+  Filter ->
   GenLocated ann (Transaction ann) ->
   Validation
     (RegisterError ann)
@@ -169,9 +173,16 @@ registerTransaction ::
       Maybe (GenLocated ann Description),
       Vector (GenLocated ann (Posting ann))
     )
-registerTransaction (Located _ t) = do
+registerTransaction f (Located _ t) = do
+  let postings =
+        V.filter
+          ( \(Located _ Posting {..}) ->
+              let Located _ an = postingAccountName
+               in Filter.predicate f an
+          )
+          (transactionPostings t)
   pure
     ( transactionTimestamp t,
       transactionDescription t,
-      transactionPostings t
+      postings
     )

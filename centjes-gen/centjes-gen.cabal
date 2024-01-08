@@ -162,6 +162,7 @@ library
       Centjes.Convert.PriceGraph.Gen
       Centjes.CurrencySymbol.Gen
       Centjes.Description.Gen
+      Centjes.Filter.Gen
       Centjes.Ledger.Gen
       Centjes.Location.Gen
       Centjes.Module.Gen
@@ -203,6 +204,7 @@ test-suite centjes-test
       Centjes.Convert.PriceGraphSpec
       Centjes.CurrencySymbolSpec
       Centjes.DescriptionSpec
+      Centjes.FilterSpec
       Centjes.FormatSpec
       Centjes.LoadSpec
       Centjes.ModuleSpec

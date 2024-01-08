@@ -30,6 +30,7 @@ library
       Centjes.Convert.PriceGraph
       Centjes.CurrencySymbol
       Centjes.Description
+      Centjes.Filter
       Centjes.Format
       Centjes.Formatting
       Centjes.Ledger

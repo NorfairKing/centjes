@@ -15,6 +15,7 @@ module Centjes.Command.Check
 where
 
 import Centjes.Compile
+import Centjes.Filter (Filter (..))
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
@@ -113,6 +114,6 @@ checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
 
 checkLedger :: Ord ann => Ledger ann -> Checker ann (BalanceReport ann, Register ann)
 checkLedger l = do
-  balanceReport <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport Nothing l
-  register <- mapValidationFailure CheckErrorRegisterError $ produceRegister Nothing l
+  balanceReport <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport FilterAny Nothing l
+  register <- mapValidationFailure CheckErrorRegisterError $ produceRegister FilterAny Nothing l
   pure (balanceReport, register)
