@@ -23,7 +23,6 @@ import Data.Either
 import Data.List (sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
-import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -130,8 +129,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
           <$> Description.combine
             ( filter
                 (not . T.null . unDescription)
-                [ "Date: " <> fromString (formatTime defaultTimeLocale "%F" rowDate),
-                  rowDescription,
+                [ rowDescription,
                   rowSubject
                 ]
             )
