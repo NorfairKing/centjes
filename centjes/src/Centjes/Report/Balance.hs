@@ -536,7 +536,9 @@ balanceTransaction f (Located tl Transaction {..}) = do
               then addAccountToBalances convertedCurrency convertedAccount convertedBalances
               else pure convertedBalances
           actualBalances' <-
-            addAccountToBalances currency account actualBalances
+            if Filter.predicate f an
+              then addAccountToBalances currency account actualBalances
+              else pure actualBalances
           pure (convertedBalances', actualBalances')
 
   (mForBalancing, mActual) <- V.ifoldM incorporatePosting (M.empty, M.empty) transactionPostings
