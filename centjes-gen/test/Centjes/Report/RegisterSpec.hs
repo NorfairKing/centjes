@@ -7,6 +7,8 @@ module Centjes.Report.RegisterSpec (spec) where
 import Centjes.Command.Register (renderRegisterTable)
 import Centjes.Compile
 import Centjes.CurrencySymbol (CurrencySymbol (..))
+import Centjes.Filter (Filter (..))
+import Centjes.Filter.Gen ()
 import Centjes.Ledger.Gen ()
 import Centjes.Load
 import Centjes.Report.Register
@@ -24,7 +26,7 @@ spec :: Spec
 spec = do
   describe "produceBalanceReport" $ do
     it "produces valid reports" $
-      producesValid2
+      producesValid3
         (produceRegister @())
 
     scenarioDir "test_resources/register/valid/as-is" $ \fp -> do
@@ -38,7 +40,7 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            br <- shouldValidate diag $ produceRegister Nothing ledger
+            br <- shouldValidate diag $ produceRegister FilterAny Nothing ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderRegisterTable br
 
@@ -53,7 +55,7 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            br <- shouldValidate diag $ produceRegister (Just (CurrencySymbol "CHF")) ledger
+            br <- shouldValidate diag $ produceRegister FilterAny (Just (CurrencySymbol "CHF")) ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderRegisterTable br
 
@@ -68,7 +70,7 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            errs <- shouldFailToValidate $ produceRegister Nothing ledger
+            errs <- shouldFailToValidate $ produceRegister FilterAny Nothing ledger
             pure $ renderValidationErrors diag errs
 
     scenarioDir "test_resources/register/error/to-chf" $ \fp -> do
@@ -82,5 +84,5 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            errs <- shouldFailToValidate $ produceRegister (Just (CurrencySymbol "CHF")) ledger
+            errs <- shouldFailToValidate $ produceRegister FilterAny (Just (CurrencySymbol "CHF")) ledger
             pure $ renderValidationErrors diag errs

@@ -2,7 +2,7 @@
 
 module Centjes.FilterSpec (spec) where
 
-import Centjes.Filter
+import Centjes.Filter as Filter
 import Centjes.Filter.Gen ()
 import Test.Syd
 import Test.Syd.Validity
@@ -15,4 +15,4 @@ spec = do
     it "does not crash" $
       forAllValid $ \f ->
         forAllValid $ \an ->
-          shouldBeValid $ filterPredicate f an
+          shouldBeValid $ Filter.predicate f an
