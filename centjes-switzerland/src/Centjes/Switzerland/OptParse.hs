@@ -13,6 +13,7 @@ import Data.Map (Map)
 import Data.Maybe
 import Data.Set (Set)
 import Data.Text
+import Data.Time
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
 import GHC.Generics (Generic)
@@ -44,13 +45,19 @@ data Settings = Settings
   deriving (Show, Eq, Generic)
 
 data Dispatch
-  = DispatchTaxes TaxesSettings
-  | DispatchDownloadRates
+  = DispatchTaxes !TaxesSettings
+  | DispatchDownloadRates !DownloadRatesSettings
   deriving (Show, Eq, Generic)
 
 data TaxesSettings = TaxesSettings
   { taxesSettingZipFile :: !(Path Abs File),
     taxesSettingReadmeFile :: !(Path Abs File)
+  }
+  deriving (Show, Eq, Generic)
+
+data DownloadRatesSettings = DownloadRatesSettings
+  { downloadRatesSettingBegin :: !Day,
+    downloadRatesSettingEnd :: !Day
   }
   deriving (Show, Eq, Generic)
 
@@ -73,8 +80,12 @@ combineToInstructions
         taxesSettingZipFile <- resolveFile' $ fromMaybe "packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
         taxesSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ taxesArgReadmeFile <|> envReadmeFile <|> configReadmeFile
         pure $ DispatchTaxes TaxesSettings {..}
-      CommandDownloadRates _ ->
-        pure DispatchDownloadRates
+      CommandDownloadRates DownloadRatesArgs {..} -> do
+        today <- utctDay <$> getCurrentTime
+        let (y, _, _) = toGregorian today
+        let downloadRatesSettingBegin = fromMaybe (fromGregorian y 1 1) downloadRatesArgBegin
+        let downloadRatesSettingEnd = fromMaybe (addDays (-1) today) downloadRatesArgEnd
+        pure $ DispatchDownloadRates DownloadRatesSettings {..}
     pure $ Instructions dispatch Settings {..}
 
 data Configuration = Configuration
@@ -250,6 +261,9 @@ parseCommandTaxes = OptParse.info parser modifier
           )
 
 data DownloadRatesArgs = DownloadRatesArgs
+  { downloadRatesArgBegin :: !(Maybe Day),
+    downloadRatesArgEnd :: !(Maybe Day)
+  }
   deriving (Show, Eq, Generic)
 
 parseCommandDownloadRates :: OptParse.ParserInfo DownloadRatesArgs
@@ -257,7 +271,25 @@ parseCommandDownloadRates = OptParse.info parser modifier
   where
     modifier = OptParse.fullDesc <> OptParse.progDesc "Download exchange rates"
     parser =
-      pure DownloadRatesArgs
+      DownloadRatesArgs
+        <$> optional
+          ( option
+              auto
+              ( mconcat
+                  [ help "The begin date (inclusive), default: Start of the year",
+                    metavar "YYYY-MM-DD"
+                  ]
+              )
+          )
+        <*> optional
+          ( option
+              auto
+              ( mconcat
+                  [ help "The final date (inclusive), default: Yesterday",
+                    metavar "YYYY-MM-DD"
+                  ]
+              )
+          )
 
 -- | The flags that are common across commands.
 data Flags = Flags

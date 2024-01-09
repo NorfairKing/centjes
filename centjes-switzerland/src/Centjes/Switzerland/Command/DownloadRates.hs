@@ -33,18 +33,17 @@ import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Text.XML as XML
 
-runCentjesSwitzerlandDownloadRates :: Settings -> IO ()
-runCentjesSwitzerlandDownloadRates Settings {..} =
+runCentjesSwitzerlandDownloadRates :: Settings -> DownloadRatesSettings -> IO ()
+runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
   runStderrLoggingT $ do
     -- Produce the input.json structure
     (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
     currencies <- liftIO $ checkValidation diag $ compileCurrencyDeclarations declarations
     man <- liftIO newTlsManager
-    yesterday <- liftIO $ addDays (-1) . utctDay <$> getCurrentTime
     generatedDeclarations <-
       runConduit $
         -- For each day
-        yieldMany [yesterday] -- TODO more days
+        yieldMany [downloadRatesSettingBegin .. downloadRatesSettingEnd]
           .| C.map id -- TODO add in a delay
           -- Do a query to the rates endpoint
           .| C.concatMap
