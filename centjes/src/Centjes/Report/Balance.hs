@@ -531,15 +531,13 @@ balanceTransaction f (Located tl Transaction {..}) = do
                 Just lp -> pure lp
             checkPercentage tl pl lp lc la lpct
 
-          actualBalances' <-
-            if real
-              then addAccountToBalances currency account actualBalances
-              else pure actualBalances
           convertedBalances' <-
-            if Filter.predicate f an
+            if real
               then addAccountToBalances convertedCurrency convertedAccount convertedBalances
               else pure convertedBalances
-          pure (actualBalances', convertedBalances')
+          actualBalances' <-
+            addAccountToBalances currency account actualBalances
+          pure (convertedBalances', actualBalances')
 
   (mForBalancing, mActual) <- V.ifoldM incorporatePosting (M.empty, M.empty) transactionPostings
   let as = M.elems mForBalancing
