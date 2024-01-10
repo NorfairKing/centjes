@@ -6,9 +6,9 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Centjes.Switzerland.Command.Taxes
-  ( runCentjesSwitzerlandTaxes,
-    produceTaxesInputFromDeclarations,
+module Centjes.Switzerland.Command.VAT
+  ( runCentjesSwitzerlandVAT,
+    produceVATInputFromDeclarations,
   )
 where
 
@@ -52,8 +52,8 @@ import Path.IO
 import System.Exit
 import System.Process.Typed
 
-runCentjesSwitzerlandTaxes :: Settings -> TaxesSettings -> IO ()
-runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
+runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
+runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   templatesMap <- loadIO templateFileMap
   mainTypContents <- case M.lookup [relfile|main.typ|] templatesMap of
     Nothing -> die "main.typ template not found."
@@ -62,7 +62,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
     runStderrLoggingT $ do
       -- Produce the input.json structure
       (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
-      validation <- liftIO $ runValidationT $ produceTaxesInputFromDeclarations settingSetup declarations
+      validation <- liftIO $ runValidationT $ produceVATInputFromDeclarations settingSetup declarations
       (input, files) <- liftIO $ checkValidation diag validation
 
       -- Write the input to a file
@@ -94,7 +94,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
                 [ "-v",
                   "compile",
                   fromAbsFile mainTypFile,
-                  fromAbsFile taxesSettingReadmeFile,
+                  fromAbsFile vatSettingReadmeFile,
                   "--root",
                   fromAbsDir tdir
                 ]
@@ -102,17 +102,17 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
         T.pack $
           unwords
             [ "Typst compilation succesfully created",
-              fromAbsFile taxesSettingReadmeFile
+              fromAbsFile vatSettingReadmeFile
             ]
 
       let allFilesToInclude =
-            (taxesSettingReadmeFile, [relfile|README.pdf|])
+            (vatSettingReadmeFile, [relfile|README.pdf|])
               : (jsonInputFile, [relfile|raw-input.json|])
               : [(settingBaseDir </> fromRel, to) | (fromRel, to) <- M.toList files]
 
       -- Create a nice zip file
       liftIO $
-        Zip.createArchive (fromAbsFile taxesSettingZipFile) $
+        Zip.createArchive (fromAbsFile vatSettingZipFile) $
           forM_ allFilesToInclude $ \(filePathFrom, filePathTo) -> do
             contents <- liftIO $ SB.readFile $ fromAbsFile filePathFrom
             selector <- Zip.mkEntrySelector $ fromRelFile filePathTo
@@ -122,7 +122,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
         T.pack $
           unwords
             [ "Succesfully created packet",
-              fromAbsFile taxesSettingZipFile
+              fromAbsFile vatSettingZipFile
             ]
 
 data AnyError ann
@@ -134,11 +134,11 @@ instance ToReport (AnyError SourceSpan) where
     AnyErrorCheck ce -> toReport ce
     AnyErrorInput ie -> toReport ie
 
-produceTaxesInputFromDeclarations ::
+produceVATInputFromDeclarations ::
   Setup ->
   [Declaration SourceSpan] ->
   ValidationT (AnyError SourceSpan) IO (Input, Map (Path Rel File) (Path Rel File))
-produceTaxesInputFromDeclarations setup declarations = do
+produceVATInputFromDeclarations setup declarations = do
   (ledger, balanceReport, _) <- mapValidationTFailure AnyErrorCheck $ doCompleteCheck declarations
   transformValidationT
     ( \f -> do
@@ -159,7 +159,7 @@ produceInput ::
   Ledger ann ->
   BalanceReport ann ->
   P ann Input
-produceInput Setup {..} ledger BalanceReport {..} = do
+produceInput Setup {..} ledger (BalanceReport accountBalances) = do
   let inputName = setupName
 
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
@@ -230,7 +230,7 @@ produceInput Setup {..} ledger BalanceReport {..} = do
     evidenceFile <- liftIO $ parseRelFile assetSetupEvidence
     let assetEvidence = [reldir|assets|] </> evidenceFile
     addEvidence evidenceFile assetEvidence
-    assetAmount <- case M.lookup assetSetupAccountName balanceReportBalances of
+    assetAmount <- case M.lookup assetSetupAccountName accountBalances of
       Nothing -> undefined -- TODO error
       Just ma -> case M.toList (MultiAccount.unMultiAccount ma) of
         [] -> undefined -- TODO error

@@ -22,8 +22,8 @@ mkDerivation {
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
-    autodocodec-yaml base centjes centjes-gen filepath monad-logger
-    path path-io sydtest sydtest-aeson
+    aeson autodocodec-yaml base centjes centjes-gen filepath
+    monad-logger path path-io sydtest sydtest-aeson
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

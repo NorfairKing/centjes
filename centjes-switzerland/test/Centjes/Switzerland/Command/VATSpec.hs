@@ -1,8 +1,8 @@
-module Centjes.Switzerland.Command.TaxesSpec (spec) where
+module Centjes.Switzerland.Command.VATSpec (spec) where
 
 import Autodocodec.Yaml
 import Centjes.Load
-import Centjes.Switzerland.Command.Taxes
+import Centjes.Switzerland.Command.VAT
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.TestUtils
 import Centjes.Validation.TestUtils
@@ -15,7 +15,7 @@ import Test.Syd.Aeson
 
 spec :: Spec
 spec = do
-  dirScenarioDir "test_resources/taxes" $ \fp ->
+  dirScenarioDir "test_resources/vat" $ \fp ->
     it "Makes the same input.json for this scenario" $
       goldenJSONFile (fp <> "input.json") $ do
         dir <- resolveDir' fp
@@ -27,5 +27,5 @@ spec = do
             Just c -> pure c
         ledgerFile <- resolveFile dir $ fromMaybe "ledger.cent" $ configLedgerFile config
         (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
-        (input, _) <- shouldValidateT diag $ produceTaxesInputFromDeclarations (configSetup config) declarations
+        (input, _) <- shouldValidateT diag $ produceVATInputFromDeclarations (configSetup config) declarations
         pure $ toJSON input

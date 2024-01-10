@@ -46,12 +46,19 @@ data Settings = Settings
 
 data Dispatch
   = DispatchTaxes !TaxesSettings
+  | DispatchVAT !VATSettings
   | DispatchDownloadRates !DownloadRatesSettings
   deriving (Show, Eq, Generic)
 
 data TaxesSettings = TaxesSettings
   { taxesSettingZipFile :: !(Path Abs File),
     taxesSettingReadmeFile :: !(Path Abs File)
+  }
+  deriving (Show, Eq, Generic)
+
+data VATSettings = VATSettings
+  { vatSettingZipFile :: !(Path Abs File),
+    vatSettingReadmeFile :: !(Path Abs File)
   }
   deriving (Show, Eq, Generic)
 
@@ -77,9 +84,13 @@ combineToInstructions
     let settingSetup = configSetup
     dispatch <- case cmd of
       CommandTaxes TaxesArgs {..} -> do
-        taxesSettingZipFile <- resolveFile' $ fromMaybe "packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
+        taxesSettingZipFile <- resolveFile' $ fromMaybe "tax-packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
         taxesSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ taxesArgReadmeFile <|> envReadmeFile <|> configReadmeFile
         pure $ DispatchTaxes TaxesSettings {..}
+      CommandVAT VATArgs {..} -> do
+        vatSettingZipFile <- resolveFile' $ fromMaybe "vat-packet.zip" $ vatArgZipFile <|> envZipFile <|> configZipFile
+        vatSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ vatArgReadmeFile <|> envReadmeFile <|> configReadmeFile
+        pure $ DispatchVAT VATSettings {..}
       CommandDownloadRates DownloadRatesArgs {..} -> do
         today <- utctDay <$> getCurrentTime
         let (y, _, _) = toGregorian today
@@ -218,6 +229,7 @@ parseArguments = Arguments <$> parseCommand <*> parseFlags
 -- | A sum type for the commands and their specific arguments
 data Command
   = CommandTaxes !TaxesArgs
+  | CommandVAT !VATArgs
   | CommandDownloadRates !DownloadRatesArgs
   deriving (Show, Eq, Generic)
 
@@ -226,6 +238,7 @@ parseCommand =
   OptParse.hsubparser $
     mconcat
       [ OptParse.command "taxes" $ CommandTaxes <$> parseCommandTaxes,
+        OptParse.command "vat" $ CommandVAT <$> parseCommandVAT,
         OptParse.command "download-rates" $ CommandDownloadRates <$> parseCommandDownloadRates
       ]
 
@@ -241,6 +254,37 @@ parseCommandTaxes = OptParse.info parser modifier
     modifier = OptParse.fullDesc <> OptParse.progDesc "Prepare a tax packet"
     parser =
       TaxesArgs
+        <$> optional
+          ( strOption
+              ( mconcat
+                  [ long "zip-file",
+                    help "Path to the zip file to create",
+                    metavar "FILEPATH"
+                  ]
+              )
+          )
+        <*> optional
+          ( strOption
+              ( mconcat
+                  [ long "readme-file",
+                    help "Path to the readme file to create",
+                    metavar "FILEPATH"
+                  ]
+              )
+          )
+
+data VATArgs = VATArgs
+  { vatArgZipFile :: !(Maybe FilePath),
+    vatArgReadmeFile :: !(Maybe FilePath)
+  }
+  deriving (Show, Eq, Generic)
+
+parseCommandVAT :: OptParse.ParserInfo VATArgs
+parseCommandVAT = OptParse.info parser modifier
+  where
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Prepare a vat packet"
+    parser =
+      VATArgs
         <$> optional
           ( strOption
               ( mconcat
