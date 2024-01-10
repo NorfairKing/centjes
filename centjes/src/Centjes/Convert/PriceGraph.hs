@@ -32,8 +32,6 @@ import Prelude hiding (lookup)
 -- Instead of saving undirected edges, we save directed edges twice each: one
 -- with the rate and one with the reverse rate.
 -- This way we use twice the memory, and take twice as long to insert, but lookups are cheap.
---
--- TODO: Rename to PriceGraph
 newtype PriceGraph cur = PriceGraph {unPriceGraph :: Map cur (Map cur ConversionRate)}
   deriving (Show, Eq, Generic)
 

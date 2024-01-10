@@ -115,7 +115,6 @@ lookupConversionRate graph currencyTo currencyFrom = do
     Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
 
--- TODO speed this up by not recomputing this entire graph for every conversion
 pricesToPriceGraph ::
   Ord ann =>
   Vector (GenLocated ann (Price ann)) ->
