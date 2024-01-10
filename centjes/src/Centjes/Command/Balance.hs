@@ -9,7 +9,6 @@ module Centjes.Command.Balance
   )
 where
 
-import qualified Centjes.AccountName as AccountName
 import Centjes.Compile
 import Centjes.Formatting
 import Centjes.Ledger
@@ -19,14 +18,11 @@ import Centjes.Report.Balance
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
-import Data.Foldable
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
-import Data.Maybe
 import Data.Semigroup
 import Data.Word
 import qualified Money.MultiAccount as Money (MultiAccount)
-import qualified Money.MultiAccount as MultiAccount
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
@@ -42,40 +38,22 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable br
 
-renderBalanceReportTable :: Ord ann => BalanceReport ann -> [Chunk]
+renderBalanceReportTable :: BalanceReport ann -> [Chunk]
 renderBalanceReportTable br =
   let t = table (renderBalanceReport br)
    in renderTable t
 
-renderBalanceReport :: Ord ann => BalanceReport ann -> [[Chunk]]
-renderBalanceReport br@(BalanceReport m) =
+renderBalanceReport :: BalanceReport ann -> [[Chunk]]
+renderBalanceReport br@BalanceReport {..} =
   let width = balanceReportMaxWidth br
-      totalAmount = fromMaybe (error "Error somehow?") (MultiAccount.sum m)
-      BalanceReport m' = fillBalanceReport br
-   in renderBalances width m'
-        ++ amountLines (fore blue (accountNameChunk "Total")) (multiAccountChunksWithWidth (Just width) totalAmount)
-
--- Should this be in Centjes.Report.Balance?
-fillBalanceReport :: forall ann. Ord ann => BalanceReport ann -> BalanceReport ann
-fillBalanceReport = BalanceReport . go . unBalanceReport
-  where
-    go :: AccountBalances ann -> AccountBalances ann
-    go as = foldl' go' as (M.toList as)
-    go' :: AccountBalances ann -> (AccountName, Money.MultiAccount (Currency ann)) -> AccountBalances ann
-    go' as (an, am) = foldl' (go'' am) as (AccountName.ancestors an)
-    go'' ::
-      Money.MultiAccount (Currency ann) ->
-      AccountBalances ann ->
-      AccountName ->
-      AccountBalances ann
-    go'' am as an = case M.lookup an as of
-      Nothing -> M.insert an am as
-      Just am' -> case MultiAccount.add am am' of
-        Nothing -> as -- TODO error somehow
-        Just am'' -> M.insert an am'' as
+   in renderBalances width balanceReportFilledBalances
+        ++ amountLines (fore blue (accountNameChunk "Total")) (multiAccountChunksWithWidth (Just width) balanceReportTotal)
 
 balanceReportMaxWidth :: BalanceReport ann -> Max Word8
-balanceReportMaxWidth = accountBalancesMaxWidth . unBalanceReport
+balanceReportMaxWidth BalanceReport {..} =
+  multiAccountMaxWidth balanceReportTotal
+    <> accountBalancesMaxWidth balanceReportBalances
+    <> accountBalancesMaxWidth balanceReportFilledBalances
 
 accountBalancesMaxWidth :: AccountBalances ann -> Max Word8
 accountBalancesMaxWidth = foldMap multiAccountMaxWidth

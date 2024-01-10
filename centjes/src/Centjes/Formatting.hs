@@ -46,9 +46,11 @@ currencySymbolChunk = fore magenta . chunk . currencySymbolText
 
 accountWidth :: Money.Account -> Max Word8
 accountWidth a =
-  -- One extra for the dot and one for the minus sign
-  Max . (+ 2) $
-    ceiling (logBase 10 (fromIntegral (Amount.toMinimalQuantisations (Account.abs a))) :: Float)
+  -- One extra for the dot
+  -- , one for the minus sign
+  -- , and one extra because of the floor
+  Max . (+ 3) $
+    floor (logBase 10 (fromIntegral (Amount.toMinimalQuantisations (Account.abs a))) :: Float)
 
 accountChunk :: QuantisationFactor -> Money.Account -> Chunk
 accountChunk = accountChunkWithWidth Nothing

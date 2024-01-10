@@ -155,7 +155,7 @@ produceInput ::
   Ledger ann ->
   BalanceReport ann ->
   P ann Input
-produceInput Setup {..} ledger (BalanceReport accountBalances) = do
+produceInput Setup {..} ledger BalanceReport {..} = do
   let inputName = setupName
 
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
@@ -226,7 +226,7 @@ produceInput Setup {..} ledger (BalanceReport accountBalances) = do
     evidenceFile <- liftIO $ parseRelFile assetSetupEvidence
     let assetEvidence = [reldir|assets|] </> evidenceFile
     addEvidence evidenceFile assetEvidence
-    assetAmount <- case M.lookup assetSetupAccountName accountBalances of
+    assetAmount <- case M.lookup assetSetupAccountName balanceReportBalances of
       Nothing -> undefined -- TODO error
       Just ma -> case M.toList (MultiAccount.unMultiAccount ma) of
         [] -> undefined -- TODO error

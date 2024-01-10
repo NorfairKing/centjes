@@ -36,7 +36,7 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Traversable
-import Data.Validity (Validity (..))
+import Data.Validity hiding (Validation (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
@@ -59,11 +59,20 @@ instance NFData ann => NFData (BalancedLedger ann)
 
 type AccountBalances ann = Map AccountName (Money.MultiAccount (Currency ann))
 
-newtype BalanceReport ann = BalanceReport
-  {unBalanceReport :: AccountBalances ann}
+data BalanceReport ann = BalanceReport
+  { balanceReportBalances :: !(AccountBalances ann),
+    balanceReportFilledBalances :: !(AccountBalances ann),
+    balanceReportTotal :: !(Money.MultiAccount (Currency ann))
+  }
   deriving (Show, Eq, Generic)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (BalanceReport ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (BalanceReport ann) where
+  validate br@BalanceReport {..} =
+    mconcat
+      [ genericValidate br,
+        declare "The total matches the balances" $
+          MultiAccount.sum balanceReportBalances == Just balanceReportTotal
+      ]
 
 instance NFData ann => NFData (BalanceReport ann)
 
@@ -83,6 +92,8 @@ data BalanceError ann
   | BalanceErrorAccountTypeAssertion !ann !ann !AccountType !(Money.MultiAccount (Currency ann))
   | BalanceErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Currency ann)) !(Maybe Money.Account)
   | BalanceErrorConvertError !(ConvertError ann)
+  | BalanceErrorCouldNotFill
+  | BalanceErrorCouldNotSumTotal ![Money.MultiAccount (Currency ann)]
   deriving stock (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceError ann)
@@ -322,6 +333,18 @@ instance ToReport (BalanceError SourceSpan) where
         )
         []
     BalanceErrorConvertError ce -> toReport ce
+    BalanceErrorCouldNotFill ->
+      Err
+        (Just "BE_FILL")
+        "Could not fill accounts hierarchically because the result got too big."
+        []
+        []
+    BalanceErrorCouldNotSumTotal _ ->
+      Err
+        (Just "BE_TOTAL")
+        "Could not sum all amounts together because the result got too big."
+        []
+        []
 
 makePostingSuggestion ::
   Money.MultiAccount (Currency SourceSpan) ->
@@ -371,39 +394,65 @@ produceBalanceReport ::
 produceBalanceReport f mCurrencySymbolTo l = do
   bl <- produceBalancedLedger l
   let v = balancedLedgerTransactions bl
-  let br =
-        filterBalanceReport f $
-          BalanceReport $
-            if V.null v
-              then M.empty
-              else snd (V.last v)
+  let balances =
+        filterAccountBalances f $
+          if V.null v
+            then M.empty
+            else snd (V.last v)
 
-  mapValidationFailure BalanceErrorConvertError $ case mCurrencySymbolTo of
-    Nothing -> pure br
+  balanceReportBalances <- mapValidationFailure BalanceErrorConvertError $ case mCurrencySymbolTo of
+    Nothing -> pure balances
     Just currencySymbolTo -> do
       currencyTo <- lookupConversionCurrency (ledgerCurrencies l) currencySymbolTo
-      convertBalanceReport
+      convertAccountBalances
         (pricesToPriceGraph (ledgerPrices l))
         currencyTo
-        br
+        balances
 
-filterBalanceReport :: Filter -> BalanceReport ann -> BalanceReport ann
-filterBalanceReport f =
-  BalanceReport
-    . M.filterWithKey (\an _ -> Filter.predicate f an)
-    . unBalanceReport
+  balanceReportFilledBalances <- fillAccountBalances balanceReportBalances
 
-convertBalanceReport ::
+  balanceReportTotal <- case MultiAccount.sum balanceReportBalances of
+    Nothing -> validationFailure $ BalanceErrorCouldNotSumTotal $ M.elems balanceReportBalances
+    Just total -> pure total
+
+  pure BalanceReport {..}
+
+filterAccountBalances :: Filter -> AccountBalances ann -> AccountBalances ann
+filterAccountBalances f =
+  M.filterWithKey (\an _ -> Filter.predicate f an)
+
+convertAccountBalances ::
   forall ann.
   Ord ann =>
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
-  BalanceReport ann ->
-  Validation (ConvertError ann) (BalanceReport ann)
-convertBalanceReport mpg currencyTo =
-  fmap BalanceReport
-    . traverse (convertMultiAccount mpg currencyTo)
-    . unBalanceReport
+  AccountBalances ann ->
+  Validation (ConvertError ann) (AccountBalances ann)
+convertAccountBalances mpg currencyTo =
+  traverse (convertMultiAccount mpg currencyTo)
+
+fillAccountBalances ::
+  forall ann.
+  Ord ann =>
+  AccountBalances ann ->
+  Validation (BalanceError ann) (AccountBalances ann)
+fillAccountBalances bs = foldM go bs (M.toList bs)
+  where
+    go ::
+      AccountBalances ann ->
+      (AccountName, Money.MultiAccount (Currency ann)) ->
+      Validation (BalanceError ann) (AccountBalances ann)
+    go as (an, am) = foldM (go' am) as (AccountName.ancestors an)
+    go' ::
+      Money.MultiAccount (Currency ann) ->
+      AccountBalances ann ->
+      AccountName ->
+      Validation (BalanceError ann) (AccountBalances ann)
+    go' am as an = case M.lookup an as of
+      Nothing -> pure $ M.insert an am as
+      Just am' -> case MultiAccount.add am am' of
+        Nothing -> validationFailure BalanceErrorCouldNotFill
+        Just am'' -> pure $ M.insert an am'' as
 
 produceBalancedLedger ::
   forall ann.

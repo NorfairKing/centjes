@@ -22,6 +22,8 @@ extra-source-files:
     test_resources/balance/balanced/as-is/empty.txt
     test_resources/balance/balanced/as-is/example.cent
     test_resources/balance/balanced/as-is/example.txt
+    test_resources/balance/balanced/as-is/total-bigger.cent
+    test_resources/balance/balanced/as-is/total-bigger.txt
     test_resources/balance/balanced/as-is/vat.cent
     test_resources/balance/balanced/as-is/vat.txt
     test_resources/balance/balanced/to-chf/conversion-hop.cent

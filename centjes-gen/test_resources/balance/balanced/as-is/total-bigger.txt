@@ -1,0 +1,5 @@
+[37massets[m [32m  5.00[m [32mUSD[m
+[37mequity[m [31m -5.00[m [31mUSD[m
+[37mvat1[m   [32m  5.00[m [32mUSD[m
+[37mvat2[m   [32m  5.00[m [32mUSD[m
+[34mTotal[m  [32m 10.00[m [32mUSD[m
