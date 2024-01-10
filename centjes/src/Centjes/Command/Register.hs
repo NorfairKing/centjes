@@ -1,6 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -90,19 +89,6 @@ renderTransaction maxWidth ix timestamp mDescription postings =
           maybe [] descriptionChunks mDescription,
           postingLines
         ]
-
-hCatTable :: [[[Chunk]]] -> [[Chunk]]
-hCatTable = \case
-  [] -> []
-  (col : restCols) ->
-    zipChunks col $ hCatTable restCols
-
-zipChunks :: [[Chunk]] -> [[Chunk]] -> [[Chunk]]
-zipChunks rows1 rows2 = case (rows1, rows2) of
-  ([], []) -> []
-  (_ : _, []) -> rows1
-  ([], _ : _) -> map (chunk " " :) rows2
-  (row1 : restRows1, row2 : restRows2) -> (row1 ++ row2) : zipChunks restRows1 restRows2
 
 renderPosting ::
   Max Word8 ->

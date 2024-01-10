@@ -67,8 +67,5 @@ renderBalances width =
     (\(an, acc) -> amountLines (accountNameChunk an) $ multiAccountChunksWithWidth (Just width) acc)
     . M.toList
 
--- TODO use the hCatTable
 amountLines :: Chunk -> [[Chunk]] -> [[Chunk]]
-amountLines header cs = case cs of
-  [] -> [[header]]
-  (firstChunks : rest) -> (header : firstChunks) : map (chunk " " :) rest
+amountLines header cs = hCatTable [[[header]], cs]

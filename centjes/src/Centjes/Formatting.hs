@@ -1,4 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.Formatting where
 
@@ -69,3 +71,16 @@ timestampChunk = fore blue . chunk . Timestamp.toText
 descriptionChunks :: Description -> [[Chunk]]
 descriptionChunks (Description t) =
   map ((: []) . fore yellow . chunk) (T.lines t)
+
+hCatTable :: [[[Chunk]]] -> [[Chunk]]
+hCatTable = \case
+  [] -> []
+  (col : restCols) ->
+    zipChunks col $ hCatTable restCols
+  where
+    zipChunks :: [[Chunk]] -> [[Chunk]] -> [[Chunk]]
+    zipChunks rows1 rows2 = case (rows1, rows2) of
+      ([], []) -> []
+      (_ : _, []) -> rows1
+      ([], _ : _) -> map (chunk " " :) rows2
+      (row1 : restRows1, row2 : restRows2) -> (row1 ++ row2) : zipChunks restRows1 restRows2

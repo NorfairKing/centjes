@@ -120,9 +120,6 @@ rowTransaction ::
   Row ->
   Validation ImportError' (Transaction ())
 rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName Row {..} = do
-  -- TODO dont import non-completed transactions?
-  -- rowAccount is the amount the expense
-  -- rowFee is the fee on top of that amount
   let transactionTimestamp = noLoc $ TimestampDay rowDate
       transactionDescription =
         noLoc
