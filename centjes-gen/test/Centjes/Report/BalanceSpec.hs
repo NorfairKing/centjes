@@ -26,7 +26,7 @@ spec :: Spec
 spec = do
   describe "balanceTransaction" $ do
     it "produces valid balances" $
-      producesValid2 $
+      producesValid $
         balanceTransaction @()
 
   describe "produceBalanceReport" $ do
