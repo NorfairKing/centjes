@@ -32,6 +32,7 @@ library
       Centjes.Switzerland.Command.VAT
       Centjes.Switzerland.Constants
       Centjes.Switzerland.OptParse
+      Centjes.Switzerland.Report.Taxes
       Centjes.Switzerland.Report.VAT
       Centjes.Switzerland.Templates
   other-modules:
@@ -87,7 +88,7 @@ test-suite centjes-switzerland-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Centjes.Switzerland.Command.TaxesSpec
+      Centjes.Switzerland.Report.TaxesSpec
       Centjes.Switzerland.Report.VATSpec
       Centjes.Switzerland.TestUtils
       Paths_centjes_switzerland
