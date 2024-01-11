@@ -19,7 +19,6 @@ import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
 import Centjes.Module (Declaration)
-import Centjes.Report.Balance
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Templates
 import qualified Centjes.Timestamp as Timestamp
@@ -36,20 +35,17 @@ import qualified Data.ByteString.Lazy as LB
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
-import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
 import Data.Time.Calendar.Quarter
-import Data.Traversable
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Language.Haskell.TH.Load
 import Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
-import qualified Money.MultiAccount as MultiAccount
 import Path
 import Path.IO
 import System.Exit
@@ -128,28 +124,28 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
               fromAbsFile vatSettingZipFile
             ]
 
-data AnyError ann
-  = AnyErrorCheck (CheckError ann)
-  | AnyErrorInput (InputError ann)
+data VATError ann
+  = VATErrorCheck (CheckError ann)
+  | VATErrorInput (InputError ann)
 
-instance ToReport (AnyError SourceSpan) where
+instance ToReport (VATError SourceSpan) where
   toReport = \case
-    AnyErrorCheck ce -> toReport ce
-    AnyErrorInput ie -> toReport ie
+    VATErrorCheck ce -> toReport ce
+    VATErrorInput ie -> toReport ie
 
 produceVATInputFromDeclarations ::
   Setup ->
   [Declaration SourceSpan] ->
-  ValidationT (AnyError SourceSpan) IO (Input, Map (Path Rel File) (Path Rel File))
+  ValidationT (VATError SourceSpan) IO (Input, Map (Path Rel File) (Path Rel File))
 produceVATInputFromDeclarations setup declarations = do
-  (ledger, balanceReport, _) <- mapValidationTFailure AnyErrorCheck $ doCompleteCheck declarations
+  (ledger, _, _) <- mapValidationTFailure VATErrorCheck $ doCompleteCheck declarations
   transformValidationT
     ( \f -> do
         (v, fs) <- runWriterT f
         pure $ (,) <$> v <*> pure fs
     )
-    $ mapValidationTFailure AnyErrorInput
-    $ produceInput setup ledger balanceReport
+    $ mapValidationTFailure VATErrorInput
+    $ produceInput setup ledger
 
 type P ann a = ValidationT (InputError ann) (WriterT (Map (Path Rel File) (Path Rel File)) IO) a
 
@@ -157,12 +153,11 @@ addEvidence :: Path Rel File -> Path Rel File -> P ann ()
 addEvidence locationOnDisk locationInTarball = lift $ tell $ M.singleton locationOnDisk locationInTarball
 
 produceInput ::
-  (Show ann, Ord ann) =>
+  Ord ann =>
   Setup ->
   Ledger ann ->
-  BalanceReport ann ->
   P ann Input
-produceInput Setup {..} ledger BalanceReport {..} = do
+produceInput Setup {..} ledger = do
   let inputName = setupName
   let inputQuarter = fromMaybe (YearQuarter 2024 Q1) setupVATQuarter
 

@@ -1,8 +1,11 @@
 name: John Doe
 
 income:
-  - income:consulting
+  "income:consulting":
+    foreign: false
 
 assets: {}
 
 expenses: []
+
+vat-income: "income:vat"

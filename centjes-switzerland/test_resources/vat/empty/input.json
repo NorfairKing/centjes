@@ -1,6 +1,5 @@
 {
-    "assets": [],
-    "expenses": [],
     "income": [],
-    "name": "John Doe"
+    "name": "John Doe",
+    "quarter": "2024-q1"
 }

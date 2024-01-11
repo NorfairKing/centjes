@@ -125,27 +125,27 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
               fromAbsFile taxesSettingZipFile
             ]
 
-data AnyError ann
-  = AnyErrorCheck (CheckError ann)
-  | AnyErrorInput (InputError ann)
+data TaxesError ann
+  = TaxesErrorCheck (CheckError ann)
+  | TaxesErrorInput (InputError ann)
 
-instance ToReport (AnyError SourceSpan) where
+instance ToReport (TaxesError SourceSpan) where
   toReport = \case
-    AnyErrorCheck ce -> toReport ce
-    AnyErrorInput ie -> toReport ie
+    TaxesErrorCheck ce -> toReport ce
+    TaxesErrorInput ie -> toReport ie
 
 produceTaxesInputFromDeclarations ::
   Setup ->
   [Declaration SourceSpan] ->
-  ValidationT (AnyError SourceSpan) IO (Input, Map (Path Rel File) (Path Rel File))
+  ValidationT (TaxesError SourceSpan) IO (Input, Map (Path Rel File) (Path Rel File))
 produceTaxesInputFromDeclarations setup declarations = do
-  (ledger, balanceReport, _) <- mapValidationTFailure AnyErrorCheck $ doCompleteCheck declarations
+  (ledger, balanceReport, _) <- mapValidationTFailure TaxesErrorCheck $ doCompleteCheck declarations
   transformValidationT
     ( \f -> do
         (v, fs) <- runWriterT f
         pure $ (,) <$> v <*> pure fs
     )
-    $ mapValidationTFailure AnyErrorInput
+    $ mapValidationTFailure TaxesErrorInput
     $ produceInput setup ledger balanceReport
 
 type P ann a = ValidationT (InputError ann) (WriterT (Map (Path Rel File) (Path Rel File)) IO) a
@@ -162,7 +162,6 @@ produceInput ::
 produceInput Setup {..} ledger BalanceReport {..} = do
   let inputName = setupName
 
-  let incomeAccounts = M.keysSet setupIncomeAccounts
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
     let Located _ timestamp = transactionTimestamp
     relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
