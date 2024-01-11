@@ -15,6 +15,7 @@ import Centjes.Load
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.Templates
+import Centjes.Switzerland.Typst
 import Centjes.Validation
 import qualified Codec.Archive.Zip as Zip
 import Conduit
@@ -31,7 +32,6 @@ import Language.Haskell.TH.Load
 import Path
 import Path.IO
 import System.Exit
-import System.Process.Typed
 
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
 runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
@@ -65,20 +65,8 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
         SB.writeFile (fromAbsFile mtf) $ TE.encodeUtf8 mainTypContents
         pure mtf
 
-      -- Compile the README.pdf using typst
-      runProcess_ $
-        setWorkingDir (fromAbsDir (parent mainTypFile)) $
-          setStdout inherit $
-            setStderr inherit $
-              proc
-                "typst"
-                [ "-v",
-                  "compile",
-                  fromAbsFile mainTypFile,
-                  fromAbsFile vatSettingReadmeFile,
-                  "--root",
-                  fromAbsDir tdir
-                ]
+      liftIO $ compileTypst mainTypFile vatSettingReadmeFile
+
       logInfoN $
         T.pack $
           unwords
