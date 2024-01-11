@@ -16,11 +16,10 @@ import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Taxes
 import Centjes.Switzerland.Templates
 import Centjes.Switzerland.Typst
+import Centjes.Switzerland.Zip
 import Centjes.Validation
-import qualified Codec.Archive.Zip as Zip
 import Conduit
 import Control.Monad.Logger
-import Control.Monad.Writer
 import qualified Data.Aeson as JSON
 import Data.Aeson.Encode.Pretty as JSON
 import qualified Data.ByteString as SB
@@ -75,19 +74,13 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
               fromAbsFile taxesSettingReadmeFile
             ]
 
-      let allFilesToInclude =
-            (taxesSettingReadmeFile, [relfile|README.pdf|])
-              : (jsonInputFile, [relfile|raw-input.json|])
-              : [(settingBaseDir </> fromRel, to) | (fromRel, to) <- M.toList files]
-
       -- Create a nice zip file
       liftIO $
-        Zip.createArchive (fromAbsFile taxesSettingZipFile) $
-          forM_ allFilesToInclude $ \(filePathFrom, filePathTo) -> do
-            contents <- liftIO $ SB.readFile $ fromAbsFile filePathFrom
-            selector <- Zip.mkEntrySelector $ fromRelFile filePathTo
-            Zip.addEntry Zip.Deflate contents selector
-            pure ()
+        createZipFile taxesSettingZipFile $
+          M.insert [relfile|README.pdf|] taxesSettingReadmeFile $
+            M.insert [relfile|raw-input.json|] jsonInputFile $
+              M.map (settingBaseDir </>) files
+
       logInfoN $
         T.pack $
           unwords

@@ -62,7 +62,7 @@ produceVATInputFromDeclarations setup declarations = do
 type P ann a = ValidationT (InputError ann) (WriterT (Map (Path Rel File) (Path Rel File)) IO) a
 
 addEvidence :: Path Rel File -> Path Rel File -> P ann ()
-addEvidence locationOnDisk locationInTarball = lift $ tell $ M.singleton locationOnDisk locationInTarball
+addEvidence locationInTarball locationOnDisk = lift $ tell $ M.singleton locationOnDisk locationInTarball
 
 produceInput ::
   Ord ann =>
