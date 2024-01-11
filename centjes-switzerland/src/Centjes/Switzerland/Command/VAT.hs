@@ -14,6 +14,7 @@ where
 
 import Autodocodec
 import Centjes.Command.Check
+import Centjes.Convert
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
@@ -34,17 +35,19 @@ import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
 import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Maybe
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
+import Data.Time.Calendar.Quarter
 import Data.Traversable
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Language.Haskell.TH.Load
 import Money.Account as Money (Account (..))
-import Money.Amount as Money (Amount (..))
+import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import qualified Money.MultiAccount as MultiAccount
 import Path
@@ -55,8 +58,8 @@ import System.Process.Typed
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
 runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   templatesMap <- loadIO templateFileMap
-  mainTypContents <- case M.lookup [relfile|main.typ|] templatesMap of
-    Nothing -> die "main.typ template not found."
+  mainTypContents <- case M.lookup [relfile|vat.typ|] templatesMap of
+    Nothing -> die "vat.typ template not found."
     Just t -> pure t
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
@@ -154,30 +157,31 @@ addEvidence :: Path Rel File -> Path Rel File -> P ann ()
 addEvidence locationOnDisk locationInTarball = lift $ tell $ M.singleton locationOnDisk locationInTarball
 
 produceInput ::
-  Show ann =>
+  (Show ann, Ord ann) =>
   Setup ->
   Ledger ann ->
   BalanceReport ann ->
   P ann Input
-produceInput Setup {..} ledger (BalanceReport accountBalances) = do
+produceInput Setup {..} ledger BalanceReport {..} = do
   let inputName = setupName
+  let inputQuarter = fromMaybe (YearQuarter 2024 Q1) setupVATQuarter
+
+  let chfSymbol = CurrencySymbol "CHF"
+  chfCurrency <- case M.lookup chfSymbol (ledgerCurrencies ledger) of
+    Nothing -> undefined
+    Just lqf -> pure $ Currency {currencySymbol = chfSymbol, currencyQuantisationFactor = lqf}
+
+  let priceGraph = pricesToPriceGraph (ledgerPrices ledger)
 
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
     let Located _ timestamp = transactionTimestamp
-    relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
-      let Located _ accountName = postingAccountName
-      if S.member accountName setupIncomeAccounts
-        then do
-          let Located _ account = postingAccount
-          let Located _ currency = postingCurrency
-          amount <- case account of
-            Negative amount -> pure $ amountToAmountWithCurrency currency amount
-            Positive _ -> undefined -- TODO error
-          pure $ Just amount
-        else pure Nothing
-    case V.toList relevantAccounts of
-      [] -> pure Nothing
-      [incomeAmount] -> do
+    let day = Timestamp.toDay timestamp
+    if periodFirstDay inputQuarter <= day && day <= periodLastDay inputQuarter
+      then do
+        let incomeDay = Timestamp.toDay timestamp
+        incomeDescription <- case transactionDescription of
+          Nothing -> undefined -- TODO error
+          Just (Located _ d) -> pure d
         incomeEvidence <- case V.toList transactionAttachments of
           [] -> undefined -- TODO error
           [Located _ (Attachment (Located _ path))] -> do
@@ -185,60 +189,42 @@ produceInput Setup {..} ledger (BalanceReport accountBalances) = do
             addEvidence path fileInTarball
             pure fileInTarball
           _ -> undefined -- TODO error
-        let incomeDay = Timestamp.toDay timestamp
-        incomeDescription <- case transactionDescription of
-          Nothing -> undefined -- TODO error
-          Just (Located _ d) -> pure d
-        pure $ Just Income {..}
-      -- TODO Error
-      _ -> undefined
-
-  inputExpenses <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
-    let Located _ timestamp = transactionTimestamp
-    relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
-      let Located _ accountName = postingAccountName
-      if S.member accountName setupExpensesAccounts
-        then do
-          let Located _ account = postingAccount
-          let Located _ currency = postingCurrency
-          amount <- case account of
-            Negative _ -> undefined -- TODO error
-            Positive amount -> pure $ amountToAmountWithCurrency currency amount
-          pure $ Just amount
-        else pure Nothing
-    case V.toList relevantAccounts of
-      [] -> pure Nothing
-      [expenseAmount] -> do
-        expenseEvidence <- case V.toList transactionAttachments of
-          [] -> undefined -- TODO error
-          [Located _ (Attachment (Located _ path))] -> do
-            let fileInTarball = [reldir|expense|] </> path
-            addEvidence path fileInTarball
-            pure fileInTarball
-          _ -> undefined -- TODO error
-        let expenseDay = Timestamp.toDay timestamp
-        expenseDescription <- case transactionDescription of
-          Nothing -> undefined -- TODO error
-          Just (Located _ d) -> pure d
-        pure $ Just Expense {..}
-      -- TODO Error
-      _ -> undefined
-
-  inputAssets <- fmap V.fromList $ for (M.toList setupAssetsAccounts) $ \(name, AssetSetup {..}) -> do
-    let assetName = name
-    -- TODO check that file exists
-    evidenceFile <- liftIO $ parseRelFile assetSetupEvidence
-    let assetEvidence = [reldir|assets|] </> evidenceFile
-    addEvidence evidenceFile assetEvidence
-    assetAmount <- case M.lookup assetSetupAccountName accountBalances of
-      Nothing -> undefined -- TODO error
-      Just ma -> case M.toList (MultiAccount.unMultiAccount ma) of
-        [] -> undefined -- TODO error
-        [(currency, account)] -> case account of
-          Positive amount -> pure $ amountToAmountWithCurrency currency amount
-          _ -> undefined -- TODO error
-        m -> error (show m) -- TODO error
-    pure Asset {..}
+        relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
+          let Located _ accountName = postingAccountName
+          if M.member accountName setupIncomeAccounts
+            then do
+              let Located _ account = postingAccount
+              let Located _ currency = postingCurrency
+              case account of
+                Negative amount -> pure $ Just (amount, currency)
+                Positive _ -> undefined -- TODO error
+            else pure Nothing
+        relevantVATAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
+          let Located _ accountName = postingAccountName
+          if accountName == setupVATIncomeAccount
+            then do
+              let Located _ account = postingAccount
+              let Located _ currency = postingCurrency
+              -- TODO check that the currency is CHF
+              case account of
+                Negative amount -> pure $ Just $ amountToAmountWithCurrency currency amount
+                Positive _ -> undefined -- TODO error
+            else pure Nothing
+        case V.toList relevantAccounts of
+          [] -> pure Nothing
+          [(amount, currency)] -> do
+            let incomeAmount = amountToAmountWithCurrency currency amount
+            incomeVAT <- case V.toList relevantVATAccounts of
+              [] -> pure Nothing
+              [vatAmount] -> pure $ Just vatAmount
+              _ -> undefined
+            -- TODO use the conversion rate from the appropriate date
+            -- TODO figure out if this is the correct rounding
+            incomeCHFAmount <- amountToAmountWithCurrency chfCurrency <$> mapValidationTFailure InputErrorConvert (liftValidation (convertAmount priceGraph RoundNearest currency amount chfCurrency))
+            pure $ Just Income {..}
+          -- TODO Error
+          _ -> undefined
+      else pure Nothing
 
   pure Input {..}
 
@@ -248,17 +234,18 @@ amountToAmountWithCurrency currency amount =
       symbol = currencySymbol currency
    in AmountWithCurrency (Amount.format qf amount) symbol
 
-data InputError ann = InputError
+data InputError ann
+  = InputErrorConvert (ConvertError ann)
 
 instance ToReport (InputError SourceSpan) where
   toReport = \case
-    InputError -> undefined
+    InputErrorConvert ce -> toReport ce
 
+-- TODO split up "Input" into "Input to Typst" and "VAT report"
 data Input = Input
   { inputName :: Text,
-    inputIncome :: Vector Income,
-    inputAssets :: Vector Asset,
-    inputExpenses :: Vector Expense
+    inputQuarter :: !Quarter,
+    inputIncome :: Vector Income
   }
   deriving (Show, Eq)
   deriving (FromJSON, ToJSON) via (Autodocodec Input)
@@ -269,17 +256,17 @@ instance HasCodec Input where
       Input
         <$> requiredField "name" "name"
           .= inputName
+        <*> requiredFieldWith "quarter" (codecViaAeson "Quarter") "quarter"
+          .= inputQuarter
         <*> requiredField "income" "income"
           .= inputIncome
-        <*> requiredField "assets" "assets"
-          .= inputAssets
-        <*> requiredField "expenses" "expenses"
-          .= inputExpenses
 
 data Income = Income
   { incomeDay :: !Day,
     incomeDescription :: !Description,
     incomeAmount :: !AmountWithCurrency,
+    incomeVAT :: !(Maybe AmountWithCurrency),
+    incomeCHFAmount :: !AmountWithCurrency,
     incomeEvidence :: !(Path Rel File)
   }
   deriving (Show, Eq)
@@ -295,49 +282,12 @@ instance HasCodec Income where
           .= incomeDescription
         <*> requiredField "amount" "amount"
           .= incomeAmount
+        <*> requiredField "vat" "vat"
+          .= incomeVAT
+        <*> requiredField "chf" "amount in chf"
+          .= incomeCHFAmount
         <*> requiredField "evidence" "evidence"
           .= incomeEvidence
-
-data Asset = Asset
-  { assetName :: !Text,
-    assetAmount :: !AmountWithCurrency,
-    assetEvidence :: !(Path Rel File)
-  }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec Asset)
-
-instance HasCodec Asset where
-  codec =
-    object "Asset" $
-      Asset
-        <$> requiredField "name" "asset account name"
-          .= assetName
-        <*> requiredField "amount" "amount"
-          .= assetAmount
-        <*> requiredField "evidence" "evidence"
-          .= assetEvidence
-
-data Expense = Expense
-  { expenseDay :: !Day,
-    expenseDescription :: !Description,
-    expenseAmount :: !AmountWithCurrency,
-    expenseEvidence :: !(Path Rel File)
-  }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec Expense)
-
-instance HasCodec Expense where
-  codec =
-    object "Expense" $
-      Expense
-        <$> requiredField "day" "expense day"
-          .= expenseDay
-        <*> requiredField "description" "expense description"
-          .= expenseDescription
-        <*> requiredField "amount" "amount"
-          .= expenseAmount
-        <*> requiredField "evidence" "evidence"
-          .= expenseEvidence
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: String,

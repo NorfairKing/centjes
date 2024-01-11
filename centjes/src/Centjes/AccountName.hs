@@ -16,7 +16,8 @@ where
 
 import Autodocodec
 import Control.DeepSeq
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON, FromJSONKey (..), FromJSONKeyFunction (..), ToJSON, ToJSONKey (..))
+import Data.Aeson.Types (toJSONKeyText)
 import qualified Data.Char as Char
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -66,6 +67,12 @@ instance HasCodec AccountName where
         Nothing -> Left $ "Invalid AccountName: " <> show t
         Just an -> Right an
 
+instance FromJSONKey AccountName where
+  fromJSONKey = FromJSONKeyTextParser fromTextM
+
+instance ToJSONKey AccountName where
+  toJSONKey = toJSONKeyText toText
+
 instance IsString AccountName where
   fromString s = case fromText (fromString s) of
     Nothing -> error $ "Invalid AccountName literal: " <> show s
@@ -73,6 +80,11 @@ instance IsString AccountName where
 
 fromText :: Text -> Maybe AccountName
 fromText = either (const Nothing) Just . fromTextOrError
+
+fromTextM :: MonadFail m => Text -> m AccountName
+fromTextM t = case fromTextOrError t of
+  Left err -> fail err
+  Right an -> pure an
 
 fromTextOrError :: Text -> Either String AccountName
 fromTextOrError = prettyValidate . AccountName . NE.fromList . reverse . T.splitOn ":"

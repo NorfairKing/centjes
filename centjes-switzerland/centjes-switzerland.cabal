@@ -11,6 +11,7 @@ bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
     templates/main.typ
+    templates/vat.typ
     test_resources/taxes/empty/input.json
     test_resources/taxes/empty/ledger.cent
     test_resources/taxes/empty/switzerland.yaml

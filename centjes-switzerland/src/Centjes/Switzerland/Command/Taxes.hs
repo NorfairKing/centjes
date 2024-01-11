@@ -162,11 +162,12 @@ produceInput ::
 produceInput Setup {..} ledger BalanceReport {..} = do
   let inputName = setupName
 
+  let incomeAccounts = M.keysSet setupIncomeAccounts
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
     let Located _ timestamp = transactionTimestamp
     relevantAccounts <- flip V.mapMaybeM transactionPostings $ \(Located _ Posting {..}) -> do
       let Located _ accountName = postingAccountName
-      if S.member accountName setupIncomeAccounts
+      if M.member accountName setupIncomeAccounts
         then do
           let Located _ account = postingAccount
           let Located _ currency = postingCurrency

@@ -14,6 +14,7 @@ import Data.Maybe
 import Data.Set (Set)
 import Data.Text
 import Data.Time
+import Data.Time.Calendar.Quarter
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
 import GHC.Generics (Generic)
@@ -123,9 +124,11 @@ instance HasCodec Configuration where
 
 data Setup = Setup
   { setupName :: !Text,
-    setupIncomeAccounts :: !(Set AccountName),
+    setupIncomeAccounts :: !(Map AccountName IncomeSetup),
     setupAssetsAccounts :: !(Map Text AssetSetup),
-    setupExpensesAccounts :: !(Set AccountName)
+    setupExpensesAccounts :: !(Set AccountName),
+    setupVATIncomeAccount :: !AccountName,
+    setupVATQuarter :: !(Maybe Quarter)
   }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Setup)
@@ -144,6 +147,23 @@ instance HasObjectCodec Setup where
         .= setupAssetsAccounts
       <*> requiredField "expenses" "expenses"
         .= setupExpensesAccounts
+      <*> requiredField "vat-income" "VAT income account"
+        .= setupVATIncomeAccount
+      <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "quarter"
+        .= setupVATQuarter
+
+data IncomeSetup = IncomeSetup
+  { incomeSetupForeign :: !Bool
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving (FromJSON, ToJSON) via (Autodocodec IncomeSetup)
+
+instance HasCodec IncomeSetup where
+  codec =
+    object "IncomeSetup" $
+      IncomeSetup
+        <$> requiredField "foreign" "whether the income is foreign"
+          .= incomeSetupForeign
 
 data AssetSetup = AssetSetup
   { assetSetupAccountName :: !AccountName,
@@ -156,7 +176,7 @@ instance HasCodec AssetSetup where
   codec =
     object "AssetSetup" $
       AssetSetup
-        <$> requiredField "name" "account name"
+        <$> requiredField "name" "Account name of the account"
           .= assetSetupAccountName
         <*> requiredField "evidence" "account statement file"
           .= assetSetupEvidence
