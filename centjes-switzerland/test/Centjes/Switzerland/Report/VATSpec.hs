@@ -1,9 +1,9 @@
-module Centjes.Switzerland.Command.VATSpec (spec) where
+module Centjes.Switzerland.Report.VATSpec (spec) where
 
 import Autodocodec.Yaml
 import Centjes.Load
-import Centjes.Switzerland.Command.VAT
 import Centjes.Switzerland.OptParse
+import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.TestUtils
 import Centjes.Validation.TestUtils
 import Control.Monad.Logger
