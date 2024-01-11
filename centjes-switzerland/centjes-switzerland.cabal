@@ -36,6 +36,7 @@ library
       Centjes.Switzerland.Report.VAT
       Centjes.Switzerland.Templates
       Centjes.Switzerland.Typst
+      Centjes.Switzerland.Zip
   other-modules:
       Paths_centjes_switzerland
   hs-source-dirs:
