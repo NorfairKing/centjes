@@ -76,6 +76,7 @@ $alpha = [A-Za-z]
 @bang = "! "
 @plus = "+ " 
 @at = "@ "
+@slash = "/ "
 @percent = "%"
 @tilde = "~"
 @import = "import " .* \n
@@ -121,6 +122,7 @@ $white_no_nl+ ;
 <price> @timestamp       { lexTimestamp }
 <price> @var             { lexVar }
 <price> @decimal_literal { lexDL }
+<price> @slash           { lexSlash }
 <price> @newline         { lexNl `andBegin` 0 }
 
 -- Transactions
@@ -138,6 +140,7 @@ $white_no_nl+ ;
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
 <posting> @at              { lexAt }
+<posting> @slash           { lexSlash }
 <posting> @tilde           { lexTilde }
 <posting> @percent         { lexPercent }
 <posting> @newline         { lexNl `andBegin` transaction}
@@ -167,6 +170,9 @@ lexDL = lexM (maybeParser "DecimalLiteral" (fmap TokenDecimalLiteral . DecimalLi
 
 lexAt :: AlexAction Token
 lexAt = lex' TokenAt
+
+lexSlash :: AlexAction Token
+lexSlash = lex' TokenSlash
 
 lexTilde :: AlexAction Token
 lexTilde = lex' TokenTilde
@@ -208,6 +214,7 @@ data TokenClass
   | TokenPlus
   | TokenDot
   | TokenAt
+  | TokenSlash
   | TokenTilde
   | TokenPercent
   | TokenCurrency

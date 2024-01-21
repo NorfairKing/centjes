@@ -52,8 +52,9 @@ data CompileError ann
   | CompileErrorMissingAccount !ann !(GenLocated ann AccountName)
   | CompileErrorAccountDeclaredTwice !ann !ann !AccountName
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
-  | CompileErrorInvalidPrice !ann !(GenLocated ann DecimalLiteral)
-  | CompileErrorInvalidPercentage !ann !ann !(GenLocated ann DecimalLiteral)
+  | CompileErrorInvalidPrice !ann !(GenLocated ann (RationalExpression ann))
+  | CompileErrorInvalidPercentage !ann !ann !(GenLocated ann (RationalExpression ann))
+  | CompileErrorInvalidRational !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Eq, Generic)
 
@@ -164,29 +165,29 @@ instance ToReport (CompileError SourceSpan) where
                   ]
               ]
         ]
-    CompileErrorInvalidPrice pdl (Located ll dl) ->
+    CompileErrorInvalidPrice dl (Located ll _) ->
       Err
         (Just "CE_INVALID_PRICE")
-        ( unwords
-            [ "Invalid price:",
-              DecimalLiteral.format dl
-            ]
-        )
+        "Invalid price, cannot be interpreted as a positive fraction."
         [ (toDiagnosePosition ll, This "This rate is invalid"),
-          (toDiagnosePosition pdl, Where "While compiling this price declaration")
+          (toDiagnosePosition dl, Where "While compiling this declaration")
         ]
         []
-    CompileErrorInvalidPercentage tl pel (Located ll dl) ->
+    CompileErrorInvalidPercentage tl pel (Located ll _) ->
       Err
         (Just "CE_INVALID_PERCENTAGE")
-        ( unwords
-            [ "Invalid percentage:",
-              DecimalLiteral.format dl
-            ]
-        )
+        "Invalid percentage, cannot be interpreted as a positive fraction."
         [ (toDiagnosePosition ll, This "This percentage is invalid"),
-          (toDiagnosePosition pel, Where "While compiling this posting percentage"),
+          (toDiagnosePosition pel, Where "While compiling this percentage"),
           (toDiagnosePosition tl, Where "While compiling this transaction")
+        ]
+        []
+    CompileErrorInvalidRational tl (Located ll _) ->
+      Err
+        (Just "CE_INVALID_RATIONAL")
+        "Invalid rational, cannot be interpreted as a positive fraction."
+        [ (toDiagnosePosition ll, This "This rational expression is invalid"),
+          (toDiagnosePosition tl, Blank)
         ]
         []
     CompileErrorUnparseableAmount tl (Located cl qf) (Located al dl) ->
@@ -346,11 +347,18 @@ compileCostExpression currencies pdl (Located cl CostExpression {..}) = do
 
 compileConversionRate ::
   ann ->
-  GenLocated ann DecimalLiteral ->
+  GenLocated ann (RationalExpression ann) ->
   Validation (CompileError ann) (GenLocated ann Money.ConversionRate)
-compileConversionRate pdl ldl@(Located rl dl) = do
-  case ConversionRate.fromDecimalLiteral dl of
-    Nothing -> validationFailure $ CompileErrorInvalidPrice pdl ldl
+compileConversionRate pdl lre = do
+  Located rl r <-
+    mapValidationFailure
+      ( \case
+          CompileErrorInvalidRational _ _ -> CompileErrorInvalidPrice pdl lre
+          e -> e
+      )
+      (compileRational pdl lre)
+  case ConversionRate.fromRatio r of
+    Nothing -> validationFailure $ CompileErrorInvalidPrice pdl lre
     Just cr -> pure (Located rl cr)
 
 compilePercentageExpression ::
@@ -364,12 +372,33 @@ compilePercentageExpression pl (Located pel PercentageExpression {..}) = do
 compilePercentage ::
   ann ->
   ann ->
-  GenLocated ann DecimalLiteral ->
+  GenLocated ann (RationalExpression ann) ->
   Validation (CompileError ann) (GenLocated ann (Ratio Natural))
-compilePercentage pl pel ldl@(Located dll dl) =
-  case DecimalLiteral.toRatio dl of
-    Nothing -> validationFailure $ CompileErrorInvalidPercentage pl pel ldl
-    Just r -> pure (Located dll (r / 100)) -- We undo the percentage-ness here
+compilePercentage pl pel ldl = do
+  Located rl r <-
+    mapValidationFailure
+      ( \case
+          CompileErrorInvalidRational _ lre -> CompileErrorInvalidPercentage pl pel lre
+          e -> e
+      )
+      $ compileRational pl ldl
+  pure $ Located rl $ r / 100 -- We undo the percentage-ness here
+
+compileRational ::
+  ann ->
+  GenLocated ann (RationalExpression ann) ->
+  Validation (CompileError ann) (GenLocated ann (Ratio Natural))
+compileRational l lre@(Located rel re) = case re of
+  RationalExpressionDecimal (Located del dl) ->
+    case DecimalLiteral.toRatio dl of
+      Nothing -> validationFailure $ CompileErrorInvalidRational l lre
+      Just r -> pure (Located del r)
+  RationalExpressionFraction (Located _ ndl) (Located _ ddl) ->
+    case (,) <$> DecimalLiteral.toRatio ndl <*> DecimalLiteral.toRatio ddl of
+      Nothing -> validationFailure $ CompileErrorInvalidRational l lre
+      Just (n, d) -> do
+        when (d == 0) $ validationFailure $ CompileErrorInvalidRational l lre
+        pure (Located rel (n / d)) -- TODO err on zero denominator
 
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

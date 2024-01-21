@@ -37,7 +37,7 @@ extra-deps:
 
 
 - github: NorfairKing/really-safe-money
-  commit: 954209a8bf1f4c9843fc789cde8cd44955ac92f1
+  commit: 34afa1526d6d1182bd8380b170afb360b200f6d9
   subdirs:
   - really-safe-money
   - really-safe-money-autodocodec

@@ -13,7 +13,7 @@ import Centjes.Format (formatModule)
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
-import Centjes.Module (CostExpression (..), Declaration (..), Module (..), PriceDeclaration (..))
+import Centjes.Module (CostExpression (..), Declaration (..), Module (..), PriceDeclaration (..), RationalExpression (..))
 import Centjes.Switzerland.OptParse
 import Centjes.Validation
 import Conduit
@@ -23,6 +23,7 @@ import qualified Data.Conduit.Combinators as C
 import Data.List (find)
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Ratio
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
@@ -101,15 +102,22 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
                 baseRatio <- DecimalLiteral.toRatio baseLiteral
                 rateRatio <- DecimalLiteral.toRatio rateLiteral
                 let actualRate = rateRatio / baseRatio
-                actualRateLiteral <- DecimalLiteral.fromRatio actualRate
-                pure (day, currencySymbol, actualRateLiteral)
+                let rateExpression = case DecimalLiteral.fromRatio actualRate of
+                      Just r -> RationalExpressionDecimal (noLoc r)
+                      Nothing ->
+                        let n = numerator actualRate
+                            d = denominator actualRate
+                         in RationalExpressionFraction
+                              (noLoc (DecimalLiteral.fromNatural n))
+                              (noLoc (DecimalLiteral.fromNatural d))
+                pure (day, currencySymbol, rateExpression)
             )
           -- \| Produce Price declarations
           .| C.map
-            ( \(day, currencySymbol, rateLiteral) ->
+            ( \(day, currencySymbol, rateExpression) ->
                 let priceDeclarationTimestamp = noLoc $ TimestampDay day
                     priceDeclarationCurrencySymbol = noLoc currencySymbol
-                    costExpressionConversionRate = noLoc rateLiteral
+                    costExpressionConversionRate = noLoc rateExpression
                     costExpressionCurrencySymbol = noLoc $ CurrencySymbol "CHF"
                     priceDeclarationCost = noLoc $ CostExpression {..}
                  in PriceDeclaration {..}

@@ -59,6 +59,7 @@ import qualified Data.Text as T
       star            { Located _ TokenStar }
       bang            { Located _ TokenBang }
       at              { Located _ TokenAt }
+      slash           { Located _ TokenSlash }
       tilde           { Located _ TokenTilde }
       percent         { Located _ TokenPercent }
       currency_tok    { Located _ TokenCurrency}
@@ -122,8 +123,8 @@ price_dec
   : price timestamp currency_symbol cost_exp newline { sBE $1 $5 $ PriceDeclaration $2 $3 $4 }
 
 conversion_rate
-  :: { Located DecimalLiteral }
-  : decimal_literal { parseDecimalLiteral $1 }
+  :: { LRationalExpression }
+  : rational_exp { $1 }
 
 transaction_dec
   :: { LTransaction }
@@ -161,11 +162,12 @@ posting_cost
 
 posting_percentage
   :: { LPercentageExpression }
-  : tilde percentage percent { sBE $1 $3 $ PercentageExpression $2 }
+  : tilde rational_exp percent { sBE $1 $3 $ PercentageExpression $2 }
 
-percentage
-  :: { Located DecimalLiteral }
-  : decimal_literal { parseDecimalLiteral $1 }
+rational_exp
+  :: { LRationalExpression }
+  : decimal_literal { sL1 $1 $ RationalExpressionDecimal $ parseDecimalLiteral $1 }
+  | decimal_literal slash decimal_literal { sBE $1 $3 $ RationalExpressionFraction (parseDecimalLiteral $1) (parseDecimalLiteral $3) }
 
 account_name
   :: { Located AccountName }

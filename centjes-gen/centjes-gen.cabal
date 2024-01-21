@@ -94,6 +94,10 @@ extra-source-files:
     test_resources/compile/CE_INVALID_PRICE.err
     test_resources/compile/CE_INVALID_QUANTISATION_FACTOR.cent
     test_resources/compile/CE_INVALID_QUANTISATION_FACTOR.err
+    test_resources/compile/CE_INVALID_RATIONAL-negative.cent
+    test_resources/compile/CE_INVALID_RATIONAL-negative.err
+    test_resources/compile/CE_INVALID_RATIONAL-zero.cent
+    test_resources/compile/CE_INVALID_RATIONAL-zero.err
     test_resources/compile/CE_UNDECLARED_ACCOUNT.cent
     test_resources/compile/CE_UNDECLARED_ACCOUNT.err
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
@@ -136,6 +140,7 @@ extra-source-files:
     test_resources/syntax/module/valid/multiple-accounts.cent
     test_resources/syntax/module/valid/multiple-currencies.cent
     test_resources/syntax/module/valid/multiple-imports.cent
+    test_resources/syntax/transaction/formatted/currency-conversion-fraction.cent
     test_resources/syntax/transaction/formatted/currency-conversion.cent
     test_resources/syntax/transaction/formatted/example.cent
     test_resources/syntax/transaction/formatted/multiline-description.cent
@@ -143,7 +148,9 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/timestamp-with-second.cent
     test_resources/syntax/transaction/formatted/with-assertion.cent
     test_resources/syntax/transaction/formatted/with-attachment.cent
+    test_resources/syntax/transaction/formatted/with-percentage-fraction.cent
     test_resources/syntax/transaction/formatted/with-percentage.cent
+    test_resources/syntax/transaction/valid/currency-conversion-fraction.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
     test_resources/syntax/transaction/valid/example.cent
     test_resources/syntax/transaction/valid/multiline-description.cent
@@ -151,6 +158,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/timestamp-with-second.cent
     test_resources/syntax/transaction/valid/with-assertion.cent
     test_resources/syntax/transaction/valid/with-attachment.cent
+    test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
 
 source-repository head

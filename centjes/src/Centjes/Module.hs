@@ -22,6 +22,8 @@ module Centjes.Module
     CostExpression (..),
     LPercentageExpression,
     PercentageExpression (..),
+    LRationalExpression,
+    RationalExpression (..),
     LTransaction,
     Transaction (..),
     transactionCurrencySymbols,
@@ -167,7 +169,7 @@ instance NFData ann => NFData (Posting ann)
 type LCostExpression = LLocated CostExpression
 
 data CostExpression ann = CostExpression
-  { costExpressionConversionRate :: !(GenLocated ann DecimalLiteral),
+  { costExpressionConversionRate :: !(GenLocated ann (RationalExpression ann)),
     costExpressionCurrencySymbol :: !(GenLocated ann CurrencySymbol)
   }
   deriving stock (Show, Eq, Generic)
@@ -179,13 +181,28 @@ instance NFData ann => NFData (CostExpression ann)
 type LPercentageExpression = LLocated PercentageExpression
 
 newtype PercentageExpression ann = PercentageExpression
-  { unPercentageExpression :: GenLocated ann DecimalLiteral
+  { unPercentageExpression :: GenLocated ann (RationalExpression ann)
   }
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (PercentageExpression ann)
 
 instance NFData ann => NFData (PercentageExpression ann)
+
+type LRationalExpression = LLocated RationalExpression
+
+data RationalExpression ann
+  = RationalExpressionDecimal !(GenLocated ann DecimalLiteral)
+  | RationalExpressionFraction
+      !(GenLocated ann DecimalLiteral)
+      -- ^ Numerator
+      !(GenLocated ann DecimalLiteral)
+      -- ^ Denominator
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (RationalExpression ann)
+
+instance NFData ann => NFData (RationalExpression ann)
 
 type LTransactionExtra = LLocated TransactionExtra
 

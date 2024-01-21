@@ -143,11 +143,11 @@ priceDeclarationDoc (Located _ PriceDeclaration {..}) =
     <+> lCostExpressionDoc priceDeclarationCost
       <> hardline
 
-lConversionRateDoc :: GenLocated l DecimalLiteral -> Doc ann
+lConversionRateDoc :: GenLocated l (RationalExpression l) -> Doc ann
 lConversionRateDoc = conversionRateDoc . locatedValue
 
-conversionRateDoc :: DecimalLiteral -> Doc ann
-conversionRateDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional
+conversionRateDoc :: RationalExpression l -> Doc ann
+conversionRateDoc = rationalExpressionDoc
 
 transactionDecDoc :: GenLocated l (Transaction l) -> Doc ann
 transactionDecDoc = transactionDoc . locatedValue
@@ -188,8 +188,22 @@ lCostExpressionDoc (Located _ CostExpression {..}) =
 
 lPercentageExpressionDoc :: GenLocated l (PercentageExpression l) -> Doc ann
 lPercentageExpressionDoc (Located _ PercentageExpression {..}) =
-  lConversionRateDoc unPercentageExpression
+  lRationalExpressionDoc unPercentageExpression
     <> "%"
+
+lRationalExpressionDoc :: GenLocated l (RationalExpression l) -> Doc ann
+lRationalExpressionDoc = rationalExpressionDoc . locatedValue
+
+rationalExpressionDoc :: RationalExpression l -> Doc ann
+rationalExpressionDoc = \case
+  RationalExpressionDecimal ldl -> lRationalDecimalLiteralDoc ldl
+  RationalExpressionFraction ln ld ->
+    lRationalDecimalLiteralDoc ln
+      <+> "/"
+      <+> lRationalDecimalLiteralDoc ld
+
+lRationalDecimalLiteralDoc :: GenLocated l DecimalLiteral -> Doc ann
+lRationalDecimalLiteralDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
 
 transactionExtraDoc :: TransactionExtra l -> Doc ann
 transactionExtraDoc =
