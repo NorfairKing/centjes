@@ -8,6 +8,7 @@
 
 module Centjes.Switzerland.Report.VAT
   ( produceVATInputFromDeclarations,
+    produceVATReport,
   )
 where
 
@@ -211,3 +212,40 @@ instance HasCodec AmountWithCurrency where
           .= amountWithCurrencyAmount
         <*> requiredField "symbol" "currency symbol"
           .= amountWithCurrencyCurrency
+
+data VATReport = VATReport
+  { vatReportName :: !Text,
+    vatReportQuarter :: !Quarter
+  }
+  deriving (Show, Eq)
+
+-- TODO rename this to VATError
+data VATReportError ann
+  = VATReportErrorConvert (ConvertError ann)
+  deriving (Show, Eq)
+
+instance ToReport (VATReportError SourceSpan) where
+  toReport = \case
+    VATReportErrorConvert ce -> toReport ce
+
+produceVATReport ::
+  Setup ->
+  Ledger ann ->
+  ValidationT (VATError ann) IO (VATReport, Map (Path Rel File) (Path Rel File))
+produceVATReport setup ledger = do
+  transformValidationT
+    ( \f -> do
+        (v, fs) <- runWriterT f
+        pure $ (,) <$> v <*> pure fs
+    )
+    $ mapValidationTFailure VATErrorInput
+    $ produceVATReportFromLedger setup ledger
+
+produceVATReportFromLedger ::
+  Setup ->
+  Ledger ann ->
+  P ann VATReport
+produceVATReportFromLedger Setup {..} _ = do
+  let vatReportName = setupName
+  let vatReportQuarter = fromMaybe (YearQuarter 2024 Q1) setupVATQuarter
+  pure VATReport {..}
