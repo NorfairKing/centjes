@@ -9,8 +9,11 @@ module Centjes.Convert
   ( ConvertError (..),
     lookupConversionCurrency,
     convertMultiAccount,
+    convertAccount,
+    convertAmount,
     lookupConversionRate,
     pricesToPriceGraph,
+    pricesToDailyPriceGraphs,
   )
 where
 
@@ -20,15 +23,22 @@ import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
 import Centjes.Location
+import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.DeepSeq
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
+import Data.Time
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
+import qualified Money.Account as Account
+import qualified Money.Account as Money (Account)
+import Money.Amount (Rounding (..))
+import qualified Money.Amount as Amount
+import qualified Money.Amount as Money (Amount)
 import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
@@ -103,6 +113,38 @@ convertMultiAccount graph currencyTo ma = do
     Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
     Just result -> pure $ MultiAccount.fromAccount currencyTo result
 
+convertAccount ::
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Rounding ->
+  Currency ann ->
+  Money.Account ->
+  Currency ann ->
+  Validation (ConvertError ann) Money.Account
+convertAccount graph rounding currencyFrom account currencyTo = do
+  (rate, quantisationFactorFrom) <- lookupConversionRate graph currencyTo currencyFrom
+  let quantisationFactorTo :: Money.QuantisationFactor
+      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+  case fst $ Account.convert rounding quantisationFactorFrom account rate quantisationFactorTo of
+    Nothing -> undefined -- TODO error
+    Just a -> pure a
+
+convertAmount ::
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Rounding ->
+  Currency ann ->
+  Money.Amount ->
+  Currency ann ->
+  Validation (ConvertError ann) Money.Amount
+convertAmount graph rounding currencyFrom amount currencyTo = do
+  (rate, quantisationFactorFrom) <- lookupConversionRate graph currencyTo currencyFrom
+  let quantisationFactorTo :: Money.QuantisationFactor
+      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+  case fst $ Amount.convert rounding quantisationFactorFrom amount rate quantisationFactorTo of
+    Nothing -> undefined -- TODO error
+    Just a -> pure a
+
 lookupConversionRate ::
   forall ann.
   Ord ann =>
@@ -127,3 +169,19 @@ pricesToPriceGraph = MemoisedPriceGraph.fromPriceGraph . V.foldl go PriceGraph.e
           Located _ rate = costConversionRate
           Located _ currencyTo = costCurrency
        in PriceGraph.insert currencyFrom currencyTo rate g
+
+pricesToDailyPriceGraphs ::
+  Ord ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Map Day (MemoisedPriceGraph (Currency ann))
+pricesToDailyPriceGraphs = fst . V.foldl go (M.empty, PriceGraph.empty)
+  where
+    go (m, pg) (Located _ Price {..}) =
+      let Located _ currencyFrom = priceCurrency
+          Located _ Cost {..} = priceCost
+          Located _ rate = costConversionRate
+          Located _ currencyTo = costCurrency
+          pg' = PriceGraph.insert currencyFrom currencyTo rate pg
+          Located _ timestamp = priceTimestamp
+          m' = M.insert (Timestamp.toDay timestamp) (MemoisedPriceGraph.fromPriceGraph pg') m
+       in (m', pg')

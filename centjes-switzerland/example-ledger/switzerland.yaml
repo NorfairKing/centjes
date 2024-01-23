@@ -1,7 +1,10 @@
 name: John Doe
 
 income:
-  - income:consulting
+  "income:consulting:foobar": 
+    foreign: false
+  "income:consulting:quux": 
+    foreign: true
 
 assets:
   bank: 
@@ -9,3 +12,5 @@ assets:
     evidence: bank-statement.txt
 
 expenses: []
+
+vat-income: income:vat

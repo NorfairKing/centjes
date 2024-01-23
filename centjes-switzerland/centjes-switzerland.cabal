@@ -11,9 +11,13 @@ bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
     templates/main.typ
-    test_resources/scenarios/empty/input.json
-    test_resources/scenarios/empty/ledger.cent
-    test_resources/scenarios/empty/switzerland.yaml
+    templates/vat.typ
+    test_resources/taxes/empty/input.json
+    test_resources/taxes/empty/ledger.cent
+    test_resources/taxes/empty/switzerland.yaml
+    test_resources/vat/empty/input.json
+    test_resources/vat/empty/ledger.cent
+    test_resources/vat/empty/switzerland.yaml
 
 source-repository head
   type: git
@@ -25,9 +29,15 @@ library
       Centjes.Switzerland.Command
       Centjes.Switzerland.Command.DownloadRates
       Centjes.Switzerland.Command.Taxes
+      Centjes.Switzerland.Command.VAT
       Centjes.Switzerland.Constants
       Centjes.Switzerland.OptParse
+      Centjes.Switzerland.Report.Taxes
+      Centjes.Switzerland.Report.VAT
+      Centjes.Switzerland.Reporter
       Centjes.Switzerland.Templates
+      Centjes.Switzerland.Typst
+      Centjes.Switzerland.Zip
   other-modules:
       Paths_centjes_switzerland
   hs-source-dirs:
@@ -44,6 +54,7 @@ library
     , centjes
     , conduit
     , containers
+    , diagnose
     , envparse
     , http-client
     , http-client-tls
@@ -59,6 +70,8 @@ library
     , text
     , time
     , typed-process
+    , validity
+    , validity-time
     , vector
     , xml-conduit
     , yaml
@@ -82,6 +95,11 @@ test-suite centjes-switzerland-test
   main-is: Spec.hs
   other-modules:
       Centjes.Switzerland.Command.TaxesSpec
+      Centjes.Switzerland.Command.VATSpec
+      Centjes.Switzerland.Report.TaxesSpec
+      Centjes.Switzerland.Report.VAT.Gen
+      Centjes.Switzerland.Report.VATSpec
+      Centjes.Switzerland.TestUtils
       Paths_centjes_switzerland
   hs-source-dirs:
       test
@@ -89,15 +107,23 @@ test-suite centjes-switzerland-test
   build-tool-depends:
       sydtest-discover:sydtest-discover
   build-depends:
-      autodocodec-yaml
+      QuickCheck
+    , aeson
+    , autodocodec-yaml
     , base >=4.7 && <5
     , centjes
     , centjes-gen
     , centjes-switzerland
     , filepath
+    , genvalidity
+    , genvalidity-sydtest
+    , genvalidity-time
     , monad-logger
     , path
     , path-io
+    , really-safe-money
+    , really-safe-money-gen
     , sydtest
     , sydtest-aeson
+    , time
   default-language: Haskell2010

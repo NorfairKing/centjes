@@ -14,6 +14,7 @@ import Data.Maybe
 import Data.Set (Set)
 import Data.Text
 import Data.Time
+import Data.Time.Calendar.Quarter
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
 import GHC.Generics (Generic)
@@ -46,12 +47,19 @@ data Settings = Settings
 
 data Dispatch
   = DispatchTaxes !TaxesSettings
+  | DispatchVAT !VATSettings
   | DispatchDownloadRates !DownloadRatesSettings
   deriving (Show, Eq, Generic)
 
 data TaxesSettings = TaxesSettings
   { taxesSettingZipFile :: !(Path Abs File),
     taxesSettingReadmeFile :: !(Path Abs File)
+  }
+  deriving (Show, Eq, Generic)
+
+data VATSettings = VATSettings
+  { vatSettingZipFile :: !(Path Abs File),
+    vatSettingReadmeFile :: !(Path Abs File)
   }
   deriving (Show, Eq, Generic)
 
@@ -77,9 +85,13 @@ combineToInstructions
     let settingSetup = configSetup
     dispatch <- case cmd of
       CommandTaxes TaxesArgs {..} -> do
-        taxesSettingZipFile <- resolveFile' $ fromMaybe "packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
+        taxesSettingZipFile <- resolveFile' $ fromMaybe "tax-packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
         taxesSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ taxesArgReadmeFile <|> envReadmeFile <|> configReadmeFile
         pure $ DispatchTaxes TaxesSettings {..}
+      CommandVAT VATArgs {..} -> do
+        vatSettingZipFile <- resolveFile' $ fromMaybe "vat-packet.zip" $ vatArgZipFile <|> envZipFile <|> configZipFile
+        vatSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ vatArgReadmeFile <|> envReadmeFile <|> configReadmeFile
+        pure $ DispatchVAT VATSettings {..}
       CommandDownloadRates DownloadRatesArgs {..} -> do
         today <- utctDay <$> getCurrentTime
         let (y, _, _) = toGregorian today
@@ -112,9 +124,11 @@ instance HasCodec Configuration where
 
 data Setup = Setup
   { setupName :: !Text,
-    setupIncomeAccounts :: !(Set AccountName),
+    setupIncomeAccounts :: !(Map AccountName IncomeSetup),
     setupAssetsAccounts :: !(Map Text AssetSetup),
-    setupExpensesAccounts :: !(Set AccountName)
+    setupExpensesAccounts :: !(Set AccountName),
+    setupVATIncomeAccount :: !AccountName,
+    setupVATQuarter :: !(Maybe Quarter)
   }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Setup)
@@ -133,6 +147,23 @@ instance HasObjectCodec Setup where
         .= setupAssetsAccounts
       <*> requiredField "expenses" "expenses"
         .= setupExpensesAccounts
+      <*> requiredField "vat-income" "VAT income account"
+        .= setupVATIncomeAccount
+      <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "quarter"
+        .= setupVATQuarter
+
+data IncomeSetup = IncomeSetup
+  { incomeSetupForeign :: !Bool
+  }
+  deriving stock (Show, Eq, Generic)
+  deriving (FromJSON, ToJSON) via (Autodocodec IncomeSetup)
+
+instance HasCodec IncomeSetup where
+  codec =
+    object "IncomeSetup" $
+      IncomeSetup
+        <$> requiredField "foreign" "whether the income is foreign"
+          .= incomeSetupForeign
 
 data AssetSetup = AssetSetup
   { assetSetupAccountName :: !AccountName,
@@ -145,7 +176,7 @@ instance HasCodec AssetSetup where
   codec =
     object "AssetSetup" $
       AssetSetup
-        <$> requiredField "name" "account name"
+        <$> requiredField "name" "Account name of the account"
           .= assetSetupAccountName
         <*> requiredField "evidence" "account statement file"
           .= assetSetupEvidence
@@ -218,6 +249,7 @@ parseArguments = Arguments <$> parseCommand <*> parseFlags
 -- | A sum type for the commands and their specific arguments
 data Command
   = CommandTaxes !TaxesArgs
+  | CommandVAT !VATArgs
   | CommandDownloadRates !DownloadRatesArgs
   deriving (Show, Eq, Generic)
 
@@ -226,6 +258,7 @@ parseCommand =
   OptParse.hsubparser $
     mconcat
       [ OptParse.command "taxes" $ CommandTaxes <$> parseCommandTaxes,
+        OptParse.command "vat" $ CommandVAT <$> parseCommandVAT,
         OptParse.command "download-rates" $ CommandDownloadRates <$> parseCommandDownloadRates
       ]
 
@@ -241,6 +274,37 @@ parseCommandTaxes = OptParse.info parser modifier
     modifier = OptParse.fullDesc <> OptParse.progDesc "Prepare a tax packet"
     parser =
       TaxesArgs
+        <$> optional
+          ( strOption
+              ( mconcat
+                  [ long "zip-file",
+                    help "Path to the zip file to create",
+                    metavar "FILEPATH"
+                  ]
+              )
+          )
+        <*> optional
+          ( strOption
+              ( mconcat
+                  [ long "readme-file",
+                    help "Path to the readme file to create",
+                    metavar "FILEPATH"
+                  ]
+              )
+          )
+
+data VATArgs = VATArgs
+  { vatArgZipFile :: !(Maybe FilePath),
+    vatArgReadmeFile :: !(Maybe FilePath)
+  }
+  deriving (Show, Eq, Generic)
+
+parseCommandVAT :: OptParse.ParserInfo VATArgs
+parseCommandVAT = OptParse.info parser modifier
+  where
+    modifier = OptParse.fullDesc <> OptParse.progDesc "Prepare a vat packet"
+    parser =
+      VATArgs
         <$> optional
           ( strOption
               ( mconcat
