@@ -7,7 +7,7 @@ with final.haskell.lib;
     paths = attrValues final.centjesReleasePackages;
     passthru = {
       makeSwitzerlandTaxesPacket = src: final.stdenv.mkDerivation {
-        name = "switzerland";
+        name = "taxes";
         inherit src;
         buildInputs = [
           final.typst
@@ -16,6 +16,21 @@ with final.haskell.lib;
           mkdir -p $out
           ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
             taxes \
+            --config-file $src/switzerland.yaml \
+            --zip-file $out/packet.zip \
+            --readme-file $out/README.pdf
+        '';
+      };
+      makeSwitzerlandVATPacket = src: final.stdenv.mkDerivation {
+        name = "vat";
+        inherit src;
+        buildInputs = [
+          final.typst
+        ];
+        buildCommand = ''
+          mkdir -p $out
+          ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
+            vat \
             --config-file $src/switzerland.yaml \
             --zip-file $out/packet.zip \
             --readme-file $out/README.pdf

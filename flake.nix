@@ -87,7 +87,8 @@
           centjes-nixos-module = self.nixosModules.${system}.default;
           inherit system;
         };
-        example-packet-switzerland = pkgs.centjes.makeSwitzerlandTaxesPacket ./centjes-switzerland/example-ledger;
+        example-switzerland-taxes = pkgs.centjes.makeSwitzerlandTaxesPacket ./centjes-switzerland/example-ledger;
+        example-switzerland-vat = pkgs.centjes.makeSwitzerlandVATPacket ./centjes-switzerland/example-ledger;
         pre-commit = pre-commit-hooks.lib.${ system}.run {
           src = ./.;
           hooks = {

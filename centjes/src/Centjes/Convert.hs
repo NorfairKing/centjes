@@ -9,6 +9,8 @@ module Centjes.Convert
   ( ConvertError (..),
     lookupConversionCurrency,
     convertMultiAccount,
+    convertAccount,
+    convertAmount,
     lookupConversionRate,
     pricesToPriceGraph,
   )
@@ -29,6 +31,11 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
+import qualified Money.Account as Account
+import qualified Money.Account as Money (Account)
+import Money.Amount (Rounding (..))
+import qualified Money.Amount as Amount
+import qualified Money.Amount as Money (Amount)
 import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
@@ -102,6 +109,38 @@ convertMultiAccount graph currencyTo ma = do
   case mResult of
     Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
     Just result -> pure $ MultiAccount.fromAccount currencyTo result
+
+convertAccount ::
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Rounding ->
+  Currency ann ->
+  Money.Account ->
+  Currency ann ->
+  Validation (ConvertError ann) Money.Account
+convertAccount graph rounding currencyFrom account currencyTo = do
+  (rate, quantisationFactorFrom) <- lookupConversionRate graph currencyTo currencyFrom
+  let quantisationFactorTo :: Money.QuantisationFactor
+      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+  case fst $ Account.convert rounding quantisationFactorFrom account rate quantisationFactorTo of
+    Nothing -> undefined -- TODO error
+    Just a -> pure a
+
+convertAmount ::
+  Ord ann =>
+  MemoisedPriceGraph (Currency ann) ->
+  Rounding ->
+  Currency ann ->
+  Money.Amount ->
+  Currency ann ->
+  Validation (ConvertError ann) Money.Amount
+convertAmount graph rounding currencyFrom amount currencyTo = do
+  (rate, quantisationFactorFrom) <- lookupConversionRate graph currencyTo currencyFrom
+  let quantisationFactorTo :: Money.QuantisationFactor
+      quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
+  case fst $ Amount.convert rounding quantisationFactorFrom amount rate quantisationFactorTo of
+    Nothing -> undefined -- TODO error
+    Just a -> pure a
 
 lookupConversionRate ::
   forall ann.

@@ -1,9 +1,9 @@
-module Centjes.Switzerland.Command.TaxesSpec (spec) where
+module Centjes.Switzerland.Report.TaxesSpec (spec) where
 
 import Autodocodec.Yaml
 import Centjes.Load
-import Centjes.Switzerland.Command.Taxes
 import Centjes.Switzerland.OptParse
+import Centjes.Switzerland.Report.Taxes
 import Centjes.Switzerland.TestUtils
 import Centjes.Validation.TestUtils
 import Control.Monad.Logger

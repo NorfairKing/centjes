@@ -1,0 +1,16 @@
+{
+    "domestic_revenue": {
+        "formatted": "0.00",
+        "symbol": "CHF"
+    },
+    "foreign_revenue": {
+        "formatted": "0.00",
+        "symbol": "CHF"
+    },
+    "name": "Tom Sydney Kerckhove",
+    "quarter": "2024-q1",
+    "total_revenue": {
+        "formatted": "0.00",
+        "symbol": "CHF"
+    }
+}

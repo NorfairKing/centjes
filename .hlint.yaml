@@ -84,6 +84,7 @@
   - name: decodeUtf8 # Partial, use decodeUtf8' instead.
     within:
       - Centjes.Switzerland.Command.Taxes
+      - Centjes.Switzerland.Command.VAT
   - name: Prelude.putStrLn
     within:
       - Centjes.Docs.Site.ModuleDocs

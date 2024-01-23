@@ -5,28 +5,33 @@ account equity:starting
 account assets:bank:usd
 account assets:bank
 account expenses:hardware
-account income:consulting
+account income:domestic
+account income:foreign
+account income:vat
 
 2023-12-31
   | Opening balances
   * equity:starting -10000 CHF
   * assets:bank 10000 CHF
 
-2024-01-15
+2024-01-02
   | Computer
   * assets:bank -5000 CHF
   * expenses:hardware 5000 CHF
   + attach receipt-computer.txt
 
-2024-01-31
-  | Foobar Jan
+price 2024-01-07 USD 0.8589 CHF
+
+2024-01-07
+  | Foobar Dec
   * assets:bank 1000 CHF
-  * income:consulting -1000 CHF
+  * income:domestic -1000 CHF
+  ! income:vat -71.50 CHF ~ 7.7 %
   + attach foobar-jan.txt
 
-2024-02-15
-  | Quux Jan
+2024-01-07
+  | Quux Dec
   * assets:bank:usd 1000 USD
-  * income:consulting -1000 USD
+  * income:foreign -1000 USD
   + attach quux-jan.txt
 

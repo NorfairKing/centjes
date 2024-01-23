@@ -23,6 +23,7 @@ library:
   - conduit
   - containers
   - containers
+  - diagnose
   - envparse
   - http-client
   - http-client-tls
@@ -38,6 +39,8 @@ library:
   - text
   - time
   - typed-process
+  - validity
+  - validity-time
   - vector
   - xml-conduit
   - yaml
@@ -64,13 +67,22 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies: 
+    - QuickCheck
+    - aeson
     - autodocodec-yaml
     - centjes
     - centjes-gen
     - centjes-switzerland
     - filepath
+    - genvalidity
+    - genvalidity-sydtest
+    - genvalidity-time
     - monad-logger  
     - path            
     - path-io
+    - really-safe-money
+    - really-safe-money-gen
+    - really-safe-money-gen
     - sydtest
     - sydtest-aeson
+    - time
