@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -14,6 +15,9 @@ module Centjes.Switzerland.Report.VAT
   )
 where
 
+import Centjes.Convert
+import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
+import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Switzerland.Reporter
@@ -22,6 +26,7 @@ import Centjes.Validation
 import Control.Monad.Writer
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Text (Text)
@@ -34,7 +39,7 @@ import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic (..))
 import Money.Account as Money (Account (..))
-import Money.Amount as Money (Amount (..))
+import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import Path
 
@@ -79,8 +84,8 @@ instance Validity ann => Validity (VATReport ann) where
 data VATError ann
   = VATErrorNoCHF
   | VATErrorNoEvidence !ann
+  | VATErrorCouldNotConvert !Money.Amount
   | VATErrorPositiveIncome !ann !ann !Money.Account
-  | VATErrorDomesticIncomeNotCHF !(Currency ann)
   | VATErrorSum ![Money.Amount]
   | VATErrorAdd !Money.Amount !Money.Amount
   deriving (Show, Eq, Generic)
@@ -91,6 +96,7 @@ instance ToReport (VATError SourceSpan) where
   toReport = \case
     VATErrorNoCHF -> Err Nothing "no CHF currency defined" [] []
     VATErrorNoEvidence _ -> Err Nothing "no evidence in transaction" [] []
+    VATErrorCouldNotConvert _ -> Err Nothing "could not convert to CHF" [] []
     VATErrorPositiveIncome tl pl _ ->
       Err
         Nothing
@@ -99,12 +105,11 @@ instance ToReport (VATError SourceSpan) where
           (toDiagnosePosition tl, Blank)
         ]
         []
-    VATErrorDomesticIncomeNotCHF _ -> Err Nothing "domestic income was not in CHF" [] []
     VATErrorSum _ -> Err Nothing "could not sum amounts because the result would get too big" [] []
     VATErrorAdd _ _ -> Err Nothing "could not add amounts because the result wolud get too big" [] []
 
 produceVATReport ::
-  Eq ann =>
+  Ord ann =>
   Ledger ann ->
   Reporter (VATError ann) (VATReport ann)
 produceVATReport Ledger {..} = do
@@ -118,6 +123,12 @@ produceVATReport Ledger {..} = do
   vatReportCHF <- case M.lookup chfSymbol ledgerCurrencies of
     Nothing -> validationTFailure VATErrorNoCHF
     Just lqf -> pure $ Currency chfSymbol lqf
+
+  -- TODO: Let the user pass in the correct rates, don't just use the ones they used.
+  -- We can't build the rates into the binary because there are MANY Currencies
+  -- that could be relevant.
+  -- So we let the user download rates with download-rates instead.
+  let dailyPriceGraphs = pricesToDailyPriceGraphs ledgerPrices
 
   vatReportDomesticRevenue <- do
     amounts <- fmap (concat . catMaybes) $
@@ -136,10 +147,10 @@ produceVATReport Ledger {..} = do
                     if accountName == domesticIncomeAccountName
                       then do
                         let Located _ currency = postingCurrency
-                        when (currency /= vatReportCHF) $ validationTFailure $ VATErrorDomesticIncomeNotCHF currency
                         let Located _ account = postingAccount
                         amount <- requireNegative tl pl account
-                        pure $ Just amount
+                        amount' <- convertDaily dailyPriceGraphs day currency vatReportCHF amount
+                        pure $ Just amount'
                       else pure Nothing
 
               pure $ Just amounts
@@ -164,11 +175,11 @@ produceVATReport Ledger {..} = do
                     let Located _ accountName = postingAccountName
                     if accountName == foreignIncomeAccountName
                       then do
-                        let Located _ _currency = postingCurrency
+                        let Located _ currency = postingCurrency
                         let Located _ account = postingAccount
                         amount <- requireNegative tl pl account
-                        -- TODO do currency conversion on the apropriate day
-                        pure $ Just amount
+                        amount' <- convertDaily dailyPriceGraphs day currency vatReportCHF amount
+                        pure $ Just amount'
                       else pure Nothing
 
               pure $ Just amounts
@@ -192,7 +203,7 @@ requireEvidence tl attachments =
     Nothing -> validationTFailure $ VATErrorNoEvidence tl
     Just ne ->
       forM ne $ \(Located _ (Attachment (Located _ rf))) -> do
-        includeFile rf rf -- TODO subdir in tarball?
+        includeFile ([reldir|income|] </> rf) rf
         pure rf
 
 requireNegative ::
@@ -204,3 +215,25 @@ requireNegative tl pl account =
   case account of
     Positive _ -> validationTFailure $ VATErrorPositiveIncome tl pl account
     Negative a -> pure a
+
+convertDaily ::
+  Ord ann =>
+  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Day ->
+  Currency ann ->
+  Currency ann ->
+  Money.Amount ->
+  Reporter (VATError ann) Money.Amount
+convertDaily dailyPrices day currencyFrom currencyTo amount =
+  case M.lookupLE day dailyPrices of
+    Nothing -> validationTFailure $ VATErrorCouldNotConvert amount
+    Just (_, mpg) ->
+      case MemoisedPriceGraph.lookup mpg currencyFrom currencyTo of
+        Nothing -> validationTFailure $ VATErrorCouldNotConvert amount
+        Just rate -> do
+          let Located _ qfFrom = currencyQuantisationFactor currencyFrom
+          let Located _ qfTo = currencyQuantisationFactor currencyTo
+          let (mA, _) = Amount.convert RoundNearest qfFrom amount rate qfTo
+          case mA of
+            Nothing -> validationTFailure $ VATErrorCouldNotConvert amount
+            Just convertedAmount -> pure convertedAmount

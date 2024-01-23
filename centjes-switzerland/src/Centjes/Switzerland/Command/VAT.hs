@@ -75,7 +75,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       -- Write the template to a file
       mainTypFile <- liftIO $ do
         mtf <- resolveFile tdir "main.typ"
-        SB.writeFile (fromAbsFile mtf) $ TE.encodeUtf8 mainTypContents
+        SB.writeFile (fromAbsFile mtf) (TE.encodeUtf8 mainTypContents)
         pure mtf
 
       liftIO $ compileTypst mainTypFile vatSettingReadmeFile

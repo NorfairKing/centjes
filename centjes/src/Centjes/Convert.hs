@@ -13,6 +13,7 @@ module Centjes.Convert
     convertAmount,
     lookupConversionRate,
     pricesToPriceGraph,
+    pricesToDailyPriceGraphs,
   )
 where
 
@@ -22,10 +23,12 @@ import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
 import Centjes.Location
+import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.DeepSeq
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
+import Data.Time
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -166,3 +169,19 @@ pricesToPriceGraph = MemoisedPriceGraph.fromPriceGraph . V.foldl go PriceGraph.e
           Located _ rate = costConversionRate
           Located _ currencyTo = costCurrency
        in PriceGraph.insert currencyFrom currencyTo rate g
+
+pricesToDailyPriceGraphs ::
+  Ord ann =>
+  Vector (GenLocated ann (Price ann)) ->
+  Map Day (MemoisedPriceGraph (Currency ann))
+pricesToDailyPriceGraphs = fst . V.foldl go (M.empty, PriceGraph.empty)
+  where
+    go (m, pg) (Located _ Price {..}) =
+      let Located _ currencyFrom = priceCurrency
+          Located _ Cost {..} = priceCost
+          Located _ rate = costConversionRate
+          Located _ currencyTo = costCurrency
+          pg' = PriceGraph.insert currencyFrom currencyTo rate pg
+          Located _ timestamp = priceTimestamp
+          m' = M.insert (Timestamp.toDay timestamp) (MemoisedPriceGraph.fromPriceGraph pg') m
+       in (m', pg')
