@@ -51,6 +51,26 @@ Alle Umsatzangaben sind netto
 
 == Steuerberechnung
 === Leistungen ab 01.01.2018
+
+#table(
+  columns: (auto, 1fr, auto, auto),
+  ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
+  "302",
+  "Leistungen zum Normalsatz 8.1%",
+  input.domestic_revenue.formatted,
+  input.vat_standard.formatted,
+)
+
 === Total geschuldete Steuer
+
+#table(
+  columns: (auto, 1fr, auto, auto),
+  ..("", "", "Umsatz CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
+  "399",
+  "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)",
+  "",
+  input.total_vat.formatted,
+)
+
 === Steueranrechnung
 === Zu bezahlender Betrag / Guthaben

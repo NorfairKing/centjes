@@ -107,6 +107,8 @@ vatReportInput VATReport {..} =
       inputTotalRevenue = amountToAmountWithCurrency vatReportCHF vatReportTotalRevenue
       inputForeignRevenue = amountToAmountWithCurrency vatReportCHF vatReportForeignRevenue
       inputDomesticRevenue = amountToAmountWithCurrency vatReportCHF vatReportDomesticRevenue
+      inputStandardRateVAT81Percent = amountToAmountWithCurrency vatReportCHF vatReportStandardRateVAT81Percent
+      inputTotalVAT = amountToAmountWithCurrency vatReportCHF vatReportTotalVAT
    in Input {..}
 
 amountToAmountWithCurrency :: Currency ann -> Money.Amount -> AmountWithCurrency
@@ -132,7 +134,11 @@ data Input = Input
     -- | 299
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
-    inputDomesticRevenue :: !AmountWithCurrency
+    inputDomesticRevenue :: !AmountWithCurrency,
+    -- 302 Leistungen zum Normalsatz 8.1%
+    inputStandardRateVAT81Percent :: !AmountWithCurrency,
+    -- 399 Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)
+    inputTotalVAT :: !AmountWithCurrency
   }
   deriving (Show, Eq)
   deriving (FromJSON, ToJSON) via (Autodocodec Input)
@@ -151,6 +157,10 @@ instance HasCodec Input where
           .= inputForeignRevenue
         <*> requiredField "domestic_revenue" "domestic_revenue"
           .= inputDomesticRevenue
+        <*> requiredField "vat_standard" "vat_standard"
+          .= inputStandardRateVAT81Percent
+        <*> requiredField "total_vat" "total vat"
+          .= inputTotalVAT
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: String,

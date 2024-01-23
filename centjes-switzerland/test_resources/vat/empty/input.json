@@ -12,5 +12,13 @@
     "total_revenue": {
         "formatted": "0.00",
         "symbol": "CHF"
+    },
+    "total_vat": {
+        "formatted": "0.00",
+        "symbol": "CHF"
+    },
+    "vat_standard": {
+        "formatted": "0.00",
+        "symbol": "CHF"
     }
 }

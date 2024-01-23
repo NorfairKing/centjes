@@ -21,4 +21,6 @@ instance GenValid ann => GenValid (VATReport ann) where
     vatReportCHF <- genValid
     (vatReportForeignRevenue, vatReportDomesticRevenue, vatReportTotalRevenue) <-
       ((,) <$> genValid <*> genValid) `suchThatMap` (\(f, d) -> (,,) f d <$> Amount.add f d)
+    vatReportStandardRateVAT81Percent <- genValid
+    let vatReportTotalVAT = vatReportStandardRateVAT81Percent
     pure VATReport {..}
