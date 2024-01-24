@@ -173,7 +173,12 @@ instance ToReport (VATError SourceSpan) where
   toReport = \case
     VATErrorNoCHF -> Err Nothing "no CHF currency defined" [] []
     VATErrorNoDescription -> Err Nothing "no description" [] []
-    VATErrorNoEvidence _ -> Err Nothing "no evidence in transaction" [] []
+    VATErrorNoEvidence tl ->
+      Err
+        Nothing
+        "No evidence in transaction"
+        [(toDiagnosePosition tl, This "This transaction is missing evidence")]
+        []
     VATErrorCouldNotConvert al currencyFrom currencyTo _ ->
       let symbolFrom = currencySymbol currencyFrom
           symbolTo = currencySymbol currencyTo
@@ -253,7 +258,6 @@ produceVATReport Ledger {..} = do
             domesticRevenueDescription <- case transactionDescription of
               Nothing -> validationTFailure VATErrorNoDescription
               Just (Located _ d) -> pure d
-            domesticRevenueEvidence <- requireEvidence tl transactionAttachments
 
             -- Every posting and the next
             let postingsTups =
@@ -266,6 +270,7 @@ produceVATReport Ledger {..} = do
                   let Located _ accountName = postingAccountName p1
                   if accountName == domesticIncomeAccountName
                     then fmap Just $ do
+                      domesticRevenueEvidence <- requireEvidence tl transactionAttachments
                       let Located _ domesticRevenueCurrency = postingCurrency p1
                       let Located al1 account = postingAccount p1
                       domesticRevenueAmount <- requireNegative tl pl1 account
@@ -323,7 +328,6 @@ produceVATReport Ledger {..} = do
           let day = Timestamp.toDay timestamp
           if dayInQuarter vatReportQuarter day
             then do
-              _ <- requireEvidence tl transactionAttachments
               -- TODO assert that the rate is one of the common ones
 
               amounts <- fmap catMaybes $
@@ -332,6 +336,7 @@ produceVATReport Ledger {..} = do
                     let Located _ accountName = postingAccountName
                     if accountName == foreignIncomeAccountName
                       then do
+                        _ <- requireEvidence tl transactionAttachments
                         let Located _ currency = postingCurrency
                         let Located al account = postingAccount
                         amount <- requireNegative tl pl account
@@ -361,14 +366,13 @@ produceVATReport Ledger {..} = do
           let day = Timestamp.toDay timestamp
           if dayInQuarter vatReportQuarter day
             then do
-              _ <- requireEvidence tl transactionAttachments
-
               amounts <- fmap catMaybes $
                 forM (V.toList transactionPostings) $
                   \(Located pl Posting {..}) -> do
                     let Located _ accountName = postingAccountName
                     if accountName == vatExpensesAccountName
                       then do
+                        _ <- requireEvidence tl transactionAttachments
                         let Located _ currency = postingCurrency
                         let Located al account = postingAccount
                         amount <- requirePositive tl pl account
