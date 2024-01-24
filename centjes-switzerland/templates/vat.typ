@@ -4,6 +4,8 @@
 
 Name: #{ input.name }
 
+#set text(size: 10pt)
+
 == Umsatz
 
 Alle Umsatzangaben sind netto
@@ -11,7 +13,8 @@ Alle Umsatzangaben sind netto
 === Entgelte
 
 #table(
-  columns: (auto, 1fr, auto, auto),
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
   ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")),
   "200",
   "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)",
@@ -22,8 +25,8 @@ Alle Umsatzangaben sind netto
 === Abzüge
 
 #table(
-  columns: (auto, 1fr, auto, auto),
-  ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")),
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
   "221",
   "Leistungen im Ausland (Ort der Leistung im Ausland)",
   input.foreign_revenue.formatted,
@@ -41,8 +44,8 @@ Alle Umsatzangaben sind netto
 === Steuerbarer Gesamtumsatz
 
 #table(
-  columns: (auto, 1fr, auto, auto),
-  ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")),
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
   "299",
   "Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)",
   "",
@@ -53,7 +56,8 @@ Alle Umsatzangaben sind netto
 === Leistungen ab 01.01.2018
 
 #table(
-  columns: (auto, 1fr, auto, auto),
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
   ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
   "302",
   "Leistungen zum Normalsatz 8.1%",
@@ -64,8 +68,8 @@ Alle Umsatzangaben sind netto
 === Total geschuldete Steuer
 
 #table(
-  columns: (auto, 1fr, auto, auto),
-  ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
   "399",
   "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)",
   "",
@@ -75,7 +79,8 @@ Alle Umsatzangaben sind netto
 === Steueranrechnung
 
 #table(
-  columns: (auto, 1fr, auto, auto),
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
   ..("", "", "Steuer CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
   "405",
   "Vorsteuer auf Investitionen und übrigem Betriebsaufwand",
