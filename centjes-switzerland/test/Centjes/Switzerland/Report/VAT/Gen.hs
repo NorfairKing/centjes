@@ -23,7 +23,12 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (DomesticRevenue ann) whe
     dr <- genValidStructurally
     -- If this number is too small, that's a VERY good problem.
     chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
-    pure $ dr {domesticRevenueCHFAmount = chfAmount}
+    vatAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      dr
+        { domesticRevenueCHFAmount = chfAmount,
+          domesticRevenueVATCHFAmount = vatAmount
+        }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (ForeignRevenue ann) where
   genValid = do
@@ -31,6 +36,18 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (ForeignRevenue ann) wher
     -- If this number is too small, that's a VERY good problem.
     chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
     pure $ dr {foreignRevenueCHFAmount = chfAmount}
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (DeductibleExpense ann) where
+  genValid = do
+    dr <- genValidStructurally
+    -- If this number is too small, that's a VERY good problem.
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    vatAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      dr
+        { deductibleExpenseCHFAmount = chfAmount,
+          deductibleExpenseVATCHFAmount = vatAmount
+        }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
   genValid = do

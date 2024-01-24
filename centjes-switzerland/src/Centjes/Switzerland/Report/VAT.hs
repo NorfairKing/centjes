@@ -12,6 +12,7 @@ module Centjes.Switzerland.Report.VAT
   ( VATReport (..),
     DomesticRevenue (..),
     ForeignRevenue (..),
+    DeductibleExpense (..),
     VATRate (..),
     VATError (..),
     produceVATReport,
@@ -62,6 +63,7 @@ data VATReport ann = VATReport
     vatReportCHF :: !(Currency ann),
     vatReportDomesticRevenues :: ![DomesticRevenue ann],
     vatReportForeignRevenues :: ![ForeignRevenue ann],
+    vatReportDeductibleExpenses :: ![DeductibleExpense ann],
     -- | 200
     --
     -- Total der vereinbarten bzw. vereinnahmten Entgelte, inkl.
@@ -147,11 +149,20 @@ data DomesticRevenue ann = DomesticRevenue
 
 instance (Validity ann, Show ann, Ord ann) => Validity (DomesticRevenue ann)
 
+-- TODO check that the rate is valid for the day?
 data VATRate
   = -- | 7.7%
     VATRate2023Standard
   | -- | 8.1%
     VATRate2024Standard
+  | -- | 2.5%
+    VATRate2023Reduced
+  | -- | 2.6%
+    VATRate2024Reduced
+  | -- | 3.7%
+    VATRate2023Hotel
+  | -- | 3.8%
+    VATRate2024Hotel
   deriving (Show, Eq, Generic)
 
 instance Validity VATRate
@@ -169,6 +180,23 @@ data ForeignRevenue ann = ForeignRevenue
 
 instance (Validity ann, Show ann, Ord ann) => Validity (ForeignRevenue ann)
 
+data DeductibleExpense ann = DeductibleExpense
+  { deductibleExpenseTimestamp :: !Timestamp,
+    deductibleExpenseDescription :: !Description,
+    deductibleExpenseAmount :: !Money.Amount,
+    deductibleExpenseCurrency :: !(Currency ann),
+    deductibleExpenseCHFAmount :: !Money.Amount,
+    deductibleExpenseVATAmount :: !Money.Amount,
+    deductibleExpenseVATCurrency :: !(Currency ann),
+    deductibleExpenseVATCHFAmount :: !Money.Amount,
+    deductibleExpenseVATRate :: !VATRate,
+    -- | Evidence in tarball
+    deductibleExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Eq, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (DeductibleExpense ann)
+
 data VATError ann
   = VATErrorNoCHF
   | VATErrorNoDescription
@@ -179,7 +207,7 @@ data VATError ann
   | VATErrorNoVATPosting
   | VATErrorVATPostingNotVATAccount
   | VATErrorNoVATPercentage
-  | VATErrorUnknownVATRate !ann !(Ratio Natural)
+  | VATErrorUnknownVATRate !ann !ann !(Ratio Natural)
   | VATErrorSum ![Money.Amount]
   | VATErrorAdd !Money.Amount !Money.Amount
   | VATErrorSubtract !Money.Amount !Money.Amount
@@ -224,17 +252,18 @@ instance ToReport (VATError SourceSpan) where
         Nothing
         "Negative expense amount"
         [ (toDiagnosePosition pl, Where "in this posting"),
-          (toDiagnosePosition tl, Blank)
+          (toDiagnosePosition tl, Where "in this transaction")
         ]
         []
     VATErrorNoVATPosting -> Err Nothing "No VAT posting for domestic income" [] []
     VATErrorVATPostingNotVATAccount -> Err Nothing "VAT posting for domestic income had unknown account name" [] []
     VATErrorNoVATPercentage -> Err Nothing "VAT posting for domestic income did not have a percentage" [] []
-    VATErrorUnknownVATRate pl _ ->
+    VATErrorUnknownVATRate tl pl _ ->
       Err
         Nothing
         "Unknown VAT rate"
-        [ (toDiagnosePosition pl, This "in this percentage")
+        [ (toDiagnosePosition pl, This "in this percentage"),
+          (toDiagnosePosition tl, Where "in this transaction")
         ]
         []
     VATErrorSum _ -> Err Nothing "could not sum amounts because the result would get too big" [] []
@@ -272,9 +301,6 @@ produceVATReport Ledger {..} = do
         let day = Timestamp.toDay timestamp
         if dayInQuarter vatReportQuarter day
           then do
-            let domesticRevenueTimestamp = timestamp
-            domesticRevenueDescription <- requireDescription transactionDescription
-
             -- Every posting and the next
             let postingsTups =
                   let l = V.toList transactionPostings
@@ -286,6 +312,8 @@ produceVATReport Ledger {..} = do
                   let Located _ accountName = postingAccountName p1
                   if accountName == domesticIncomeAccountName
                     then fmap Just $ do
+                      let domesticRevenueTimestamp = timestamp
+                      domesticRevenueDescription <- requireDescription transactionDescription
                       domesticRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
                       let Located _ domesticRevenueCurrency = postingCurrency p1
                       let Located al1 account = postingAccount p1
@@ -302,7 +330,7 @@ produceVATReport Ledger {..} = do
                           -- TODO require that the vat currency is the same?
                           domesticRevenueVATAmount <- requireNegative tl pl2 vatAccount
                           domesticRevenueVATCHFAmount <- convertDaily al2 dailyPriceGraphs day domesticRevenueVATCurrency vatReportCHF domesticRevenueVATAmount
-                          domesticRevenueVATRate <- requireVATRate (postingPercentage p2)
+                          domesticRevenueVATRate <- requireVATRate tl (postingPercentage p2)
                           pure DomesticRevenue {..}
                     else pure Nothing
           else pure []
@@ -348,12 +376,12 @@ produceVATReport Ledger {..} = do
             fmap catMaybes $
               forM (V.toList transactionPostings) $
                 \(Located pl Posting {..}) -> do
-                  let foreignRevenueTimestamp = timestamp
-                  foreignRevenueDescription <- requireDescription transactionDescription
                   let Located _ accountName = postingAccountName
                   if accountName == foreignIncomeAccountName
                     then fmap Just $ do
+                      let foreignRevenueTimestamp = timestamp
                       foreignRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
+                      foreignRevenueDescription <- requireDescription transactionDescription
                       let Located _ foreignRevenueCurrency = postingCurrency
                       let Located al account = postingAccount
                       foreignRevenueAmount <- requireNegative tl pl account
@@ -372,33 +400,44 @@ produceVATReport Ledger {..} = do
         vatReport2024StandardRateVATRevenue
       ]
 
-  vatReportPaidVAT <- do
-    amounts <- fmap (concat . catMaybes) $
-      forM (V.toList ledgerTransactions) $
-        \(Located tl Transaction {..}) -> do
-          let Located _ timestamp = transactionTimestamp
-          let day = Timestamp.toDay timestamp
-          if dayInQuarter vatReportQuarter day
-            then do
-              amounts <- fmap catMaybes $
-                forM (V.toList transactionPostings) $
-                  \(Located pl Posting {..}) -> do
-                    let Located _ accountName = postingAccountName
-                    if accountName == vatExpensesAccountName
-                      then do
-                        _ <- requireEvidence tl [reldir|deductions|] transactionAttachments
-                        let Located _ currency = postingCurrency
-                        let Located al account = postingAccount
-                        amount <- requirePositive tl pl account
-                        amount' <- convertDaily al dailyPriceGraphs day currency vatReportCHF amount
-                        pure $ Just amount'
-                      else pure Nothing
+  vatReportDeductibleExpenses <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInQuarter vatReportQuarter day
+          then fmap catMaybes $ do
+            -- Every posting and the next
+            let postingsTups =
+                  let l = V.toList transactionPostings
+                   in zip l (map Just (tail l) ++ [Nothing])
+            forM postingsTups $ \(Located pl1 p1, mP2) -> do
+              -- TODO check if this account name checks out as well ?
+              -- let Located _ accountName = postingAccountName p1
+              -- Maybe just assume that any declared vat is deductible
+              case mP2 of
+                Nothing -> pure Nothing
+                Just (Located pl2 p2) -> do
+                  let Located _ vatAccountName = postingAccountName p2
+                  if vatAccountName == vatExpensesAccountName
+                    then fmap Just $ do
+                      let Located _ deductibleExpenseCurrency = postingCurrency p1
+                      let Located al1 account = postingAccount p1
+                      deductibleExpenseAmount <- requirePositive tl pl1 account
+                      deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency vatReportCHF deductibleExpenseAmount
+                      let deductibleExpenseTimestamp = timestamp
+                      deductibleExpenseDescription <- requireDescription transactionDescription
+                      deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
+                      let Located _ deductibleExpenseVATCurrency = postingCurrency p2
+                      let Located al vatAccount = postingAccount p2
+                      deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
+                      deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency vatReportCHF deductibleExpenseVATAmount
+                      deductibleExpenseVATRate <- requireVATRate tl (postingPercentage p2)
+                      pure DeductibleExpense {..}
+                    else pure Nothing
+          else pure []
 
-              pure $ Just amounts
-            else pure Nothing
-    case Amount.sum amounts of
-      Nothing -> validationTFailure $ VATErrorSum amounts
-      Just a -> pure a
+  vatReportPaidVAT <- requireSumAmount (map deductibleExpenseVATCHFAmount vatReportDeductibleExpenses)
 
   vatReportPayable <- case Account.subtract (Account.fromAmount vatReportTotalVATRevenue) (Account.fromAmount vatReportPaidVAT) of
     Nothing -> validationTFailure $ VATErrorSubtract vatReportTotalRevenue vatReportPaidVAT
@@ -494,10 +533,17 @@ convertDaily al dailyPrices day currencyFrom currencyTo amount =
               Nothing -> validationTFailure $ VATErrorCouldNotConvert al currencyFrom currencyTo amount
               Just convertedAmount -> pure convertedAmount
 
-requireVATRate :: Maybe (GenLocated ann (Percentage ann)) -> Reporter (VATError ann) VATRate
-requireVATRate = \case
+requireVATRate ::
+  ann ->
+  Maybe (GenLocated ann (Percentage ann)) ->
+  Reporter (VATError ann) VATRate
+requireVATRate tl = \case
   Nothing -> validationTFailure VATErrorNoVATPercentage
   Just (Located pl (Percentage (Located _ r))) -> case r of
     0.077 -> pure VATRate2023Standard
     0.081 -> pure VATRate2024Standard
-    _ -> validationTFailure $ VATErrorUnknownVATRate pl r
+    0.025 -> pure VATRate2023Reduced
+    0.026 -> pure VATRate2024Reduced
+    0.037 -> pure VATRate2023Hotel
+    0.038 -> pure VATRate2024Hotel
+    _ -> validationTFailure $ VATErrorUnknownVATRate tl pl r

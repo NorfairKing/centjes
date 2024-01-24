@@ -131,3 +131,28 @@ Alle Umsatzangaben sind netto
     - #{ raw(evidence) }
   ]
 ]
+
+#pagebreak()
+== Expenses
+
+#for expense in input.expenses [
+  === #{ expense.description }
+
+  Day: #{ expense.day }
+
+  #if expense.amount.symbol == "CHF" [
+    Amount: #{ expense.amount.formatted } #{ expense.amount.symbol }
+  ] else [
+    Amount: #{ expense.amount.formatted } #{ expense.amount.symbol }: #{ expense.amount_chf } CHF
+  ]
+
+  #if expense.amount.symbol == "CHF" [
+    VAT: #{ expense.vat_amount.formatted } #{ expense.vat_amount.symbol }
+  ] else [
+    VAT: #{ expense.vat_amount.formatted } #{ expense.vat_amount.symbol }: #{ expense.vat_amount_chf } CHF
+  ]
+
+  #for evidence in expense.evidence [
+    - #{ raw(evidence) }
+  ]
+]

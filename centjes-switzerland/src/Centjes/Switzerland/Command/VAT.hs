@@ -122,6 +122,7 @@ vatReportInput VATReport {..} =
             [ map vatInputDomesticRevenue vatReportDomesticRevenues,
               map vatInputForeignRevenue vatReportForeignRevenues
             ]
+      inputExpenses = map vatInputDeductibleExpense vatReportDeductibleExpenses
       inputTotalRevenue = formatAmount vatReportCHF vatReportTotalRevenue
       inputTotalForeignRevenue = formatAmount vatReportCHF vatReportTotalForeignRevenue
       inputDomesticRevenue2023 = formatAmount vatReportCHF vatReportDomesticRevenue2023
@@ -138,6 +139,7 @@ data Input = Input
   { inputName :: Text,
     inputQuarter :: !Quarter,
     inputRevenues :: ![InputRevenue],
+    inputExpenses :: ![InputExpense],
     -- | 200
     --
     -- Total der vereinbarten bzw. vereinnahmten Entgelte, inkl.
@@ -189,6 +191,8 @@ instance HasCodec Input where
           .= inputQuarter
         <*> requiredField "revenues" "revenues"
           .= inputRevenues
+        <*> requiredField "expenses" "expenses"
+          .= inputExpenses
         <*> requiredField "total_revenue" "total_revenue"
           .= inputTotalRevenue
         <*> requiredField "total_foreign_revenue" "total foreign revenue"
@@ -210,6 +214,18 @@ instance HasCodec Input where
         <*> requiredField "payable" "payable"
           .= inputPayable
 
+vatInputDomesticRevenue :: DomesticRevenue ann -> InputRevenue
+vatInputDomesticRevenue DomesticRevenue {..} =
+  let inputRevenueDay = Timestamp.toDay domesticRevenueTimestamp
+      inputRevenueDescription = Description.toText domesticRevenueDescription
+      inputRevenueAmount = amountToAmountWithCurrency domesticRevenueCurrency domesticRevenueAmount
+      inputRevenueCHFAmount = formatAmount domesticRevenueCurrency domesticRevenueCHFAmount
+      inputRevenueVATAmount = Just $ amountToAmountWithCurrency domesticRevenueVATCurrency domesticRevenueVATAmount
+      inputRevenueVATCHFAmount = Just $ formatAmount domesticRevenueVATCurrency domesticRevenueVATCHFAmount
+      inputRevenueVATRate = Just $ formatVATRate domesticRevenueVATRate
+      inputRevenueEvidence = domesticRevenueEvidence
+   in InputRevenue {..}
+
 vatInputForeignRevenue :: ForeignRevenue ann -> InputRevenue
 vatInputForeignRevenue ForeignRevenue {..} =
   let inputRevenueDay = Timestamp.toDay foreignRevenueTimestamp
@@ -222,19 +238,26 @@ vatInputForeignRevenue ForeignRevenue {..} =
       inputRevenueEvidence = foreignRevenueEvidence
    in InputRevenue {..}
 
-vatInputDomesticRevenue :: DomesticRevenue ann -> InputRevenue
-vatInputDomesticRevenue DomesticRevenue {..} =
-  let inputRevenueDay = Timestamp.toDay domesticRevenueTimestamp
-      inputRevenueDescription = Description.toText domesticRevenueDescription
-      inputRevenueAmount = amountToAmountWithCurrency domesticRevenueCurrency domesticRevenueAmount
-      inputRevenueCHFAmount = formatAmount domesticRevenueCurrency domesticRevenueCHFAmount
-      inputRevenueVATAmount = Just $ amountToAmountWithCurrency domesticRevenueVATCurrency domesticRevenueVATAmount
-      inputRevenueVATCHFAmount = Just $ formatAmount domesticRevenueVATCurrency domesticRevenueVATCHFAmount
-      inputRevenueVATRate = Just $ case domesticRevenueVATRate of
-        VATRate2023Standard -> "7.7 %"
-        VATRate2024Standard -> "8.1 %"
-      inputRevenueEvidence = domesticRevenueEvidence
-   in InputRevenue {..}
+vatInputDeductibleExpense :: DeductibleExpense ann -> InputExpense
+vatInputDeductibleExpense DeductibleExpense {..} =
+  let inputExpenseDay = Timestamp.toDay deductibleExpenseTimestamp
+      inputExpenseDescription = Description.toText deductibleExpenseDescription
+      inputExpenseAmount = amountToAmountWithCurrency deductibleExpenseCurrency deductibleExpenseAmount
+      inputExpenseCHFAmount = formatAmount deductibleExpenseCurrency deductibleExpenseCHFAmount
+      inputExpenseVATAmount = amountToAmountWithCurrency deductibleExpenseVATCurrency deductibleExpenseVATAmount
+      inputExpenseVATCHFAmount = formatAmount deductibleExpenseVATCurrency deductibleExpenseVATCHFAmount
+      inputExpenseVATRate = formatVATRate deductibleExpenseVATRate
+      inputExpenseEvidence = deductibleExpenseEvidence
+   in InputExpense {..}
+
+formatVATRate :: VATRate -> String
+formatVATRate = \case
+  VATRate2023Standard -> "7.7 %"
+  VATRate2024Standard -> "8.1 %"
+  VATRate2023Reduced -> "2.5 %"
+  VATRate2024Reduced -> "2.6 %"
+  VATRate2023Hotel -> "3.7 %"
+  VATRate2024Hotel -> "3.8 %"
 
 data InputRevenue = InputRevenue
   { inputRevenueDay :: !Day,
@@ -269,6 +292,40 @@ instance HasCodec InputRevenue where
           .= inputRevenueVATRate
         <*> requiredField "evidence" "evidence"
           .= inputRevenueEvidence
+
+data InputExpense = InputExpense
+  { inputExpenseDay :: !Day,
+    inputExpenseDescription :: !Text,
+    inputExpenseAmount :: !AmountWithCurrency,
+    inputExpenseCHFAmount :: !FormattedAmount,
+    inputExpenseVATAmount :: !AmountWithCurrency,
+    inputExpenseVATCHFAmount :: !FormattedAmount,
+    inputExpenseVATRate :: !String,
+    inputExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Eq)
+  deriving (FromJSON, ToJSON) via (Autodocodec InputExpense)
+
+instance HasCodec InputExpense where
+  codec =
+    object "InputExpense" $
+      InputExpense
+        <$> requiredField "day" "day of expense"
+          .= inputExpenseDay
+        <*> requiredField "description" "description of expense"
+          .= inputExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputExpenseCHFAmount
+        <*> requiredField "vat_amount" "VAT amount in original currency"
+          .= inputExpenseVATAmount
+        <*> requiredField "vat_amount_chf" "VAT amount in chf"
+          .= inputExpenseVATCHFAmount
+        <*> requiredField "vat_rate" "VAT rate"
+          .= inputExpenseVATRate
+        <*> requiredField "evidence" "evidence"
+          .= inputExpenseEvidence
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: FormattedAmount,
