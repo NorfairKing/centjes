@@ -107,8 +107,9 @@ vatReportInput VATReport {..} =
       inputTotalRevenue = amountToAmountWithCurrency vatReportCHF vatReportTotalRevenue
       inputForeignRevenue = amountToAmountWithCurrency vatReportCHF vatReportForeignRevenue
       inputDomesticRevenue = amountToAmountWithCurrency vatReportCHF vatReportDomesticRevenue
-      inputStandardRateVAT81Percent = amountToAmountWithCurrency vatReportCHF vatReportStandardRateVAT81Percent
-      inputTotalVAT = amountToAmountWithCurrency vatReportCHF vatReportTotalVAT
+      inputStandardRateVAT81PercentRevenue = amountToAmountWithCurrency vatReportCHF vatReportStandardRateVAT81PercentRevenue
+      inputTotalVATRevenue = amountToAmountWithCurrency vatReportCHF vatReportTotalVATRevenue
+      inputPaidVAT = amountToAmountWithCurrency vatReportCHF vatReportPaidVAT
    in Input {..}
 
 amountToAmountWithCurrency :: Currency ann -> Money.Amount -> AmountWithCurrency
@@ -118,6 +119,7 @@ amountToAmountWithCurrency currency amount =
    in AmountWithCurrency (Amount.format qf amount) symbol
 
 data Input = Input
+  -- TODO make these amounts without currency
   { inputName :: Text,
     inputQuarter :: !Quarter,
     -- | 200
@@ -136,9 +138,11 @@ data Input = Input
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
     inputDomesticRevenue :: !AmountWithCurrency,
     -- 302 Leistungen zum Normalsatz 8.1%
-    inputStandardRateVAT81Percent :: !AmountWithCurrency,
+    inputStandardRateVAT81PercentRevenue :: !AmountWithCurrency,
     -- 399 Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)
-    inputTotalVAT :: !AmountWithCurrency
+    inputTotalVATRevenue :: !AmountWithCurrency,
+    -- 405 Vorsteuer auf Investitionen und übrigem Betriebsaufwand
+    inputPaidVAT :: !AmountWithCurrency
   }
   deriving (Show, Eq)
   deriving (FromJSON, ToJSON) via (Autodocodec Input)
@@ -157,10 +161,12 @@ instance HasCodec Input where
           .= inputForeignRevenue
         <*> requiredField "domestic_revenue" "domestic_revenue"
           .= inputDomesticRevenue
-        <*> requiredField "vat_standard" "vat_standard"
-          .= inputStandardRateVAT81Percent
-        <*> requiredField "total_vat" "total vat"
-          .= inputTotalVAT
+        <*> requiredField "vat_revenue_standard" "vat_standard"
+          .= inputStandardRateVAT81PercentRevenue
+        <*> requiredField "total_vat_revenue" "total vat"
+          .= inputTotalVATRevenue
+        <*> requiredField "vat_paid" "total vat"
+          .= inputPaidVAT
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: String,

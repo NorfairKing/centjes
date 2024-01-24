@@ -5,6 +5,7 @@ account equity:starting
 account assets:bank:usd
 account assets:bank
 account expenses:hardware
+account expenses:vat
 account income:domestic
 account income:foreign
 account income:vat
@@ -18,6 +19,7 @@ account income:vat
   | Computer
   * assets:bank -5000 CHF
   * expenses:hardware 5000 CHF
+  ! expenses:vat 357.45 CHF ~ 7.7%
   + attach receipt-computer.txt
 
 price 2024-01-07 USD 0.8589 CHF

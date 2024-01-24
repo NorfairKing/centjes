@@ -58,19 +58,28 @@ Alle Umsatzangaben sind netto
   "302",
   "Leistungen zum Normalsatz 8.1%",
   input.domestic_revenue.formatted,
-  input.vat_standard.formatted,
+  input.vat_revenue_standard.formatted,
 )
 
 === Total geschuldete Steuer
 
 #table(
   columns: (auto, 1fr, auto, auto),
-  ..("", "", "Umsatz CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
+  ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
   "399",
   "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)",
   "",
-  input.total_vat.formatted,
+  input.total_vat_revenue.formatted,
 )
 
 === Steueranrechnung
+
+#table(
+  columns: (auto, 1fr, auto, auto),
+  ..("", "", "Steuer CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
+  "405",
+  "Vorsteuer auf Investitionen und übrigem Betriebsaufwand",
+  "",
+  input.vat_paid.formatted,
+)
 === Zu bezahlender Betrag / Guthaben
