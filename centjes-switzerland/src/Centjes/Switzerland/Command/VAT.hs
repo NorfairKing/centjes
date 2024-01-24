@@ -37,6 +37,8 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time.Calendar.Quarter
 import Language.Haskell.TH.Load
+import Money.Account as Money (Account (..))
+import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import Path
@@ -104,19 +106,14 @@ vatReportInput :: VATReport ann -> Input
 vatReportInput VATReport {..} =
   let inputName = vatReportName
       inputQuarter = vatReportQuarter
-      inputTotalRevenue = amountToAmountWithCurrency vatReportCHF vatReportTotalRevenue
-      inputForeignRevenue = amountToAmountWithCurrency vatReportCHF vatReportForeignRevenue
-      inputDomesticRevenue = amountToAmountWithCurrency vatReportCHF vatReportDomesticRevenue
-      inputStandardRateVAT81PercentRevenue = amountToAmountWithCurrency vatReportCHF vatReportStandardRateVAT81PercentRevenue
-      inputTotalVATRevenue = amountToAmountWithCurrency vatReportCHF vatReportTotalVATRevenue
-      inputPaidVAT = amountToAmountWithCurrency vatReportCHF vatReportPaidVAT
+      inputTotalRevenue = formatAmount vatReportCHF vatReportTotalRevenue
+      inputForeignRevenue = formatAmount vatReportCHF vatReportForeignRevenue
+      inputDomesticRevenue = formatAmount vatReportCHF vatReportDomesticRevenue
+      inputStandardRateVAT81PercentRevenue = formatAmount vatReportCHF vatReportStandardRateVAT81PercentRevenue
+      inputTotalVATRevenue = formatAmount vatReportCHF vatReportTotalVATRevenue
+      inputPaidVAT = formatAmount vatReportCHF vatReportPaidVAT
+      inputPayable = formatAccount vatReportCHF vatReportPayable
    in Input {..}
-
-amountToAmountWithCurrency :: Currency ann -> Money.Amount -> AmountWithCurrency
-amountToAmountWithCurrency currency amount =
-  let Located _ qf = currencyQuantisationFactor currency
-      symbol = currencySymbol currency
-   in AmountWithCurrency (Amount.format qf amount) symbol
 
 data Input = Input
   -- TODO make these amounts without currency
@@ -128,21 +125,31 @@ data Input = Input
     -- optierte Leistungen, Entgelte aus Übertragungen im
     -- Meldeverfahren sowie aus Leistungen im Ausland
     -- (weltweiter Umsatz)
-    inputTotalRevenue :: !AmountWithCurrency,
+    inputTotalRevenue :: !FormattedAmount,
     -- | 221
     --
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
-    inputForeignRevenue :: !AmountWithCurrency,
+    inputForeignRevenue :: !FormattedAmount,
     -- | 299
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
-    inputDomesticRevenue :: !AmountWithCurrency,
-    -- 302 Leistungen zum Normalsatz 8.1%
-    inputStandardRateVAT81PercentRevenue :: !AmountWithCurrency,
-    -- 399 Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)
-    inputTotalVATRevenue :: !AmountWithCurrency,
-    -- 405 Vorsteuer auf Investitionen und übrigem Betriebsaufwand
-    inputPaidVAT :: !AmountWithCurrency
+    inputDomesticRevenue :: !FormattedAmount,
+    -- | 302
+    --
+    -- Leistungen zum Normalsatz 8.1%
+    inputStandardRateVAT81PercentRevenue :: !FormattedAmount,
+    -- | 399
+    --
+    -- Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)
+    inputTotalVATRevenue :: !FormattedAmount,
+    -- | 405
+    --
+    -- Vorsteuer auf Investitionen und übrigem Betriebsaufwand
+    inputPaidVAT :: !FormattedAmount,
+    -- | 500
+    --
+    -- Zu bezahlender Betrag
+    inputPayable :: !FormattedAccount
   }
   deriving (Show, Eq)
   deriving (FromJSON, ToJSON) via (Autodocodec Input)
@@ -167,19 +174,41 @@ instance HasCodec Input where
           .= inputTotalVATRevenue
         <*> requiredField "vat_paid" "total vat"
           .= inputPaidVAT
+        <*> requiredField "payable" "payable"
+          .= inputPayable
 
-data AmountWithCurrency = AmountWithCurrency
-  { amountWithCurrencyAmount :: String,
-    amountWithCurrencyCurrency :: CurrencySymbol
-  }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec AmountWithCurrency)
+-- data AmountWithCurrency = AmountWithCurrency
+--   { amountWithCurrencyAmount :: FormattedAmount,
+--     amountWithCurrencyCurrency :: CurrencySymbol
+--   }
+--   deriving (Show, Eq)
+--   deriving (FromJSON, ToJSON) via (Autodocodec AmountWithCurrency)
+--
+-- instance HasCodec AmountWithCurrency where
+--   codec =
+--     object "AmountWithCurrency" $
+--       AmountWithCurrency
+--         <$> requiredField "formatted" "formatted amount"
+--         .= amountWithCurrencyAmount
+--         <*> requiredField "symbol" "currency symbol"
+--         .= amountWithCurrencyCurrency
+--
+-- amountToAmountWithCurrency :: Currency ann -> Money.Amount -> AmountWithCurrency
+-- amountToAmountWithCurrency currency amount =
+--   let Located _ qf = currencyQuantisationFactor currency
+--       symbol = currencySymbol currency
+--    in AmountWithCurrency (Amount.format qf amount) symbol
 
-instance HasCodec AmountWithCurrency where
-  codec =
-    object "AmountWithCurrency" $
-      AmountWithCurrency
-        <$> requiredField "formatted" "formatted amount"
-          .= amountWithCurrencyAmount
-        <*> requiredField "symbol" "currency symbol"
-          .= amountWithCurrencyCurrency
+type FormattedAmount = String
+
+formatAmount :: Currency ann -> Money.Amount -> FormattedAmount
+formatAmount currency account =
+  let Located _ qf = currencyQuantisationFactor currency
+   in Amount.format qf account
+
+type FormattedAccount = String
+
+formatAccount :: Currency ann -> Money.Account -> FormattedAccount
+formatAccount currency account =
+  let Located _ qf = currencyQuantisationFactor currency
+   in Account.format qf account

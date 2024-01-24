@@ -19,7 +19,7 @@ Alle Umsatzangaben sind netto
   "200",
   "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)",
   "",
-  input.total_revenue.formatted,
+  input.total_revenue,
 )
 
 === Abzüge
@@ -29,7 +29,7 @@ Alle Umsatzangaben sind netto
   align: (x, y) => (left, left, right, right).at(x),
   "221",
   "Leistungen im Ausland (Ort der Leistung im Ausland)",
-  input.foreign_revenue.formatted,
+  input.foreign_revenue,
   "",
   "",
   "",
@@ -38,7 +38,7 @@ Alle Umsatzangaben sind netto
   "289",
   "Total Abzüge Ziffer 220 bis 280",
   "",
-  input.foreign_revenue.formatted,
+  input.foreign_revenue,
 )
 
 === Steuerbarer Gesamtumsatz
@@ -49,7 +49,7 @@ Alle Umsatzangaben sind netto
   "299",
   "Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)",
   "",
-  input.domestic_revenue.formatted,
+  input.domestic_revenue,
 )
 
 == Steuerberechnung
@@ -61,8 +61,8 @@ Alle Umsatzangaben sind netto
   ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
   "302",
   "Leistungen zum Normalsatz 8.1%",
-  input.domestic_revenue.formatted,
-  input.vat_revenue_standard.formatted,
+  input.domestic_revenue,
+  input.vat_revenue_standard,
 )
 
 === Total geschuldete Steuer
@@ -73,7 +73,7 @@ Alle Umsatzangaben sind netto
   "399",
   "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)",
   "",
-  input.total_vat_revenue.formatted,
+  input.total_vat_revenue,
 )
 
 === Steueranrechnung
@@ -85,6 +85,16 @@ Alle Umsatzangaben sind netto
   "405",
   "Vorsteuer auf Investitionen und übrigem Betriebsaufwand",
   "",
-  input.vat_paid.formatted,
+  input.vat_paid,
 )
+
 === Zu bezahlender Betrag / Guthaben
+
+#table(
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
+  "500",
+  "Zu bezahlender Betrag",
+  "",
+  input.payable,
+)

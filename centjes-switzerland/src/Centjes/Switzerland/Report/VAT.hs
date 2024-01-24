@@ -40,6 +40,7 @@ import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic (..))
 import Money.Account as Money (Account (..))
+import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import Path
@@ -68,12 +69,22 @@ data VATReport ann = VATReport
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
     vatReportDomesticRevenue :: !Money.Amount,
-    -- 302 Leistungen zum Normalsatz 8.1%
+    -- | 302
+    --
+    -- Leistungen zum Normalsatz 8.1%
     vatReportStandardRateVAT81PercentRevenue :: !Money.Amount,
-    -- 399 Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)
+    -- | 399
+    --
+    -- Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)
     vatReportTotalVATRevenue :: !Money.Amount,
-    -- 405 Vorsteuer auf Investitionen und übrigem Betriebsaufwand
-    vatReportPaidVAT :: !Money.Amount
+    -- | 405
+    --
+    -- Vorsteuer auf Investitionen und übrigem Betriebsaufwand
+    vatReportPaidVAT :: !Money.Amount,
+    -- | 500
+    --
+    -- Zu bezahlender Betrag
+    vatReportPayable :: !Money.Account
   }
   deriving (Show, Eq, Generic)
 
@@ -87,7 +98,9 @@ instance Validity ann => Validity (VATReport ann) where
             vatReportForeignRevenue
             == Just vatReportTotalRevenue,
         declare "The total vat is the sum of all the vat fields" $
-          Amount.sum [vatReportStandardRateVAT81PercentRevenue] == Just vatReportTotalVATRevenue
+          Amount.sum [vatReportStandardRateVAT81PercentRevenue] == Just vatReportTotalVATRevenue,
+        declare "The payable amount is the VAT revenue minus the paid VAT" $
+          Account.subtract (Account.fromAmount vatReportTotalVATRevenue) (Account.fromAmount vatReportPaidVAT) == Just vatReportPayable
       ]
 
 data VATError ann
@@ -100,6 +113,7 @@ data VATError ann
   | VATErrorVATPostingNotVATAccount
   | VATErrorSum ![Money.Amount]
   | VATErrorAdd !Money.Amount !Money.Amount
+  | VATErrorSubtract !Money.Amount !Money.Amount
   deriving (Show, Eq, Generic)
 
 instance Validity ann => Validity (VATError ann)
@@ -142,6 +156,7 @@ instance ToReport (VATError SourceSpan) where
     VATErrorVATPostingNotVATAccount -> Err Nothing "VAT posting for domestic income had unknown account name" [] []
     VATErrorSum _ -> Err Nothing "could not sum amounts because the result would get too big" [] []
     VATErrorAdd _ _ -> Err Nothing "could not add amounts because the result wolud get too big" [] []
+    VATErrorSubtract _ _ -> Err Nothing "Could not subtract amounts because the result wolud get too big or too small" [] []
 
 produceVATReport ::
   Ord ann =>
@@ -282,6 +297,10 @@ produceVATReport Ledger {..} = do
     case Amount.sum amounts of
       Nothing -> validationTFailure $ VATErrorSum amounts
       Just a -> pure a
+
+  vatReportPayable <- case Account.subtract (Account.fromAmount vatReportTotalVATRevenue) (Account.fromAmount vatReportPaidVAT) of
+    Nothing -> validationTFailure $ VATErrorSubtract vatReportTotalRevenue vatReportPaidVAT
+    Just a -> pure a
 
   pure VATReport {..}
 

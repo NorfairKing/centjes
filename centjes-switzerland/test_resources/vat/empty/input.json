@@ -1,24 +1,11 @@
 {
-    "domestic_revenue": {
-        "formatted": "0.00",
-        "symbol": "CHF"
-    },
-    "foreign_revenue": {
-        "formatted": "0.00",
-        "symbol": "CHF"
-    },
+    "domestic_revenue": "0.00",
+    "foreign_revenue": "0.00",
     "name": "Tom Sydney Kerckhove",
+    "payable": "0.00",
     "quarter": "2024-q1",
-    "total_revenue": {
-        "formatted": "0.00",
-        "symbol": "CHF"
-    },
-    "total_vat": {
-        "formatted": "0.00",
-        "symbol": "CHF"
-    },
-    "vat_standard": {
-        "formatted": "0.00",
-        "symbol": "CHF"
-    }
+    "total_revenue": "0.00",
+    "total_vat_revenue": "0.00",
+    "vat_paid": "0.00",
+    "vat_revenue_standard": "0.00"
 }
