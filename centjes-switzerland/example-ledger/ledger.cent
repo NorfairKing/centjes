@@ -29,11 +29,24 @@ price 2024-01-07 USD 0.8589 CHF
   * assets:bank 1000 CHF
   * income:domestic -1000 CHF
   ! income:vat -71.50 CHF ~ 7.7 %
-  + attach foobar-jan.txt
+  + attach foobar-dec.txt
 
 2024-01-07
   | Quux Dec
   * assets:bank:usd 1000 USD
   * income:foreign -1000 USD
-  + attach quux-jan.txt
+  + attach quux-dec.txt
 
+
+2024-02-07
+  | Foobar Jan
+  * assets:bank 1000 CHF
+  * income:domestic -1000 CHF
+  ! income:vat -74.95 CHF ~ 8.1 %
+  + attach foobar-jan.txt
+
+2024-02-07
+  | Quux Jan
+  * assets:bank:usd 1000 USD
+  * income:foreign -1000 USD
+  + attach quux-jan.txt

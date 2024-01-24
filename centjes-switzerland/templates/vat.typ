@@ -2,15 +2,17 @@
 
 = VAT #{ upper(input.quarter) }
 
+== Overview
+
 Name: #{ input.name }
 
 #set text(size: 10pt)
 
-== Umsatz
+=== Umsatz
 
 Alle Umsatzangaben sind netto
 
-=== Entgelte
+==== Entgelte
 
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
@@ -22,7 +24,7 @@ Alle Umsatzangaben sind netto
   input.total_revenue,
 )
 
-=== Abzüge
+==== Abzüge
 
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
@@ -41,7 +43,7 @@ Alle Umsatzangaben sind netto
   input.foreign_revenue,
 )
 
-=== Steuerbarer Gesamtumsatz
+==== Steuerbarer Gesamtumsatz
 
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
@@ -49,11 +51,11 @@ Alle Umsatzangaben sind netto
   "299",
   "Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)",
   "",
-  input.domestic_revenue,
+  input.total_domestic_revenue,
 )
 
-== Steuerberechnung
-=== Leistungen ab 01.01.2018
+=== Steuerberechnung
+==== Leistungen ab 01.01.2018
 
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
@@ -61,11 +63,11 @@ Alle Umsatzangaben sind netto
   ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
   "302",
   "Leistungen zum Normalsatz 8.1%",
-  input.domestic_revenue,
+  input.total_domestic_revenue,
   input.vat_revenue_standard,
 )
 
-=== Total geschuldete Steuer
+==== Total geschuldete Steuer
 
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
@@ -76,7 +78,7 @@ Alle Umsatzangaben sind netto
   input.total_vat_revenue,
 )
 
-=== Steueranrechnung
+==== Steueranrechnung
 
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
@@ -88,7 +90,7 @@ Alle Umsatzangaben sind netto
   input.vat_paid,
 )
 
-=== Zu bezahlender Betrag / Guthaben
+==== Zu bezahlender Betrag / Guthaben
 
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
@@ -98,3 +100,28 @@ Alle Umsatzangaben sind netto
   "",
   input.payable,
 )
+
+#pagebreak()
+== Income
+
+#for revenue in input.revenues [
+  === #{ revenue.description }
+
+  Day: #{ revenue.day }
+
+  #if revenue.amount.symbol == "CHF" [
+    Amount: #{ revenue.amount.formatted } #{ revenue.amount.symbol }
+  ] else [
+    Amount: #{ revenue.amount.formatted } #{ revenue.amount.symbol }: #{ revenue.amount_chf } CHF
+  ]
+
+  #if revenue.amount.symbol == "CHF" [
+    VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }
+  ] else [
+    VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }: #{ revenue.vat_amount_chf } CHF
+  ]
+
+  #for evidence in revenue.evidence [
+    - #{ raw(evidence) }
+  ]
+]
