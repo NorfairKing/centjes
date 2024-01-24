@@ -118,8 +118,11 @@ vatReportInput VATReport {..} =
       inputRevenues = map vatInputDomesticRevenue vatReportDomesticRevenues
       inputTotalRevenue = formatAmount vatReportCHF vatReportTotalRevenue
       inputForeignRevenue = formatAmount vatReportCHF vatReportForeignRevenue
-      inputTotalDomesticRevenue = formatAmount vatReportCHF vatReportTotalDomesticRevenue
+      inputDomesticRevenue2023 = formatAmount vatReportCHF vatReportDomesticRevenue2023
+      input2023StandardRateVATRevenue = formatAmount vatReportCHF vatReport2023StandardRateVATRevenue
+      inputDomesticRevenue2024 = formatAmount vatReportCHF vatReportDomesticRevenue2024
       input2024StandardRateVATRevenue = formatAmount vatReportCHF vatReport2024StandardRateVATRevenue
+      inputTotalDomesticRevenue = formatAmount vatReportCHF vatReportTotalDomesticRevenue
       inputTotalVATRevenue = formatAmount vatReportCHF vatReportTotalVATRevenue
       inputPaidVAT = formatAmount vatReportCHF vatReportPaidVAT
       inputPayable = formatAccount vatReportCHF vatReportPayable
@@ -147,6 +150,12 @@ data Input = Input
     -- | 302
     --
     -- Leistungen zum Normalsatz 8.1%
+    inputDomesticRevenue2023 :: !FormattedAmount,
+    input2023StandardRateVATRevenue :: !FormattedAmount,
+    -- | 303
+    --
+    -- Leistungen zum Normalsatz 8.1%
+    inputDomesticRevenue2024 :: !FormattedAmount,
     input2024StandardRateVATRevenue :: !FormattedAmount,
     -- | 399
     --
@@ -180,7 +189,13 @@ instance HasCodec Input where
           .= inputForeignRevenue
         <*> requiredField "total_domestic_revenue" "total domestic revenue"
           .= inputTotalDomesticRevenue
-        <*> requiredField "vat_revenue_standard" "vat_standard"
+        <*> requiredField "domestic_revenue_2023" "domestic revenue from 2023"
+          .= inputDomesticRevenue2023
+        <*> requiredField "vat_revenue_standard_2023" "vat_standard"
+          .= input2023StandardRateVATRevenue
+        <*> requiredField "domestic_revenue_2024" "domestic revenue from 2024"
+          .= inputDomesticRevenue2024
+        <*> requiredField "vat_revenue_standard_2024" "vat_standard"
           .= input2024StandardRateVATRevenue
         <*> requiredField "total_vat_revenue" "total vat"
           .= inputTotalVATRevenue

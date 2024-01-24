@@ -62,9 +62,13 @@ Alle Umsatzangaben sind netto
   align: (x, y) => (left, left, right, right).at(x),
   ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
   "302",
+  "Leistungen zum Normalsatz 7.7%",
+  input.domestic_revenue_2023,
+  input.vat_revenue_standard_2023,
+  "303",
   "Leistungen zum Normalsatz 8.1%",
-  input.total_domestic_revenue,
-  input.vat_revenue_standard,
+  input.domestic_revenue_2024,
+  input.vat_revenue_standard_2024,
 )
 
 ==== Total geschuldete Steuer

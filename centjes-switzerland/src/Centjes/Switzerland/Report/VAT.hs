@@ -78,10 +78,12 @@ data VATReport ann = VATReport
     -- | 302
     --
     -- Leistungen zum Normalsatz 7.7%
+    vatReportDomesticRevenue2023 :: !Money.Amount,
     vatReport2023StandardRateVATRevenue :: !Money.Amount,
     -- | 303
     --
     -- Leistungen zum Normalsatz 8.1%
+    vatReportDomesticRevenue2024 :: !Money.Amount,
     vatReport2024StandardRateVATRevenue :: !Money.Amount,
     -- | 399
     --
@@ -294,10 +296,22 @@ produceVATReport Ledger {..} = do
           domesticRevenueVATCHFAmount
           (filter ((== VATRate2023Standard) . domesticRevenueVATRate) vatReportDomesticRevenues)
       )
+  vatReportDomesticRevenue2023 <-
+    requireSumAmount
+      ( map
+          domesticRevenueCHFAmount
+          (filter ((== VATRate2023Standard) . domesticRevenueVATRate) vatReportDomesticRevenues)
+      )
   vatReport2024StandardRateVATRevenue <-
     requireSumAmount
       ( map
           domesticRevenueVATCHFAmount
+          (filter ((== VATRate2024Standard) . domesticRevenueVATRate) vatReportDomesticRevenues)
+      )
+  vatReportDomesticRevenue2024 <-
+    requireSumAmount
+      ( map
+          domesticRevenueCHFAmount
           (filter ((== VATRate2024Standard) . domesticRevenueVATRate) vatReportDomesticRevenues)
       )
 
