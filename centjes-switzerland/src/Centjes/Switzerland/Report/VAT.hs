@@ -11,6 +11,7 @@
 module Centjes.Switzerland.Report.VAT
   ( VATReport (..),
     DomesticRevenue (..),
+    ForeignRevenue (..),
     VATRate (..),
     VATError (..),
     produceVATReport,
@@ -60,6 +61,7 @@ data VATReport ann = VATReport
     vatReportQuarter :: !Quarter,
     vatReportCHF :: !(Currency ann),
     vatReportDomesticRevenues :: ![DomesticRevenue ann],
+    vatReportForeignRevenues :: ![ForeignRevenue ann],
     -- | 200
     --
     -- Total der vereinbarten bzw. vereinnahmten Entgelte, inkl.
@@ -70,7 +72,7 @@ data VATReport ann = VATReport
     -- | 221
     --
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
-    vatReportForeignRevenue :: !Money.Amount,
+    vatReportTotalForeignRevenue :: !Money.Amount,
     -- | 299
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
@@ -104,14 +106,17 @@ instance (Validity ann, Show ann, Ord ann) => Validity (VATReport ann) where
   validate vr@VATReport {..} =
     mconcat
       [ genericValidate vr,
-        declare "The total domestic revenue is the total of the revenues" $
+        declare "The total domestic revenue is the total of the domestic revenues" $
           Amount.sum (map domesticRevenueCHFAmount vatReportDomesticRevenues)
             == Just vatReportTotalDomesticRevenue,
+        declare "The total fereign revenue is the total of the foreign revenues" $
+          Amount.sum (map foreignRevenueCHFAmount vatReportForeignRevenues)
+            == Just vatReportTotalForeignRevenue,
         declare
           "The total revenue is the sum of domestic and foreign"
           $ Amount.add
             vatReportTotalDomesticRevenue
-            vatReportForeignRevenue
+            vatReportTotalForeignRevenue
             == Just vatReportTotalRevenue,
         declare "The total 2023 standard rate VAT revenue is the total of VAT amounts of the revenues" $
           Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2023Standard) . domesticRevenueVATRate) vatReportDomesticRevenues))
@@ -150,6 +155,19 @@ data VATRate
   deriving (Show, Eq, Generic)
 
 instance Validity VATRate
+
+data ForeignRevenue ann = ForeignRevenue
+  { foreignRevenueTimestamp :: !Timestamp,
+    foreignRevenueDescription :: !Description,
+    foreignRevenueAmount :: !Money.Amount,
+    foreignRevenueCurrency :: !(Currency ann),
+    foreignRevenueCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    foreignRevenueEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Eq, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (ForeignRevenue ann)
 
 data VATError ann
   = VATErrorNoCHF
@@ -255,9 +273,7 @@ produceVATReport Ledger {..} = do
         if dayInQuarter vatReportQuarter day
           then do
             let domesticRevenueTimestamp = timestamp
-            domesticRevenueDescription <- case transactionDescription of
-              Nothing -> validationTFailure VATErrorNoDescription
-              Just (Located _ d) -> pure d
+            domesticRevenueDescription <- requireDescription transactionDescription
 
             -- Every posting and the next
             let postingsTups =
@@ -270,7 +286,7 @@ produceVATReport Ledger {..} = do
                   let Located _ accountName = postingAccountName p1
                   if accountName == domesticIncomeAccountName
                     then fmap Just $ do
-                      domesticRevenueEvidence <- requireEvidence tl transactionAttachments
+                      domesticRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
                       let Located _ domesticRevenueCurrency = postingCurrency p1
                       let Located al1 account = postingAccount p1
                       domesticRevenueAmount <- requireNegative tl pl1 account
@@ -320,37 +336,35 @@ produceVATReport Ledger {..} = do
           (filter ((== VATRate2024Standard) . domesticRevenueVATRate) vatReportDomesticRevenues)
       )
 
-  vatReportForeignRevenue <- do
-    amounts <- fmap (concat . catMaybes) $
-      forM (V.toList ledgerTransactions) $
-        \(Located tl Transaction {..}) -> do
-          let Located _ timestamp = transactionTimestamp
-          let day = Timestamp.toDay timestamp
-          if dayInQuarter vatReportQuarter day
-            then do
-              -- TODO assert that the rate is one of the common ones
+  vatReportForeignRevenues <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInQuarter vatReportQuarter day
+          then do
+            -- TODO assert that the rate is one of the common ones
 
-              amounts <- fmap catMaybes $
-                forM (V.toList transactionPostings) $
-                  \(Located pl Posting {..}) -> do
-                    let Located _ accountName = postingAccountName
-                    if accountName == foreignIncomeAccountName
-                      then do
-                        _ <- requireEvidence tl transactionAttachments
-                        let Located _ currency = postingCurrency
-                        let Located al account = postingAccount
-                        amount <- requireNegative tl pl account
-                        amount' <- convertDaily al dailyPriceGraphs day currency vatReportCHF amount
-                        pure $ Just amount'
-                      else pure Nothing
+            fmap catMaybes $
+              forM (V.toList transactionPostings) $
+                \(Located pl Posting {..}) -> do
+                  let foreignRevenueTimestamp = timestamp
+                  foreignRevenueDescription <- requireDescription transactionDescription
+                  let Located _ accountName = postingAccountName
+                  if accountName == foreignIncomeAccountName
+                    then fmap Just $ do
+                      foreignRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
+                      let Located _ foreignRevenueCurrency = postingCurrency
+                      let Located al account = postingAccount
+                      foreignRevenueAmount <- requireNegative tl pl account
+                      foreignRevenueCHFAmount <- convertDaily al dailyPriceGraphs day foreignRevenueCurrency vatReportCHF foreignRevenueAmount
+                      pure $ ForeignRevenue {..}
+                    else pure Nothing
+          else pure []
 
-              pure $ Just amounts
-            else pure Nothing
-    case Amount.sum amounts of
-      Nothing -> validationTFailure $ VATErrorSum amounts
-      Just a -> pure a
+  vatReportTotalForeignRevenue <- requireSumAmount $ map foreignRevenueCHFAmount vatReportForeignRevenues
 
-  vatReportTotalRevenue <- requireAddAmount vatReportTotalDomesticRevenue vatReportForeignRevenue
+  vatReportTotalRevenue <- requireAddAmount vatReportTotalDomesticRevenue vatReportTotalForeignRevenue
 
   vatReportTotalVATRevenue <-
     requireSumAmount
@@ -372,7 +386,7 @@ produceVATReport Ledger {..} = do
                     let Located _ accountName = postingAccountName
                     if accountName == vatExpensesAccountName
                       then do
-                        _ <- requireEvidence tl transactionAttachments
+                        _ <- requireEvidence tl [reldir|deductions|] transactionAttachments
                         let Located _ currency = postingCurrency
                         let Located al account = postingAccount
                         amount <- requirePositive tl pl account
@@ -396,16 +410,24 @@ dayInQuarter :: Quarter -> Day -> Bool
 dayInQuarter quarter day =
   day >= periodFirstDay quarter && day <= periodLastDay quarter
 
+requireDescription ::
+  Maybe (GenLocated ann Description) ->
+  Reporter (VATError ann) Description
+requireDescription = \case
+  Nothing -> validationTFailure VATErrorNoDescription
+  Just (Located _ d) -> pure d
+
 requireEvidence ::
   ann ->
+  Path Rel Dir ->
   Vector (GenLocated ann (Attachment ann)) ->
   Reporter (VATError ann) (NonEmpty (Path Rel File))
-requireEvidence tl attachments =
+requireEvidence tl subdir attachments =
   case NE.nonEmpty (V.toList attachments) of
     Nothing -> validationTFailure $ VATErrorNoEvidence tl
     Just ne ->
       forM ne $ \(Located _ (Attachment (Located _ rf))) -> do
-        let pathInTarball = [reldir|income|] </> rf
+        let pathInTarball = subdir </> rf
         includeFile pathInTarball rf
         pure pathInTarball
 

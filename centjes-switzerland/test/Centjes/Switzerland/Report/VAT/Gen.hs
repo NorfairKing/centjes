@@ -1,3 +1,4 @@
+{-# LANGUAGE NumericUnderscores #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Switzerland.Report.VAT.Gen where
@@ -17,17 +18,33 @@ instance GenValid Quarter
 
 instance GenValid VATRate
 
-instance (Show ann, Ord ann, GenValid ann) => GenValid (DomesticRevenue ann)
+instance (Show ann, Ord ann, GenValid ann) => GenValid (DomesticRevenue ann) where
+  genValid = do
+    dr <- genValidStructurally
+    -- If this number is too small, that's a VERY good problem.
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $ dr {domesticRevenueCHFAmount = chfAmount}
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (ForeignRevenue ann) where
+  genValid = do
+    dr <- genValidStructurally
+    -- If this number is too small, that's a VERY good problem.
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $ dr {foreignRevenueCHFAmount = chfAmount}
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
-  genValid =
+  genValid = do
     genValidStructurallyWithoutExtraChecking
       `suchThatMap` ( \vr -> do
                         totalDomesticRevenues <- Amount.sum (map domesticRevenueCHFAmount (vatReportDomesticRevenues vr))
                         pure $ vr {vatReportTotalDomesticRevenue = totalDomesticRevenues}
                     )
       `suchThatMap` ( \vr -> do
-                        totalRevenue <- Amount.add (vatReportForeignRevenue vr) (vatReportTotalDomesticRevenue vr)
+                        totalForeignRevenues <- Amount.sum (map foreignRevenueCHFAmount (vatReportForeignRevenues vr))
+                        pure $ vr {vatReportTotalForeignRevenue = totalForeignRevenues}
+                    )
+      `suchThatMap` ( \vr -> do
+                        totalRevenue <- Amount.add (vatReportTotalForeignRevenue vr) (vatReportTotalDomesticRevenue vr)
                         pure $ vr {vatReportTotalRevenue = totalRevenue}
                     )
       `suchThatMap` ( \vr -> do

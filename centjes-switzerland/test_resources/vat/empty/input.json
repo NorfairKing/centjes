@@ -1,12 +1,15 @@
 {
-    "foreign_revenue": "0.00",
+    "domestic_revenue_2023": "0.00",
+    "domestic_revenue_2024": "0.00",
     "name": "Tom Sydney Kerckhove",
     "payable": "0.00",
     "quarter": "2024-q1",
     "revenues": [],
     "total_domestic_revenue": "0.00",
+    "total_foreign_revenue": "0.00",
     "total_revenue": "0.00",
     "total_vat_revenue": "0.00",
     "vat_paid": "0.00",
-    "vat_revenue_standard": "0.00"
+    "vat_revenue_standard_2023": "0.00",
+    "vat_revenue_standard_2024": "0.00"
 }

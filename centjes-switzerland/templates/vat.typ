@@ -31,7 +31,7 @@ Alle Umsatzangaben sind netto
   align: (x, y) => (left, left, right, right).at(x),
   "221",
   "Leistungen im Ausland (Ort der Leistung im Ausland)",
-  input.foreign_revenue,
+  input.total_foreign_revenue,
   "",
   "",
   "",
@@ -40,7 +40,7 @@ Alle Umsatzangaben sind netto
   "289",
   "Total Abzüge Ziffer 220 bis 280",
   "",
-  input.foreign_revenue,
+  input.total_foreign_revenue,
 )
 
 ==== Steuerbarer Gesamtumsatz
@@ -119,10 +119,12 @@ Alle Umsatzangaben sind netto
     Amount: #{ revenue.amount.formatted } #{ revenue.amount.symbol }: #{ revenue.amount_chf } CHF
   ]
 
-  #if revenue.amount.symbol == "CHF" [
-    VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }
-  ] else [
-    VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }: #{ revenue.vat_amount_chf } CHF
+  #if revenue.keys().contains("vat_amount") [
+    #if revenue.amount.symbol == "CHF" [
+      VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }
+    ] else [
+      VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }: #{ revenue.vat_amount_chf } CHF
+    ]
   ]
 
   #for evidence in revenue.evidence [

@@ -35,6 +35,7 @@ import qualified Data.Aeson as JSON
 import Data.Aeson.Encode.Pretty as JSON
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
+import Data.List (sortOn)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Map as M
 import Data.Text (Text)
@@ -115,9 +116,14 @@ vatReportInput :: VATReport ann -> Input
 vatReportInput VATReport {..} =
   let inputName = vatReportName
       inputQuarter = vatReportQuarter
-      inputRevenues = map vatInputDomesticRevenue vatReportDomesticRevenues
+      inputRevenues =
+        sortOn inputRevenueDay $
+          concat
+            [ map vatInputDomesticRevenue vatReportDomesticRevenues,
+              map vatInputForeignRevenue vatReportForeignRevenues
+            ]
       inputTotalRevenue = formatAmount vatReportCHF vatReportTotalRevenue
-      inputForeignRevenue = formatAmount vatReportCHF vatReportForeignRevenue
+      inputTotalForeignRevenue = formatAmount vatReportCHF vatReportTotalForeignRevenue
       inputDomesticRevenue2023 = formatAmount vatReportCHF vatReportDomesticRevenue2023
       input2023StandardRateVATRevenue = formatAmount vatReportCHF vatReport2023StandardRateVATRevenue
       inputDomesticRevenue2024 = formatAmount vatReportCHF vatReportDomesticRevenue2024
@@ -142,7 +148,7 @@ data Input = Input
     -- | 221
     --
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
-    inputForeignRevenue :: !FormattedAmount,
+    inputTotalForeignRevenue :: !FormattedAmount,
     -- | 299
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
@@ -185,8 +191,8 @@ instance HasCodec Input where
           .= inputRevenues
         <*> requiredField "total_revenue" "total_revenue"
           .= inputTotalRevenue
-        <*> requiredField "foreign_revenue" "foreign_revenue"
-          .= inputForeignRevenue
+        <*> requiredField "total_foreign_revenue" "total foreign revenue"
+          .= inputTotalForeignRevenue
         <*> requiredField "total_domestic_revenue" "total domestic revenue"
           .= inputTotalDomesticRevenue
         <*> requiredField "domestic_revenue_2023" "domestic revenue from 2023"
@@ -204,15 +210,27 @@ instance HasCodec Input where
         <*> requiredField "payable" "payable"
           .= inputPayable
 
+vatInputForeignRevenue :: ForeignRevenue ann -> InputRevenue
+vatInputForeignRevenue ForeignRevenue {..} =
+  let inputRevenueDay = Timestamp.toDay foreignRevenueTimestamp
+      inputRevenueDescription = Description.toText foreignRevenueDescription
+      inputRevenueAmount = amountToAmountWithCurrency foreignRevenueCurrency foreignRevenueAmount
+      inputRevenueCHFAmount = formatAmount foreignRevenueCurrency foreignRevenueCHFAmount
+      inputRevenueVATAmount = Nothing
+      inputRevenueVATCHFAmount = Nothing
+      inputRevenueVATRate = Nothing
+      inputRevenueEvidence = foreignRevenueEvidence
+   in InputRevenue {..}
+
 vatInputDomesticRevenue :: DomesticRevenue ann -> InputRevenue
 vatInputDomesticRevenue DomesticRevenue {..} =
   let inputRevenueDay = Timestamp.toDay domesticRevenueTimestamp
       inputRevenueDescription = Description.toText domesticRevenueDescription
       inputRevenueAmount = amountToAmountWithCurrency domesticRevenueCurrency domesticRevenueAmount
       inputRevenueCHFAmount = formatAmount domesticRevenueCurrency domesticRevenueCHFAmount
-      inputRevenueVATAmount = amountToAmountWithCurrency domesticRevenueVATCurrency domesticRevenueVATAmount
-      inputRevenueVATCHFAmount = formatAmount domesticRevenueVATCurrency domesticRevenueVATCHFAmount
-      inputRevenueVATRate = case domesticRevenueVATRate of
+      inputRevenueVATAmount = Just $ amountToAmountWithCurrency domesticRevenueVATCurrency domesticRevenueVATAmount
+      inputRevenueVATCHFAmount = Just $ formatAmount domesticRevenueVATCurrency domesticRevenueVATCHFAmount
+      inputRevenueVATRate = Just $ case domesticRevenueVATRate of
         VATRate2023Standard -> "7.7 %"
         VATRate2024Standard -> "8.1 %"
       inputRevenueEvidence = domesticRevenueEvidence
@@ -223,9 +241,9 @@ data InputRevenue = InputRevenue
     inputRevenueDescription :: !Text,
     inputRevenueAmount :: !AmountWithCurrency,
     inputRevenueCHFAmount :: !FormattedAmount,
-    inputRevenueVATAmount :: !AmountWithCurrency,
-    inputRevenueVATCHFAmount :: !FormattedAmount,
-    inputRevenueVATRate :: !String,
+    inputRevenueVATAmount :: !(Maybe AmountWithCurrency),
+    inputRevenueVATCHFAmount :: !(Maybe FormattedAmount),
+    inputRevenueVATRate :: !(Maybe String),
     inputRevenueEvidence :: !(NonEmpty (Path Rel File))
   }
   deriving (Show, Eq)
@@ -243,11 +261,11 @@ instance HasCodec InputRevenue where
           .= inputRevenueAmount
         <*> requiredField "amount_chf" "amount in chf"
           .= inputRevenueCHFAmount
-        <*> requiredField "vat_amount" "VAT amount in original currency"
-          .= inputRevenueAmount
-        <*> requiredField "vat_amount_chf" "VAT amount in chf"
-          .= inputRevenueCHFAmount
-        <*> requiredField "vat_rate" "VAT rate"
+        <*> optionalField "vat_amount" "VAT amount in original currency"
+          .= inputRevenueVATAmount
+        <*> optionalField "vat_amount_chf" "VAT amount in chf"
+          .= inputRevenueVATCHFAmount
+        <*> optionalField "vat_rate" "VAT rate"
           .= inputRevenueVATRate
         <*> requiredField "evidence" "evidence"
           .= inputRevenueEvidence
