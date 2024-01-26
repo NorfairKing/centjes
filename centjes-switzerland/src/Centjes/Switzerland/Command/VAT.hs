@@ -41,6 +41,7 @@ import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import qualified Data.Text.Lazy as LT
 import Data.Time
 import Data.Time.Calendar.Quarter
 import Language.Haskell.TH.Load
@@ -51,6 +52,7 @@ import qualified Money.Amount as Amount
 import Path
 import Path.IO
 import System.Exit
+import Text.XML as XML
 
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
 runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
@@ -70,6 +72,20 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       validation <- liftIO $ runValidationT $ runReporter $ produceVATReport ledger
       (vatReport, files) <- liftIO $ checkValidation diag validation
       let input = vatReportInput vatReport
+
+      -- Write the xml to a file
+      let xmlDoc = xmlReport vatReport
+      xmlFile <- liftIO $ do
+        xf <- resolveFile tdir "vat.xml"
+        XML.writeFile XML.def (fromAbsFile xf) xmlDoc
+        pure xf
+      logInfoN $
+        T.pack $
+          unwords
+            [ "Wrote XML version to",
+              fromAbsFile xmlFile
+            ]
+      logDebugN $ LT.toStrict $ XML.renderText def xmlDoc
 
       -- Write the input to a file
       jsonInputFile <- liftIO $ do
@@ -103,7 +119,8 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       createZipFile vatSettingZipFile $
         M.insert [relfile|README.pdf|] vatSettingReadmeFile $
           M.insert [relfile|raw-input.json|] jsonInputFile $
-            M.map (settingBaseDir </>) files
+            M.insert [relfile|vat.xml|] xmlFile $
+              M.map (settingBaseDir </>) files
 
       logInfoN $
         T.pack $
@@ -362,3 +379,21 @@ formatAccount :: Currency ann -> Money.Account -> FormattedAccount
 formatAccount currency account =
   let Located _ qf = currencyQuantisationFactor currency
    in Account.format qf account
+
+xmlReport :: VATReport ann -> XML.Document
+xmlReport VATReport {} =
+  XML.Document
+    { documentPrologue =
+        XML.Prologue
+          { prologueBefore = [],
+            prologueDoctype = Nothing,
+            prologueAfter = []
+          },
+      documentRoot =
+        XML.Element
+          { elementName = "test",
+            elementAttributes = M.empty,
+            elementNodes = []
+          },
+      documentEpilogue = []
+    }
