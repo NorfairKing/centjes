@@ -106,5 +106,6 @@
     within:
       - Centjes.Compile.compileConversionRate
       - Centjes.Formatting.accountWidth
+      - Centjes.Import.Cornercard
       - Centjes.Import.Neon
       - Centjes.Timestamp

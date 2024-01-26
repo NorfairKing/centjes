@@ -4,8 +4,9 @@ packages:
 - centjes
 - centjes-gen
 
-- centjes-import-revolut
+- centjes-import-cornercard
 - centjes-import-neon
+- centjes-import-revolut
 
 - centjes-switzerland
 
