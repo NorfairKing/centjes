@@ -114,6 +114,7 @@
         buildInputs = (with pkgs; [
           cabal-install
           pkg-config
+          libxml2
           typst
           typstfmt
           zlib

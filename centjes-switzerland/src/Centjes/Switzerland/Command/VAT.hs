@@ -19,10 +19,11 @@ import qualified Centjes.Description as Description
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
+import Centjes.Switzerland.Assets
+import Centjes.Switzerland.Constants (development)
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.Reporter
-import Centjes.Switzerland.Templates
 import Centjes.Switzerland.Typst
 import Centjes.Switzerland.Zip
 import qualified Centjes.Timestamp as Timestamp
@@ -52,13 +53,17 @@ import qualified Money.Amount as Amount
 import Path
 import Path.IO
 import System.Exit
+import System.Process.Typed
 import Text.XML as XML
 
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
 runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
-  templatesMap <- loadIO templateFileMap
-  mainTypContents <- case M.lookup [relfile|vat.typ|] templatesMap of
+  assetMap <- loadIO assetFileMap
+  mainTypContents <- case M.lookup [relfile|vat.typ|] assetMap of
     Nothing -> die "vat.typ template not found."
+    Just t -> pure t
+  xmlSchemaContents <- case M.lookup [relfile|mwst-schema.xsd|] assetMap of
+    Nothing -> die "mwst-schema.xsd asset not found."
     Just t -> pure t
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
@@ -75,9 +80,34 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
 
       -- Write the xml to a file
       let xmlDoc = xmlReport vatReport
-      xmlFile <- liftIO $ do
+      xmlFile <- do
         xf <- resolveFile tdir "vat.xml"
-        XML.writeFile XML.def (fromAbsFile xf) xmlDoc
+        liftIO $ XML.writeFile XML.def (fromAbsFile xf) xmlDoc
+        when development $ do
+          schemaFile <- resolveFile tdir "mwst-schema.xsd"
+          liftIO $
+            SB.writeFile
+              (fromAbsFile schemaFile)
+              (TE.encodeUtf8 xmlSchemaContents)
+          logInfoN $
+            T.pack $
+              unwords
+                [ "Validating XML output at",
+                  fromAbsFile xf,
+                  "against schema",
+                  fromAbsFile schemaFile
+                ]
+          runProcess_ $
+            setWorkingDir (fromAbsDir tdir) $
+              setStdout inherit $
+                setStderr inherit $
+                  proc
+                    "xmllint"
+                    [ "--schema",
+                      fromAbsFile schemaFile,
+                      fromAbsFile xf,
+                      "--noout"
+                    ]
         pure xf
       logInfoN $
         T.pack $

@@ -13,9 +13,9 @@ module Centjes.Switzerland.Command.Taxes
 where
 
 import Centjes.Load
+import Centjes.Switzerland.Assets
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Taxes
-import Centjes.Switzerland.Templates
 import Centjes.Switzerland.Typst
 import Centjes.Switzerland.Zip
 import Centjes.Validation
@@ -35,8 +35,8 @@ import System.Exit
 
 runCentjesSwitzerlandTaxes :: Settings -> TaxesSettings -> IO ()
 runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
-  templatesMap <- loadIO templateFileMap
-  mainTypContents <- case M.lookup [relfile|main.typ|] templatesMap of
+  assetMap <- loadIO assetFileMap
+  mainTypContents <- case M.lookup [relfile|main.typ|] assetMap of
     Nothing -> die "main.typ template not found."
     Just t -> pure t
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
