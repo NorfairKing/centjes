@@ -45,15 +45,19 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import Data.Time
 import Data.Time.Calendar.Quarter
+import Data.Time.Format.ISO8601
 import Language.Haskell.TH.Load
 import Money.Account as Money (Account (..))
 import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
+import Numeric.DecimalLiteral (DecimalLiteral)
+import qualified Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Path.IO
 import System.Exit
 import System.Process.Typed
+import Text.Show.Pretty
 import Text.XML as XML
 
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
@@ -79,56 +83,71 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       let input = vatReportInput vatReport
 
       -- Write the xml to a file
-      let xmlDoc = xmlReport vatReport
       xmlFile <- do
-        xf <- resolveFile tdir "vat.xml"
-        liftIO $ XML.writeFile XML.def (fromAbsFile xf) xmlDoc
-        when development $ do
-          schemaFile <- resolveFile tdir "mwst-schema.xsd"
-          liftIO $
-            SB.writeFile
-              (fromAbsFile schemaFile)
-              (TE.encodeUtf8 xmlSchemaContents)
-          logInfoN $
-            T.pack $
-              unwords
-                [ "Validating XML output at",
-                  fromAbsFile xf,
-                  "against schema",
-                  fromAbsFile schemaFile
-                ]
-          runProcess_ $
-            setWorkingDir (fromAbsDir tdir) $
-              setStdout inherit $
-                setStderr inherit $
-                  proc
-                    "xmllint"
-                    [ "--schema",
-                      fromAbsFile schemaFile,
+        now <- liftIO getCurrentTime
+        case produceXMLReport now vatReport of
+          Nothing -> liftIO $ die "Failed to produce XML report. This should not happen"
+          Just xmlReport -> do
+            logDebugN $ T.pack $ ppShow xmlReport
+            xf <- resolveFile tdir "vat.xml"
+            let xmlDoc = xmlReportDocument xmlReport
+            liftIO $
+              XML.writeFile
+                xmlRenderSettings
+                (fromAbsFile xf)
+                xmlDoc
+            logInfoN $
+              T.pack $
+                unwords
+                  [ "Wrote XML version to",
+                    fromAbsFile xf
+                  ]
+            logDebugN $
+              LT.toStrict $
+                XML.renderText
+                  (xmlRenderSettings {rsPretty = True})
+                  xmlDoc
+
+            -- Turned off outside of development because it does network lookups.
+            when development $ do
+              schemaFile <- resolveFile tdir "mwst-schema.xsd"
+              liftIO $
+                SB.writeFile
+                  (fromAbsFile schemaFile)
+                  (TE.encodeUtf8 xmlSchemaContents)
+              logInfoN $
+                T.pack $
+                  unwords
+                    [ "Validating XML output at",
                       fromAbsFile xf,
-                      "--noout"
+                      "against schema",
+                      fromAbsFile schemaFile
                     ]
-        pure xf
-      logInfoN $
-        T.pack $
-          unwords
-            [ "Wrote XML version to",
-              fromAbsFile xmlFile
-            ]
-      logDebugN $ LT.toStrict $ XML.renderText def xmlDoc
+              runProcess_ $
+                setWorkingDir (fromAbsDir tdir) $
+                  setStdout inherit $
+                    setStderr inherit $
+                      proc
+                        "xmllint"
+                        [ "--schema",
+                          fromAbsFile schemaFile,
+                          fromAbsFile xf,
+                          "--noout"
+                        ]
+            pure xf
 
       -- Write the input to a file
-      jsonInputFile <- liftIO $ do
+      jsonInputFile <- do
         jif <- resolveFile tdir "input.json"
-        SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
+        liftIO $ SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
+        logInfoN $
+          T.pack $
+            unwords
+              [ "Succesfully compiled information into",
+                fromAbsFile jif
+              ]
+        logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
         pure jif
-      logInfoN $
-        T.pack $
-          unwords
-            [ "Succesfully compiled information into",
-              fromAbsFile jsonInputFile
-            ]
-      logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
 
       -- Write the template to a file
       mainTypFile <- liftIO $ do
@@ -410,8 +429,116 @@ formatAccount currency account =
   let Located _ qf = currencyQuantisationFactor currency
    in Account.format qf account
 
-xmlReport :: VATReport ann -> XML.Document
-xmlReport VATReport {} =
+class ToElement a where
+  toElement :: a -> Element
+
+data XMLReport = XMLReport
+  { xmlReportGeneralInformation :: !GeneralInformation,
+    xmlReportTurnoverComputation :: !TurnoverComputation
+  }
+  deriving (Show)
+
+instance ToElement XMLReport where
+  toElement XMLReport {..} =
+    XML.Element
+      { elementName = ech0217Name "VATDeclaration",
+        elementAttributes =
+          M.fromList
+            [ (xsiName "schemaLocation", "http://www.ech.ch/xmlns/eCH-0217/1 eCH-0217-1-0.xsd")
+            ],
+        elementNodes =
+          [ NodeElement $ toElement xmlReportGeneralInformation,
+            NodeElement $ toElement xmlReportTurnoverComputation
+          ]
+      }
+
+data GeneralInformation = GeneralInformation
+  { generalInformationUID :: !UID,
+    generalInformationOrganisationName :: !Text,
+    generalInformationGenerationTime :: !UTCTime,
+    generalInformationReportingPeriodFrom :: !Day,
+    generalInformationReportingPeriodTill :: !Day
+  }
+  deriving (Show)
+
+instance ToElement GeneralInformation where
+  toElement GeneralInformation {..} =
+    ech0217Element
+      "generalInformation"
+      [ NodeElement $ toElement generalInformationUID,
+        NodeElement $ ech0217Element "organisationName" [NodeContent generalInformationOrganisationName],
+        NodeElement $ ech0217Element "generationTime" [NodeContent $ T.pack $ iso8601Show generalInformationGenerationTime],
+        NodeElement $ ech0217Element "reportingPeriodFrom" [NodeContent $ T.pack $ iso8601Show generalInformationReportingPeriodFrom],
+        NodeElement $ ech0217Element "reportingPeriodTill" [NodeContent $ T.pack $ iso8601Show generalInformationReportingPeriodTill]
+      ]
+
+data UID = UID
+  { uidCategory :: !Text,
+    uidId :: !Text
+  }
+  deriving (Show)
+
+instance ToElement UID where
+  toElement UID {..} =
+    ech0217Element
+      "uid"
+      [ NodeElement $ ech0097Element "uidOrganisationIdCategorie" [NodeContent uidCategory],
+        NodeElement $ ech0097Element "uidOrganisationId" [NodeContent uidId]
+      ]
+
+data TurnoverComputation = TurnoverComputation
+  { turnoverComputationTotalConsideration :: !DecimalLiteral,
+    turnoverComputationSuppliesAbroad :: !DecimalLiteral
+  }
+  deriving (Show)
+
+instance ToElement TurnoverComputation where
+  toElement TurnoverComputation {..} =
+    ech0217Element
+      "turnoverComputation"
+      [ NodeElement $ ech0217Element "totalConsideration" [decimalLiteralNode turnoverComputationTotalConsideration],
+        NodeElement $ ech0217Element "suppliesAbroad" [decimalLiteralNode turnoverComputationSuppliesAbroad]
+      ]
+
+ech0097Element :: Text -> [XML.Node] -> XML.Element
+ech0097Element name = xmlElement (ech0097Name name)
+
+ech0217Element :: Text -> [XML.Node] -> XML.Element
+ech0217Element name = xmlElement (ech0217Name name)
+
+xmlElement :: XML.Name -> [XML.Node] -> XML.Element
+xmlElement elementName elementNodes =
+  let elementAttributes = M.empty
+   in XML.Element {..}
+
+decimalLiteralNode :: DecimalLiteral -> XML.Node
+decimalLiteralNode =
+  XML.NodeContent
+    . T.pack
+    . DecimalLiteral.format
+    . DecimalLiteral.setSignOptional
+
+produceXMLReport :: UTCTime -> VATReport ann -> Maybe XMLReport
+produceXMLReport generalInformationGenerationTime VATReport {..} = do
+  let generalInformationUID =
+        -- TODO fill in the real data
+        UID
+          { uidCategory = "CHE",
+            uidId = "5"
+          }
+  let generalInformationOrganisationName = "CS Kerckhove"
+  let generalInformationReportingPeriodFrom = periodFirstDay vatReportQuarter
+  let generalInformationReportingPeriodTill = periodLastDay vatReportQuarter
+  let xmlReportGeneralInformation = GeneralInformation {..}
+  let Located _ qf = currencyQuantisationFactor vatReportCHF
+      amountLiteral = Amount.toDecimalLiteral qf
+  turnoverComputationTotalConsideration <- amountLiteral vatReportTotalRevenue
+  turnoverComputationSuppliesAbroad <- amountLiteral vatReportTotalRevenue
+  let xmlReportTurnoverComputation = TurnoverComputation {..}
+  pure XMLReport {..}
+
+xmlReportDocument :: XMLReport -> XML.Document
+xmlReportDocument xmlReport =
   XML.Document
     { documentPrologue =
         XML.Prologue
@@ -419,11 +546,36 @@ xmlReport VATReport {} =
             prologueDoctype = Nothing,
             prologueAfter = []
           },
-      documentRoot =
-        XML.Element
-          { elementName = "test",
-            elementAttributes = M.empty,
-            elementNodes = []
-          },
+      documentRoot = toElement xmlReport,
       documentEpilogue = []
     }
+
+xmlRenderSettings :: XML.RenderSettings
+xmlRenderSettings =
+  def
+    { rsXMLDeclaration = True,
+      rsNamespaces =
+        [ ("eCH-0058", "http://www.ech.ch/xmlns/eCH-0058/5"),
+          ("eCH-0097", "http://www.ech.ch/xmlns/eCH-0097/3"),
+          ("eCH-0217", "http://www.ech.ch/xmlns/eCH-0217/1"),
+          ("xsi", "http://www.w3.org/2001/XMLSchema-instance")
+        ]
+    }
+
+xsiName :: Text -> XML.Name
+xsiName = xmlName "http://www.w3.org/2001/XMLSchema-instance" "xsi"
+
+-- ech0058Name :: Text -> XML.Name
+-- ech0058Name = xmlName "http://www.ech.ch/xmlns/eCH-0058/5" "eCH-0058"
+
+ech0097Name :: Text -> XML.Name
+ech0097Name = xmlName "http://www.ech.ch/xmlns/eCH-0097/3" "eCH-0097"
+
+ech0217Name :: Text -> XML.Name
+ech0217Name = xmlName "http://www.ech.ch/xmlns/eCH-0217/1" "eCH-0217"
+
+xmlName :: Text -> Text -> Text -> XML.Name
+xmlName namespace prefix nameLocalName =
+  let nameNamespace = Just namespace
+      namePrefix = Just prefix
+   in XML.Name {..}

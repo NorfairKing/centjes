@@ -3,7 +3,7 @@
 , containers, diagnose, envparse, filepath, genvalidity
 , genvalidity-sydtest, genvalidity-time, http-client
 , http-client-tls, http-types, lib, monad-logger, mtl
-, optparse-applicative, path, path-io, QuickCheck
+, optparse-applicative, path, path-io, pretty-show, QuickCheck
 , really-safe-money, really-safe-money-gen, sydtest, sydtest-aeson
 , sydtest-discover, template-haskell, template-haskell-reload, text
 , time, typed-process, validity, validity-time, vector, xml-conduit
@@ -19,7 +19,7 @@ mkDerivation {
     aeson aeson-pretty autodocodec autodocodec-yaml base bytestring
     centjes conduit containers diagnose envparse http-client
     http-client-tls http-types monad-logger mtl optparse-applicative
-    path path-io really-safe-money template-haskell
+    path path-io pretty-show really-safe-money template-haskell
     template-haskell-reload text time typed-process validity
     validity-time vector xml-conduit yaml zip
   ];

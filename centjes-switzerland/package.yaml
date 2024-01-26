@@ -33,6 +33,7 @@ library:
   - optparse-applicative
   - path
   - path-io
+  - pretty-show
   - really-safe-money
   - template-haskell
   - template-haskell-reload
