@@ -52,7 +52,7 @@ with final.haskell.lib;
 
   centjesNixosModuleDocs =
     let
-      smos-module = import ./nixos-module.nix
+      centjes-module = import ./nixos-module.nix
         {
           inherit (final.centjesReleasePackages) centjes-docs-site;
         }
@@ -62,7 +62,7 @@ with final.haskell.lib;
       eval = final.evalNixOSConfig {
         pkgs = final;
         modules = [
-          smos-module
+          centjes-module
           { system.stateVersion = "23.05"; }
         ];
       };

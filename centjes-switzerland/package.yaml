@@ -1,9 +1,9 @@
 name: centjes-switzerland
-version: 0.0.0.0
+version: 0.0.0
 github: "NorfairKing/centjes"
 
 extra-source-files:
-- templates/**/*.typ
+- assets/**/*
 - test_resources/**/*
 
 dependencies:
@@ -33,6 +33,7 @@ library:
   - optparse-applicative
   - path
   - path-io
+  - pretty-show
   - really-safe-money
   - template-haskell
   - template-haskell-reload
@@ -85,4 +86,6 @@ tests:
     - really-safe-money-gen
     - sydtest
     - sydtest-aeson
+    - text
     - time
+    - xml-conduit

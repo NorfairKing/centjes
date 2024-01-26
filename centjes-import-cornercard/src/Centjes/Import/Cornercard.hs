@@ -67,7 +67,7 @@ runCentjesImportCornercard = do
                         row
                     )
             )
-            (zip [1 ..] (sortOn rowDate (V.toList v)))
+            (filter ((== "Settled transaction") . rowStatus . snd) (zip [1 ..] (sortOn rowDate (V.toList v))))
       let m = Module {moduleImports = [], moduleDeclarations = ts}
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 

@@ -87,8 +87,8 @@
           centjes-nixos-module = self.nixosModules.${system}.default;
           inherit system;
         };
-        example-switzerland-taxes = pkgs.centjes.makeSwitzerlandTaxesPacket ./centjes-switzerland/example-ledger;
-        example-switzerland-vat = pkgs.centjes.makeSwitzerlandVATPacket ./centjes-switzerland/example-ledger;
+        example-switzerland-taxes = pkgs.centjes.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/vat/example;
+        example-switzerland-vat = pkgs.centjes.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/vat/example;
         pre-commit = pre-commit-hooks.lib.${ system}.run {
           src = ./.;
           hooks = {
@@ -114,6 +114,7 @@
         buildInputs = (with pkgs; [
           cabal-install
           pkg-config
+          libxml2
           typst
           typstfmt
           zlib
