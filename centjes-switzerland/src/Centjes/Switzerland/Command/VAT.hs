@@ -434,7 +434,8 @@ class ToElement a where
 
 data XMLReport = XMLReport
   { xmlReportGeneralInformation :: !GeneralInformation,
-    xmlReportTurnoverComputation :: !TurnoverComputation
+    xmlReportTurnoverComputation :: !TurnoverComputation,
+    xmlReportNetTaxRateMethod :: !NetTaxRateMethod
   }
   deriving (Show)
 
@@ -469,7 +470,21 @@ instance ToElement GeneralInformation where
         NodeElement $ ech0217Element "organisationName" [NodeContent generalInformationOrganisationName],
         NodeElement $ ech0217Element "generationTime" [NodeContent $ T.pack $ iso8601Show generalInformationGenerationTime],
         NodeElement $ ech0217Element "reportingPeriodFrom" [NodeContent $ T.pack $ iso8601Show generalInformationReportingPeriodFrom],
-        NodeElement $ ech0217Element "reportingPeriodTill" [NodeContent $ T.pack $ iso8601Show generalInformationReportingPeriodTill]
+        NodeElement $ ech0217Element "reportingPeriodTill" [NodeContent $ T.pack $ iso8601Show generalInformationReportingPeriodTill],
+        -- We use the "first submission" type
+        NodeElement $ ech0217Element "typeOfSubmission" [NodeContent "1"],
+        -- We use received amounts, not agreed amounts
+        NodeElement $ ech0217Element "formOfReporting" [NodeContent "2"],
+        -- We use the generation time as the reference id
+        NodeElement $ ech0217Element "businessReferenceId" [NodeContent $ T.pack $ iso8601Show generalInformationGenerationTime],
+        NodeElement $
+          ech0217Element
+            "sendingApplication"
+            [ NodeElement $ ech0058Element "manufacturer" [NodeContent "CS-SYD"],
+              NodeElement $ ech0058Element "product" [NodeContent "centjes"],
+              -- TODO use the current version
+              NodeElement $ ech0058Element "productVersion" [NodeContent "0.0"]
+            ]
       ]
 
 data UID = UID
@@ -499,6 +514,34 @@ instance ToElement TurnoverComputation where
       [ NodeElement $ ech0217Element "totalConsideration" [decimalLiteralNode turnoverComputationTotalConsideration],
         NodeElement $ ech0217Element "suppliesAbroad" [decimalLiteralNode turnoverComputationSuppliesAbroad]
       ]
+
+data NetTaxRateMethod = NetTaxRateMethod
+  { netTaxRateMethodSupplies :: ![TurnoverTaxRate]
+  }
+  deriving (Show)
+
+instance ToElement NetTaxRateMethod where
+  toElement NetTaxRateMethod {..} =
+    ech0217Element
+      "netTaxRateMethod"
+      $ map (NodeElement . toElement) netTaxRateMethodSupplies
+
+data TurnoverTaxRate = TurnoverTaxRate
+  { turnoverTaxRateRate :: !DecimalLiteral,
+    turnoverTaxRateTurnover :: !DecimalLiteral
+  }
+  deriving (Show)
+
+instance ToElement TurnoverTaxRate where
+  toElement TurnoverTaxRate {..} =
+    ech0217Element
+      "suppliesPerTaxRate"
+      [ NodeElement $ ech0217Element "taxRate" [decimalLiteralNode turnoverTaxRateRate],
+        NodeElement $ ech0217Element "turnover" [decimalLiteralNode turnoverTaxRateTurnover]
+      ]
+
+ech0058Element :: Text -> [XML.Node] -> XML.Element
+ech0058Element name = xmlElement (ech0058Name name)
 
 ech0097Element :: Text -> [XML.Node] -> XML.Element
 ech0097Element name = xmlElement (ech0097Name name)
@@ -535,6 +578,21 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   turnoverComputationTotalConsideration <- amountLiteral vatReportTotalRevenue
   turnoverComputationSuppliesAbroad <- amountLiteral vatReportTotalRevenue
   let xmlReportTurnoverComputation = TurnoverComputation {..}
+  standard2023TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2023
+  standard2024TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2024
+  let netTaxRateMethodSupplies =
+        [ TurnoverTaxRate
+            { -- TODO generate this decimal literal from the same type that produced it
+              turnoverTaxRateRate = "7.7",
+              turnoverTaxRateTurnover = standard2023TurnoverLiteral
+            },
+          TurnoverTaxRate
+            { -- TODO generate this decimal literal from the same type that produced it
+              turnoverTaxRateRate = "8.1",
+              turnoverTaxRateTurnover = standard2024TurnoverLiteral
+            }
+        ]
+  let xmlReportNetTaxRateMethod = NetTaxRateMethod {..}
   pure XMLReport {..}
 
 xmlReportDocument :: XMLReport -> XML.Document
@@ -565,8 +623,8 @@ xmlRenderSettings =
 xsiName :: Text -> XML.Name
 xsiName = xmlName "http://www.w3.org/2001/XMLSchema-instance" "xsi"
 
--- ech0058Name :: Text -> XML.Name
--- ech0058Name = xmlName "http://www.ech.ch/xmlns/eCH-0058/5" "eCH-0058"
+ech0058Name :: Text -> XML.Name
+ech0058Name = xmlName "http://www.ech.ch/xmlns/eCH-0058/5" "eCH-0058"
 
 ech0097Name :: Text -> XML.Name
 ech0097Name = xmlName "http://www.ech.ch/xmlns/eCH-0097/3" "eCH-0097"
