@@ -39,6 +39,7 @@ import qualified Data.ByteString.Lazy as LB
 import Data.List (sortOn)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.Map as M
+import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -520,7 +521,8 @@ instance ToElement TurnoverComputation where
 
 data EffectiveReportingMethod = EffectiveReportingMethod
   { effectiveReportingMethodGross :: !Bool,
-    effectiveReportingMethodSupplies :: ![TurnoverTaxRate]
+    effectiveReportingMethodSupplies :: ![TurnoverTaxRate],
+    effectiveReportingMethodInputTaxInvestments :: !(Maybe DecimalLiteral)
   }
   deriving (Show)
 
@@ -530,7 +532,10 @@ instance ToElement EffectiveReportingMethod where
       "effectiveReportingMethod"
       $ concat
         [ [NodeElement $ ech0217Element "grossOrNet" [NodeContent "2"]],
-          map (NodeElement . toElement) effectiveReportingMethodSupplies
+          map
+            (NodeElement . toElement)
+            effectiveReportingMethodSupplies,
+          [NodeElement $ ech0217Element "inputTaxInvestments" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxInvestments]
         ]
 
 data TurnoverTaxRate = TurnoverTaxRate
@@ -601,6 +606,7 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
               turnoverTaxRateTurnover = standard2024TurnoverLiteral
             }
         ]
+  effectiveReportingMethodInputTaxInvestments <- Just <$> amountLiteral vatReportPaidVAT
   let xmlReportEffectiveReportingMethod = EffectiveReportingMethod {..}
   xmlReportPayableTax <- accountLiteral vatReportPayable
   pure XMLReport {..}
