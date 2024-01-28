@@ -435,7 +435,8 @@ class ToElement a where
 data XMLReport = XMLReport
   { xmlReportGeneralInformation :: !GeneralInformation,
     xmlReportTurnoverComputation :: !TurnoverComputation,
-    xmlReportNetTaxRateMethod :: !NetTaxRateMethod
+    xmlReportEffectiveReportingMethod :: !EffectiveReportingMethod,
+    xmlReportPayableTax :: !DecimalLiteral
   }
   deriving (Show)
 
@@ -449,7 +450,9 @@ instance ToElement XMLReport where
             ],
         elementNodes =
           [ NodeElement $ toElement xmlReportGeneralInformation,
-            NodeElement $ toElement xmlReportTurnoverComputation
+            NodeElement $ toElement xmlReportTurnoverComputation,
+            NodeElement $ toElement xmlReportEffectiveReportingMethod,
+            NodeElement $ ech0217Element "payableTax" [decimalLiteralNode xmlReportPayableTax]
           ]
       }
 
@@ -515,16 +518,20 @@ instance ToElement TurnoverComputation where
         NodeElement $ ech0217Element "suppliesAbroad" [decimalLiteralNode turnoverComputationSuppliesAbroad]
       ]
 
-data NetTaxRateMethod = NetTaxRateMethod
-  { netTaxRateMethodSupplies :: ![TurnoverTaxRate]
+data EffectiveReportingMethod = EffectiveReportingMethod
+  { effectiveReportingMethodGross :: !Bool,
+    effectiveReportingMethodSupplies :: ![TurnoverTaxRate]
   }
   deriving (Show)
 
-instance ToElement NetTaxRateMethod where
-  toElement NetTaxRateMethod {..} =
+instance ToElement EffectiveReportingMethod where
+  toElement EffectiveReportingMethod {..} =
     ech0217Element
-      "netTaxRateMethod"
-      $ map (NodeElement . toElement) netTaxRateMethodSupplies
+      "effectiveReportingMethod"
+      $ concat
+        [ [NodeElement $ ech0217Element "grossOrNet" [NodeContent "2"]],
+          map (NodeElement . toElement) effectiveReportingMethodSupplies
+        ]
 
 data TurnoverTaxRate = TurnoverTaxRate
   { turnoverTaxRateRate :: !DecimalLiteral,
@@ -575,12 +582,14 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let xmlReportGeneralInformation = GeneralInformation {..}
   let Located _ qf = currencyQuantisationFactor vatReportCHF
       amountLiteral = Amount.toDecimalLiteral qf
+      accountLiteral = Account.toDecimalLiteral qf
   turnoverComputationTotalConsideration <- amountLiteral vatReportTotalRevenue
   turnoverComputationSuppliesAbroad <- amountLiteral vatReportTotalRevenue
   let xmlReportTurnoverComputation = TurnoverComputation {..}
   standard2023TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2023
   standard2024TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2024
-  let netTaxRateMethodSupplies =
+  let effectiveReportingMethodGross = True
+  let effectiveReportingMethodSupplies =
         [ TurnoverTaxRate
             { -- TODO generate this decimal literal from the same type that produced it
               turnoverTaxRateRate = "7.7",
@@ -592,7 +601,8 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
               turnoverTaxRateTurnover = standard2024TurnoverLiteral
             }
         ]
-  let xmlReportNetTaxRateMethod = NetTaxRateMethod {..}
+  let xmlReportEffectiveReportingMethod = EffectiveReportingMethod {..}
+  xmlReportPayableTax <- accountLiteral vatReportPayable
   pure XMLReport {..}
 
 xmlReportDocument :: XMLReport -> XML.Document
