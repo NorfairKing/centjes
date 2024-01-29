@@ -16,6 +16,12 @@ module Centjes.Switzerland.Report.VAT
     VATRate (..),
     VATError (..),
     produceVATReport,
+
+    -- * XML report
+    XMLReport (..),
+    xmlReportDocument,
+    xmlRenderSettings,
+    produceXMLReport,
   )
 where
 
@@ -24,6 +30,7 @@ import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import Centjes.Ledger
 import Centjes.Location
+import Centjes.Switzerland.Report.VAT.EMWST
 import Centjes.Switzerland.Report.VAT.Types
 import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp

@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.VAT.EMWST
   ( XMLReport (..),
@@ -12,7 +13,7 @@ where
 
 import Centjes.Ledger
 import Centjes.Location
-import Centjes.Switzerland.Report.VAT
+import Centjes.Switzerland.Report.VAT.Types
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Text (Text)
