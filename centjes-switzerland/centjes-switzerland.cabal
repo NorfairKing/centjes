@@ -33,6 +33,7 @@ library
       Centjes.Switzerland.OptParse
       Centjes.Switzerland.Report.Taxes
       Centjes.Switzerland.Report.VAT
+      Centjes.Switzerland.Report.VAT.Types
       Centjes.Switzerland.Reporter
       Centjes.Switzerland.Typst
       Centjes.Switzerland.Zip
