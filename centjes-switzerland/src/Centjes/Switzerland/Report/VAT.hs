@@ -22,6 +22,10 @@ module Centjes.Switzerland.Report.VAT
     xmlReportDocument,
     xmlRenderSettings,
     produceXMLReport,
+
+    -- * Typst report
+    Input (..),
+    vatReportInput,
   )
 where
 
@@ -32,6 +36,7 @@ import Centjes.Ledger
 import Centjes.Location
 import Centjes.Switzerland.Report.VAT.EMWST
 import Centjes.Switzerland.Report.VAT.Types
+import Centjes.Switzerland.Report.VAT.Typst
 import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
