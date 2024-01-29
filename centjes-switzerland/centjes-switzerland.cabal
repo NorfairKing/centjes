@@ -20,6 +20,18 @@ extra-source-files:
     test_resources/vat/empty/ledger.cent
     test_resources/vat/empty/switzerland.yaml
     test_resources/vat/empty/vat.xml
+    test_resources/vat/example/bank-statement.txt
+    test_resources/vat/example/foobar-dec.txt
+    test_resources/vat/example/foobar-feb.txt
+    test_resources/vat/example/foobar-jan.txt
+    test_resources/vat/example/input.json
+    test_resources/vat/example/ledger.cent
+    test_resources/vat/example/quux-dec.txt
+    test_resources/vat/example/quux-feb.txt
+    test_resources/vat/example/quux-jan.txt
+    test_resources/vat/example/receipt-computer.txt
+    test_resources/vat/example/switzerland.yaml
+    test_resources/vat/example/vat.xml
 
 source-repository head
   type: git
