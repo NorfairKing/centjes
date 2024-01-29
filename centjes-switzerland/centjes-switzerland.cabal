@@ -100,9 +100,9 @@ test-suite centjes-switzerland-test
   main-is: Spec.hs
   other-modules:
       Centjes.Switzerland.Command.TaxesSpec
-      Centjes.Switzerland.Command.VATSpec
       Centjes.Switzerland.Report.TaxesSpec
       Centjes.Switzerland.Report.VAT.Gen
+      Centjes.Switzerland.Report.VAT.TypstSpec
       Centjes.Switzerland.Report.VATSpec
       Centjes.Switzerland.TestUtils
       Paths_centjes_switzerland

@@ -1,4 +1,4 @@
-module Centjes.Switzerland.Command.VATSpec (spec) where
+module Centjes.Switzerland.Report.VAT.TypstSpec (spec) where
 
 import Autodocodec.Yaml
 import Centjes.Compile
