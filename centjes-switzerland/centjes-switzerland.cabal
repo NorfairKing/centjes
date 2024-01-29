@@ -19,6 +19,7 @@ extra-source-files:
     test_resources/vat/empty/input.json
     test_resources/vat/empty/ledger.cent
     test_resources/vat/empty/switzerland.yaml
+    test_resources/vat/empty/vat.xml
 
 source-repository head
   type: git
@@ -101,6 +102,7 @@ test-suite centjes-switzerland-test
   other-modules:
       Centjes.Switzerland.Command.TaxesSpec
       Centjes.Switzerland.Report.TaxesSpec
+      Centjes.Switzerland.Report.VAT.EMWSTSpec
       Centjes.Switzerland.Report.VAT.Gen
       Centjes.Switzerland.Report.VAT.TypstSpec
       Centjes.Switzerland.Report.VATSpec
@@ -130,5 +132,7 @@ test-suite centjes-switzerland-test
     , really-safe-money-gen
     , sydtest
     , sydtest-aeson
+    , text
     , time
+    , xml-conduit
   default-language: Haskell2010

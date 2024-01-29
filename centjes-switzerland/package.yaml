@@ -86,4 +86,6 @@ tests:
     - really-safe-money-gen
     - sydtest
     - sydtest-aeson
+    - text
     - time
+    - xml-conduit

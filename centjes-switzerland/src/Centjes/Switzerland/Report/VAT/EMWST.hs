@@ -170,6 +170,7 @@ decimalLiteralNode =
     . DecimalLiteral.format
     . DecimalLiteral.setSignOptional
 
+-- TODO Put this in a validation instead of a Maybe?
 produceXMLReport :: UTCTime -> VATReport ann -> Maybe XMLReport
 produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let generalInformationUID =

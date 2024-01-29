@@ -29,7 +29,7 @@ mkDerivation {
     aeson autodocodec-yaml base centjes centjes-gen filepath
     genvalidity genvalidity-sydtest genvalidity-time monad-logger path
     path-io QuickCheck really-safe-money really-safe-money-gen sydtest
-    sydtest-aeson time
+    sydtest-aeson text time xml-conduit
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";
