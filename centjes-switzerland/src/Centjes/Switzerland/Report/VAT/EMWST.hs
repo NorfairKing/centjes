@@ -34,7 +34,8 @@ data XMLReport = XMLReport
   { xmlReportGeneralInformation :: !GeneralInformation,
     xmlReportTurnoverComputation :: !TurnoverComputation,
     xmlReportEffectiveReportingMethod :: !EffectiveReportingMethod,
-    xmlReportPayableTax :: !DecimalLiteral
+    xmlReportPayableTax :: !DecimalLiteral,
+    xmlReportOtherFlowOfFunds :: !(Maybe OtherFlowOfFunds)
   }
   deriving (Show)
 
@@ -47,11 +48,16 @@ instance ToElement XMLReport where
             [ (xsiName "schemaLocation", "http://www.ech.ch/xmlns/eCH-0217/1 eCH-0217-1-0.xsd")
             ],
         elementNodes =
-          [ NodeElement $ toElement xmlReportGeneralInformation,
-            NodeElement $ toElement xmlReportTurnoverComputation,
-            NodeElement $ toElement xmlReportEffectiveReportingMethod,
-            NodeElement $ ech0217Element "payableTax" [decimalLiteralNode xmlReportPayableTax]
-          ]
+          concat
+            [ [ NodeElement $ toElement xmlReportGeneralInformation,
+                NodeElement $ toElement xmlReportTurnoverComputation,
+                NodeElement $ toElement xmlReportEffectiveReportingMethod,
+                NodeElement $ ech0217Element "payableTax" [decimalLiteralNode xmlReportPayableTax]
+              ],
+              [ NodeElement $ toElement o
+                | o <- maybeToList xmlReportOtherFlowOfFunds
+              ]
+            ]
       }
 
 data GeneralInformation = GeneralInformation
@@ -149,6 +155,20 @@ instance ToElement TurnoverTaxRate where
         NodeElement $ ech0217Element "turnover" [decimalLiteralNode turnoverTaxRateTurnover]
       ]
 
+data OtherFlowOfFunds = OtherFlowOfFunds
+  { otherFlowOfFundsSubsidies :: !DecimalLiteral,
+    otherFlowOfFundsDonations :: !DecimalLiteral
+  }
+  deriving (Show)
+
+instance ToElement OtherFlowOfFunds where
+  toElement OtherFlowOfFunds {..} =
+    ech0217Element
+      "otherFlowOfFunds"
+      [ NodeElement $ ech0217Element "subsidies" [decimalLiteralNode otherFlowOfFundsSubsidies],
+        NodeElement $ ech0217Element "donations" [decimalLiteralNode otherFlowOfFundsDonations]
+      ]
+
 ech0058Element :: Text -> [XML.Node] -> XML.Element
 ech0058Element name = xmlElement (ech0058Name name)
 
@@ -207,6 +227,8 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   effectiveReportingMethodInputTaxInvestments <- Just <$> amountLiteral vatReportPaidVAT
   let xmlReportEffectiveReportingMethod = EffectiveReportingMethod {..}
   xmlReportPayableTax <- accountLiteral vatReportPayable
+  -- TODO gather donations and subsidies
+  let xmlReportOtherFlowOfFunds = Nothing
   pure XMLReport {..}
 
 xmlReportDocument :: XMLReport -> XML.Document
