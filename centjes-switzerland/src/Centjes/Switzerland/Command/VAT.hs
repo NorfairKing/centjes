@@ -45,7 +45,6 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import Data.Time
 import Data.Time.Calendar.Quarter
-import Language.Haskell.TH.Load
 import Money.Account as Money (Account (..))
 import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
@@ -59,13 +58,8 @@ import Text.XML as XML
 
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
 runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
-  assetMap <- loadIO assetFileMap
-  mainTypContents <- case M.lookup [relfile|vat.typ|] assetMap of
-    Nothing -> die "vat.typ template not found."
-    Just t -> pure t
-  xmlSchemaContents <- case M.lookup [relfile|mwst-schema.xsd|] assetMap of
-    Nothing -> die "mwst-schema.xsd asset not found."
-    Just t -> pure t
+  mainTypContents <- requireAsset [relfile|vat.typ|]
+  xmlSchemaContents <- requireAsset [relfile|mwst-schema.xsd|]
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure

@@ -28,17 +28,12 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Language.Haskell.TH.Load
 import Path
 import Path.IO
-import System.Exit
 
 runCentjesSwitzerlandTaxes :: Settings -> TaxesSettings -> IO ()
 runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
-  assetMap <- loadIO assetFileMap
-  mainTypContents <- case M.lookup [relfile|main.typ|] assetMap of
-    Nothing -> die "main.typ template not found."
-    Just t -> pure t
+  mainTypContents <- requireAsset [relfile|main.typ|]
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure

@@ -3,7 +3,7 @@ version: 0.0.0.0
 github: "NorfairKing/centjes"
 
 extra-source-files:
-- assets/**/*.typ
+- assets/**/*
 - test_resources/**/*
 
 dependencies:
