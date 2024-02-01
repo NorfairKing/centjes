@@ -75,9 +75,6 @@
                 0.00
             </eCH-0217:turnover>
         </eCH-0217:suppliesPerTaxRate>
-        <eCH-0217:inputTaxInvestments>
-            0.00
-        </eCH-0217:inputTaxInvestments>
     </eCH-0217:effectiveReportingMethod>
     <eCH-0217:payableTax>
         0.00

@@ -23,6 +23,7 @@ import Data.Time.Format.ISO8601
 import Data.Version
 import qualified Money.Account as Account
 import qualified Money.Amount as Amount
+import qualified Money.Amount as Money (Amount)
 import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Numeric.DecimalLiteral as DecimalLiteral
 import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
@@ -246,7 +247,7 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let effectiveReportingMethodAcquisitionTax = []
   -- TODO what's this?
   let effectiveReportingMethodInputTaxMaterialAndServices = Nothing
-  effectiveReportingMethodInputTaxInvestments <- Just <$> amountLiteral vatReportPaidVAT
+  effectiveReportingMethodInputTaxInvestments <- traverse amountLiteral (unlessZero vatReportPaidVAT)
   -- TODO what's this?
   let effectiveReportingMethodSubsequentInputTaxDeduction = Nothing
   let effectiveReportingMethodInputTaxCorrections = Nothing
@@ -256,6 +257,9 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   -- TODO gather donations and subsidies
   let xmlReportOtherFlowOfFunds = Nothing
   pure XMLReport {..}
+
+unlessZero :: Money.Amount -> Maybe Money.Amount
+unlessZero a = if a == Amount.zero then Nothing else Just a
 
 xmlReportDocument :: XMLReport -> XML.Document
 xmlReportDocument xmlReport =
