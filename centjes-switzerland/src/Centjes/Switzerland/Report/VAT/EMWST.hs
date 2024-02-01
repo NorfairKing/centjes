@@ -20,10 +20,12 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
 import Data.Time.Format.ISO8601
+import Data.Version
 import qualified Money.Account as Account
 import qualified Money.Amount as Amount
 import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Numeric.DecimalLiteral as DecimalLiteral
+import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
 import Text.XML as XML
 
 class ToElement a where
@@ -89,8 +91,7 @@ instance ToElement GeneralInformation where
             "sendingApplication"
             [ NodeElement $ ech0058Element "manufacturer" [NodeContent "CS-SYD"],
               NodeElement $ ech0058Element "product" [NodeContent "centjes"],
-              -- TODO use the current version
-              NodeElement $ ech0058Element "productVersion" [NodeContent "0.0"]
+              NodeElement $ ech0058Element "productVersion" [NodeContent $ T.pack $ showVersion CentjesSwitzerland.version]
             ]
       ]
 
