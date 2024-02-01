@@ -31,6 +31,9 @@ import Text.XML as XML
 class ToElement a where
   toElement :: a -> Element
 
+class ToNodes a where
+  toNodes :: a -> [XML.Node]
+
 -- Rename the types to the names in the specifications
 data XMLReport = XMLReport
   { xmlReportGeneralInformation :: !GeneralInformation,
@@ -125,8 +128,14 @@ instance ToElement TurnoverComputation where
 
 data EffectiveReportingMethod = EffectiveReportingMethod
   { effectiveReportingMethodGross :: !Bool,
+    effectiveReportingMethodOpted :: !(Maybe DecimalLiteral),
     effectiveReportingMethodSupplies :: ![TurnoverTaxRate],
-    effectiveReportingMethodInputTaxInvestments :: !(Maybe DecimalLiteral)
+    effectiveReportingMethodAcquisitionTax :: ![TurnoverTaxRate],
+    effectiveReportingMethodInputTaxMaterialAndServices :: !(Maybe DecimalLiteral),
+    effectiveReportingMethodInputTaxInvestments :: !(Maybe DecimalLiteral),
+    effectiveReportingMethodSubsequentInputTaxDeduction :: !(Maybe DecimalLiteral),
+    effectiveReportingMethodInputTaxCorrections :: !(Maybe DecimalLiteral),
+    effectiveReportingMethodInputTaxReductions :: !(Maybe DecimalLiteral)
   }
   deriving (Show)
 
@@ -136,10 +145,18 @@ instance ToElement EffectiveReportingMethod where
       "effectiveReportingMethod"
       $ concat
         [ [NodeElement $ ech0217Element "grossOrNet" [NodeContent "2"]],
+          [NodeElement $ ech0217Element "opted" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodOpted],
           map
-            (NodeElement . toElement)
+            (NodeElement . ech0217Element "suppliesPerTaxRate" . toNodes)
             effectiveReportingMethodSupplies,
-          [NodeElement $ ech0217Element "inputTaxInvestments" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxInvestments]
+          map
+            (NodeElement . ech0217Element "acquisitionTax" . toNodes)
+            effectiveReportingMethodAcquisitionTax,
+          [NodeElement $ ech0217Element "inputTaxMaterialAndServices" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxMaterialAndServices],
+          [NodeElement $ ech0217Element "inputTaxInvestments" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxInvestments],
+          [NodeElement $ ech0217Element "subsequentInputTaxDeduction" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodSubsequentInputTaxDeduction],
+          [NodeElement $ ech0217Element "inputTaxCorrections" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxCorrections],
+          [NodeElement $ ech0217Element "inputTaxReductions" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxReductions]
         ]
 
 data TurnoverTaxRate = TurnoverTaxRate
@@ -148,13 +165,11 @@ data TurnoverTaxRate = TurnoverTaxRate
   }
   deriving (Show)
 
-instance ToElement TurnoverTaxRate where
-  toElement TurnoverTaxRate {..} =
-    ech0217Element
-      "suppliesPerTaxRate"
-      [ NodeElement $ ech0217Element "taxRate" [decimalLiteralNode turnoverTaxRateRate],
-        NodeElement $ ech0217Element "turnover" [decimalLiteralNode turnoverTaxRateTurnover]
-      ]
+instance ToNodes TurnoverTaxRate where
+  toNodes TurnoverTaxRate {..} =
+    [ NodeElement $ ech0217Element "taxRate" [decimalLiteralNode turnoverTaxRateRate],
+      NodeElement $ ech0217Element "turnover" [decimalLiteralNode turnoverTaxRateTurnover]
+    ]
 
 data OtherFlowOfFunds = OtherFlowOfFunds
   { otherFlowOfFundsSubsidies :: !DecimalLiteral,
@@ -213,19 +228,29 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   standard2023TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2023
   standard2024TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2024
   let effectiveReportingMethodGross = True
+  -- TODO what is this?
+  let effectiveReportingMethodOpted = Nothing
   let effectiveReportingMethodSupplies =
         [ TurnoverTaxRate
-            { -- TODO generate this decimal literal from the same type that produced it
+            { -- TODO generate this decimal literal from the same TaxRate type that produced it
               turnoverTaxRateRate = "7.7",
               turnoverTaxRateTurnover = standard2023TurnoverLiteral
             },
           TurnoverTaxRate
-            { -- TODO generate this decimal literal from the same type that produced it
+            { -- TODO generate this decimal literal from the same TaxRate type that produced it
               turnoverTaxRateRate = "8.1",
               turnoverTaxRateTurnover = standard2024TurnoverLiteral
             }
         ]
+  -- TODO what's this?
+  let effectiveReportingMethodAcquisitionTax = []
+  -- TODO what's this?
+  let effectiveReportingMethodInputTaxMaterialAndServices = Nothing
   effectiveReportingMethodInputTaxInvestments <- Just <$> amountLiteral vatReportPaidVAT
+  -- TODO what's this?
+  let effectiveReportingMethodSubsequentInputTaxDeduction = Nothing
+  let effectiveReportingMethodInputTaxCorrections = Nothing
+  let effectiveReportingMethodInputTaxReductions = Nothing
   let xmlReportEffectiveReportingMethod = EffectiveReportingMethod {..}
   xmlReportPayableTax <- accountLiteral vatReportPayable
   -- TODO gather donations and subsidies
