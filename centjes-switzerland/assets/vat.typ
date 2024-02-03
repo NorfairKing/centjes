@@ -33,6 +33,10 @@ Alle Umsatzangaben sind netto
 #table(
   columns: (auto, 3fr, 1fr, 1fr),
   align: (x, y) => (left, left, right, right).at(x),
+  "220",
+  "Leistungen ins Ausland",
+  input.total_exports_revenue,
+  "",
   "221",
   "Leistungen im Ausland (Ort der Leistung im Ausland)",
   input.total_foreign_revenue,

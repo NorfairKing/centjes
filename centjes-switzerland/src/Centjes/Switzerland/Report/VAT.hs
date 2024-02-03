@@ -157,33 +157,38 @@ produceVATReport VATInput {..} Ledger {..} = do
           (filter ((== VATRate2024Standard) . domesticRevenueVATRate) vatReportDomesticRevenues)
       )
 
-  vatReportForeignRevenues <- fmap concat $
-    forM (V.toList ledgerTransactions) $
-      \(Located tl Transaction {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        if dayInQuarter vatReportQuarter day
-          then do
-            -- TODO assert that the rate is one of the common ones
+  let foreignRevenuesOfAccount foreignAccountName = fmap concat $
+        forM (V.toList ledgerTransactions) $
+          \(Located tl Transaction {..}) -> do
+            let Located _ timestamp = transactionTimestamp
+            let day = Timestamp.toDay timestamp
+            if dayInQuarter vatReportQuarter day
+              then do
+                -- TODO assert that the rate is one of the common ones
 
-            fmap catMaybes $
-              forM (V.toList transactionPostings) $
-                \(Located pl Posting {..}) -> do
-                  let Located _ accountName = postingAccountName
-                  if accountName == vatInputForeignIncomeAccountName
-                    then fmap Just $ do
-                      let foreignRevenueTimestamp = timestamp
-                      foreignRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
-                      foreignRevenueDescription <- requireDescription transactionDescription
-                      let Located _ foreignRevenueCurrency = postingCurrency
-                      let Located al account = postingAccount
-                      foreignRevenueAmount <- requireNegative tl pl account
-                      foreignRevenueCHFAmount <- convertDaily al dailyPriceGraphs day foreignRevenueCurrency vatReportCHF foreignRevenueAmount
-                      pure $ ForeignRevenue {..}
-                    else pure Nothing
-          else pure []
+                fmap catMaybes $
+                  forM (V.toList transactionPostings) $
+                    \(Located pl Posting {..}) -> do
+                      let Located _ accountName = postingAccountName
+                      if accountName == foreignAccountName
+                        then fmap Just $ do
+                          let foreignRevenueTimestamp = timestamp
+                          foreignRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
+                          foreignRevenueDescription <- requireDescription transactionDescription
+                          let Located _ foreignRevenueCurrency = postingCurrency
+                          let Located al account = postingAccount
+                          foreignRevenueAmount <- requireNegative tl pl account
+                          foreignRevenueCHFAmount <- convertDaily al dailyPriceGraphs day foreignRevenueCurrency vatReportCHF foreignRevenueAmount
+                          pure $ ForeignRevenue {..}
+                        else pure Nothing
+              else pure []
+
+  vatReportForeignRevenues <- foreignRevenuesOfAccount vatInputForeignIncomeAccountName
 
   vatReportTotalForeignRevenue <- requireSumAmount $ map foreignRevenueCHFAmount vatReportForeignRevenues
+
+  vatReportExportsRevenues <- foreignRevenuesOfAccount vatInputExportsIncomeAccountName
+  vatReportTotalExportsRevenue <- requireSumAmount $ map foreignRevenueCHFAmount vatReportExportsRevenues
 
   vatReportTotalRevenue <- requireAddAmount vatReportTotalDomesticRevenue vatReportTotalForeignRevenue
 

@@ -8,6 +8,7 @@ account expenses:hardware
 account expenses:vat
 account income:domestic
 account income:foreign
+account income:exports
 account income:vat
 
 2023-12-31
@@ -64,3 +65,9 @@ price 2024-01-07 USD 0.8589 CHF
   * assets:bank:usd 1000 USD
   * income:foreign -1000 USD
   + attach quux-feb.txt
+
+2024-03-07
+  | Joe Feb
+  * assets:bank:usd 1000 USD
+  * income:exports -1000 USD
+  + attach joe-feb.txt

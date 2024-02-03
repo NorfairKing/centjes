@@ -110,8 +110,9 @@ configureVATInput day Configuration {..} =
       vatInputVATId = configVATId
       currentQuarter = dayPeriod day
       vatInputQuarter = fromMaybe currentQuarter configQuarter
-      vatInputDomesticIncomeAccountName = fromMaybe "income:domestic" configDomesticInputAccountName
-      vatInputForeignIncomeAccountName = fromMaybe "income:foreign" configForeignInputAccountName
+      vatInputDomesticIncomeAccountName = fromMaybe "income:domestic" configDomesticIncomeAccountName
+      vatInputExportsIncomeAccountName = fromMaybe "income:exports" configExportsIncomeAccountName
+      vatInputForeignIncomeAccountName = fromMaybe "income:foreign" configForeignIncomeAccountName
       vatInputVATIncomeAccountName = fromMaybe "income:vat" configVATIncomeAccountName
       vatInputVATExpensesAccountName = fromMaybe "expenses:vat" configVATExpensesAccount
    in VATInput {..}
@@ -124,8 +125,9 @@ data Configuration = Configuration
     configOrganisationName :: !Text,
     configVATId :: !Text,
     configQuarter :: !(Maybe Quarter),
-    configDomesticInputAccountName :: !(Maybe AccountName),
-    configForeignInputAccountName :: !(Maybe AccountName),
+    configDomesticIncomeAccountName :: !(Maybe AccountName),
+    configExportsIncomeAccountName :: !(Maybe AccountName),
+    configForeignIncomeAccountName :: !(Maybe AccountName),
     configVATIncomeAccountName :: !(Maybe AccountName),
     configVATExpensesAccount :: !(Maybe AccountName),
     configSetup :: !Setup
@@ -152,9 +154,11 @@ instance HasCodec Configuration where
         <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "The quarter to produce a vat report for"
           .= configQuarter
         <*> optionalField "domestic-income-account" "Account name of your domestic income"
-          .= configDomesticInputAccountName
+          .= configDomesticIncomeAccountName
+        <*> optionalField "exports-income-account" "Account name of your exports' income"
+          .= configDomesticIncomeAccountName
         <*> optionalField "foreign-income-account" "Account name of your foreign income"
-          .= configDomesticInputAccountName
+          .= configDomesticIncomeAccountName
         <*> optionalField "vat-income-account" "Account name of your the VAT you've charged"
           .= configVATIncomeAccountName
         <*> optionalField "vat-expenses-account" "Account name of your the VAT you've paid"

@@ -59,11 +59,20 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
                         pure $ vr {vatReportTotalDomesticRevenue = totalDomesticRevenues}
                     )
       `suchThatMap` ( \vr -> do
+                        totalExportsRevenues <- Amount.sum (map foreignRevenueCHFAmount (vatReportExportsRevenues vr))
+                        pure $ vr {vatReportTotalExportsRevenue = totalExportsRevenues}
+                    )
+      `suchThatMap` ( \vr -> do
                         totalForeignRevenues <- Amount.sum (map foreignRevenueCHFAmount (vatReportForeignRevenues vr))
                         pure $ vr {vatReportTotalForeignRevenue = totalForeignRevenues}
                     )
       `suchThatMap` ( \vr -> do
-                        totalRevenue <- Amount.add (vatReportTotalForeignRevenue vr) (vatReportTotalDomesticRevenue vr)
+                        totalRevenue <-
+                          Amount.sum
+                            [ vatReportTotalForeignRevenue vr,
+                              vatReportTotalExportsRevenue vr,
+                              vatReportTotalDomesticRevenue vr
+                            ]
                         pure $ vr {vatReportTotalRevenue = totalRevenue}
                     )
       `suchThatMap` ( \vr -> do

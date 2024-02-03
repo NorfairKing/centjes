@@ -25,6 +25,7 @@ extra-source-files:
     test_resources/vat/example/foobar-feb.txt
     test_resources/vat/example/foobar-jan.txt
     test_resources/vat/example/input.json
+    test_resources/vat/example/joe-feb.txt
     test_resources/vat/example/ledger.cent
     test_resources/vat/example/quux-dec.txt
     test_resources/vat/example/quux-feb.txt

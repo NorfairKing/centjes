@@ -50,6 +50,7 @@ data VATInput = VATInput
     vatInputVATId :: !Text,
     vatInputQuarter :: !Quarter,
     vatInputDomesticIncomeAccountName :: !AccountName,
+    vatInputExportsIncomeAccountName :: !AccountName,
     vatInputForeignIncomeAccountName :: !AccountName,
     vatInputVATIncomeAccountName :: !AccountName,
     vatInputVATExpensesAccountName :: !AccountName
@@ -67,6 +68,7 @@ data VATReport ann = VATReport
     vatReportQuarter :: !Quarter,
     vatReportCHF :: !(Currency ann),
     vatReportDomesticRevenues :: ![DomesticRevenue ann],
+    vatReportExportsRevenues :: ![ForeignRevenue ann],
     vatReportForeignRevenues :: ![ForeignRevenue ann],
     vatReportDeductibleExpenses :: ![DeductibleExpense ann],
     -- | 200
@@ -76,6 +78,10 @@ data VATReport ann = VATReport
     -- Meldeverfahren sowie aus Leistungen im Ausland
     -- (weltweiter Umsatz)
     vatReportTotalRevenue :: !Money.Amount,
+    -- | 220
+    --
+    -- Leistungen ins Ausland
+    vatReportTotalExportsRevenue :: !Money.Amount,
     -- | 221
     --
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
@@ -116,14 +122,19 @@ instance (Validity ann, Show ann, Ord ann) => Validity (VATReport ann) where
         declare "The total domestic revenue is the total of the domestic revenues" $
           Amount.sum (map domesticRevenueCHFAmount vatReportDomesticRevenues)
             == Just vatReportTotalDomesticRevenue,
+        declare "The total export revenue is the total of the exports " $
+          Amount.sum (map foreignRevenueCHFAmount vatReportExportsRevenues)
+            == Just vatReportTotalExportsRevenue,
         declare "The total fereign revenue is the total of the foreign revenues" $
           Amount.sum (map foreignRevenueCHFAmount vatReportForeignRevenues)
             == Just vatReportTotalForeignRevenue,
         declare
-          "The total revenue is the sum of domestic and foreign"
-          $ Amount.add
-            vatReportTotalDomesticRevenue
-            vatReportTotalForeignRevenue
+          "The total revenue is the sum of domestic, exports, and foreign"
+          $ Amount.sum
+            [ vatReportTotalDomesticRevenue,
+              vatReportTotalExportsRevenue,
+              vatReportTotalForeignRevenue
+            ]
             == Just vatReportTotalRevenue,
         declare "The total 2023 standard rate VAT revenue is the total of VAT amounts of the revenues" $
           Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2023Standard) . domesticRevenueVATRate) vatReportDomesticRevenues))

@@ -40,9 +40,11 @@ vatReportInput VATReport {..} =
             [ map vatInputDomesticRevenue vatReportDomesticRevenues,
               map vatInputForeignRevenue vatReportForeignRevenues
             ]
+      orZero a = if a == Amount.zero then Nothing else Just a
       inputExpenses = map vatInputDeductibleExpense vatReportDeductibleExpenses
       inputTotalRevenue = formatAmount vatReportCHF vatReportTotalRevenue
-      inputTotalForeignRevenue = formatAmount vatReportCHF vatReportTotalForeignRevenue
+      inputTotalExportsRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalExportsRevenue
+      inputTotalForeignRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalForeignRevenue
       inputDomesticRevenue2023 = formatAmount vatReportCHF vatReportDomesticRevenue2023
       input2023StandardRateVATRevenue = formatAmount vatReportCHF vatReport2023StandardRateVATRevenue
       inputDomesticRevenue2024 = formatAmount vatReportCHF vatReportDomesticRevenue2024
@@ -68,10 +70,14 @@ data Input = Input
     -- Meldeverfahren sowie aus Leistungen im Ausland
     -- (weltweiter Umsatz)
     inputTotalRevenue :: !FormattedAmount,
+    -- | 220
+    --
+    -- Leistungen ins Ausland
+    inputTotalExportsRevenue :: !(Maybe FormattedAmount),
     -- | 221
     --
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
-    inputTotalForeignRevenue :: !FormattedAmount,
+    inputTotalForeignRevenue :: !(Maybe FormattedAmount),
     -- | 299
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
@@ -120,6 +126,8 @@ instance HasCodec Input where
           .= inputExpenses
         <*> requiredField "total_revenue" "total_revenue"
           .= inputTotalRevenue
+        <*> requiredField "total_exports_revenue" "total exports revenue"
+          .= inputTotalExportsRevenue
         <*> requiredField "total_foreign_revenue" "total foreign revenue"
           .= inputTotalForeignRevenue
         <*> requiredField "total_domestic_revenue" "total domestic revenue"
