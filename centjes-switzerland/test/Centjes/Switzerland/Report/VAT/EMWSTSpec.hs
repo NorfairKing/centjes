@@ -34,10 +34,13 @@ spec = do
         (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
         ledger <- shouldValidate diag $ compileDeclarations declarations
 
-        validation <- runValidationT $ runReporter $ produceVATReport ledger
-        (vatReport, _) <- checkValidation diag validation
+        let pretendToday = fromGregorian 2024 01 29
+        let vatInput = configureVATInput pretendToday config
 
-        let pretendNow = UTCTime (fromGregorian 2024 01 29) 0
+        validation <- runValidationT $ runReporter $ produceVATReport vatInput ledger
+        (vatReport, _) <- shouldValidate diag validation
+
+        let pretendNow = UTCTime pretendToday 0
         xmlReport <- case produceXMLReport pretendNow vatReport of
           Nothing -> expectationFailure "Should have been able to produce a report"
           Just x -> pure x

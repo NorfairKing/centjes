@@ -9,7 +9,8 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Switzerland.Report.VAT
-  ( VATReport (..),
+  ( VATInput (..),
+    VATReport (..),
     DomesticRevenue (..),
     ForeignRevenue (..),
     DeductibleExpense (..),
@@ -56,27 +57,27 @@ import Money.Account as Money (Account (..))
 import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
+import qualified Money.QuantisationFactor as QuantisationFactor
 import Path
 
 produceVATReport ::
   Ord ann =>
+  VATInput ->
   Ledger ann ->
   Reporter (VATError ann) (VATReport ann)
-produceVATReport Ledger {..} = do
-  -- TODO make these configurable
-  let vatReportName = "Tom Sydney Kerckhove"
-  let vatReportQuarter = YearQuarter 2024 Q1
-  let domesticIncomeAccountName = "income:domestic"
-  let foreignIncomeAccountName = "income:foreign"
-  let vatIncomeAccountName = "income:vat"
-  let vatExpensesAccountName = "expenses:vat"
+produceVATReport VATInput {..} Ledger {..} = do
+  let vatReportName = vatInputName
+  let vatReportQuarter = vatInputQuarter
 
   -- TODO Check that the user-defined CHF has QF 100.
   -- Or not, but we can't support any QF.
   let chfSymbol = CurrencySymbol "CHF"
   vatReportCHF <- case M.lookup chfSymbol ledgerCurrencies of
     Nothing -> validationTFailure VATErrorNoCHF
-    Just lqf -> pure $ Currency chfSymbol lqf
+    Just lqf@(Located _ qf) ->
+      if Just qf == QuantisationFactor.fromWord32 100
+        then pure $ Currency chfSymbol lqf
+        else validationTFailure $ VATErrorWrongCHF lqf
 
   -- TODO: Let the user pass in the correct rates, don't just use the ones they used.
   -- We can't build the rates into the binary because there are MANY Currencies
@@ -100,7 +101,7 @@ produceVATReport Ledger {..} = do
               forM postingsTups $
                 \(Located pl1 p1, mP2) -> do
                   let Located _ accountName = postingAccountName p1
-                  if accountName == domesticIncomeAccountName
+                  if accountName == vatInputDomesticIncomeAccountName
                     then fmap Just $ do
                       let domesticRevenueTimestamp = timestamp
                       domesticRevenueDescription <- requireDescription transactionDescription
@@ -114,7 +115,7 @@ produceVATReport Ledger {..} = do
                         Nothing -> validationTFailure VATErrorNoVATPosting
                         Just (Located pl2 p2) -> do
                           let Located al2 vatAccountName = postingAccountName p2
-                          when (vatAccountName /= vatIncomeAccountName) $ validationTFailure VATErrorVATPostingNotVATAccount
+                          when (vatAccountName /= vatInputVATIncomeAccountName) $ validationTFailure VATErrorVATPostingNotVATAccount
                           let Located _ domesticRevenueVATCurrency = postingCurrency p2
                           let Located _ vatAccount = postingAccount p2
                           -- TODO require that the vat currency is the same?
@@ -167,7 +168,7 @@ produceVATReport Ledger {..} = do
               forM (V.toList transactionPostings) $
                 \(Located pl Posting {..}) -> do
                   let Located _ accountName = postingAccountName
-                  if accountName == foreignIncomeAccountName
+                  if accountName == vatInputForeignIncomeAccountName
                     then fmap Just $ do
                       let foreignRevenueTimestamp = timestamp
                       foreignRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
@@ -209,7 +210,7 @@ produceVATReport Ledger {..} = do
                 Nothing -> pure Nothing
                 Just (Located pl2 p2) -> do
                   let Located _ vatAccountName = postingAccountName p2
-                  if vatAccountName == vatExpensesAccountName
+                  if vatAccountName == vatInputVATExpensesAccountName
                     then fmap Just $ do
                       let Located _ deductibleExpenseCurrency = postingCurrency p1
                       let Located al1 account = postingAccount p1

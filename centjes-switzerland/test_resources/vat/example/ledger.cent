@@ -1,5 +1,5 @@
 currency USD 0.01
-currency CHF 0.05
+currency CHF 0.01
 
 account equity:starting
 account assets:bank:usd

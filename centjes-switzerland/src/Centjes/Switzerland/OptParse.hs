@@ -8,6 +8,7 @@ module Centjes.Switzerland.OptParse where
 import Autodocodec
 import Autodocodec.Yaml
 import Centjes.AccountName (AccountName)
+import Centjes.Switzerland.Report.VAT.Types (VATInput (..))
 import Control.Applicative
 import Data.Map (Map)
 import Data.Maybe
@@ -59,7 +60,8 @@ data TaxesSettings = TaxesSettings
 
 data VATSettings = VATSettings
   { vatSettingZipFile :: !(Path Abs File),
-    vatSettingReadmeFile :: !(Path Abs File)
+    vatSettingReadmeFile :: !(Path Abs File),
+    vatSettingInput :: !VATInput
   }
   deriving (Show, Eq, Generic)
 
@@ -79,7 +81,8 @@ combineToInstructions
   (Arguments cmd Flags {})
   Environment {..}
   configFilePath
-  Configuration {..} = do
+  configuration@Configuration {..} = do
+    today <- utctDay <$> getCurrentTime
     let settingBaseDir = parent configFilePath
     settingLedgerFile <- parseRelFile $ fromMaybe "ledger.cent" configLedgerFile
     let settingSetup = configSetup
@@ -91,19 +94,36 @@ combineToInstructions
       CommandVAT VATArgs {..} -> do
         vatSettingZipFile <- resolveFile' $ fromMaybe "vat-packet.zip" $ vatArgZipFile <|> envZipFile <|> configZipFile
         vatSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ vatArgReadmeFile <|> envReadmeFile <|> configReadmeFile
+        let vatSettingInput = configureVATInput today configuration
         pure $ DispatchVAT VATSettings {..}
       CommandDownloadRates DownloadRatesArgs {..} -> do
-        today <- utctDay <$> getCurrentTime
         let (y, _, _) = toGregorian today
         let downloadRatesSettingBegin = fromMaybe (fromGregorian y 1 1) downloadRatesArgBegin
         let downloadRatesSettingEnd = fromMaybe (addDays (-1) today) downloadRatesArgEnd
         pure $ DispatchDownloadRates DownloadRatesSettings {..}
     pure $ Instructions dispatch Settings {..}
 
+configureVATInput :: Day -> Configuration -> VATInput
+configureVATInput day Configuration {..} =
+  let vatInputName = configName
+      currentQuarter = dayPeriod day
+      vatInputQuarter = fromMaybe currentQuarter configQuarter
+      vatInputDomesticIncomeAccountName = fromMaybe "income:domestic" configDomesticInputAccountName
+      vatInputForeignIncomeAccountName = fromMaybe "income:foreign" configForeignInputAccountName
+      vatInputVATIncomeAccountName = fromMaybe "income:vat" configVATIncomeAccountName
+      vatInputVATExpensesAccountName = fromMaybe "expenses:vat" configVATExpensesAccount
+   in VATInput {..}
+
 data Configuration = Configuration
   { configZipFile :: !(Maybe FilePath),
     configReadmeFile :: !(Maybe FilePath),
     configLedgerFile :: !(Maybe FilePath),
+    configName :: !Text,
+    configQuarter :: !(Maybe Quarter),
+    configDomesticInputAccountName :: !(Maybe AccountName),
+    configForeignInputAccountName :: !(Maybe AccountName),
+    configVATIncomeAccountName :: !(Maybe AccountName),
+    configVATExpensesAccount :: !(Maybe AccountName),
     configSetup :: !Setup
   }
   deriving stock (Show, Eq, Generic)
@@ -119,16 +139,26 @@ instance HasCodec Configuration where
           .= configReadmeFile
         <*> optionalField "ledger" "The ledger file"
           .= configLedgerFile
+        <*> requiredField "name" "Your legal name"
+          .= configName
+        <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "The quarter to produce a vat report for"
+          .= configQuarter
+        <*> optionalField "domestic-income-account" "Account name of your domestic income"
+          .= configDomesticInputAccountName
+        <*> optionalField "foreign-income-account" "Account name of your foreign income"
+          .= configDomesticInputAccountName
+        <*> optionalField "vat-income-account" "Account name of your the VAT you've charged"
+          .= configVATIncomeAccountName
+        <*> optionalField "vat-expenses-account" "Account name of your the VAT you've paid"
+          .= configVATExpensesAccount
         <*> objectCodec
           .= configSetup
 
 data Setup = Setup
-  { setupName :: !Text,
-    setupIncomeAccounts :: !(Map AccountName IncomeSetup),
+  { setupIncomeAccounts :: !(Map AccountName IncomeSetup),
     setupAssetsAccounts :: !(Map Text AssetSetup),
     setupExpensesAccounts :: !(Set AccountName),
-    setupVATIncomeAccount :: !AccountName,
-    setupVATQuarter :: !(Maybe Quarter)
+    setupVATIncomeAccount :: !AccountName
   }
   deriving stock (Show, Eq, Generic)
   deriving (FromJSON, ToJSON) via (Autodocodec Setup)
@@ -139,9 +169,7 @@ instance HasCodec Setup where
 instance HasObjectCodec Setup where
   objectCodec =
     Setup
-      <$> requiredField "name" "name"
-        .= setupName
-      <*> requiredField "income" "income"
+      <$> requiredField "income" "income"
         .= setupIncomeAccounts
       <*> requiredField "assets" "assets"
         .= setupAssetsAccounts
@@ -149,8 +177,6 @@ instance HasObjectCodec Setup where
         .= setupExpensesAccounts
       <*> requiredField "vat-income" "VAT income account"
         .= setupVATIncomeAccount
-      <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "quarter"
-        .= setupVATQuarter
 
 data IncomeSetup = IncomeSetup
   { incomeSetupForeign :: !Bool

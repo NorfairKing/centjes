@@ -13,6 +13,7 @@ import Centjes.Validation.TestUtils
 import Control.Monad.Logger
 import Data.Aeson
 import Data.Maybe
+import Data.Time
 import Path.IO
 import Test.Syd
 import Test.Syd.Aeson
@@ -34,8 +35,10 @@ spec = do
         (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
         ledger <- shouldValidate diag $ compileDeclarations declarations
 
-        validation <- runValidationT $ runReporter $ produceVATReport ledger
-        (vatReport, _) <- checkValidation diag validation
+        let pretendToday = fromGregorian 2024 02 03
+        let vatInput = configureVATInput pretendToday config
+        validation <- runValidationT $ runReporter $ produceVATReport vatInput ledger
+        (vatReport, _) <- shouldValidate diag validation
         let input = vatReportInput vatReport
 
         pure $ toJSON input

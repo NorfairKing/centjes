@@ -14,6 +14,7 @@ spec = do
   genValidSpec @(VATReport ())
   describe "produceVATReport" $
     it "produces valid reports" $
-      forAllValid $ \ledger -> do
-        errOrReport <- runValidationT $ runReporter $ produceVATReport @() ledger
-        shouldBeValid errOrReport
+      forAllValid $ \vatInput -> do
+        forAllValid $ \ledger -> do
+          errOrReport <- runValidationT $ runReporter $ produceVATReport @() vatInput ledger
+          shouldBeValid errOrReport
