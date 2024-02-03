@@ -4,10 +4,18 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.VAT.EMWST
-  ( XMLReport (..),
+  ( -- * XML Report
+    produceXMLReport,
     xmlReportDocument,
     xmlRenderSettings,
-    produceXMLReport,
+
+    -- ** Types
+    XMLReport (..),
+    GeneralInformation (..),
+    TurnoverComputation (..),
+    EffectiveReportingMethod (..),
+    TurnoverTaxRate (..),
+    OtherFlowOfFunds (..),
   )
 where
 
@@ -37,10 +45,42 @@ class ToNodes a where
 
 -- Rename the types to the names in the specifications
 data XMLReport = XMLReport
-  { xmlReportGeneralInformation :: !GeneralInformation,
+  { -- | `generalInformation`
+    --
+    -- @
+    -- Enthält Angaben zum Steuerpflichtigen und der Abrechnungsperiode
+    -- @
+    xmlReportGeneralInformation :: !GeneralInformation,
+    -- | `turnoverComputation`
+    --
+    -- @
+    -- Enthält Angaben zur Um-satzberechnung
+    -- @
     xmlReportTurnoverComputation :: !TurnoverComputation,
+    -- | `effectiveReportingMethod`
+    --
+    -- Ziffer 205 und 3xx bis 4xx
+    --
+    -- @
+    -- Enthält Angaben, welche spezifisch sind für die effektive Methode
+    -- (insbesondere die Abzüge)
+    -- @
     xmlReportEffectiveReportingMethod :: !EffectiveReportingMethod,
+    -- | `payableTax`
+    --
+    -- Ziffer 500, resp, 510
+    --
+    -- @
+    -- Zu bezahlender Betrag (positives Vorzeichen), resp. Guthaben der steuerpflichtigen Person (negatives Vorzeichen)
+    -- @
     xmlReportPayableTax :: !DecimalLiteral,
+    -- | `otherFlowsOfFunds`
+    --
+    -- Ziffer 9xx
+    --
+    -- @
+    -- Enthält alle anderen Mittel-flüsse
+    -- @
     xmlReportOtherFlowOfFunds :: !(Maybe OtherFlowOfFunds)
   }
   deriving (Show)
@@ -67,10 +107,39 @@ instance ToElement XMLReport where
       }
 
 data GeneralInformation = GeneralInformation
-  { generalInformationUID :: !UID,
+  { -- | `uid`
+    --
+    -- @
+    -- UID des Steuerpflichtigen, wobei im Element uidOrganisationIdCategory
+    -- der Präfix (CHE) und im Element uidOrganisationId die neunstellige
+    -- Ziffer zu übermitteln ist. Es muss diejenigeUID mit dem Zusatz „MWST“
+    -- angegeben werden (= MWST-Nr.; Bsp.: CHE-111.222.333 MWST). Der Zusatz
+    -- „MWST“ darf jedoch nicht übermittelt werden.
+    -- @
+    generalInformationUID :: !UID,
+    -- | `organisationName`
+    --
+    -- @
+    -- Firmenname (im UID-System hinterlegter Name)
+    -- @
     generalInformationOrganisationName :: !Text,
+    -- | `generationTime`
+    --
+    -- @
+    -- Zeitpunkt (Datum und Zeit), an dem das XML generiert wird
+    -- @
     generalInformationGenerationTime :: !UTCTime,
+    -- | `reportingPeriodFrom`
+    --
+    -- @
+    -- Abrechnungsperiode von (erster Tag der Abrechnungsperiode)
+    -- @
     generalInformationReportingPeriodFrom :: !Day,
+    -- | `reportingPeriodTill`
+    --
+    -- @
+    -- Abrechnungsperiode bis (letzter Tag der Abrechnungsperiode)
+    -- @
     generalInformationReportingPeriodTill :: !Day
   }
   deriving (Show)
@@ -99,6 +168,7 @@ instance ToElement GeneralInformation where
             ]
       ]
 
+-- | `eCH-0097:uidStructureType`
 data UID = UID
   { uidCategory :: !Text,
     uidId :: !Text
@@ -113,9 +183,31 @@ instance ToElement UID where
         NodeElement $ ech0097Element "uidOrganisationId" [NodeContent uidId]
       ]
 
+-- | `turnoverComputationType`
+--
+-- Dieser Datentyp enthält Angaben zur Umsatzberechnung (Teil I des MWST-Deklarationsformulars).
 data TurnoverComputation = TurnoverComputation
-  { turnoverComputationTotalConsideration :: !DecimalLiteral,
+  { -- | `totalConsideration`
+    --
+    -- Ziffer 200
+    --
+    -- @
+    -- Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte
+    -- Leistungen, Entgelte aus Übertragungen im Meldeverfahren und aus
+    -- Leistungen im Ausland.
+    -- Hinweis: Bis 31. Dezember 2017 ist der in der Schweiz erzielte Umsatz
+    -- anzugeben, ab 1. Januar 2018 der weltweit erzielte Umsatz.
+    -- @
+    turnoverComputationTotalConsideration :: !DecimalLiteral,
+    -- | `suppliesAbroad`
+    --
+    -- Ziffer 221
+    --
+    -- @
+    -- Leistungen im Ausland (Ort der Leistung im Ausland)
+    -- @
     turnoverComputationSuppliesAbroad :: !DecimalLiteral
+    -- TODO other fields here
   }
   deriving (Show)
 
@@ -127,15 +219,93 @@ instance ToElement TurnoverComputation where
         NodeElement $ ech0217Element "suppliesAbroad" [decimalLiteralNode turnoverComputationSuppliesAbroad]
       ]
 
+-- | Ziffer 205 und 3xx bis 4xx
+--
+-- @
+-- Dieser Datentyp enthält alle Elemente, welche spezifisch für die effektive
+-- Abrechnungsmethode sind.
+-- @
 data EffectiveReportingMethod = EffectiveReportingMethod
-  { effectiveReportingMethodGross :: !Bool,
+  { -- | `grossOrNet`
+    --
+    -- @
+    -- Angabe, ob die Umsätze im Element suppliesPerTaxRate und innerhalb
+    -- turnoverComputationType Brutto (inkl. MWST) oder Netto angegeben sind.
+    -- Die ESTV empfiehlt, nach Möglichkeit die Nettowerte zu übermitteln
+    -- (grossOrNet = 1).
+    -- 1 = Netto--
+    -- 2 = Brutto
+    -- @
+    effectiveReportingMethodGross :: !Bool,
+    -- | `opted`
+    --
+    -- Ziffer 205
+    --
+    -- @
+    -- Im Element totalConsideration enthaltene entgelte aus von der Steuer
+    -- ausgenommenen Leistungen, für welche optiert wird.
+    -- @
     effectiveReportingMethodOpted :: !(Maybe DecimalLiteral),
+    -- | `suppliesPerTaxRate`
+    --
+    -- Ziffer 300 bis 379
+    --
+    -- @
+    -- Leistung (Umsatz) pro gesetzlichem Steuersatz; gemäss Angabe im Element
+    -- grossOrNet sind alle Leistungen entweder in Brutto oder in Netto
+    -- anzugeben.
+    -- @
     effectiveReportingMethodSupplies :: ![TurnoverTaxRate],
+    -- | `acquisitionTax`
+    --
+    -- Ziffer 38x
+    --
+    -- @
+    -- Bezugsteuer (Art. 45) Im Element turnoverTaxRateType müssen der Aufwand
+    -- und der Steuersatz übermittelt werden; es sind die gesetzlichen
+    -- Steuersätze zu verwenden; der Mischsatz ist somit nicht zu übermitteln;
+    -- die Bezugsteuer muss immer Netto angegeben werden.
+    -- @
     effectiveReportingMethodAcquisitionTax :: ![TurnoverTaxRate],
+    -- | `inputTaxMaterialAndServices`
+    --
+    -- Ziffer 400
+    --
+    -- @
+    -- Vorsteuer auf Material- und Dienstleistungsaufwand
+    -- @
     effectiveReportingMethodInputTaxMaterialAndServices :: !(Maybe DecimalLiteral),
+    -- | `inputTaxInvestments`
+    --
+    -- Ziffer 405
+    --
+    -- @
+    -- Vorsteuer auf Investitionen und übrigem Betriebsaufwand
+    -- @
     effectiveReportingMethodInputTaxInvestments :: !(Maybe DecimalLiteral),
+    -- | `subsequentInputTaxDeduction`
+    --
+    -- Ziffer 410
+    --
+    -- @
+    -- Einlageentsteuerung (Art. 32)
+    -- @
     effectiveReportingMethodSubsequentInputTaxDeduction :: !(Maybe DecimalLiteral),
+    -- | `inputTaxCorrections`
+    --
+    -- Ziffer 415
+    --
+    -- @
+    -- Vorsteuerkorrekturen: gemischte Verwendung (Art. 30), Eigenverbrauch (Art. 31)
+    -- @
     effectiveReportingMethodInputTaxCorrections :: !(Maybe DecimalLiteral),
+    -- | `inputTaxReductions`
+    --
+    -- Ziffer 420
+    --
+    -- @
+    -- Vorsteuerkürzungen aufgrund Subventionen usw. (Art. 33 Abs. 2)
+    -- @
     effectiveReportingMethodInputTaxReductions :: !(Maybe DecimalLiteral)
   }
   deriving (Show)
@@ -160,8 +330,25 @@ instance ToElement EffectiveReportingMethod where
           [NodeElement $ ech0217Element "inputTaxReductions" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxReductions]
         ]
 
+-- | `turnoverTaxRateType`
+--
+-- @
+-- Mittels diesem Datentyp wird der Umsatz pro Steuersatz angegeben. Er wird
+-- primär für die Steuerberechnung (Teil II der MWST-Deklarationsformulare)
+-- verwendet.
+-- @
 data TurnoverTaxRate = TurnoverTaxRate
-  { turnoverTaxRateRate :: !DecimalLiteral,
+  { -- | `taxRate`
+    --
+    -- @
+    -- Steuersatz in %
+    -- @
+    turnoverTaxRateRate :: !DecimalLiteral,
+    -- | `turnover`
+    --
+    -- @
+    -- Umsatz
+    -- @
     turnoverTaxRateTurnover :: !DecimalLiteral
   }
   deriving (Show)
@@ -172,8 +359,31 @@ instance ToNodes TurnoverTaxRate where
       NodeElement $ ech0217Element "turnover" [decimalLiteralNode turnoverTaxRateTurnover]
     ]
 
+-- | `otherFlowsOfFundsType`
+--
+-- Ziffer 910 und 910
+--
+-- @
+-- Dieser Datentyp enthält alle anderen Mittelflüsse (Teil III des
+-- MWST-Deklarationsformulars).
+-- @
 data OtherFlowOfFunds = OtherFlowOfFunds
-  { otherFlowOfFundsSubsidies :: !DecimalLiteral,
+  { -- | `subsidies`
+    --
+    -- Ziffer 900
+    --
+    -- @
+    -- Subventionen, durch Kurvereine eingenommene Tourismusabgaben,
+    -- Entsorgungs- und Wasserwerkbeiträge (Bst. a-c)
+    -- @
+    otherFlowOfFundsSubsidies :: !DecimalLiteral,
+    -- | `donations`
+    --
+    -- Ziffer 910
+    --
+    -- @
+    -- Spenden, Dividenden, Schadenersatz usw. (Bst. d-l)
+    -- @
     otherFlowOfFundsDonations :: !DecimalLiteral
   }
   deriving (Show)
@@ -207,16 +417,22 @@ decimalLiteralNode =
     . DecimalLiteral.format
     . DecimalLiteral.setSignOptional
 
+-- | Produce an 'XMLReport' from a 'VATReport' at the given time.
+--
 -- TODO Put this in a validation instead of a Maybe?
 produceXMLReport :: UTCTime -> VATReport ann -> Maybe XMLReport
 produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let generalInformationUID =
         -- TODO fill in the real data
         UID
-          { uidCategory = "CHE",
-            uidId = "5"
+          { uidCategory =
+              -- @
+              -- UID des Steuerpflichtigen, wobei im Element uidOrganisationIdCategory der Präfix (CHE)
+              -- @
+              "CHE",
+            uidId = T.filter (/= '.') vatReportVATId
           }
-  let generalInformationOrganisationName = "CS Kerckhove"
+  let generalInformationOrganisationName = vatReportOrganisationName
   let generalInformationReportingPeriodFrom = periodFirstDay vatReportQuarter
   let generalInformationReportingPeriodTill = periodLastDay vatReportQuarter
   let xmlReportGeneralInformation = GeneralInformation {..}
@@ -261,6 +477,7 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
 unlessZero :: Money.Amount -> Maybe Money.Amount
 unlessZero a = if a == Amount.zero then Nothing else Just a
 
+-- | Produce an XML Document from the XMLReport.
 xmlReportDocument :: XMLReport -> XML.Document
 xmlReportDocument xmlReport =
   XML.Document
@@ -274,6 +491,7 @@ xmlReportDocument xmlReport =
       documentEpilogue = []
     }
 
+-- | Render with the four relevant namespaces and an XML declaration.
 xmlRenderSettings :: XML.RenderSettings
 xmlRenderSettings =
   def

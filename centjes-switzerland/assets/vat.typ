@@ -4,7 +4,11 @@
 
 == Overview
 
-Name: #{ input.name }
+Name: #{ input.person_name }
+
+Organisation: #{ input.organisation_name }
+
+VAT-ID: #raw("CHF-")#raw(input.vat_id)#raw(" MWST")
 
 #set text(size: 10pt)
 

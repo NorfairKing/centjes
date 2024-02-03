@@ -45,7 +45,9 @@ instance Validity Quarter
 
 -- | The settings we need to produce a 'VATReport'
 data VATInput = VATInput
-  { vatInputName :: !Text,
+  { vatInputPersonName :: !Text,
+    vatInputOrganisationName :: !Text,
+    vatInputVATId :: !Text,
     vatInputQuarter :: !Quarter,
     vatInputDomesticIncomeAccountName :: !AccountName,
     vatInputForeignIncomeAccountName :: !AccountName,
@@ -59,7 +61,9 @@ instance Validity VATInput
 -- | The information we need to produce VAT reports like the pdfs, zip files,
 -- or xml files.
 data VATReport ann = VATReport
-  { vatReportName :: !Text,
+  { vatReportPersonName :: !Text,
+    vatReportOrganisationName :: !Text,
+    vatReportVATId :: !Text,
     vatReportQuarter :: !Quarter,
     vatReportCHF :: !(Currency ann),
     vatReportDomesticRevenues :: ![DomesticRevenue ann],

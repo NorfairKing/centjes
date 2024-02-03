@@ -1,4 +1,6 @@
-name: John Doe
+person-name: John Doe
+organisation-name: Doe Inc.
+vat-id: 111.222.333
 
 income:
   "income:consulting:foobar": 

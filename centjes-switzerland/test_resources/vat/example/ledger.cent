@@ -19,7 +19,7 @@ account income:vat
   | Computer
   * assets:bank -5000 CHF
   * expenses:hardware 5000 CHF
-  ! expenses:vat 357.45 CHF ~ 7.7%
+  ! expenses:vat 357.47 CHF ~ 7.7%
   + attach receipt-computer.txt
 
 price 2024-01-07 USD 0.8589 CHF
@@ -28,7 +28,7 @@ price 2024-01-07 USD 0.8589 CHF
   | Foobar Dec
   * assets:bank 1000 CHF
   * income:domestic -1000 CHF
-  ! income:vat -71.50 CHF ~ 7.7 %
+  ! income:vat -71.49 CHF ~ 7.7 %
   + attach foobar-dec.txt
 
 2024-01-07
@@ -42,7 +42,7 @@ price 2024-01-07 USD 0.8589 CHF
   | Foobar Jan
   * assets:bank 1000 CHF
   * income:domestic -1000 CHF
-  ! income:vat -74.95 CHF ~ 8.1 %
+  ! income:vat -74.93 CHF ~ 8.1 %
   + attach foobar-jan.txt
 
 2024-02-07
@@ -56,7 +56,7 @@ price 2024-01-07 USD 0.8589 CHF
   | Foobar Feb
   * assets:bank 1000 CHF
   * income:domestic -1000 CHF
-  ! income:vat -74.95 CHF ~ 8.1 %
+  ! income:vat -74.93 CHF ~ 8.1 %
   + attach foobar-feb.txt
 
 2024-03-07

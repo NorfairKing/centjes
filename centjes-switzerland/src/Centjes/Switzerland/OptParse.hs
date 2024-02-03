@@ -105,7 +105,9 @@ combineToInstructions
 
 configureVATInput :: Day -> Configuration -> VATInput
 configureVATInput day Configuration {..} =
-  let vatInputName = configName
+  let vatInputPersonName = configPersonName
+      vatInputOrganisationName = configOrganisationName
+      vatInputVATId = configVATId
       currentQuarter = dayPeriod day
       vatInputQuarter = fromMaybe currentQuarter configQuarter
       vatInputDomesticIncomeAccountName = fromMaybe "income:domestic" configDomesticInputAccountName
@@ -118,7 +120,9 @@ data Configuration = Configuration
   { configZipFile :: !(Maybe FilePath),
     configReadmeFile :: !(Maybe FilePath),
     configLedgerFile :: !(Maybe FilePath),
-    configName :: !Text,
+    configPersonName :: !Text,
+    configOrganisationName :: !Text,
+    configVATId :: !Text,
     configQuarter :: !(Maybe Quarter),
     configDomesticInputAccountName :: !(Maybe AccountName),
     configForeignInputAccountName :: !(Maybe AccountName),
@@ -139,8 +143,12 @@ instance HasCodec Configuration where
           .= configReadmeFile
         <*> optionalField "ledger" "The ledger file"
           .= configLedgerFile
-        <*> requiredField "name" "Your legal name"
-          .= configName
+        <*> requiredField "person-name" "Your legal name"
+          .= configPersonName
+        <*> requiredField "organisation-name" "The organisation's legal name"
+          .= configOrganisationName
+        <*> requiredField "vat-id" "The VAT identifier. e.g. 111.222.333"
+          .= configVATId
         <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "The quarter to produce a vat report for"
           .= configQuarter
         <*> optionalField "domestic-income-account" "Account name of your domestic income"

@@ -14,15 +14,16 @@
                 "deductions/receipt-computer.txt"
             ],
             "vat_amount": {
-                "formatted": "357.45",
+                "formatted": "357.47",
                 "symbol": "CHF"
             },
-            "vat_amount_chf": "357.45",
+            "vat_amount_chf": "357.47",
             "vat_rate": "7.7 %"
         }
     ],
-    "name": "John Doe",
-    "payable": "-136.05",
+    "organisation_name": "Doe Inc.",
+    "payable": "-136.12",
+    "person_name": "John Doe",
     "quarter": "2024-q1",
     "revenues": [
         {
@@ -37,10 +38,10 @@
                 "income/foobar-dec.txt"
             ],
             "vat_amount": {
-                "formatted": "71.50",
+                "formatted": "71.49",
                 "symbol": "CHF"
             },
-            "vat_amount_chf": "71.50",
+            "vat_amount_chf": "71.49",
             "vat_rate": "7.7 %"
         },
         {
@@ -67,10 +68,10 @@
                 "income/foobar-jan.txt"
             ],
             "vat_amount": {
-                "formatted": "74.95",
+                "formatted": "74.93",
                 "symbol": "CHF"
             },
-            "vat_amount_chf": "74.95",
+            "vat_amount_chf": "74.93",
             "vat_rate": "8.1 %"
         },
         {
@@ -97,10 +98,10 @@
                 "income/foobar-feb.txt"
             ],
             "vat_amount": {
-                "formatted": "74.95",
+                "formatted": "74.93",
                 "symbol": "CHF"
             },
-            "vat_amount_chf": "74.95",
+            "vat_amount_chf": "74.93",
             "vat_rate": "8.1 %"
         },
         {
@@ -119,8 +120,9 @@
     "total_domestic_revenue": "3000.00",
     "total_foreign_revenue": "2576.70",
     "total_revenue": "5576.70",
-    "total_vat_revenue": "221.40",
-    "vat_paid": "357.45",
-    "vat_revenue_standard_2023": "71.50",
-    "vat_revenue_standard_2024": "149.90"
+    "total_vat_revenue": "221.35",
+    "vat_id": "111.222.333",
+    "vat_paid": "357.47",
+    "vat_revenue_standard_2023": "71.49",
+    "vat_revenue_standard_2024": "149.86"
 }

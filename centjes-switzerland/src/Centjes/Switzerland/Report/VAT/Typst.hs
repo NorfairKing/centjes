@@ -30,7 +30,9 @@ import Path
 
 vatReportInput :: VATReport ann -> Input
 vatReportInput VATReport {..} =
-  let inputName = vatReportName
+  let inputPersonName = vatReportPersonName
+      inputOrganisationName = vatReportOrganisationName
+      inputVATId = vatReportVATId
       inputQuarter = vatReportQuarter
       inputRevenues =
         sortOn inputRevenueDay $
@@ -52,7 +54,10 @@ vatReportInput VATReport {..} =
    in Input {..}
 
 data Input = Input
-  { inputName :: Text,
+  { inputPersonName :: Text,
+    inputOrganisationName :: Text,
+    -- | 111.222.333
+    inputVATId :: Text,
     inputQuarter :: !Quarter,
     inputRevenues :: ![InputRevenue],
     inputExpenses :: ![InputExpense],
@@ -101,8 +106,12 @@ instance HasCodec Input where
   codec =
     object "Input" $
       Input
-        <$> requiredField "name" "name"
-          .= inputName
+        <$> requiredField "person_name" "person name"
+          .= inputPersonName
+        <*> requiredField "organisation_name" "organisation name"
+          .= inputOrganisationName
+        <*> requiredField "vat_id" "VAT Identifier. e.g. 111.222.333"
+          .= inputVATId
         <*> requiredFieldWith "quarter" (codecViaAeson "Quarter") "quarter"
           .= inputQuarter
         <*> requiredField "revenues" "revenues"

@@ -66,7 +66,9 @@ produceVATReport ::
   Ledger ann ->
   Reporter (VATError ann) (VATReport ann)
 produceVATReport VATInput {..} Ledger {..} = do
-  let vatReportName = vatInputName
+  let vatReportPersonName = vatInputPersonName
+  let vatReportOrganisationName = vatInputOrganisationName
+  let vatReportVATId = vatInputVATId
   let vatReportQuarter = vatInputQuarter
 
   -- TODO Check that the user-defined CHF has QF 100.
