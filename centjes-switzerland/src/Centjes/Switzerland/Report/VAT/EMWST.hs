@@ -43,7 +43,15 @@ class ToElement a where
 class ToNodes a where
   toNodes :: a -> [XML.Node]
 
--- Rename the types to the names in the specifications
+-- | `VATDeclaration`
+--
+-- @
+-- Das Hauptelement der elektronischen MWST-Deklaration hat den Namen
+-- VATDeclaration (root-Element). In der folgenden Tabelle 1 wird die Struktur
+-- der elektronischen MWST- Deklaration definiert. Die verwendeten Datentypen
+-- sind im Kapitel 5 beschrieben. Um eine bessere Übersicht zu geben, ist die
+-- Struktur der gesamten Deklaration in Abbildung 2 darge- stellt.
+-- @
 data XMLReport = XMLReport
   { -- | `generalInformation`
     --
@@ -185,7 +193,10 @@ instance ToElement UID where
 
 -- | `turnoverComputationType`
 --
--- Dieser Datentyp enthält Angaben zur Umsatzberechnung (Teil I des MWST-Deklarationsformulars).
+-- @
+-- Dieser Datentyp enthält Angaben zur Umsatzberechnung (Teil I des
+-- MWST-Deklarationsformulars).
+-- @
 data TurnoverComputation = TurnoverComputation
   { -- | `totalConsideration`
     --
@@ -199,6 +210,17 @@ data TurnoverComputation = TurnoverComputation
     -- anzugeben, ab 1. Januar 2018 der weltweit erzielte Umsatz.
     -- @
     turnoverComputationTotalConsideration :: !DecimalLiteral,
+    -- | `suppliesToForeignCountries`
+    --
+    -- Ziffer 220
+    --
+    -- @
+    -- Leistungen ins Ausland:
+    -- Von der Steuer befreite Leistungen (u.a. Exporte), von der Steuer
+    -- befreite Leistungen an begünstigte Einrichtungen und Personen
+    -- @
+    -- TODO reconsider if I should be using this instead
+    turnoverComputationSuppliesToForeignCountries :: !(Maybe DecimalLiteral),
     -- | `suppliesAbroad`
     --
     -- Ziffer 221
@@ -206,18 +228,66 @@ data TurnoverComputation = TurnoverComputation
     -- @
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
     -- @
-    turnoverComputationSuppliesAbroad :: !DecimalLiteral
-    -- TODO other fields here
+    turnoverComputationSuppliesAbroad :: !(Maybe DecimalLiteral),
+    -- | `transferNotificationProcedure`
+    --
+    -- Ziffer 225
+    --
+    -- @
+    -- Übertragung im Meldeverfahren
+    -- @
+    turnoverComputationTransferNotificationProcedure :: !(Maybe DecimalLiteral),
+    -- | `suppliesExemptFromTax`
+    --
+    -- Ziffer 230
+    --
+    -- @
+    -- Von der Steuer ausgenommene Inlandleistungen, für die nicht optiert wird
+    -- @
+    turnoverComputationSuppliesExemptFromTax :: !(Maybe DecimalLiteral),
+    -- | `reductionOfConsideration`
+    --
+    -- Ziffer 235
+    --
+    -- @
+    -- Entgeltsminderungen wie Skonti, Rabatte usw.
+    -- @
+    turnoverComputationReductionOfConsideration :: !(Maybe DecimalLiteral),
+    -- | `variousDeduction`
+    --
+    -- Ziffer 280
+    --
+    -- @
+    -- Diverses (z.B. Wert des Bodens, Ankaufspreise Margenbesteuerung)
+    -- @
+    turnoverComputationVariousDeduction :: !(Maybe DecimalLiteral)
   }
   deriving (Show)
 
 instance ToElement TurnoverComputation where
   toElement TurnoverComputation {..} =
-    ech0217Element
-      "turnoverComputation"
-      [ NodeElement $ ech0217Element "totalConsideration" [decimalLiteralNode turnoverComputationTotalConsideration],
-        NodeElement $ ech0217Element "suppliesAbroad" [decimalLiteralNode turnoverComputationSuppliesAbroad]
-      ]
+    ech0217Element "turnoverComputation" $
+      concat
+        [ [NodeElement $ ech0217Element "totalConsideration" [decimalLiteralNode turnoverComputationTotalConsideration]],
+          [ NodeElement $ ech0217Element "suppliesToForeignCountries" [decimalLiteralNode dl]
+            | dl <- maybeToList turnoverComputationSuppliesToForeignCountries
+          ],
+          [ NodeElement $ ech0217Element "suppliesAbroad" [decimalLiteralNode dl]
+            | dl <- maybeToList turnoverComputationSuppliesAbroad
+          ],
+          [ NodeElement $ ech0217Element "transferNotificationProcedure" [decimalLiteralNode dl]
+            | dl <- maybeToList turnoverComputationTransferNotificationProcedure
+          ],
+          [ NodeElement $ ech0217Element "suppliesExemptFromTax" [decimalLiteralNode dl]
+            | dl <- maybeToList turnoverComputationSuppliesExemptFromTax
+          ],
+          [ NodeElement $ ech0217Element "reductionOfConsideration" [decimalLiteralNode dl]
+            | dl <- maybeToList turnoverComputationReductionOfConsideration
+          ],
+          [ NodeElement $ ech0217Element "variousDeduction" [decimalLiteralNode dl]
+            | dl <- maybeToList turnoverComputationVariousDeduction
+          ]
+        ]
 
 -- | Ziffer 205 und 3xx bis 4xx
 --
@@ -440,10 +510,21 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
       amountLiteral = Amount.toDecimalLiteral qf
       accountLiteral = Account.toDecimalLiteral qf
   turnoverComputationTotalConsideration <- amountLiteral vatReportTotalRevenue
-  turnoverComputationSuppliesAbroad <- amountLiteral vatReportTotalRevenue
+  turnoverComputationSuppliesToForeignCountries <- traverse amountLiteral (unlessZero vatReportTotalForeignRevenue)
+  -- TODO what is this?
+  let turnoverComputationSuppliesAbroad = Nothing
+  -- TODO what is this?
+  let turnoverComputationTransferNotificationProcedure = Nothing
+  -- TODO what is this?
+  let turnoverComputationSuppliesExemptFromTax = Nothing
+  -- TODO what is this?
+  let turnoverComputationReductionOfConsideration = Nothing
+  -- TODO what is this?
+  let turnoverComputationVariousDeduction = Nothing
   let xmlReportTurnoverComputation = TurnoverComputation {..}
   standard2023TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2023
   standard2024TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2024
+  -- TODO what is this?
   let effectiveReportingMethodGross = True
   -- TODO what is this?
   let effectiveReportingMethodOpted = Nothing
