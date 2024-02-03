@@ -55,7 +55,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       val <- liftIO $ runValidationT $ doCompleteCheck declarations
       void $ liftIO $ checkValidation diag val
 
-      validation <- liftIO $ runValidationT $ runReporter $ produceVATReport ledger
+      validation <- liftIO $ runValidationT $ runReporter $ produceVATReport vatSettingInput ledger
       (vatReport, files) <- liftIO $ checkValidation diag validation
       let input = vatReportInput vatReport
 

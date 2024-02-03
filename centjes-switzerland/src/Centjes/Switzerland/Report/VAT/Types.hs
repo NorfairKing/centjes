@@ -8,7 +8,8 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Switzerland.Report.VAT.Types
-  ( VATReport (..),
+  ( VATInput (..),
+    VATReport (..),
     DomesticRevenue (..),
     ForeignRevenue (..),
     DeductibleExpense (..),
@@ -33,6 +34,7 @@ import Money.Account as Money (Account (..))
 import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
+import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import Numeric.Natural
 import Path
 
@@ -41,6 +43,21 @@ deriving instance Generic Quarter
 
 instance Validity Quarter
 
+-- | The settings we need to produce a 'VATReport'
+data VATInput = VATInput
+  { vatInputName :: !Text,
+    vatInputQuarter :: !Quarter,
+    vatInputDomesticIncomeAccountName :: !AccountName,
+    vatInputForeignIncomeAccountName :: !AccountName,
+    vatInputVATIncomeAccountName :: !AccountName,
+    vatInputVATExpensesAccountName :: !AccountName
+  }
+  deriving (Show, Eq, Generic)
+
+instance Validity VATInput
+
+-- | The information we need to produce VAT reports like the pdfs, zip files,
+-- or xml files.
 data VATReport ann = VATReport
   { vatReportName :: !Text,
     vatReportQuarter :: !Quarter,
@@ -183,6 +200,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (DeductibleExpense ann)
 
 data VATError ann
   = VATErrorNoCHF
+  | VATErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
   | VATErrorNoDescription
   | VATErrorNoEvidence !ann
   | VATErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
@@ -202,6 +220,12 @@ instance Validity ann => Validity (VATError ann)
 instance ToReport (VATError SourceSpan) where
   toReport = \case
     VATErrorNoCHF -> Err Nothing "no CHF currency defined" [] []
+    VATErrorWrongCHF (Located cdl _) ->
+      Err
+        Nothing
+        "Incompatible CHF defined"
+        [(toDiagnosePosition cdl, This "This currency declaration must use 0.01")]
+        []
     VATErrorNoDescription -> Err Nothing "no description" [] []
     VATErrorNoEvidence tl ->
       Err

@@ -21,7 +21,7 @@
             "vat_rate": "7.7 %"
         }
     ],
-    "name": "Tom Sydney Kerckhove",
+    "name": "John Doe",
     "payable": "-136.05",
     "quarter": "2024-q1",
     "revenues": [
@@ -48,7 +48,7 @@
                 "formatted": "1000.00",
                 "symbol": "USD"
             },
-            "amount_chf": "171.78",
+            "amount_chf": "858.90",
             "day": "2024-01-07",
             "description": "Quux Dec",
             "evidence": [
@@ -78,7 +78,7 @@
                 "formatted": "1000.00",
                 "symbol": "USD"
             },
-            "amount_chf": "171.78",
+            "amount_chf": "858.90",
             "day": "2024-02-07",
             "description": "Quux Jan",
             "evidence": [
@@ -108,7 +108,7 @@
                 "formatted": "1000.00",
                 "symbol": "USD"
             },
-            "amount_chf": "171.78",
+            "amount_chf": "858.90",
             "day": "2024-03-07",
             "description": "Quux Feb",
             "evidence": [

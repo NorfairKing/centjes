@@ -72,7 +72,8 @@ produceInput ::
   BalanceReport ann ->
   P ann Input
 produceInput Setup {..} ledger BalanceReport {..} = do
-  let inputName = setupName
+  -- TODO make this configurable
+  let inputName = "John Doe"
 
   inputIncome <- flip V.mapMaybeM (ledgerTransactions ledger) $ \(Located _ Transaction {..}) -> do
     let Located _ timestamp = transactionTimestamp

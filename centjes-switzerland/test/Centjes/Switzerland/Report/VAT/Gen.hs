@@ -16,6 +16,8 @@ import Test.QuickCheck
 -- TODO upstream this to genvalidity-time
 instance GenValid Quarter
 
+instance GenValid VATInput
+
 instance GenValid VATRate
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DomesticRevenue ann) where
