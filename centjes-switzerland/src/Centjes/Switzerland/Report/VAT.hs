@@ -48,6 +48,7 @@ import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Ratio
 import Data.Time
 import Data.Time.Calendar.Quarter
 import Data.Validity
@@ -59,6 +60,7 @@ import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import qualified Money.QuantisationFactor as QuantisationFactor
+import Numeric.Natural
 import Path
 
 produceVATReport ::
@@ -124,7 +126,8 @@ produceVATReport VATInput {..} Ledger {..} = do
                           -- TODO require that the vat currency is the same?
                           domesticRevenueVATAmount <- requireNegative tl pl2 vatAccount
                           domesticRevenueVATCHFAmount <- convertDaily al2 dailyPriceGraphs day domesticRevenueVATCurrency vatReportCHF domesticRevenueVATAmount
-                          domesticRevenueVATRate <- requireVATRate tl (postingPercentage p2)
+
+                          domesticRevenueVATRate <- requirePercentageVATRate tl (postingPercentage p2)
                           pure DomesticRevenue {..}
                     else pure Nothing
           else pure []
@@ -233,7 +236,11 @@ produceVATReport VATInput {..} Ledger {..} = do
                       let Located al vatAccount = postingAccount p2
                       deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
                       deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency vatReportCHF deductibleExpenseVATAmount
-                      deductibleExpenseVATRate <- requireVATRate tl (postingPercentage p2)
+                      (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
+                      deductibleExpenseVATRate <-
+                        if deductibleExpenseVATCurrency == vatReportCHF
+                          then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate
+                          else pure reportedVATRate -- No way to check if it's a foreign VAT rate
                       pure DeductibleExpense {..}
                     else pure Nothing
           else pure []
@@ -338,17 +345,41 @@ convertDaily al dailyPrices day currencyFrom currencyTo amount =
               Nothing -> validationTFailure $ VATErrorCouldNotConvert al currencyFrom currencyTo amount
               Just convertedAmount -> pure convertedAmount
 
-requireVATRate ::
+requirePercentageRate ::
+  ann ->
+  Maybe (GenLocated ann (Percentage ann)) ->
+  Reporter (VATError ann) (ann, Ratio Natural)
+requirePercentageRate tl = \case
+  Nothing -> validationTFailure $ VATErrorNoVATPercentage tl
+  Just (Located pl (Percentage (Located _ r))) -> pure (pl, r)
+
+requirePercentageVATRate ::
   ann ->
   Maybe (GenLocated ann (Percentage ann)) ->
   Reporter (VATError ann) VATRate
-requireVATRate tl = \case
-  Nothing -> validationTFailure VATErrorNoVATPercentage
-  Just (Located pl (Percentage (Located _ r))) -> case r of
-    0.077 -> pure VATRate2023Standard
-    0.081 -> pure VATRate2024Standard
-    0.025 -> pure VATRate2023Reduced
-    0.026 -> pure VATRate2024Reduced
-    0.037 -> pure VATRate2023Hotel
-    0.038 -> pure VATRate2024Hotel
-    _ -> validationTFailure $ VATErrorUnknownVATRate tl pl r
+requirePercentageVATRate tl mp = do
+  (pl, r) <- requirePercentageRate tl mp
+  requireRatioVATRate tl pl r
+
+requireRatioVATRate ::
+  ann ->
+  ann ->
+  Ratio Natural ->
+  Reporter (VATError ann) VATRate
+requireRatioVATRate tl pl r = case r of
+  0.077 -> pure VATRate2023Standard
+  0.081 -> pure VATRate2024Standard
+  0.025 -> pure VATRate2023Reduced
+  0.026 -> pure VATRate2024Reduced
+  0.037 -> pure VATRate2023Hotel
+  0.038 -> pure VATRate2024Hotel
+  _ -> validationTFailure $ VATErrorUnknownVATRate tl pl r
+
+vatRateRatio :: VATRate -> Ratio Natural
+vatRateRatio = \case
+  VATRate2023Standard -> 0.077
+  VATRate2024Standard -> 0.081
+  VATRate2023Reduced -> 0.025
+  VATRate2024Reduced -> 0.026
+  VATRate2023Hotel -> 0.037
+  VATRate2024Hotel -> 0.038

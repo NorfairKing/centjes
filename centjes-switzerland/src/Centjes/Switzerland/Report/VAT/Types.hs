@@ -235,7 +235,7 @@ data DeductibleExpense ann = DeductibleExpense
     deductibleExpenseVATAmount :: !Money.Amount,
     deductibleExpenseVATCurrency :: !(Currency ann),
     deductibleExpenseVATCHFAmount :: !Money.Amount,
-    deductibleExpenseVATRate :: !VATRate,
+    deductibleExpenseVATRate :: !(Ratio Natural),
     -- | Evidence in tarball
     deductibleExpenseEvidence :: !(NonEmpty (Path Rel File))
   }
@@ -253,7 +253,7 @@ data VATError ann
   | VATErrorNegativeExpense !ann !ann !Money.Account
   | VATErrorNoVATPosting
   | VATErrorVATPostingNotVATAccount
-  | VATErrorNoVATPercentage
+  | VATErrorNoVATPercentage !ann
   | VATErrorUnknownVATRate !ann !ann !(Ratio Natural)
   | VATErrorSum ![Money.Amount]
   | VATErrorAdd !Money.Amount !Money.Amount
@@ -310,8 +310,19 @@ instance ToReport (VATError SourceSpan) where
         ]
         []
     VATErrorNoVATPosting -> Err Nothing "No VAT posting for domestic income" [] []
-    VATErrorVATPostingNotVATAccount -> Err Nothing "VAT posting for domestic income had unknown account name" [] []
-    VATErrorNoVATPercentage -> Err Nothing "VAT posting for domestic income did not have a percentage" [] []
+    VATErrorVATPostingNotVATAccount ->
+      Err
+        Nothing
+        "VAT posting for domestic income had unknown account name"
+        []
+        []
+    VATErrorNoVATPercentage tl ->
+      Err
+        Nothing
+        "VAT posting for domestic income did not have a percentage"
+        [ (toDiagnosePosition tl, This "in this transaction")
+        ]
+        []
     VATErrorUnknownVATRate tl pl _ ->
       Err
         Nothing

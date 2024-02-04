@@ -26,6 +26,7 @@ import Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import Path
+import Text.Printf
 
 vatReportInput :: VATReport ann -> Input
 vatReportInput VATReport {..} =
@@ -203,7 +204,7 @@ vatInputDeductibleExpense DeductibleExpense {..} =
       inputExpenseCHFAmount = formatAmount deductibleExpenseCurrency deductibleExpenseCHFAmount
       inputExpenseVATAmount = amountToAmountWithCurrency deductibleExpenseVATCurrency deductibleExpenseVATAmount
       inputExpenseVATCHFAmount = formatAmount deductibleExpenseVATCurrency deductibleExpenseVATCHFAmount
-      inputExpenseVATRate = formatVATRate deductibleExpenseVATRate
+      inputExpenseVATRate = printf "%.1f %%" (realToFrac (deductibleExpenseVATRate * 100) :: Double)
       inputExpenseEvidence = deductibleExpenseEvidence
    in InputExpense {..}
 
