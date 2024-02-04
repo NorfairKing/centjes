@@ -37,6 +37,7 @@ import qualified Money.Amount as Amount
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import Numeric.Natural
 import Path
+import Text.Show.Pretty
 
 -- TODO upstream this to validity-time
 deriving instance Generic Quarter
@@ -251,9 +252,10 @@ data VATError ann
   | VATErrorSum ![Money.Amount]
   | VATErrorAdd !Money.Amount !Money.Amount
   | VATErrorSubtract !Money.Amount !Money.Amount
+  | VATErrorReportInvalid !(VATReport ann) !String
   deriving (Show, Eq, Generic)
 
-instance Validity ann => Validity (VATError ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (VATError ann)
 
 instance ToReport (VATError SourceSpan) where
   toReport = \case
@@ -315,3 +317,15 @@ instance ToReport (VATError SourceSpan) where
     VATErrorSum _ -> Err Nothing "could not sum amounts because the result would get too big" [] []
     VATErrorAdd _ _ -> Err Nothing "could not add amounts because the result wolud get too big" [] []
     VATErrorSubtract _ _ -> Err Nothing "Could not subtract amounts because the result wolud get too big or too small" [] []
+    VATErrorReportInvalid report e ->
+      Err
+        Nothing
+        ( unlines
+            [ "Produced VATReport is considered invalid.",
+              "This indicates a bug in this program.",
+              ppShow report,
+              e
+            ]
+        )
+        []
+        []

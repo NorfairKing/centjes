@@ -50,6 +50,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Time
 import Data.Time.Calendar.Quarter
+import Data.Validity
 import Data.Validity.Time ()
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -61,7 +62,7 @@ import qualified Money.QuantisationFactor as QuantisationFactor
 import Path
 
 produceVATReport ::
-  Ord ann =>
+  (Validity ann, Show ann, Ord ann) =>
   VATInput ->
   Ledger ann ->
   Reporter (VATError ann) (VATReport ann)
@@ -243,7 +244,10 @@ produceVATReport VATInput {..} Ledger {..} = do
     Nothing -> validationTFailure $ VATErrorSubtract vatReportTotalRevenue vatReportPaidVAT
     Just a -> pure a
 
-  pure VATReport {..}
+  let unValidatedVatReport = VATReport {..}
+  case prettyValidate unValidatedVatReport of
+    Left err -> validationTFailure $ VATErrorReportInvalid unValidatedVatReport err
+    Right vr -> pure vr
 
 dayInQuarter :: Quarter -> Day -> Bool
 dayInQuarter quarter day =

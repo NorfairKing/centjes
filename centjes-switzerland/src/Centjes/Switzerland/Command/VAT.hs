@@ -57,6 +57,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
 
       validation <- liftIO $ runValidationT $ runReporter $ produceVATReport vatSettingInput ledger
       (vatReport, files) <- liftIO $ checkValidation diag validation
+
       let input = vatReportInput vatReport
 
       -- Write the xml to a file
