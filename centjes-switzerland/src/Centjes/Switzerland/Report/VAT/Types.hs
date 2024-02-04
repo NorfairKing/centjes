@@ -67,8 +67,27 @@ data VATReport ann = VATReport
     vatReportVATId :: !Text,
     vatReportQuarter :: !Quarter,
     vatReportCHF :: !(Currency ann),
+    -- | Domestic revenues
+    --
+    -- These are the numbers that go into
+    -- vatReportTotalDomesticRevenue
+    -- ziffer 299
     vatReportDomesticRevenues :: ![DomesticRevenue ann],
+    -- | Exports to foreign countries
+    --
+    -- This is work FOR foreign countries but not IN foreign countries
+    --
+    -- These are the numbers that go into
+    -- vatReportTotalForeignRevenue
+    -- ziffer 220
     vatReportExportsRevenues :: ![ForeignRevenue ann],
+    -- | Foreign revenues
+    --
+    -- This is for work IN foreign countries
+    --
+    -- These are the numbers that go into
+    -- vatReportTotalForeignRevenue
+    -- ziffer 221
     vatReportForeignRevenues :: ![ForeignRevenue ann],
     vatReportDeductibleExpenses :: ![DeductibleExpense ann],
     -- | 200

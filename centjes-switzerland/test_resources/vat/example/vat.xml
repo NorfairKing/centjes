@@ -52,8 +52,11 @@
             6435.60
         </eCH-0217:totalConsideration>
         <eCH-0217:suppliesToForeignCountries>
-            2576.70
+            858.90
         </eCH-0217:suppliesToForeignCountries>
+        <eCH-0217:suppliesAbroad>
+            2576.70
+        </eCH-0217:suppliesAbroad>
     </eCH-0217:turnoverComputation>
     <eCH-0217:effectiveReportingMethod>
         <eCH-0217:grossOrNet>

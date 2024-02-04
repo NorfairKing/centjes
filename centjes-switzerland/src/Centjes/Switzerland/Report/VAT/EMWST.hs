@@ -493,7 +493,6 @@ decimalLiteralNode =
 produceXMLReport :: UTCTime -> VATReport ann -> Maybe XMLReport
 produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let generalInformationUID =
-        -- TODO fill in the real data
         UID
           { uidCategory =
               -- @
@@ -510,9 +509,9 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
       amountLiteral = Amount.toDecimalLiteral qf
       accountLiteral = Account.toDecimalLiteral qf
   turnoverComputationTotalConsideration <- amountLiteral vatReportTotalRevenue
-  turnoverComputationSuppliesToForeignCountries <- traverse amountLiteral (unlessZero vatReportTotalForeignRevenue)
-  -- TODO what is this?
-  let turnoverComputationSuppliesAbroad = Nothing
+  turnoverComputationSuppliesToForeignCountries <- traverse amountLiteral (unlessZero vatReportTotalExportsRevenue)
+  turnoverComputationSuppliesAbroad <- traverse amountLiteral (unlessZero vatReportTotalForeignRevenue)
+
   -- TODO what is this?
   let turnoverComputationTransferNotificationProcedure = Nothing
   -- TODO what is this?
