@@ -52,6 +52,11 @@ class ToNodes a where
 -- sind im Kapitel 5 beschrieben. Um eine bessere Übersicht zu geben, ist die
 -- Struktur der gesamten Deklaration in Abbildung 2 darge- stellt.
 -- @
+--
+-- Note that this is a separate type from the Typst 'Input' because the fields
+-- of this type are not easy to read from from typst, and don't contain enough
+-- info for a good readme. (They're missing the individual deductions, for
+-- example.)
 data XMLReport = XMLReport
   { -- | `generalInformation`
     --

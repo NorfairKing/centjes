@@ -23,7 +23,6 @@ import Data.Text (Text)
 import Data.Time
 import Data.Time.Calendar.Quarter
 import Money.Account as Money (Account (..))
-import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import Path
@@ -54,11 +53,14 @@ vatReportInput VATReport {..} =
       inputTotalDomesticRevenue = formatAmount vatReportCHF vatReportTotalDomesticRevenue
       inputTotalVATRevenue = formatAmount vatReportCHF vatReportTotalVATRevenue
       inputPaidVAT = formatAmount vatReportCHF vatReportPaidVAT
+      inputTotalVATDeductions = formatAmount vatReportCHF vatReportTotalVATDeductions
       (inputPayable, inputReceivable) = case vatReportPayable of
         Positive a -> (Just (formatAmount vatReportCHF a), Nothing)
         Negative a -> (Nothing, Just (formatAmount vatReportCHF a))
    in Input {..}
 
+-- Note that this is a separate type from the EMWST 'XMLReport' because there
+-- is more information in the README than there is in the EMWST
 data Input = Input
   { inputPersonName :: Text,
     inputOrganisationName :: Text,
@@ -108,6 +110,10 @@ data Input = Input
     --
     -- Vorsteuer auf Investitionen und übrigem Betriebsaufwand
     inputPaidVAT :: !FormattedAmount,
+    -- | 479
+    --
+    -- Totale Abzuge
+    inputTotalVATDeductions :: !FormattedAmount,
     -- | 500
     --
     -- Zu bezahlender Betrag
@@ -158,6 +164,8 @@ instance HasCodec Input where
           .= inputTotalVATRevenue
         <*> requiredField "vat_paid" "total vat"
           .= inputPaidVAT
+        <*> requiredField "total_vat_deductions" "total vat deductions"
+          .= inputTotalVATDeductions
         <*> requiredField "payable" "payable"
           .= inputPayable
         <*> requiredField "receivable" "receivable"

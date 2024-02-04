@@ -22,9 +22,10 @@
         }
     ],
     "organisation_name": "Doe Inc.",
-    "payable": "-136.12",
+    "payable": null,
     "person_name": "John Doe",
     "quarter": "2024-q1",
+    "receivable": "136.12",
     "revenues": [
         {
             "amount": {
@@ -134,6 +135,7 @@
     "total_foreign_deductions": "3435.60",
     "total_foreign_revenue": "2576.70",
     "total_revenue": "6435.60",
+    "total_vat_deductions": "357.47",
     "total_vat_revenue": "221.35",
     "vat_id": "111.222.333",
     "vat_paid": "357.47",

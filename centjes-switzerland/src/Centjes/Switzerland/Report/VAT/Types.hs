@@ -132,6 +132,10 @@ data VATReport ann = VATReport
     --
     -- Vorsteuer auf Investitionen und übrigem Betriebsaufwand
     vatReportPaidVAT :: !Money.Amount,
+    -- | 479
+    --
+    -- Totale Abzuge
+    vatReportTotalVATDeductions :: !Money.Amount,
     -- | 500
     --
     -- Zu bezahlender Betrag
@@ -168,6 +172,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (VATReport ann) where
             == Just vatReport2024StandardRateVATRevenue,
         declare "The total vat is the sum of all the vat fields" $
           Amount.sum [vatReport2023StandardRateVATRevenue, vatReport2024StandardRateVATRevenue] == Just vatReportTotalVATRevenue,
+        declare "The total vat deductions is the sum of all vat deductions" $
+          Amount.sum [vatReportPaidVAT] == Just vatReportTotalVATDeductions,
         declare "The payable amount is the VAT revenue minus the paid VAT" $
           Account.subtract (Account.fromAmount vatReportTotalVATRevenue) (Account.fromAmount vatReportPaidVAT) == Just vatReportPayable
       ]

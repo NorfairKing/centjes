@@ -116,6 +116,15 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
                         pure $ vr {vatReportTotalVATRevenue = totalVATRevenue}
                     )
       `suchThatMap` ( \vr -> do
-                        payable <- Account.subtract (Account.fromAmount (vatReportTotalVATRevenue vr)) (Account.fromAmount (vatReportPaidVAT vr))
+                        totalVATDeductions <-
+                          Amount.sum
+                            [vatReportPaidVAT vr]
+                        pure $ vr {vatReportTotalVATDeductions = totalVATDeductions}
+                    )
+      `suchThatMap` ( \vr -> do
+                        payable <-
+                          Account.subtract
+                            (Account.fromAmount (vatReportTotalVATRevenue vr))
+                            (Account.fromAmount (vatReportPaidVAT vr))
                         pure $ vr {vatReportPayable = payable}
                     )

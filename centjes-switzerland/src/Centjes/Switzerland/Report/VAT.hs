@@ -239,6 +239,7 @@ produceVATReport VATInput {..} Ledger {..} = do
           else pure []
 
   vatReportPaidVAT <- requireSumAmount (map deductibleExpenseVATCHFAmount vatReportDeductibleExpenses)
+  let vatReportTotalVATDeductions = vatReportPaidVAT
 
   vatReportPayable <- case Account.subtract (Account.fromAmount vatReportTotalVATRevenue) (Account.fromAmount vatReportPaidVAT) of
     Nothing -> validationTFailure $ VATErrorSubtract vatReportTotalRevenue vatReportPaidVAT

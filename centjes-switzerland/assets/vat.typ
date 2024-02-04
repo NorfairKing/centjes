@@ -171,7 +171,7 @@ Alle Umsatzangaben sind netto
   "479",
   "Totale Abzuge",
   "",
-  input.vat_paid, // TODO this should be the sum of the fields 400-420
+  input.total_vat_deductions,
 )
 
 ==== Zu bezahlender Betrag / Guthaben
