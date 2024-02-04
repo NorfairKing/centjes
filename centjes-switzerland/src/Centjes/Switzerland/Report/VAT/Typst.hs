@@ -54,7 +54,9 @@ vatReportInput VATReport {..} =
       inputTotalDomesticRevenue = formatAmount vatReportCHF vatReportTotalDomesticRevenue
       inputTotalVATRevenue = formatAmount vatReportCHF vatReportTotalVATRevenue
       inputPaidVAT = formatAmount vatReportCHF vatReportPaidVAT
-      inputPayable = formatAccount vatReportCHF vatReportPayable
+      (inputPayable, inputReceivable) = case vatReportPayable of
+        Positive a -> (Just (formatAmount vatReportCHF a), Nothing)
+        Negative a -> (Nothing, Just (formatAmount vatReportCHF a))
    in Input {..}
 
 data Input = Input
@@ -109,7 +111,11 @@ data Input = Input
     -- | 500
     --
     -- Zu bezahlender Betrag
-    inputPayable :: !FormattedAccount
+    inputPayable :: !(Maybe FormattedAmount),
+    -- | 510
+    --
+    --  Guthaben der steuerpflichtigen Person
+    inputReceivable :: !(Maybe FormattedAmount)
   }
   deriving (Show, Eq)
   deriving (FromJSON, ToJSON) via (Autodocodec Input)
@@ -154,6 +160,8 @@ instance HasCodec Input where
           .= inputPaidVAT
         <*> requiredField "payable" "payable"
           .= inputPayable
+        <*> requiredField "receivable" "receivable"
+          .= inputReceivable
 
 vatInputDomesticRevenue :: DomesticRevenue ann -> InputRevenue
 vatInputDomesticRevenue DomesticRevenue {..} =
@@ -296,10 +304,3 @@ formatAmount :: Currency ann -> Money.Amount -> FormattedAmount
 formatAmount currency account =
   let Located _ qf = currencyQuantisationFactor currency
    in Amount.format qf account
-
-type FormattedAccount = String
-
-formatAccount :: Currency ann -> Money.Account -> FormattedAccount
-formatAccount currency account =
-  let Located _ qf = currencyQuantisationFactor currency
-   in Account.format qf account
