@@ -9,6 +9,7 @@
     "revenues": [],
     "total_domestic_revenue": "0.00",
     "total_exports_revenue": null,
+    "total_foreign_deductions": "0.00",
     "total_foreign_revenue": null,
     "total_revenue": "0.00",
     "total_vat_revenue": "0.00",

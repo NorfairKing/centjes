@@ -38,6 +38,7 @@ vatReportInput VATReport {..} =
         sortOn inputRevenueDay $
           concat
             [ map vatInputDomesticRevenue vatReportDomesticRevenues,
+              map vatInputForeignRevenue vatReportExportsRevenues,
               map vatInputForeignRevenue vatReportForeignRevenues
             ]
       orZero a = if a == Amount.zero then Nothing else Just a
@@ -45,6 +46,7 @@ vatReportInput VATReport {..} =
       inputTotalRevenue = formatAmount vatReportCHF vatReportTotalRevenue
       inputTotalExportsRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalExportsRevenue
       inputTotalForeignRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalForeignRevenue
+      inputTotalForeignDeductions = formatAmount vatReportCHF vatReportTotalForeignDeductions
       inputDomesticRevenue2023 = formatAmount vatReportCHF vatReportDomesticRevenue2023
       input2023StandardRateVATRevenue = formatAmount vatReportCHF vatReport2023StandardRateVATRevenue
       inputDomesticRevenue2024 = formatAmount vatReportCHF vatReportDomesticRevenue2024
@@ -78,6 +80,10 @@ data Input = Input
     --
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
     inputTotalForeignRevenue :: !(Maybe FormattedAmount),
+    -- | 289
+    --
+    -- Totale AbZüge
+    inputTotalForeignDeductions :: !FormattedAmount,
     -- | 299
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
@@ -130,6 +136,8 @@ instance HasCodec Input where
           .= inputTotalExportsRevenue
         <*> requiredField "total_foreign_revenue" "total foreign revenue"
           .= inputTotalForeignRevenue
+        <*> requiredField "total_foreign_deductions" "total foreign deductions"
+          .= inputTotalForeignDeductions
         <*> requiredField "total_domestic_revenue" "total domestic revenue"
           .= inputTotalDomesticRevenue
         <*> requiredField "domestic_revenue_2023" "domestic revenue from 2023"

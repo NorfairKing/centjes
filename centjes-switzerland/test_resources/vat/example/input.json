@@ -111,6 +111,18 @@
             },
             "amount_chf": "858.90",
             "day": "2024-03-07",
+            "description": "Joe Feb",
+            "evidence": [
+                "income/joe-feb.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-03-07",
             "description": "Quux Feb",
             "evidence": [
                 "income/quux-feb.txt"
@@ -119,8 +131,9 @@
     ],
     "total_domestic_revenue": "3000.00",
     "total_exports_revenue": "858.90",
+    "total_foreign_deductions": "3435.60",
     "total_foreign_revenue": "2576.70",
-    "total_revenue": "5576.70",
+    "total_revenue": "6435.60",
     "total_vat_revenue": "221.35",
     "vat_id": "111.222.333",
     "vat_paid": "357.47",

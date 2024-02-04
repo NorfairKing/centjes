@@ -190,7 +190,9 @@ produceVATReport VATInput {..} Ledger {..} = do
   vatReportExportsRevenues <- foreignRevenuesOfAccount vatInputExportsIncomeAccountName
   vatReportTotalExportsRevenue <- requireSumAmount $ map foreignRevenueCHFAmount vatReportExportsRevenues
 
-  vatReportTotalRevenue <- requireAddAmount vatReportTotalDomesticRevenue vatReportTotalForeignRevenue
+  vatReportTotalForeignDeductions <- requireAddAmount vatReportTotalForeignRevenue vatReportTotalExportsRevenue
+
+  vatReportTotalRevenue <- requireAddAmount vatReportTotalDomesticRevenue vatReportTotalForeignDeductions
 
   vatReportTotalVATRevenue <-
     requireSumAmount

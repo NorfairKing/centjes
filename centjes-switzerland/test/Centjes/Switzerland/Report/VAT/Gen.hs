@@ -55,16 +55,30 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
   genValid = do
     genValidStructurallyWithoutExtraChecking
       `suchThatMap` ( \vr -> do
-                        totalDomesticRevenues <- Amount.sum (map domesticRevenueCHFAmount (vatReportDomesticRevenues vr))
+                        totalDomesticRevenues <-
+                          Amount.sum
+                            (map domesticRevenueCHFAmount (vatReportDomesticRevenues vr))
                         pure $ vr {vatReportTotalDomesticRevenue = totalDomesticRevenues}
                     )
       `suchThatMap` ( \vr -> do
-                        totalExportsRevenues <- Amount.sum (map foreignRevenueCHFAmount (vatReportExportsRevenues vr))
+                        totalExportsRevenues <-
+                          Amount.sum
+                            (map foreignRevenueCHFAmount (vatReportExportsRevenues vr))
                         pure $ vr {vatReportTotalExportsRevenue = totalExportsRevenues}
                     )
       `suchThatMap` ( \vr -> do
-                        totalForeignRevenues <- Amount.sum (map foreignRevenueCHFAmount (vatReportForeignRevenues vr))
+                        totalForeignRevenues <-
+                          Amount.sum
+                            (map foreignRevenueCHFAmount (vatReportForeignRevenues vr))
                         pure $ vr {vatReportTotalForeignRevenue = totalForeignRevenues}
+                    )
+      `suchThatMap` ( \vr -> do
+                        totalForeignDeductions <-
+                          Amount.sum
+                            [ vatReportTotalForeignRevenue vr,
+                              vatReportTotalExportsRevenue vr
+                            ]
+                        pure $ vr {vatReportTotalForeignDeductions = totalForeignDeductions}
                     )
       `suchThatMap` ( \vr -> do
                         totalRevenue <-
@@ -76,11 +90,21 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
                         pure $ vr {vatReportTotalRevenue = totalRevenue}
                     )
       `suchThatMap` ( \vr -> do
-                        standardRate2023VATRevenue <- Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2023Standard) . domesticRevenueVATRate) (vatReportDomesticRevenues vr)))
+                        standardRate2023VATRevenue <-
+                          Amount.sum
+                            ( map
+                                domesticRevenueVATCHFAmount
+                                (filter ((== VATRate2023Standard) . domesticRevenueVATRate) (vatReportDomesticRevenues vr))
+                            )
                         pure $ vr {vatReport2023StandardRateVATRevenue = standardRate2023VATRevenue}
                     )
       `suchThatMap` ( \vr -> do
-                        standardRate2024VATRevenue <- Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2024Standard) . domesticRevenueVATRate) (vatReportDomesticRevenues vr)))
+                        standardRate2024VATRevenue <-
+                          Amount.sum
+                            ( map
+                                domesticRevenueVATCHFAmount
+                                (filter ((== VATRate2024Standard) . domesticRevenueVATRate) (vatReportDomesticRevenues vr))
+                            )
                         pure $ vr {vatReport2024StandardRateVATRevenue = standardRate2024VATRevenue}
                     )
       `suchThatMap` ( \vr -> do

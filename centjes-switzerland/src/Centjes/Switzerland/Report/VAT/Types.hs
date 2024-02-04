@@ -86,6 +86,10 @@ data VATReport ann = VATReport
     --
     -- Leistungen im Ausland (Ort der Leistung im Ausland)
     vatReportTotalForeignRevenue :: !Money.Amount,
+    -- | 289
+    --
+    -- Total Abzüge: Ziﬀer 220 bis 280
+    vatReportTotalForeignDeductions :: !Money.Amount,
     -- | 299
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
@@ -125,16 +129,16 @@ instance (Validity ann, Show ann, Ord ann) => Validity (VATReport ann) where
         declare "The total export revenue is the total of the exports " $
           Amount.sum (map foreignRevenueCHFAmount vatReportExportsRevenues)
             == Just vatReportTotalExportsRevenue,
-        declare "The total fereign revenue is the total of the foreign revenues" $
+        declare "The total foreign revenue is the total of the foreign revenues" $
           Amount.sum (map foreignRevenueCHFAmount vatReportForeignRevenues)
             == Just vatReportTotalForeignRevenue,
+        declare "The total foreign deductions is the sum of foreign revenues and exports" $
+          Amount.add vatReportTotalExportsRevenue vatReportTotalForeignRevenue == Just vatReportTotalForeignDeductions,
         declare
           "The total revenue is the sum of domestic, exports, and foreign"
-          $ Amount.sum
-            [ vatReportTotalDomesticRevenue,
-              vatReportTotalExportsRevenue,
-              vatReportTotalForeignRevenue
-            ]
+          $ Amount.add
+            vatReportTotalDomesticRevenue
+            vatReportTotalForeignDeductions
             == Just vatReportTotalRevenue,
         declare "The total 2023 standard rate VAT revenue is the total of VAT amounts of the revenues" $
           Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2023Standard) . domesticRevenueVATRate) vatReportDomesticRevenues))

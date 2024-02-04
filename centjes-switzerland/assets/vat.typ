@@ -48,7 +48,7 @@ Alle Umsatzangaben sind netto
   "289",
   "Total Abzüge Ziffer 220 bis 280",
   "",
-  input.total_foreign_revenue,
+  input.total_foreign_deductions,
 )
 
 ==== Steuerbarer Gesamtumsatz
