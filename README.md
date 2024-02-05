@@ -1,7 +1,15 @@
 # Centjes
 
+A comprehensive plaintext personal finances tool.
 
-A comprehensive personal finances tool.
+
+## Goals
+
+* Make it easy to file tax declarations.
+* Automate as much as possible.
+* Make it _very_ hard to make mistakes.
+
+## Pipeline
 
 
 External Providers
@@ -23,12 +31,6 @@ Assumptions:
   We will need a mechanism to correct it, and not forget about the correction.
   Banks and Brokers are notoriously terrible at getting currency conversions correct.
 
-
-## Goals
-
-* Make it easy to file tax declarations.
-* Automate as much as possible.
-* Make it hard to make mistakes.
 
 ## FAQ
 
