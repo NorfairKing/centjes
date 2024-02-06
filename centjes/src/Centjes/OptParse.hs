@@ -11,6 +11,8 @@ import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Filter (Filter)
 import qualified Centjes.Filter as Filter
 import Control.Applicative
+import Data.Bool
+import Data.Maybe
 import qualified Data.Text as T
 import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
@@ -55,7 +57,8 @@ data RegisterSettings = RegisterSettings
 
 data BalanceSettings = BalanceSettings
   { balanceSettingFilter :: !Filter,
-    balanceSettingCurrency :: !(Maybe CurrencySymbol)
+    balanceSettingCurrency :: !(Maybe CurrencySymbol),
+    balanceSettingShowEmpty :: !ShowEmpty
   }
   deriving (Show, Eq, Generic)
 
@@ -98,6 +101,7 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
       CommandBalance BalanceArgs {..} -> do
         let balanceSettingFilter = balanceArgFilter
         let balanceSettingCurrency = balanceArgConversionCurrency
+        let balanceSettingShowEmpty = fromMaybe DoNotShowEmpty balanceArgShowEmpty
         pure $ DispatchBalance BalanceSettings {..}
       CommandFormat FormatArgs {..} -> do
         formatSettingFileOrDir <- case (formatArgFile, formatArgDir) of
@@ -236,8 +240,14 @@ parseCommandRegister = OptParse.info parser modifier
 
 data BalanceArgs = BalanceArgs
   { balanceArgFilter :: !Filter,
-    balanceArgConversionCurrency :: !(Maybe CurrencySymbol)
+    balanceArgConversionCurrency :: !(Maybe CurrencySymbol),
+    balanceArgShowEmpty :: !(Maybe ShowEmpty)
   }
+  deriving (Show, Eq, Generic)
+
+data ShowEmpty
+  = ShowEmpty
+  | DoNotShowEmpty
   deriving (Show, Eq, Generic)
 
 parseCommandBalance :: OptParse.ParserInfo BalanceArgs
@@ -256,6 +266,15 @@ parseCommandBalance = OptParse.info parser modifier
                     help "Currency to convert to"
                   ]
               )
+          )
+        <*> optional
+          ( bool ShowEmpty DoNotShowEmpty
+              <$> switch
+                ( mconcat
+                    [ long "show-empty",
+                      help "Show empty balances instead of hiding them"
+                    ]
+                )
           )
 
 data FormatArgs = FormatArgs

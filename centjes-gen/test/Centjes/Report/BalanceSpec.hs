@@ -11,6 +11,7 @@ import Centjes.Filter.Gen ()
 import Centjes.Ledger.Gen ()
 import Centjes.Load
 import Centjes.Module
+import Centjes.OptParse
 import Centjes.Report.Balance
 import Centjes.Validation
 import Centjes.Validation.TestUtils
@@ -47,7 +48,7 @@ spec = do
 
             br <- shouldValidate diag $ produceBalanceReport FilterAny Nothing ledger
             shouldBeValid br
-            pure $ renderChunksText With24BitColours $ renderBalanceReportTable br
+            pure $ renderChunksText With24BitColours $ renderBalanceReportTable ShowEmpty br
 
     scenarioDir "test_resources/balance/balanced/to-chf" $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -62,7 +63,7 @@ spec = do
 
             br <- shouldValidate diag $ produceBalanceReport FilterAny (Just (CurrencySymbol "CHF")) ledger
             shouldBeValid br
-            pure $ renderChunksText With24BitColours $ renderBalanceReportTable br
+            pure $ renderChunksText With24BitColours $ renderBalanceReportTable ShowEmpty br
 
     scenarioDir "test_resources/balance/error/as-is" $ \fp -> do
       af <- liftIO $ resolveFile' fp
