@@ -3,7 +3,6 @@ module Centjes.Switzerland.Report.VAT.TypstSpec (spec) where
 import Autodocodec.Yaml
 import Centjes.Compile
 import Centjes.Load
-import Centjes.Switzerland.Command.VAT
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.Reporter

@@ -74,8 +74,6 @@ produceVATReport VATInput {..} Ledger {..} = do
   let vatReportVATId = vatInputVATId
   let vatReportQuarter = vatInputQuarter
 
-  -- TODO Check that the user-defined CHF has QF 100.
-  -- Or not, but we can't support any QF.
   let chfSymbol = CurrencySymbol "CHF"
   vatReportCHF <- case M.lookup chfSymbol ledgerCurrencies of
     Nothing -> validationTFailure VATErrorNoCHF
