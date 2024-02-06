@@ -199,6 +199,7 @@ registerPosting f lp@(Located _ Posting {..}) = do
   let Located _ an = postingAccountName
       included = Filter.predicate f an
   pure $
-    if included
+    -- Don't show virtual postings by default
+    if postingReal && included
       then Just lp
       else Nothing
