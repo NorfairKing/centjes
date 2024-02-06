@@ -49,6 +49,7 @@ library
       Centjes.Switzerland.Constants
       Centjes.Switzerland.OptParse
       Centjes.Switzerland.Report.Taxes
+      Centjes.Switzerland.Report.Taxes.Types
       Centjes.Switzerland.Report.VAT
       Centjes.Switzerland.Report.VAT.EMWST
       Centjes.Switzerland.Report.VAT.Types
@@ -114,6 +115,7 @@ test-suite centjes-switzerland-test
   main-is: Spec.hs
   other-modules:
       Centjes.Switzerland.Command.TaxesSpec
+      Centjes.Switzerland.Report.Taxes.Gen
       Centjes.Switzerland.Report.TaxesSpec
       Centjes.Switzerland.Report.VAT.EMWSTSpec
       Centjes.Switzerland.Report.VAT.Gen

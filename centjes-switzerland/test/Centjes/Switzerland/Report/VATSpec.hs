@@ -11,6 +11,7 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  genValidSpec @VATInput
   genValidSpec @(VATReport ())
   describe "produceVATReport" $
     it "produces valid reports" $
