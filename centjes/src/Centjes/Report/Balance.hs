@@ -586,11 +586,13 @@ balanceTransaction (Located tl Transaction {..}) = do
             checkPercentage tl pl lp lc la lpct
 
           convertedBalances' <-
-            if real
+            if real -- Don't count virtual postings for balancing
               then addAccountToBalances convertedCurrency convertedAccount convertedBalances
               else pure convertedBalances
           actualBalances' <-
-            addAccountToBalances currency account actualBalances
+            if real -- Don't count virtual posting for this report
+              then addAccountToBalances currency account actualBalances
+              else pure actualBalances
           pure (convertedBalances', actualBalances')
 
   (mForBalancing, mActual) <- V.ifoldM incorporatePosting (M.empty, M.empty) transactionPostings
