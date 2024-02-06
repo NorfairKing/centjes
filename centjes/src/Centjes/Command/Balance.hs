@@ -23,6 +23,7 @@ import Data.Map.Strict (Map)
 import Data.Semigroup
 import Data.Word
 import qualified Money.MultiAccount as Money (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
@@ -65,6 +66,7 @@ renderBalances ::
 renderBalances width =
   concatMap
     (\(an, acc) -> amountLines (accountNameChunk an) $ multiAccountChunksWithWidth (Just width) acc)
+    . filter (not . null . MultiAccount.unMultiAccount . snd) -- Don't show account with empty balances
     . M.toList
 
 amountLines :: Chunk -> [[Chunk]] -> [[Chunk]]
