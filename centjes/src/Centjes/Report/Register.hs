@@ -104,7 +104,7 @@ produceRegister ::
   Ledger ann ->
   Validation (RegisterError ann) (Register ann)
 produceRegister f mCurrencySymbolTo ledger = do
-  ts <- mapM (registerTransaction f) (ledgerTransactions ledger)
+  ts <- V.catMaybes <$> mapM (registerTransaction f) (ledgerTransactions ledger)
   let goTransaction ::
         (Int, Money.MultiAccount (Currency ann)) ->
         Validation
@@ -169,20 +169,36 @@ registerTransaction ::
   GenLocated ann (Transaction ann) ->
   Validation
     (RegisterError ann)
-    ( GenLocated ann Timestamp,
-      Maybe (GenLocated ann Description),
-      Vector (GenLocated ann (Posting ann))
+    ( Maybe
+        ( GenLocated ann Timestamp,
+          Maybe (GenLocated ann Description),
+          Vector (GenLocated ann (Posting ann))
+        )
     )
 registerTransaction f (Located _ t) = do
-  let postings =
-        V.filter
-          ( \(Located _ Posting {..}) ->
-              let Located _ an = postingAccountName
-               in Filter.predicate f an
+  postings <-
+    V.catMaybes
+      <$> mapM
+        (registerPosting f)
+        (transactionPostings t)
+  pure $
+    if null postings
+      then Nothing
+      else
+        Just
+          ( transactionTimestamp t,
+            transactionDescription t,
+            postings
           )
-          (transactionPostings t)
-  pure
-    ( transactionTimestamp t,
-      transactionDescription t,
-      postings
-    )
+
+registerPosting ::
+  Filter ->
+  GenLocated ann (Posting ann) ->
+  Validation (RegisterError ann) (Maybe (GenLocated ann (Posting ann)))
+registerPosting f lp@(Located _ Posting {..}) = do
+  let Located _ an = postingAccountName
+      included = Filter.predicate f an
+  pure $
+    if included
+      then Just lp
+      else Nothing
