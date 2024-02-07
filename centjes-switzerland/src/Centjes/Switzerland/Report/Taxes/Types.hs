@@ -16,6 +16,7 @@ import Centjes.Ledger
 import Centjes.Location
 import Centjes.Validation
 import Data.Text (Text)
+import Data.Time
 import Data.Validity
 import Data.Validity.Time ()
 import Error.Diagnose
@@ -25,7 +26,7 @@ import Money.QuantisationFactor as Money (QuantisationFactor (..))
 -- | The settings we need to produce a 'TaxesReport'
 data TaxesInput = TaxesInput
   { taxesInputPersonName :: !Text,
-    taxesInputYear :: !Int
+    taxesInputYear :: !Year
   }
   deriving (Show, Eq, Generic)
 
@@ -35,7 +36,7 @@ instance Validity TaxesInput
 -- or xml files.
 data TaxesReport ann = TaxesReport
   { taxesReportPersonName :: !Text,
-    taxesReportYear :: !Int,
+    taxesReportYear :: !Year,
     taxesReportCHF :: !(Currency ann)
   }
   deriving (Show, Eq, Generic)

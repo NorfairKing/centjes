@@ -8,6 +8,7 @@ module Centjes.Switzerland.OptParse where
 import Autodocodec
 import Autodocodec.Yaml
 import Centjes.AccountName (AccountName)
+import Centjes.Switzerland.Report.Taxes.Types (TaxesInput (..))
 import Centjes.Switzerland.Report.VAT.Types (VATInput (..))
 import Control.Applicative
 import Data.Map (Map)
@@ -117,6 +118,13 @@ configureVATInput day Configuration {..} =
       vatInputVATExpensesAccountName = fromMaybe "expenses:vat" configVATExpensesAccount
    in VATInput {..}
 
+configureTaxesInput :: Day -> Configuration -> TaxesInput
+configureTaxesInput day Configuration {..} =
+  let taxesInputPersonName = configPersonName
+      (currentYear, _, _) = toGregorian day
+      taxesInputYear = fromMaybe currentYear configYear
+   in TaxesInput {..}
+
 data Configuration = Configuration
   { configZipFile :: !(Maybe FilePath),
     configReadmeFile :: !(Maybe FilePath),
@@ -124,6 +132,7 @@ data Configuration = Configuration
     configPersonName :: !Text,
     configOrganisationName :: !Text,
     configVATId :: !Text,
+    configYear :: !(Maybe Year),
     configQuarter :: !(Maybe Quarter),
     configDomesticIncomeAccountName :: !(Maybe AccountName),
     configExportsIncomeAccountName :: !(Maybe AccountName),
@@ -151,6 +160,8 @@ instance HasCodec Configuration where
           .= configOrganisationName
         <*> requiredField "vat-id" "The VAT identifier. e.g. 111.222.333"
           .= configVATId
+        <*> optionalField "year" "The year to produce a taxes report for"
+          .= configYear
         <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "The quarter to produce a vat report for"
           .= configQuarter
         <*> optionalField "domestic-income-account" "Account name of your domestic income"
