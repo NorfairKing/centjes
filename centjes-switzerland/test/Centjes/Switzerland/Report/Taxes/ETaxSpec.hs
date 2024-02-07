@@ -19,37 +19,35 @@ import Text.XML as XML
 
 spec :: Spec
 spec = do
-  pure ()
+  dirScenarioDir "test_resources/taxes" $ \fp ->
+    it "Makes the same taxes.xml for this scenario" $
+      goldenTextFile (fp <> "taxes.xml") $ do
+        dir <- resolveDir' fp
+        configFile <- resolveFile dir "switzerland.yaml"
+        config <- do
+          mConfig <- readYamlConfigFile configFile
+          case mConfig of
+            Nothing -> expectationFailure "Expected to find a config file."
+            Just c -> pure c
+        ledgerFile <- resolveFile dir $ fromMaybe "ledger.cent" $ configLedgerFile config
 
--- dirScenarioDir "test_resources/taxes" $ \fp ->
---   it "Makes the same taxes.xml for this scenario" $
---     goldenTextFile (fp <> "taxes.xml") $ do
---       dir <- resolveDir' fp
---       configFile <- resolveFile dir "switzerland.yaml"
---       config <- do
---         mConfig <- readYamlConfigFile configFile
---         case mConfig of
---           Nothing -> expectationFailure "Expected to find a config file."
---           Just c -> pure c
---       ledgerFile <- resolveFile dir $ fromMaybe "ledger.cent" $ configLedgerFile config
+        (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
+        ledger <- shouldValidate diag $ compileDeclarations declarations
 
---       (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
---       ledger <- shouldValidate diag $ compileDeclarations declarations
+        let pretendToday = fromGregorian 2024 02 07
+        let taxesInput = configureTaxesInput pretendToday config
 
---       let pretendToday = fromGregorian 2024 02 07
---       let taxesInput = configureTaxesInput pretendToday config
+        validation <- runValidationT $ runReporter $ produceTaxesReport taxesInput ledger
+        (taxesReport, _) <- shouldValidate diag validation
 
---       validation <- runValidationT $ runReporter $ produceTaxesReport taxesInput ledger
---       (taxesReport, _) <- shouldValidate diag validation
+        let pretendNow = UTCTime pretendToday 0
+        xmlReport <- case produceXMLReport pretendNow taxesReport of
+          Nothing -> expectationFailure "Should have been able to produce a report"
+          Just x -> pure x
+        let xmlDoc = xmlReportDocument xmlReport
 
---       let pretendNow = UTCTime pretendToday 0
---       xmlReport <- case produceXMLReport pretendNow taxesReport of
---         Nothing -> expectationFailure "Should have been able to produce a report"
---         Just x -> pure x
---       let xmlDoc = xmlReportDocument xmlReport
-
---       pure $
---         LT.toStrict $
---           XML.renderText
---             (xmlRenderSettings {rsPretty = True})
---             xmlDoc
+        pure $
+          LT.toStrict $
+            XML.renderText
+              (xmlRenderSettings {rsPretty = True})
+              xmlDoc

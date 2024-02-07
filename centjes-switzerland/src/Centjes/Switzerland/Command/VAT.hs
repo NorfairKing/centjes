@@ -6,11 +6,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Centjes.Switzerland.Command.VAT
-  ( runCentjesSwitzerlandVAT,
-    vatReportInput,
-  )
-where
+module Centjes.Switzerland.Command.VAT (runCentjesSwitzerlandVAT) where
 
 import Centjes.Command.Check
 import Centjes.Compile

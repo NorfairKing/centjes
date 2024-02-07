@@ -10,8 +10,8 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
-    assets/main.typ
     assets/mwst-schema.xsd
+    assets/taxes.typ
     assets/vat.typ
     test_resources/taxes/empty/input.json
     test_resources/taxes/empty/ledger.cent
@@ -51,6 +51,7 @@ library
       Centjes.Switzerland.Report.Taxes
       Centjes.Switzerland.Report.Taxes.ETax
       Centjes.Switzerland.Report.Taxes.Types
+      Centjes.Switzerland.Report.Taxes.Typst
       Centjes.Switzerland.Report.VAT
       Centjes.Switzerland.Report.VAT.EMWST
       Centjes.Switzerland.Report.VAT.Types
@@ -115,7 +116,6 @@ test-suite centjes-switzerland-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Centjes.Switzerland.Command.TaxesSpec
       Centjes.Switzerland.Report.Taxes.ETaxSpec
       Centjes.Switzerland.Report.Taxes.Gen
       Centjes.Switzerland.Report.TaxesSpec

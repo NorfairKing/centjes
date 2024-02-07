@@ -55,7 +55,8 @@ data Dispatch
 
 data TaxesSettings = TaxesSettings
   { taxesSettingZipFile :: !(Path Abs File),
-    taxesSettingReadmeFile :: !(Path Abs File)
+    taxesSettingReadmeFile :: !(Path Abs File),
+    taxesSettingInput :: !TaxesInput
   }
   deriving (Show, Eq, Generic)
 
@@ -91,6 +92,7 @@ combineToInstructions
       CommandTaxes TaxesArgs {..} -> do
         taxesSettingZipFile <- resolveFile' $ fromMaybe "tax-packet.zip" $ taxesArgZipFile <|> envZipFile <|> configZipFile
         taxesSettingReadmeFile <- resolveFile' $ fromMaybe "README.pdf" $ taxesArgReadmeFile <|> envReadmeFile <|> configReadmeFile
+        let taxesSettingInput = configureTaxesInput today configuration
         pure $ DispatchTaxes TaxesSettings {..}
       CommandVAT VATArgs {..} -> do
         vatSettingZipFile <- resolveFile' $ fromMaybe "vat-packet.zip" $ vatArgZipFile <|> envZipFile <|> configZipFile

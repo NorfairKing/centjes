@@ -6,20 +6,20 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Centjes.Switzerland.Command.Taxes
-  ( runCentjesSwitzerlandTaxes,
-    produceTaxesInputFromDeclarations,
-  )
-where
+module Centjes.Switzerland.Command.Taxes (runCentjesSwitzerlandTaxes) where
 
+import Centjes.Command.Check
+import Centjes.Compile
 import Centjes.Load
 import Centjes.Switzerland.Assets
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Taxes
+import Centjes.Switzerland.Reporter
 import Centjes.Switzerland.Typst
 import Centjes.Switzerland.Zip
 import Centjes.Validation
 import Conduit
+import Control.Monad
 import Control.Monad.Logger
 import qualified Data.Aeson as JSON
 import Data.Aeson.Encode.Pretty as JSON
@@ -33,13 +33,21 @@ import Path.IO
 
 runCentjesSwitzerlandTaxes :: Settings -> TaxesSettings -> IO ()
 runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
-  mainTypContents <- requireAsset [relfile|main.typ|]
+  mainTypContents <- requireAsset [relfile|taxes.typ|]
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
       (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
-      validation <- liftIO $ runValidationT $ produceTaxesInputFromDeclarations settingSetup declarations
-      (input, files) <- liftIO $ checkValidation diag validation
+      ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
+
+      -- Check ahead of time, so we don't generate reports of invalid ledgers
+      val <- liftIO $ runValidationT $ doCompleteCheck declarations
+      void $ liftIO $ checkValidation diag val
+
+      validation <- liftIO $ runValidationT $ runReporter $ produceTaxesReport taxesSettingInput ledger
+      (taxesReport, files) <- liftIO $ checkValidation diag validation
+
+      let input = taxesReportInput taxesReport
 
       -- Write the input to a file
       jsonInputFile <- liftIO $ do
