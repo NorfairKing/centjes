@@ -43,6 +43,7 @@ library
       Centjes.Parse.Happy
       Centjes.Parse.Utils
       Centjes.Report.Balance
+      Centjes.Report.Check
       Centjes.Report.Register
       Centjes.Timestamp
       Centjes.Validation

@@ -8,9 +8,9 @@
 
 module Centjes.Switzerland.Command.VAT (runCentjesSwitzerlandVAT) where
 
-import Centjes.Command.Check
 import Centjes.Compile
 import Centjes.Load
+import Centjes.Report.Check
 import Centjes.Switzerland.Assets
 import Centjes.Switzerland.Constants (development)
 import Centjes.Switzerland.OptParse

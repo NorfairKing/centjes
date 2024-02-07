@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Centjes.Command.CheckSpec (spec) where
+module Centjes.Report.CheckSpec (spec) where
 
-import Centjes.Command.Check
 import Centjes.Load
 import Centjes.Module.Gen ()
+import Centjes.Report.Check
 import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad

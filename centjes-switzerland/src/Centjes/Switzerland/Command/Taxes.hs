@@ -8,9 +8,9 @@
 
 module Centjes.Switzerland.Command.Taxes (runCentjesSwitzerlandTaxes) where
 
-import Centjes.Command.Check
 import Centjes.Compile
 import Centjes.Load
+import Centjes.Report.Check
 import Centjes.Switzerland.Assets
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Taxes
