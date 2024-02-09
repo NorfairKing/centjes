@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -17,7 +18,12 @@ where
 import Centjes.Switzerland.Report.Taxes.Types
 import Centjes.Switzerland.XML
 import qualified Data.Map as M
+import Data.Maybe
+import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time
+import Data.Version (showVersion)
+import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
 import Text.XML as XML
 
 -- | `taxDeclaration`
@@ -44,11 +50,60 @@ instance ToElement XMLReport where
       }
 
 data Header = Header
+  { headerAttachments :: ![Attachment],
+    headerCantonExtension :: !(),
+    headerTransactionNumber :: !(Maybe Text),
+    headerTransactionDate :: !(Maybe LocalTime),
+    headerTaxPeriod :: !Year,
+    headerPeriodFrom :: !(Maybe Day),
+    headerPeriodTo :: !(Maybe Day),
+    headerCanton :: !(Maybe CantonAbbreviation)
+  }
   deriving (Show)
 
 instance ToElement Header where
-  toElement Header {} = ech0119Element "header" []
+  toElement Header {..} =
+    ech0119Element "header" $
+      concat
+        [ map (NodeElement . toElement) headerAttachments,
+          -- cantonExtension
+          [ NodeElement $ ech0119Element "transactionNumber" [NodeContent tn]
+            | tn <- maybeToList headerTransactionNumber
+          ],
+          [ NodeElement $ ech0119Element "transactionDate" [NodeContent $ T.pack $ formatTime defaultTimeLocale "%FT%T" lt]
+            | lt <- maybeToList headerTransactionDate
+          ],
+          [NodeElement $ ech0119Element "taxPeriod" [NodeContent $ T.pack $ show headerTaxPeriod]],
+          [ NodeElement $ ech0119Element "periodFrom" [NodeContent $ T.pack $ formatTime defaultTimeLocale "%F" d]
+            | d <- maybeToList headerPeriodFrom
+          ],
+          [ NodeElement $ ech0119Element "periodTo" [NodeContent $ T.pack $ formatTime defaultTimeLocale "%F" d]
+            | d <- maybeToList headerPeriodTo
+          ],
+          [ NodeElement $ ech0119Element "canton" [NodeContent $ renderCantonAbbreviation ca]
+            | ca <- maybeToList headerCanton
+          ],
+          [ NodeElement $ ech0119Element "source" [NodeContent "0"],
+            NodeElement $ ech0119Element "sourceDescription" [NodeContent $ T.pack $ "centjes-switzerland-" <> showVersion CentjesSwitzerland.version]
+          ]
+        ]
 
+-- TODO Attachment
+data Attachment = Attachment
+  deriving (Show)
+
+instance ToElement Attachment where
+  toElement Attachment {} = ech0119Element "attachment" []
+
+-- TODO other cantons if we support them
+data CantonAbbreviation = CantonAbbreviationZuerich
+  deriving (Show)
+
+renderCantonAbbreviation :: CantonAbbreviation -> Text
+renderCantonAbbreviation = \case
+  CantonAbbreviationZuerich -> "ZH"
+
+-- TODO Content
 data Content = Content
   deriving (Show)
 
@@ -59,8 +114,16 @@ instance ToElement Content where
 --
 -- TODO Put this in a validation instead of a Maybe?
 produceXMLReport :: UTCTime -> TaxesReport ann -> Maybe XMLReport
-produceXMLReport _ TaxesReport {} = do
-  let xmlReportHeader = Header
+produceXMLReport _ TaxesReport {..} = do
+  let headerAttachments = []
+  let headerCantonExtension = ()
+  let headerTransactionNumber = Nothing
+  let headerTransactionDate = Nothing
+  let headerTaxPeriod = taxesReportYear
+  let headerPeriodFrom = Just $ fromGregorian taxesReportYear 1 1
+  let headerPeriodTo = Just $ fromGregorian taxesReportYear 12 31
+  let headerCanton = Nothing
+  let xmlReportHeader = Header {..}
   let xmlReportContent = Content
   pure XMLReport {..}
 

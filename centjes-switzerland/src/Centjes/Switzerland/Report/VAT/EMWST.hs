@@ -29,7 +29,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
 import Data.Time.Format.ISO8601
-import Data.Version
+import Data.Version (showVersion)
 import qualified Money.Account as Account
 import qualified Money.Amount as Amount
 import qualified Money.Amount as Money (Amount)
@@ -170,7 +170,7 @@ instance ToElement GeneralInformation where
           ech0217Element
             "sendingApplication"
             [ NodeElement $ ech0058Element "manufacturer" [NodeContent "CS-SYD"],
-              NodeElement $ ech0058Element "product" [NodeContent "centjes"],
+              NodeElement $ ech0058Element "product" [NodeContent "centjes-switzerland"],
               NodeElement $ ech0058Element "productVersion" [NodeContent $ T.pack $ showVersion CentjesSwitzerland.version]
             ]
       ]
