@@ -34,6 +34,7 @@ instance ToElement XMLReport where
         elementAttributes =
           M.fromList
             [ ("minorVersion", "0"),
+              ("xmlns", "http://www.ech.ch/xmlns/eCH-0119/4"),
               (xsiName "schemaLocation", "http://www.ech.ch/xmlns/eCH-0119/4 eCH-0119-4-0_draft.xsd")
             ],
         elementNodes =

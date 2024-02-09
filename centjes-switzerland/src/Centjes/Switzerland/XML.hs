@@ -95,6 +95,10 @@ xmlRenderSettings =
           (ech0097Abbreviation, ech0097Url),
           (ech0119Abbreviation, ech0119Url),
           (ech0217Abbreviation, ech0217Url),
+          -- ("ech0007f", "http://www.ech.ch/xmlns/eCH-0007-f/6"),
+          -- ("ech0011f", "http://www.ech.ch/xmlns/eCH-0011-f/8"),
+          -- ("ech0044f", "http://www.ech.ch/xmlns/eCH-0044-f/4"),
+          -- ("ech0046f", "http://www.ech.ch/xmlns/eCH-0046-f/5"),
           (xsiAbbreviation, xsiUrl)
         ]
     }

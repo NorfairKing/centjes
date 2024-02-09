@@ -1,0 +1,144 @@
+{
+    "domestic_revenue_2023": "1000.00",
+    "domestic_revenue_2024": "2000.00",
+    "expenses": [
+        {
+            "amount": {
+                "formatted": "5000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "5000.00",
+            "day": "2024-01-02",
+            "description": "Computer",
+            "evidence": [
+                "deductions/receipt-computer.txt"
+            ],
+            "vat_amount": {
+                "formatted": "357.47",
+                "symbol": "CHF"
+            },
+            "vat_amount_chf": "357.47",
+            "vat_rate": "7.7 %"
+        }
+    ],
+    "organisation_name": "Doe Inc.",
+    "payable": null,
+    "person_name": "John Doe",
+    "quarter": "2024-q1",
+    "receivable": "136.12",
+    "revenues": [
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "1000.00",
+            "day": "2024-01-07",
+            "description": "Foobar Dec",
+            "evidence": [
+                "income/foobar-dec.txt"
+            ],
+            "vat_amount": {
+                "formatted": "71.49",
+                "symbol": "CHF"
+            },
+            "vat_amount_chf": "71.49",
+            "vat_rate": "7.7 %"
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-01-07",
+            "description": "Quux Dec",
+            "evidence": [
+                "income/quux-dec.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "1000.00",
+            "day": "2024-02-07",
+            "description": "Foobar Jan",
+            "evidence": [
+                "income/foobar-jan.txt"
+            ],
+            "vat_amount": {
+                "formatted": "74.93",
+                "symbol": "CHF"
+            },
+            "vat_amount_chf": "74.93",
+            "vat_rate": "8.1 %"
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-02-07",
+            "description": "Quux Jan",
+            "evidence": [
+                "income/quux-jan.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "1000.00",
+            "day": "2024-03-07",
+            "description": "Foobar Feb",
+            "evidence": [
+                "income/foobar-feb.txt"
+            ],
+            "vat_amount": {
+                "formatted": "74.93",
+                "symbol": "CHF"
+            },
+            "vat_amount_chf": "74.93",
+            "vat_rate": "8.1 %"
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-03-07",
+            "description": "Joe Feb",
+            "evidence": [
+                "income/joe-feb.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-03-07",
+            "description": "Quux Feb",
+            "evidence": [
+                "income/quux-feb.txt"
+            ]
+        }
+    ],
+    "total_domestic_revenue": "3000.00",
+    "total_exports_revenue": "858.90",
+    "total_foreign_deductions": "3435.60",
+    "total_foreign_revenue": "2576.70",
+    "total_revenue": "6435.60",
+    "total_vat_deductions": "357.47",
+    "total_vat_revenue": "221.35",
+    "vat_id": "111.222.333",
+    "vat_paid": "357.47",
+    "vat_revenue_standard_2023": "71.49",
+    "vat_revenue_standard_2024": "149.86"
+}
