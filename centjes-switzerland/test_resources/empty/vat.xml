@@ -2,6 +2,7 @@
 <eCH-0217:VATDeclaration
   xmlns:eCH-0058="http://www.ech.ch/xmlns/eCH-0058/5"
   xmlns:eCH-0097="http://www.ech.ch/xmlns/eCH-0097/3"
+  xmlns:eCH-0119="http://www.ech.ch/xmlns/eCH-0119/4"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.ech.ch/xmlns/eCH-0217/1 eCH-0217-1-0.xsd"
   xmlns:eCH-0217="http://www.ech.ch/xmlns/eCH-0217/1">

@@ -34,7 +34,6 @@ import qualified Money.Account as Account
 import qualified Money.Amount as Amount
 import qualified Money.Amount as Money (Amount)
 import Numeric.DecimalLiteral (DecimalLiteral)
-import qualified Numeric.DecimalLiteral as DecimalLiteral
 import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
 import Text.XML as XML
 
@@ -465,27 +464,6 @@ instance ToElement OtherFlowOfFunds where
       [ NodeElement $ ech0217Element "subsidies" [decimalLiteralNode otherFlowOfFundsSubsidies],
         NodeElement $ ech0217Element "donations" [decimalLiteralNode otherFlowOfFundsDonations]
       ]
-
-ech0058Element :: Text -> [XML.Node] -> XML.Element
-ech0058Element name = xmlElement (ech0058Name name)
-
-ech0097Element :: Text -> [XML.Node] -> XML.Element
-ech0097Element name = xmlElement (ech0097Name name)
-
-ech0217Element :: Text -> [XML.Node] -> XML.Element
-ech0217Element name = xmlElement (ech0217Name name)
-
-xmlElement :: XML.Name -> [XML.Node] -> XML.Element
-xmlElement elementName elementNodes =
-  let elementAttributes = M.empty
-   in XML.Element {..}
-
-decimalLiteralNode :: DecimalLiteral -> XML.Node
-decimalLiteralNode =
-  XML.NodeContent
-    . T.pack
-    . DecimalLiteral.format
-    . DecimalLiteral.setSignOptional
 
 -- | Produce an 'XMLReport' from a 'VATReport' at the given time.
 --

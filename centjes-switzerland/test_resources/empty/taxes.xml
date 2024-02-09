@@ -1,2 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<eCH-0119:taxDeclaration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:eCH-0119="http://www.ech.ch/xmlns/eCH-0119/3"/>
+<message
+  xmlns:eCH-0058="http://www.ech.ch/xmlns/eCH-0058/5"
+  xmlns:eCH-0097="http://www.ech.ch/xmlns/eCH-0097/3"
+  xmlns:eCH-0119="http://www.ech.ch/xmlns/eCH-0119/4"
+  xmlns:eCH-0217="http://www.ech.ch/xmlns/eCH-0217/1"
+  minorVersion="0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.ech.ch/xmlns/eCH-0119/4 eCH-0119-4-0_draft.xsd">
+    <eCH-0119:header/>
+    <eCH-0119:content/>
+</message>
