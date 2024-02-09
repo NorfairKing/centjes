@@ -22,6 +22,7 @@ where
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Switzerland.Report.VAT.Types
+import Centjes.Switzerland.XML
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Text (Text)
@@ -36,12 +37,6 @@ import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Numeric.DecimalLiteral as DecimalLiteral
 import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
 import Text.XML as XML
-
-class ToElement a where
-  toElement :: a -> Element
-
-class ToNodes a where
-  toNodes :: a -> [XML.Node]
 
 -- | `VATDeclaration`
 --
@@ -575,34 +570,3 @@ xmlReportDocument xmlReport =
       documentRoot = toElement xmlReport,
       documentEpilogue = []
     }
-
--- | Render with the four relevant namespaces and an XML declaration.
-xmlRenderSettings :: XML.RenderSettings
-xmlRenderSettings =
-  def
-    { rsXMLDeclaration = True,
-      rsNamespaces =
-        [ ("eCH-0058", "http://www.ech.ch/xmlns/eCH-0058/5"),
-          ("eCH-0097", "http://www.ech.ch/xmlns/eCH-0097/3"),
-          ("eCH-0217", "http://www.ech.ch/xmlns/eCH-0217/1"),
-          ("xsi", "http://www.w3.org/2001/XMLSchema-instance")
-        ]
-    }
-
-xsiName :: Text -> XML.Name
-xsiName = xmlName "http://www.w3.org/2001/XMLSchema-instance" "xsi"
-
-ech0058Name :: Text -> XML.Name
-ech0058Name = xmlName "http://www.ech.ch/xmlns/eCH-0058/5" "eCH-0058"
-
-ech0097Name :: Text -> XML.Name
-ech0097Name = xmlName "http://www.ech.ch/xmlns/eCH-0097/3" "eCH-0097"
-
-ech0217Name :: Text -> XML.Name
-ech0217Name = xmlName "http://www.ech.ch/xmlns/eCH-0217/1" "eCH-0217"
-
-xmlName :: Text -> Text -> Text -> XML.Name
-xmlName namespace prefix nameLocalName =
-  let nameNamespace = Just namespace
-      namePrefix = Just prefix
-   in XML.Name {..}

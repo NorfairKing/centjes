@@ -15,13 +15,11 @@ module Centjes.Switzerland.Report.Taxes.ETax
 where
 
 import Centjes.Switzerland.Report.Taxes.Types
+import Centjes.Switzerland.XML
 import qualified Data.Map as M
 import Data.Text (Text)
 import Data.Time
 import Text.XML as XML
-
-class ToElement a where
-  toElement :: a -> Element
 
 -- | `taxDeclaration`
 data XMLReport = XMLReport
@@ -31,7 +29,10 @@ instance ToElement XMLReport where
   toElement XMLReport {} =
     XML.Element
       { elementName = ech0119Name "taxDeclaration",
-        elementAttributes = M.empty,
+        elementAttributes =
+          M.fromList
+            [ (xsiName "schemaLocation", "http://www.ech.ch/xmlns/eCH-0119/4 eCH-0119-4-0_draft.xsd")
+            ],
         elementNodes = []
       }
 
@@ -55,23 +56,3 @@ xmlReportDocument xmlReport =
       documentRoot = toElement xmlReport,
       documentEpilogue = []
     }
-
--- | Render with the four relevant namespaces and an XML declaration.
-xmlRenderSettings :: XML.RenderSettings
-xmlRenderSettings =
-  def
-    { rsXMLDeclaration = True,
-      rsNamespaces =
-        [ ("eCH-0119", "http://www.ech.ch/xmlns/eCH-0119/3"),
-          ("xsi", "http://www.w3.org/2001/XMLSchema-instance")
-        ]
-    }
-
-ech0119Name :: Text -> XML.Name
-ech0119Name = xmlName "http://www.ech.ch/xmlns/eCH-0119/3" "eCH-0119"
-
-xmlName :: Text -> Text -> Text -> XML.Name
-xmlName namespace prefix nameLocalName =
-  let nameNamespace = Just namespace
-      namePrefix = Just prefix
-   in XML.Name {..}

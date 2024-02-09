@@ -40,8 +40,8 @@ import Text.XML as XML
 
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
 runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
-  mainTypContents <- requireAsset [relfile|vat.typ|]
-  xmlSchemaContents <- requireAsset [relfile|mwst-schema.xsd|]
+  typContents <- requireAsset [relfile|vat.typ|]
+  xmlSchemaContents <- requireAsset [relfile|emwst-schema.xsd|]
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
@@ -126,7 +126,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       -- Write the template to a file
       mainTypFile <- liftIO $ do
         mtf <- resolveFile tdir "main.typ"
-        SB.writeFile (fromAbsFile mtf) (TE.encodeUtf8 mainTypContents)
+        SB.writeFile (fromAbsFile mtf) (TE.encodeUtf8 typContents)
         pure mtf
 
       liftIO $ compileTypst mainTypFile vatSettingReadmeFile

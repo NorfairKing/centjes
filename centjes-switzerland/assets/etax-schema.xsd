@@ -1,0 +1,1032 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:eCH-0007f="http://www.ech.ch/xmlns/eCH-0007-f/6" xmlns:eCH-0011f="http://www.ech.ch/xmlns/eCH-0011-f/8" xmlns:eCH-0044f="http://www.ech.ch/xmlns/eCH-0044-f/4" xmlns:eCH-0046f="http://www.ech.ch/xmlns/eCH-0046-f/5" xmlns:eCH-0097="http://www.ech.ch/xmlns/eCH-0097/5" xmlns:eCH-0119="http://www.ech.ch/xmlns/eCH-0119/4" targetNamespace="http://www.ech.ch/xmlns/eCH-0119/4" elementFormDefault="qualified" attributeFormDefault="unqualified" version="0">
+	<xs:annotation>
+		<xs:documentation xml:lang="de">SSK Steuererklärung natürliche Personen</xs:documentation>
+		<xs:documentation xml:lang="de">Ausgabedatum: 31.08.2020</xs:documentation>
+	</xs:annotation>
+	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0007-f/6"/>
+	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0011-f/8"/>
+	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0044-f/4"/>
+	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0046-f/5"/>
+	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0097/5"/>
+	<xs:complexType name="headerType">
+		<xs:sequence>
+			<xs:element name="attachment" type="eCH-0119:attachmentType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="transactionNumber" type="xs:string" minOccurs="0"/>
+			<xs:element name="transactionDate" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="taxPeriod" type="xs:gYear"/>
+			<xs:element name="periodFrom" type="xs:date" minOccurs="0"/>
+			<xs:element name="periodTo" type="xs:date" minOccurs="0"/>
+			<xs:element name="canton" type="eCH-0007f:cantonAbbreviationType" minOccurs="0"/>
+			<xs:element name="source">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="0">
+							<xs:annotation>
+								<xs:documentation xml:lang="de">
+									Software
+								</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation xml:lang="de">
+									2D-Barcode-Scanning
+								</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="2">
+							<xs:annotation>
+								<xs:documentation xml:lang="de">
+									OCR-Scanning
+								</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="sourceDescription" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="attachmentType">
+		<xs:sequence>
+			<xs:element name="file" type="eCH-0119:attachmentFileType" maxOccurs="unbounded"/>
+			<xs:element name="documentIdentification" type="eCH-0119:documentIdentificationType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="title" type="xs:string"/>
+			<xs:element name="documentFormat" type="xs:string"/>
+			<xs:element name="attachedToNumber" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="attachmentFileType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="pathFileName" type="xs:string"/>
+			<xs:element name="internalSortOrder" type="xs:integer"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="documentIdentificationType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="documentCanton" type="eCH-0119:cantonFederalAbbreviationType"/>
+			<xs:element name="documentType" type="xs:string"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- Content -->
+	<xs:simpleType name="currencyShortType">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="3"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="moneyType1">
+		<xs:restriction base="xs:integer">
+			<xs:totalDigits value="12"/>
+			<xs:minInclusive value="-999999999999"/>
+			<xs:maxInclusive value="999999999999"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="moneyType2">
+		<xs:restriction base="xs:decimal">
+			<xs:totalDigits value="14"/>
+			<xs:fractionDigits value="2"/>
+			<xs:minInclusive value="-999999999999.99"/>
+			<xs:maxInclusive value="999999999999.99"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="deductionChildNumberType">
+		<xs:restriction base="xs:decimal">
+			<xs:pattern value="[0-9]+(\.[0,5])?"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="partnerAmountType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="partner1Amount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="partner2Amount" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="taxAmountType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="cantonalTax" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="federalTax" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="mutationJournalEntryType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="xpath" type="xs:string"/>
+			<xs:element name="old" type="xs:string" minOccurs="0"/>
+			<xs:element name="new" type="xs:string" minOccurs="0"/>
+			<xs:element name="mutationType">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">insert</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="2">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">update</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="3">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">delete</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="mutationDescription">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">retention of profits</xs:documentation>
+								<xs:documentation xml:lang="de">Thesaurierung</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="2">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">add missing value</xs:documentation>
+								<xs:documentation xml:lang="de">Ergänzung fehlender Wert</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="3">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">correction of wrong value</xs:documentation>
+								<xs:documentation xml:lang="de">Korrektur falscher Wert</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="4">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">other</xs:documentation>
+								<xs:documentation xml:lang="de">anderer Grund</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="5">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">automatically updated by the calculation of the application</xs:documentation>
+								<xs:documentation xml:lang="de">automatische Aktualisierung der Berechnung durch Applikation</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="mutationText" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="cantonExtensionType">
+		<xs:sequence>
+			<xs:any namespace="##other" processContents="strict"/>
+			<xs:element name="canton" type="eCH-0007f:cantonFlAbbreviationType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="cantonFederalAbbreviationType">
+		<xs:union memberTypes="eCH-0007f:cantonFlAbbreviationType eCH-0119:federalAbbreviationType"/>
+	</xs:simpleType>
+	<xs:simpleType name="federalAbbreviationType">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="CH"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="contentType">
+		<xs:sequence>
+			<xs:element name="mainForm" type="eCH-0119:mainFormType" minOccurs="0"/>
+			<xs:element name="listOfSecurities" type="eCH-0119:listOfSecuritiesType" minOccurs="0"/>
+			<xs:element name="listOfLiabilities" type="eCH-0119:listOfLiabilitiesType" minOccurs="0"/>
+			<xs:element name="qualifiedInvestmentsPrivate" type="eCH-0119:qualifiedInvestmentsPrivateType" minOccurs="0"/>
+			<xs:element name="qualifiedInvestmentsBusiness" type="eCH-0119:qualifiedInvestmentsBusinessType" minOccurs="0"/>
+			<xs:element name="jobExpenses" type="eCH-0119:jobExpensesFormType" minOccurs="0"/>
+			<xs:element name="jobOrientedFurtherEducationCost" type="eCH-0119:jobOrientedFurtherEducationCostType" minOccurs="0"/>
+			<xs:element name="insurancePremiums" type="eCH-0119:insurancePremiumsType" minOccurs="0"/>
+			<xs:element name="diseaseAndAccidentExpenses" type="eCH-0119:diseaseAndAccidentExpensesType" minOccurs="0"/>
+			<xs:element name="handicapExpenses" type="eCH-0119:handicapExpensesType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="mainFormType">
+		<xs:sequence>
+			<xs:element name="representativePerson" type="eCH-0119:representativePersonType" minOccurs="0"/>
+			<xs:element name="personDataPartner1" type="eCH-0119:personDataPartner1Type"/>
+			<xs:element name="personDataPartner2" type="eCH-0119:personDataPartner2Type" minOccurs="0"/>
+			<xs:element name="childData" type="eCH-0119:childDataType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="disabledPersonSupport" type="eCH-0119:disabledPersonSupportType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="revenue" type="eCH-0119:revenueType" minOccurs="0"/>
+			<xs:element name="deduction" type="eCH-0119:deductionType" minOccurs="0"/>
+			<xs:element name="revenueCalculation" type="eCH-0119:revenueCalculationType" minOccurs="0"/>
+			<xs:element name="asset" type="eCH-0119:assetType" minOccurs="0"/>
+			<xs:element name="benefit" type="eCH-0119:benefitType" minOccurs="0"/>
+			<xs:element name="attachedForms" type="eCH-0119:attachedFormsType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="lastTaxDeclaration" type="eCH-0007f:swissMunicipalityType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="representativePersonType">
+		<xs:sequence>
+			<xs:element name="addressInformation" type="eCH-0046f:addressType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="officialName" type="eCH-0044f:baseNameType" minOccurs="0"/>
+			<xs:element name="firstName" type="eCH-0044f:baseNameType" minOccurs="0"/>
+			<xs:element name="organisationName" type="eCH-0097:organisationNameType" minOccurs="0"/>
+			<xs:element name="phoneNumber" type="eCH-0046f:phoneNumberType" minOccurs="0"/>
+			<xs:element name="uid" type="eCH-0097:uidStructureType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="personDataPartner1Type">
+		<xs:sequence>
+			<xs:element name="partnerPersonIdentification" type="eCH-0119:partnerPersonIdentificationType"/>
+			<xs:element name="addressInformation" type="eCH-0046f:addressType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="maritalStatusTax" type="eCH-0011f:maritalDataType" minOccurs="0"/>
+			<xs:element name="religion" type="eCH-0011f:religionType" minOccurs="0"/>
+			<xs:element name="job" type="eCH-0119:jobTitleType" minOccurs="0"/>
+			<xs:element name="employer" type="eCH-0119:employerNameType" minOccurs="0"/>
+			<xs:element name="placeOfWork" type="eCH-0119:placeOfWorkType" minOccurs="0"/>
+			<xs:element name="phoneNumberPrivate" type="eCH-0046f:phoneNumberType" minOccurs="0"/>
+			<xs:element name="phoneNumberBusiness" type="eCH-0046f:phoneNumberType" minOccurs="0"/>
+			<xs:element name="paymentPension" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="taxMunicipality" type="eCH-0007f:swissMunicipalityType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="personDataPartner2Type">
+		<xs:sequence>
+			<xs:element name="personIdentification" type="eCH-0044f:personIdentificationType" minOccurs="0"/>
+			<xs:element name="addressInformation" type="eCH-0046f:addressType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="maritalStatusTax" type="eCH-0011f:maritalDataType" minOccurs="0"/>
+			<xs:element name="religion" type="eCH-0011f:religionType" minOccurs="0"/>
+			<xs:element name="job" type="eCH-0119:jobTitleType" minOccurs="0"/>
+			<xs:element name="employer" type="eCH-0119:employerNameType" minOccurs="0"/>
+			<xs:element name="placeOfWork" type="eCH-0119:placeOfWorkType" minOccurs="0"/>
+			<xs:element name="phoneNumberPrivate" type="eCH-0046f:phoneNumberType" minOccurs="0"/>
+			<xs:element name="phoneNumberBusiness" type="eCH-0046f:phoneNumberType" minOccurs="0"/>
+			<xs:element name="paymentPension" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="taxMunicipality" type="eCH-0007f:swissMunicipalityType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="jobTitleType">
+		<xs:restriction base="xs:token">
+			<xs:maxLength value="100"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="employerNameType">
+		<xs:restriction base="xs:token">
+			<xs:maxLength value="60"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="placeOfWorkType">
+		<xs:restriction base="xs:token">
+			<xs:maxLength value="40"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="partnerPersonIdentificationType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="officialName" type="eCH-0044f:baseNameType"/>
+			<xs:element name="firstName" type="eCH-0044f:baseNameType"/>
+			<xs:element name="sex" type="eCH-0044f:sexType" minOccurs="0"/>
+			<xs:element name="dateOfBirth" type="eCH-0044f:datePartiallyKnownType" minOccurs="0"/>
+			<xs:element name="vn" type="eCH-0044f:vnType"/>
+			<xs:element name="otherPersonId" type="eCH-0044f:namedPersonIdType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="childDataType">
+		<xs:sequence>
+			<xs:element name="personIdentification" type="eCH-0044f:personIdentificationType" minOccurs="0"/>
+			<xs:element name="addressInformation" type="eCH-0046f:addressType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="homeOrExternal" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">false .. home</xs:documentation>
+					<xs:documentation xml:lang="en">true .. external</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="schoolOrCompany" type="xs:string" minOccurs="0"/>
+			<xs:element name="correctTo" type="xs:date" minOccurs="0"/>
+			<xs:element name="alimonyOtherPerson" type="xs:boolean" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="disabledPersonSupportType">
+		<xs:sequence>
+			<xs:element name="personIdentification" type="eCH-0044f:personIdentificationType" minOccurs="0"/>
+			<xs:element name="addressInformation" type="eCH-0046f:addressType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="homeOrExternal" type="xs:boolean" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">false .. home</xs:documentation>
+					<xs:documentation xml:lang="en">true .. external</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="supportAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="revenueType">
+		<xs:sequence>
+			<xs:element name="employedMainRevenue" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="employedSidelineRevenue" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="selfemployedMainRevenue" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="selfemployedSidelineRevenue" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="insuranceAHVIV100" type="eCH-0119:insurance100Type" minOccurs="0"/>
+			<xs:element name="insuranceAHVIV100Amount" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="pension1Partner1" type="eCH-0119:pensionType" minOccurs="0"/>
+			<xs:element name="pension2FPartner1" type="eCH-0119:pensionType" minOccurs="0"/>
+			<xs:element name="pension1Partner2" type="eCH-0119:pensionType" minOccurs="0"/>
+			<xs:element name="pension2FPartner2" type="eCH-0119:pensionType" minOccurs="0"/>
+			<xs:element name="unemploymentInsurance" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="childAllowances" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="identificationPersonAlimony" type="eCH-0044f:personIdentificationType" minOccurs="0"/>
+			<xs:element name="identificationAddressAlimony" type="eCH-0046f:addressType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="securitiesRevenue" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="securitiesRevenueQualified" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="restRevenueAlimony" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="restRevenueAlimonyChild" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="restRevenueInheritanceEtc" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="restRevenueFreeText" type="xs:string" minOccurs="0"/>
+			<xs:element name="restRevenueFreeTextAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="restRevenueLumpSumSettlementMonths" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:positiveInteger">
+						<xs:maxInclusive value="999"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="restRevenueLumpSumSettlementAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="restRevenueLumpSumSettlementText" type="xs:string" minOccurs="0"/>
+			<xs:element name="propertyNotionalRentalValue" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="propertyRevenueRent" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="propertyRevenueGross" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="propertyDeductionFlatrate" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="propertyDeductionEffective" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="propertyRemainingRevenue" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="propertyRevenueOtherProperty" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountRevenue" type="eCH-0119:taxAmountType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="insurance100Type">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="partner1Insurance" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="0">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">AHV</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">IV</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="partner2Insurance" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="0">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">AHV</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">IV</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="pensionType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="amount100" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="percentage" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:maxInclusive value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="amountFinal" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="deductionType">
+		<xs:sequence>
+			<xs:element name="jobExpensesPartner1" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="jobExpensesPartner2" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="amountLiabilitiesInterest" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="paymentAlimony" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="paymentAlimonyChild" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="paymentPensionDeduction" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="provision3aPartner1Deduction" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="provision3aPartner2Deduction" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="insuranceAndInterest" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="furtherDeductionProvision" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="furtherDeductionJobOrientedFurtherEducationCost" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="furtherDeductionFinancialManagement" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="furtherDeductionHandicap" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="furtherDeductionFreeTextAmount" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="furtherDeductionNonparentalSuperVision" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="employmentBothPartner" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="totalAmountDeduction" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="paymentPensionTotal" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="provision3aPartner1Effective" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="provision3aPartner2Effective" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="furtherDeductionFreeText" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="revenueCalculationType">
+		<xs:sequence>
+			<xs:element name="totalAmountRevenue" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="totalAmountDeduction" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="netIncome" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="deductionDiseaseAndAccident" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="deductionCharity" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="adjustedNetIncome" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="socialDeductionHomeChild" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="socialDeductionExternalChild" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="socialDeductionSupportedPerson" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="socialDeductionPartner" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="totalAmountFiscalRevenue" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="fiscalRevenueOtherCanton" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="fiscalRevenueAbroad" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="resultingFiscalRevenue" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="assetType">
+		<xs:sequence>
+			<xs:element name="movablePropertySecuritiesAndAssets" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="movablePropertyCashValue" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="movablePropertyLifeInsurances" type="eCH-0119:moveablePropertyLifeInsuranceType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="movablePropertyVehicle" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="movablePropertyHeritageEtc" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="movablePropertyFreeTextAmount" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="propertyHouseOrFlat" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="propertyMarketValue" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="propertyCapitalizedValue" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="selfEmployedbusinessCapital" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="selfEmployedOtherAssets" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="selfEmployedStock" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="selfEmployedLiveStock" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="selfEmployedAssetWithoutProperty" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="totalAmountAssets" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="totalAmountLiabilities" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="totalAmountFiscalAssets" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="fiscalAssetsOtherCanton" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="fiscalAssetsAbroad" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="resultingFiscalAssets" type="eCH-0119:privateBusinessType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="moveablePropertyLifeInsurancesTotal" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="moveablePropertyVehicleDescription" type="xs:string" minOccurs="0"/>
+			<xs:element name="moveablePropertyVehiclePurchasePrice" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="moveablePropertyVehicleYear" type="xs:gYear" minOccurs="0"/>
+			<xs:element name="movablePropertyFreeText" type="xs:string" minOccurs="0"/>
+			<xs:element name="propertyHouseOrFlatTown" type="xs:string" minOccurs="0"/>
+			<xs:element name="propertyHouseOrFlatStreet" type="xs:string" minOccurs="0"/>
+			<xs:element name="selfEmployedLiveStockInsuranceValue" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="privateBusinessType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="fiscalValue" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="businessPortion" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="moveablePropertyLifeInsuranceType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="lifeInsuranceCompany" type="xs:string" minOccurs="0"/>
+			<xs:element name="lifeInsuranceFixtureYear" type="xs:gYear" minOccurs="0"/>
+			<xs:element name="lifeInsuranceExpirationYear" type="xs:gYear" minOccurs="0"/>
+			<xs:element name="lifeInsuranceFiscalValue" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="benefitType">
+		<xs:sequence>
+			<xs:element name="payment" type="eCH-0119:paymentType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="restBenefitPaymentReceived" type="eCH-0119:restBenefitType" minOccurs="0"/>
+			<xs:element name="restBenefitPaidOut" type="eCH-0119:restBenefitType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="benefitNote" type="xs:string" minOccurs="0"/>
+			<xs:element name="paymentAmountTotal" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="paymentType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="paymentReason" minOccurs="0" maxOccurs="unbounded">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">AHV/IV</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="2">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">Freizügigkeit</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="3">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">Death/Invalidity</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="4">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">Pillar 2</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="5">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">Pillar 3a</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="6">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">Other</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="paymentDate" type="xs:date" minOccurs="0"/>
+			<xs:element name="paymentAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="restBenefitType">
+		<xs:sequence>
+			<xs:element name="personidentification" type="eCH-0044f:personIdentificationType" minOccurs="0"/>
+			<xs:element name="adress" type="eCH-0046f:addressType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="relation" type="xs:string" minOccurs="0"/>
+			<xs:element name="restSource" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:integer">
+						<xs:enumeration value="1">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">donation</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="2">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">advancement of inheritance</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="3">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">inheritance</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="4">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">share in community of heirs</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="date" type="xs:gMonthDay" minOccurs="0"/>
+			<xs:element name="amount" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="attachedFormsType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="attachedPcTaxDeclaration" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedListOfAssets" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedWageStatement" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedColumn3a" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedBalance" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedQuestionnaire" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedQuestionnaireText" type="xs:string" minOccurs="0"/>
+			<xs:element name="attachedExpenses" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedFreeTextCheckbox" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="attachedFreeText" type="xs:string" minOccurs="0"/>
+			<xs:element name="locationAndDate" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="listOfSecuritiesType">
+		<xs:sequence>
+			<xs:element name="bankAccount" type="eCH-0119:bankAccountType" minOccurs="0"/>
+			<xs:element name="securityEntry" type="eCH-0119:securityEntryType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="eTaxStatement" type="eCH-0119:eTaxStatementType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="locationAndDate" type="xs:string" minOccurs="0"/>
+			<xs:element name="attachedPCListOfSecurities" type="xs:integer" minOccurs="0"/>
+			<xs:element name="attachedForms" type="xs:integer" minOccurs="0"/>
+			<xs:element name="attachedFormDA1" type="xs:integer" minOccurs="0"/>
+			<xs:element name="attachedClearing" type="xs:integer" minOccurs="0"/>
+			<xs:element name="note" type="xs:string" minOccurs="0"/>
+			<xs:element name="carryOverSupplementary1TaxValue" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="carryOverSupplementary1RevenueA" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="carryOverSupplementary1RevenueB" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="carryOverSupplementary2TaxValue" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="carryOverSupplementary2RevenueA" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="carryOverSupplementary2RevenueB" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="carryOverFormDA1TaxValue" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="carryOverFormDA1RevenueB" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalQualifiedInvestments" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalTaxValue" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="subtotalGrossRevenueA1" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="subtotalGrossRevenueB" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="subtotalGrossRevenueA2" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="totalGrossRevenue" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="withholdingTax" type="eCH-0119:moneyType2" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="bankAccountType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="ibanNumber" type="xs:string" minOccurs="0"/>
+			<xs:element name="postAccountNumber" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="24"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="bankAccountNumber" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="24"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="bankName" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="24"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="bankClearingNumber" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="24"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="accountOwner" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="24"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="securityEntryType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="code" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="00">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">business assets</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="01">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">usufruct</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="02">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">inherited</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="03">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">donation</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+						<xs:enumeration value="04">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">qualified investment</xs:documentation>
+							</xs:annotation>
+						</xs:enumeration>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="originalCurrency" type="eCH-0119:currencyShortType" minOccurs="0"/>
+			<xs:element name="faceValueQuantity" type="xs:decimal" minOccurs="0"/>
+			<xs:element name="securitiesNumber" type="xs:string" minOccurs="0"/>
+			<xs:element name="detailedDescription" type="xs:string" minOccurs="0"/>
+			<xs:element name="countryOfDepositaryBank" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">format ISO-3166 ALPHA-2, modeled according to iso2id from eCH-0072</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[A-Z]{2}"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="addition" type="xs:gMonthDay" minOccurs="0"/>
+			<xs:element name="divestiture" type="xs:gMonthDay" minOccurs="0"/>
+			<xs:element name="taxValueEndOfYear" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="grossRevenueA" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="grossRevenueB" type="eCH-0119:taxAmountType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="eTaxStatementType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="mutationJournal" type="eCH-0119:mutationJournalEntryType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="id" type="xs:string"/>
+			<xs:element name="taxValueEndOfYear" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="grossRevenueA" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="grossRevenueB" type="eCH-0119:taxAmountType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="qualifiedInvestmentsPrivateType">
+		<xs:sequence>
+			<xs:element name="investmentsPrivate" type="eCH-0119:qualifiedInvestmentsType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="totalGrossRevenuePrivate" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="deductionPartialTaxation" type="eCH-0119:taxAmountType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="qualifiedInvestmentsType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="originalCurrency" type="eCH-0119:currencyShortType" minOccurs="0"/>
+			<xs:element name="investmentRate" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:positiveInteger">
+						<xs:maxInclusive value="100"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="detailedDescriptionInvestmentrights" type="xs:string" minOccurs="0"/>
+			<xs:element name="grossRevenue" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="qualifiedInvestmentsBusinessType">
+		<xs:sequence>
+			<xs:element name="investmentBusiness" type="eCH-0119:qualifiedInvestmentsType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="segmentAccounting" type="eCH-0119:segmentAccountingType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="segmentEarnings" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="financingCosts" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="administrationCosts" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="clearAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="deductionPartialTaxation" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="segmentDeficits" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="chargingPartialTaxation" type="eCH-0119:taxAmountType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="segmentAccountingType">
+		<xs:sequence>
+			<xs:element name="assetList" type="eCH-0119:assetPassiveListType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="passiveList" type="eCH-0119:assetPassiveListType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="operationalRevenue" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentRevenueDividend" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentRevenueAmortization" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentRevenueTransfer" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentRevenueBookentry" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentRevenueAcrual" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="remainingRevenue" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="operationalCosts" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="financingCosts" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentCostsWriteoff" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentCostsAcrual" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="investmentCostsTransfer" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="remainingCosts" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="profitOrLoss" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="total" type="eCH-0119:segmentListType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="operationalAssets" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAssets" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="outsideCapital" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="equityCapital" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalPassive" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="assetPassiveListType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="amount" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="segmentListType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="costs" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="revenue" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="segmentInvestment" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="listOfLiabilitiesType">
+		<xs:sequence>
+			<xs:element name="privateLiabilities" type="eCH-0119:liabilitiesListingType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="businessLiabilities" type="eCH-0119:liabilitiesListingType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="totalPrivateLiabilities" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalPrivateLiabilitiesInterest" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalBusinessLiabilities" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalBusinessLiabilitiesInterest" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountLiabilities" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountLiabilitiesInterest" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="liabilitiesListingType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="identification" type="xs:string" minOccurs="0"/>
+			<xs:element name="liability" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="liabilityInterest" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="jobExpensesFormType">
+		<xs:sequence>
+			<xs:element name="jobExpensePartner1" type="eCH-0119:jobExpensesType" minOccurs="0"/>
+			<xs:element name="jobExpensePartner2" type="eCH-0119:jobExpensesType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="jobExpensesType">
+		<xs:sequence>
+			<xs:element name="ticketCostPublicTransport" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="bicycleOrSmallMotorbike" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="detailsMotorvehicle" type="eCH-0119:carOrMotorbikeType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="detailsMotorvehicleBusiness" type="eCH-0119:carOrMotorbikeType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="amountMotorvehicle" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="subtotalVehicle" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cateringSubsidized" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cateringNonSubsidized" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cateringShiftWork" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="remainingJobCostFlatrate" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="remainingJobCostEffective" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="weekdayStay" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="furtherEducationFlatrate" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="sidelineFlatrate" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="sidelineEffective" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="totalAmountJobExpenses" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="totalIncomeMotorvehicleBusiness" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="vehicleTypeCar" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="vehicleTypeMotorbike" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="vehicleLeased" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="vehicleTypeBusinessCar" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="vehicleTypeBusinessMotorbike" type="xs:boolean" minOccurs="0"/>
+			<xs:element name="placeOfWorkAddress" type="xs:string" minOccurs="0"/>
+			<xs:element name="cateringShiftWorkNumberOfDays" type="xs:integer" minOccurs="0"/>
+			<xs:element name="reasonPrivateMotorvehicle" minOccurs="0" maxOccurs="unbounded">
+				<xs:simpleType>
+					<xs:restriction base="xs:token">
+						<xs:enumeration value="00"/>
+						<xs:enumeration value="01"/>
+						<xs:enumeration value="02"/>
+						<xs:enumeration value="03"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="carOrMotorbikeType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="placeOfWork" type="xs:string" minOccurs="0"/>
+			<xs:element name="numberOfWorkdays" type="xs:integer" minOccurs="0"/>
+			<xs:element name="distance" type="xs:integer" minOccurs="0"/>
+			<xs:element name="numberOfTrips" type="xs:integer" minOccurs="0"/>
+			<xs:element name="distancePerYear" type="xs:integer" minOccurs="0"/>
+			<xs:element name="amountPerDistance" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountDetailVehicle" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="jobOrientedFurtherEducationCostType">
+		<xs:sequence>
+			<xs:element name="furtherEducationCost" type="eCH-0119:furtherEducationCostType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="furtherEducationTotalCost" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="furtherEducationEmployerContribution" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="furtherEducationOwnCost" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="furtherEducationAllowableDeduction" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="furtherEducationTotalDeduction" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="year" type="xs:integer" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="furtherEducationCostType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+			<xs:element name="amount" type="eCH-0119:partnerAmountType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="insurancePremiumsType">
+		<xs:sequence>
+			<xs:element name="deductionInsuranceAndInterestMarried" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="deductionInsuranceAndInterestSingle" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="deductionChild" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="totalDeductionInsuranceAndInterest" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="finalDeduction" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="privateHealthInsurance" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="privateAccidentInsurance" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="privateLifeAndPensionInsurance" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="interestSavings" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="subtotalAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="deductionsPremiumsReduction" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="paidInsuranceAndInterest" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="deductionChildNumber" type="eCH-0119:deductionChildNumberType" minOccurs="0"/>
+			<xs:element name="cantonalTaxDeductionSupportPersonNumber" type="xs:integer" minOccurs="0"/>
+			<xs:element name="cantonalTaxDeductionSupportPersonAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="federalTaxDeductionSupportPersonNumber" type="xs:integer" minOccurs="0"/>
+			<xs:element name="federalTaxDeductionSupportPersonAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="diseaseAndAccidentExpensesType">
+		<xs:sequence>
+			<xs:element name="concernedPerson" type="eCH-0119:concernedPersonType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="calculationTotalAmountExpenses" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="calculationPercentageShare" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="calculationDeduction" type="eCH-0119:taxAmountType" minOccurs="0"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="expenseFranchise" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseDoctor" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseDentist" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseNursingStaff" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseHospital" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseTherapy" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseFreeText" type="xs:string" minOccurs="0"/>
+			<xs:element name="expenseFreeTextAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseTotalAmount1" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceInsurance" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceCostOfLiving" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceFreeText" type="xs:string" minOccurs="0"/>
+			<xs:element name="allowanceFreeTextAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceTotalAmount1" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseTotalAmount2" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceTotalAmount2" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountExpenses" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountExpensesFlatrate" type="eCH-0119:moneyType1" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="concernedPersonType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="officialName" type="eCH-0044f:baseNameType" minOccurs="0"/>
+			<xs:element name="firstName" type="eCH-0044f:baseNameType" minOccurs="0"/>
+			<xs:element name="location" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="handicapExpensesType">
+		<xs:sequence>
+			<xs:element name="concernedPersonHandicap" type="eCH-0119:handicapConcernedPersonHandicapType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="expenseIVAllowances" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseReliefStay" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseFreeText" type="xs:string" minOccurs="0"/>
+			<xs:element name="expenseFreeTextAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseTotalAmount1" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceInsurance" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceHelplessCompensation" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceCostOfLiving" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceFreeText" type="xs:string" minOccurs="0"/>
+			<xs:element name="allowanceFreeTextAmount" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceTotalAmount1" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="expenseTotalAmount2" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="allowanceTotalAmount2" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountDeduction" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountDeductionFlatrate" type="eCH-0119:moneyType1" minOccurs="0"/>
+			<xs:element name="totalAmountDeductionFlatrateDescription" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="handicapConcernedPersonHandicapType">
+		<xs:sequence>
+			<xs:element name="cantonExtension" type="eCH-0119:cantonExtensionType" minOccurs="0"/>
+			<xs:element name="officialName" type="eCH-0044f:baseNameType" minOccurs="0"/>
+			<xs:element name="firstName" type="eCH-0044f:baseNameType" minOccurs="0"/>
+			<xs:element name="location" type="xs:string" minOccurs="0"/>
+			<xs:element name="handicap" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="message">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">declaration of root element of message.xml</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="header" type="eCH-0119:headerType"/>
+				<xs:element name="content" type="eCH-0119:contentType"/>
+			</xs:sequence>
+			<xs:attribute name="minorVersion" type="xs:integer" use="required"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

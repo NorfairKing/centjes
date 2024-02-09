@@ -12,6 +12,7 @@ import Centjes.Compile
 import Centjes.Load
 import Centjes.Report.Check
 import Centjes.Switzerland.Assets
+import Centjes.Switzerland.Constants (development)
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Taxes
 import Centjes.Switzerland.Reporter
@@ -28,12 +29,20 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.Map as M
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import qualified Data.Text.Lazy as LT
+import Data.Time
 import Path
 import Path.IO
+import System.Exit
+import System.Process.Typed
+import Text.Show.Pretty
+import Text.XML as XML
 
 runCentjesSwitzerlandTaxes :: Settings -> TaxesSettings -> IO ()
 runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
-  mainTypContents <- requireAsset [relfile|taxes.typ|]
+  typContents <- requireAsset [relfile|taxes.typ|]
+  xmlSchemaContents <- requireAsset [relfile|etax-schema.xsd|]
+
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
@@ -46,6 +55,60 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
 
       validation <- liftIO $ runValidationT $ runReporter $ produceTaxesReport taxesSettingInput ledger
       (taxesReport, files) <- liftIO $ checkValidation diag validation
+
+      -- Write the xml to a file
+      xmlFile <- do
+        now <- liftIO getCurrentTime
+        case produceXMLReport now taxesReport of
+          Nothing -> liftIO $ die "Failed to produce XML report. This should not happen"
+          Just xmlReport -> do
+            logDebugN $ T.pack $ ppShow xmlReport
+            xf <- resolveFile tdir "taxes.xml"
+            let xmlDoc = xmlReportDocument xmlReport
+            liftIO $
+              XML.writeFile
+                xmlRenderSettings
+                (fromAbsFile xf)
+                xmlDoc
+            logInfoN $
+              T.pack $
+                unwords
+                  [ "Wrote XML version to",
+                    fromAbsFile xf
+                  ]
+            logDebugN $
+              LT.toStrict $
+                XML.renderText
+                  (xmlRenderSettings {rsPretty = True})
+                  xmlDoc
+
+            -- Turned off outside of development because it does network lookups.
+            when development $ do
+              schemaFile <- resolveFile tdir "etax-schema.xsd"
+              liftIO $
+                SB.writeFile
+                  (fromAbsFile schemaFile)
+                  (TE.encodeUtf8 xmlSchemaContents)
+              logInfoN $
+                T.pack $
+                  unwords
+                    [ "Validating XML output at",
+                      fromAbsFile xf,
+                      "against schema",
+                      fromAbsFile schemaFile
+                    ]
+              runProcess_ $
+                setWorkingDir (fromAbsDir tdir) $
+                  setStdout inherit $
+                    setStderr inherit $
+                      proc
+                        "xmllint"
+                        [ "--schema",
+                          fromAbsFile schemaFile,
+                          fromAbsFile xf,
+                          "--noout"
+                        ]
+            pure xf
 
       let input = taxesReportInput taxesReport
 
@@ -65,7 +128,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
       -- Write the template to a file
       mainTypFile <- liftIO $ do
         mtf <- resolveFile tdir "main.typ"
-        SB.writeFile (fromAbsFile mtf) $ TE.encodeUtf8 mainTypContents
+        SB.writeFile (fromAbsFile mtf) $ TE.encodeUtf8 typContents
         pure mtf
 
       -- Compile the README.pdf using typst
@@ -82,7 +145,8 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
       createZipFile taxesSettingZipFile $
         M.insert [relfile|README.pdf|] taxesSettingReadmeFile $
           M.insert [relfile|raw-input.json|] jsonInputFile $
-            M.map (settingBaseDir </>) files
+            M.insert [relfile|taxes.xml|] xmlFile $
+              M.map (settingBaseDir </>) files
 
       logInfoN $
         T.pack $

@@ -10,7 +10,8 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
-    assets/mwst-schema.xsd
+    assets/emwst-schema.xsd
+    assets/etax-schema.xsd
     assets/taxes.typ
     assets/vat.typ
     test_resources/empty/input.json
@@ -57,6 +58,7 @@ library
       Centjes.Switzerland.Report.VAT.Typst
       Centjes.Switzerland.Reporter
       Centjes.Switzerland.Typst
+      Centjes.Switzerland.XML
       Centjes.Switzerland.Zip
   other-modules:
       Paths_centjes_switzerland
