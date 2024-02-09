@@ -19,7 +19,7 @@ import Text.XML as XML
 
 spec :: Spec
 spec = do
-  dirScenarioDir "test_resources/vat" $ \fp ->
+  dirScenarioDir "test_resources" $ \fp ->
     it "Makes the same vat.xml for this scenario" $
       goldenTextFile (fp <> "vat.xml") $ do
         dir <- resolveDir' fp

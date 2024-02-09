@@ -13,27 +13,25 @@ extra-source-files:
     assets/mwst-schema.xsd
     assets/taxes.typ
     assets/vat.typ
-    test_resources/taxes/empty/input.json
-    test_resources/taxes/empty/ledger.cent
-    test_resources/taxes/empty/switzerland.yaml
-    test_resources/taxes/empty/taxes.xml
-    test_resources/vat/empty/input.json
-    test_resources/vat/empty/ledger.cent
-    test_resources/vat/empty/switzerland.yaml
-    test_resources/vat/empty/vat.xml
-    test_resources/vat/example/bank-statement.txt
-    test_resources/vat/example/foobar-dec.txt
-    test_resources/vat/example/foobar-feb.txt
-    test_resources/vat/example/foobar-jan.txt
-    test_resources/vat/example/input.json
-    test_resources/vat/example/joe-feb.txt
-    test_resources/vat/example/ledger.cent
-    test_resources/vat/example/quux-dec.txt
-    test_resources/vat/example/quux-feb.txt
-    test_resources/vat/example/quux-jan.txt
-    test_resources/vat/example/receipt-computer.txt
-    test_resources/vat/example/switzerland.yaml
-    test_resources/vat/example/vat.xml
+    test_resources/empty/input.json
+    test_resources/empty/ledger.cent
+    test_resources/empty/switzerland.yaml
+    test_resources/empty/taxes.xml
+    test_resources/empty/vat.xml
+    test_resources/example/bank-statement.txt
+    test_resources/example/foobar-dec.txt
+    test_resources/example/foobar-feb.txt
+    test_resources/example/foobar-jan.txt
+    test_resources/example/input.json
+    test_resources/example/joe-feb.txt
+    test_resources/example/ledger.cent
+    test_resources/example/quux-dec.txt
+    test_resources/example/quux-feb.txt
+    test_resources/example/quux-jan.txt
+    test_resources/example/receipt-computer.txt
+    test_resources/example/switzerland.yaml
+    test_resources/example/taxes.xml
+    test_resources/example/vat.xml
 
 source-repository head
   type: git

@@ -21,7 +21,7 @@ spec :: Spec
 spec = do
   dirScenarioDir "test_resources/vat" $ \fp ->
     it "Makes the same input.json for this scenario" $
-      goldenJSONFile (fp <> "input.json") $ do
+      goldenJSONFile (fp <> "vat-input.json") $ do
         dir <- resolveDir' fp
         configFile <- resolveFile dir "switzerland.yaml"
         config <- do
