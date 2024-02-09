@@ -1,6 +1,8 @@
-person-name: John Doe
+first-name: John
+last-name: Doe
 organisation-name: Doe Inc.
 vat-id: 111.222.333
+ahv-id: 756.1111.2222.33
 
 income:
   "income:consulting:foobar": 

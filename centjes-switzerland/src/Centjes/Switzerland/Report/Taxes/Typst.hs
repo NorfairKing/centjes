@@ -17,14 +17,16 @@ import Data.Time
 
 taxesReportInput :: TaxesReport ann -> Input
 taxesReportInput TaxesReport {..} =
-  let inputPersonName = taxesReportPersonName
+  let inputLastName = taxesReportLastName
+      inputFirstName = taxesReportFirstName
       inputYear = taxesReportYear
    in Input {..}
 
 -- Note that this is a separate type from the ETax 'XMLReport' because there
 -- is more information in the README than there is in the ETax
 data Input = Input
-  { inputPersonName :: Text,
+  { inputLastName :: Text,
+    inputFirstName :: Text,
     inputYear :: !Year
   }
   deriving (Show, Eq)
@@ -34,7 +36,9 @@ instance HasCodec Input where
   codec =
     object "Input" $
       Input
-        <$> requiredField "person_name" "person name"
-          .= inputPersonName
+        <$> requiredField "last_name" "last name"
+          .= inputLastName
+        <*> requiredField "first_name" "first name"
+          .= inputFirstName
         <*> requiredField "year" "year"
           .= inputYear

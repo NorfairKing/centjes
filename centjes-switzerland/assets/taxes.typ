@@ -2,4 +2,4 @@
 
 = Taxes #{ input.year }
 
-Name: #{ input.person_name }
+Name: #{ input.first_name } #{ input.last_name }

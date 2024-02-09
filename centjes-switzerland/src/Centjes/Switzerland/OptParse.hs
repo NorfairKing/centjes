@@ -15,6 +15,7 @@ import Data.Map (Map)
 import Data.Maybe
 import Data.Set (Set)
 import Data.Text
+import qualified Data.Text as T
 import Data.Time
 import Data.Time.Calendar.Quarter
 import Data.Yaml (FromJSON, ToJSON)
@@ -108,7 +109,7 @@ combineToInstructions
 
 configureVATInput :: Day -> Configuration -> VATInput
 configureVATInput day Configuration {..} =
-  let vatInputPersonName = configPersonName
+  let vatInputPersonName = T.unwords [configFirstName, configLastName]
       vatInputOrganisationName = configOrganisationName
       vatInputVATId = configVATId
       currentQuarter = dayPeriod day
@@ -122,18 +123,22 @@ configureVATInput day Configuration {..} =
 
 configureTaxesInput :: Day -> Configuration -> TaxesInput
 configureTaxesInput day Configuration {..} =
-  let taxesInputPersonName = configPersonName
+  let taxesInputLastName = configLastName
+      taxesInputFirstName = configFirstName
       (currentYear, _, _) = toGregorian day
       taxesInputYear = fromMaybe currentYear configYear
+      taxesInputInsuredPersonNumber = configInsuredPersonNumber
    in TaxesInput {..}
 
 data Configuration = Configuration
   { configZipFile :: !(Maybe FilePath),
     configReadmeFile :: !(Maybe FilePath),
     configLedgerFile :: !(Maybe FilePath),
-    configPersonName :: !Text,
+    configLastName :: !Text,
+    configFirstName :: !Text,
     configOrganisationName :: !Text,
     configVATId :: !Text,
+    configInsuredPersonNumber :: !Text,
     configYear :: !(Maybe Year),
     configQuarter :: !(Maybe Quarter),
     configDomesticIncomeAccountName :: !(Maybe AccountName),
@@ -156,12 +161,16 @@ instance HasCodec Configuration where
           .= configReadmeFile
         <*> optionalField "ledger" "The ledger file"
           .= configLedgerFile
-        <*> requiredField "person-name" "Your legal name"
-          .= configPersonName
+        <*> requiredField "last-name" "Your last name"
+          .= configLastName
+        <*> requiredField "first-name" "Your first name"
+          .= configFirstName
         <*> requiredField "organisation-name" "The organisation's legal name"
           .= configOrganisationName
         <*> requiredField "vat-id" "The VAT identifier. e.g. 111.222.333"
           .= configVATId
+        <*> requiredField "ahv-id" "The AHV identifier. e.g. 746.1111.2222.33"
+          .= configInsuredPersonNumber
         <*> optionalField "year" "The year to produce a taxes report for"
           .= configYear
         <*> optionalFieldWith "quarter" (codecViaAeson "Quarter") "The quarter to produce a vat report for"

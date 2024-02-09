@@ -105,10 +105,95 @@ renderCantonAbbreviation = \case
 
 -- TODO Content
 data Content = Content
+  { contentMainForm :: !(Maybe MainForm)
+  }
+  -- TODO mainForm
+  -- TODO listOfSecurities
+  -- TODO listOfLiabilities
+  -- TODO qualifiedInvestmentsPrivate
+  -- TODO qualifiedInvestmentsBusiness
+  -- TODO jobExpenses
+  -- TODO jobOrientedFurtherEducationCost
+  -- TODO insurancePremiums
+  -- TODO diseaseAndAccidentExpenses
+  -- TODO handicapExpenses
+  -- TODO cantonExtension
   deriving (Show)
 
 instance ToElement Content where
-  toElement Content {} = ech0119Element "content" []
+  toElement Content {..} =
+    ech0119Element "content" $
+      [ NodeElement $ toElement mf
+        | mf <- maybeToList contentMainForm
+      ]
+
+data MainForm = MainForm
+  { mainFormPersonDataPartner1 :: !PersonDataPartner1
+  -- TODO representativePerson
+  -- TODO personDataPartner1
+  -- TODO personDataPartner2
+  -- TODO childData
+  -- TODO disabledPersonSupport
+  -- TODO revenue
+  -- TODO deduction
+  -- TODO revenueCalculation
+  -- TODO asset
+  -- TODO benefit
+  -- TODO attachedForms
+  -- TODO cantonExtension
+  -- TODO lastTaxDeclaration
+  }
+  deriving (Show)
+
+instance ToElement MainForm where
+  toElement MainForm {..} =
+    ech0119Element
+      "mainForm"
+      [ NodeElement $ toElement mainFormPersonDataPartner1
+      ]
+
+data PersonDataPartner1 = PersonDataPartner1
+  { personDataPartner1PartnerPersonIdentification :: !PartnerPersonIdentification
+  -- TODO adressinformation
+  -- TODO cantonExtension
+  -- TODO maritalStatusTax
+  -- TODO religion
+  -- TODO job
+  -- TODO employer
+  -- TODO placeOfWork
+  -- TODO phoneNumberPrivate
+  -- TODO phoneNumberBusiness
+  -- TODO paymentPension
+  -- TODO taxMunicipality
+  }
+  deriving (Show)
+
+instance ToElement PersonDataPartner1 where
+  toElement PersonDataPartner1 {..} =
+    ech0119Element
+      "personDataPartner1"
+      [ NodeElement $ toElement personDataPartner1PartnerPersonIdentification
+      ]
+
+data PartnerPersonIdentification = PartnerPersonIdentification
+  { -- TODO cantonExtension
+    partnerPersonIdentificationOfficialName :: !Text,
+    partnerPersonIdentificationFirstName :: !Text,
+    -- TODO partnerPersonIdentificationSex
+    -- TODO partnerPersonIdentificationDateOfBirth
+    partnerPersonIdentificationVn :: !Text
+    -- TODO partnerPersonIdentificationOtherPersonID
+  }
+  deriving (Show)
+
+instance ToElement PartnerPersonIdentification where
+  toElement PartnerPersonIdentification {..} =
+    ech0119Element
+      "partnerPersonIdentification"
+      [ NodeElement $ ech0119Element "officialName" [NodeContent partnerPersonIdentificationOfficialName],
+        NodeElement $ ech0119Element "firstName" [NodeContent partnerPersonIdentificationFirstName],
+        NodeElement $ ech0119Element "vn" [NodeContent partnerPersonIdentificationVn]
+      ]
 
 -- | Produce an 'XMLReport' from a 'TaxesReport' at the given time.
 --
@@ -124,7 +209,13 @@ produceXMLReport _ TaxesReport {..} = do
   let headerPeriodTo = Just $ fromGregorian taxesReportYear 12 31
   let headerCanton = Nothing
   let xmlReportHeader = Header {..}
-  let xmlReportContent = Content
+  let partnerPersonIdentificationOfficialName = taxesReportLastName
+  let partnerPersonIdentificationFirstName = taxesReportFirstName
+  let partnerPersonIdentificationVn = taxesReportInsuredPersonNumber
+  let personDataPartner1PartnerPersonIdentification = PartnerPersonIdentification {..}
+  let mainFormPersonDataPartner1 = PersonDataPartner1 {..}
+  let contentMainForm = Just MainForm {..}
+  let xmlReportContent = Content {..}
   pure XMLReport {..}
 
 -- | Produce an XML Document from the XMLReport.

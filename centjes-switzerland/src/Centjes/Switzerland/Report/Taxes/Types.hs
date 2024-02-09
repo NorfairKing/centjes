@@ -25,8 +25,10 @@ import Money.QuantisationFactor as Money (QuantisationFactor (..))
 
 -- | The settings we need to produce a 'TaxesReport'
 data TaxesInput = TaxesInput
-  { taxesInputPersonName :: !Text,
-    taxesInputYear :: !Year
+  { taxesInputLastName :: !Text,
+    taxesInputFirstName :: !Text,
+    taxesInputYear :: !Year,
+    taxesInputInsuredPersonNumber :: !Text
   }
   deriving (Show, Eq, Generic)
 
@@ -35,8 +37,10 @@ instance Validity TaxesInput
 -- | The information we need to produce Taxes reports like the pdfs, zip files,
 -- or xml files.
 data TaxesReport ann = TaxesReport
-  { taxesReportPersonName :: !Text,
+  { taxesReportLastName :: !Text,
+    taxesReportFirstName :: !Text,
     taxesReportYear :: !Year,
+    taxesReportInsuredPersonNumber :: !Text,
     taxesReportCHF :: !(Currency ann)
   }
   deriving (Show, Eq, Generic)

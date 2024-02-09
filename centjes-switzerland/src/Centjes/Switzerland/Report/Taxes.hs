@@ -36,8 +36,10 @@ produceTaxesReport ::
   Ledger ann ->
   Reporter (TaxesError ann) (TaxesReport ann)
 produceTaxesReport TaxesInput {..} Ledger {..} = do
-  let taxesReportPersonName = taxesInputPersonName
+  let taxesReportLastName = taxesInputLastName
+  let taxesReportFirstName = taxesInputFirstName
   let taxesReportYear = taxesInputYear
+  let taxesReportInsuredPersonNumber = taxesInputInsuredPersonNumber
 
   let chfSymbol = CurrencySymbol "CHF"
   taxesReportCHF <- case M.lookup chfSymbol ledgerCurrencies of
