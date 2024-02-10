@@ -40,6 +40,9 @@
                     </eCH-0119:vn>
                 </eCH-0119:partnerPersonIdentification>
             </eCH-0119:personDataPartner1>
+            <eCH-0119:revenue>
+                <eCH-0119:selfemployedMainRevenue/>
+            </eCH-0119:revenue>
         </eCH-0119:mainForm>
     </eCH-0119:content>
 </message>

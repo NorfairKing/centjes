@@ -23,6 +23,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
 import Data.Version (showVersion)
+import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
 import Text.XML as XML
 
@@ -128,20 +129,20 @@ instance ToElement Content where
       ]
 
 data MainForm = MainForm
-  { mainFormPersonDataPartner1 :: !PersonDataPartner1
-  -- TODO representativePerson
-  -- TODO personDataPartner1
-  -- TODO personDataPartner2
-  -- TODO childData
-  -- TODO disabledPersonSupport
-  -- TODO revenue
-  -- TODO deduction
-  -- TODO revenueCalculation
-  -- TODO asset
-  -- TODO benefit
-  -- TODO attachedForms
-  -- TODO cantonExtension
-  -- TODO lastTaxDeclaration
+  { mainFormPersonDataPartner1 :: !PersonDataPartner1,
+    -- TODO representativePerson
+    -- TODO personDataPartner1
+    -- TODO personDataPartner2
+    -- TODO childData
+    -- TODO disabledPersonSupport
+    mainFormRevenue :: !(Maybe Revenue)
+    -- TODO deduction
+    -- TODO revenueCalculation
+    -- TODO asset
+    -- TODO benefit
+    -- TODO attachedForms
+    -- TODO cantonExtension
+    -- TODO lastTaxDeclaration
   }
   deriving (Show)
 
@@ -149,8 +150,13 @@ instance ToElement MainForm where
   toElement MainForm {..} =
     ech0119Element
       "mainForm"
-      [ NodeElement $ toElement mainFormPersonDataPartner1
-      ]
+      $ concat
+        [ [ NodeElement $ toElement mainFormPersonDataPartner1
+          ],
+          [ NodeElement $ toElement r
+            | r <- maybeToList mainFormRevenue
+          ]
+        ]
 
 data PersonDataPartner1 = PersonDataPartner1
   { personDataPartner1PartnerPersonIdentification :: !PartnerPersonIdentification
@@ -195,6 +201,68 @@ instance ToElement PartnerPersonIdentification where
         NodeElement $ ech0119Element "vn" [NodeContent partnerPersonIdentificationVn]
       ]
 
+data Revenue = Revenue
+  { revenueSelfemployedMainRevenue :: !(Maybe PartnerAmount)
+  -- TODO employedMainRevenue
+  -- TODO employedSidelineRevenue
+  -- TODO selfemployedMainRevenue
+  -- TODO selfemployedSidelineRevenue
+  -- TODO insuranceAHVIV100
+  -- TODO insuranceAHVIV100Amount
+  -- TODO pension1Partner1
+  -- TODO pension2Partner1
+  -- TODO pension1Partner2
+  -- TODO pension2Partner2
+  -- TODO unemploymentInsurance
+  -- TODO childAllowances
+  -- TODO identificationPersonAlimony
+  -- TODO identificationAdressAlimony
+  -- TODO cantonExtension
+  -- TODO securitiesRevenue
+  -- TODO securitiesRevenueQualified
+  -- TODO restRevenueAlimony
+  -- TODO restRevenueAlimonyChild
+  -- TODO restRevenueInheritanceEtc
+  -- TODO restRevenueFreeText
+  -- TODO restRevenueFreeTextAmount
+  -- TODO restRevenueLumpSumSettlementMonths
+  -- TODO restRevenueLumpSumSettlementAmount
+  -- TODO restRevenueLumpSumSettlementText
+  -- TODO propertyNotionalRentalValue
+  -- TODO propertyRevenueRent
+  -- TODO propertyRevenueGross
+  -- TODO propertyDeductionsFlatrate
+  -- TODO propertyDeductionsEffective
+  -- TODO propertyRemainingRevenue
+  -- TODO propertyRevenueOtherProperty
+  -- TODO totalAmountRevenue
+  }
+  deriving (Show)
+
+instance ToElement Revenue where
+  toElement Revenue {..} =
+    ech0119Element
+      "revenue"
+      [ NodeElement $ ech0119Element "selfemployedMainRevenue" $ toNodes r
+        | r <- maybeToList revenueSelfemployedMainRevenue
+      ]
+
+data PartnerAmount = PartnerAmount
+  { -- TODO cantonExtension
+    partnerAmountPartner1Amount :: !(Maybe DecimalLiteral),
+    partnerAmountPartner2Amount :: !(Maybe DecimalLiteral)
+  }
+  deriving (Show)
+
+instance ToNodes PartnerAmount where
+  toNodes PartnerAmount {..} =
+    concat
+      [ [ NodeElement $ ech0119Element "partner1Amount" [decimalLiteralNode dl] | dl <- maybeToList partnerAmountPartner1Amount
+        ],
+        [ NodeElement $ ech0119Element "partner2Amount" [decimalLiteralNode dl] | dl <- maybeToList partnerAmountPartner2Amount
+        ]
+      ]
+
 -- | Produce an 'XMLReport' from a 'TaxesReport' at the given time.
 --
 -- TODO Put this in a validation instead of a Maybe?
@@ -214,6 +282,13 @@ produceXMLReport _ TaxesReport {..} = do
   let partnerPersonIdentificationVn = taxesReportInsuredPersonNumber
   let personDataPartner1PartnerPersonIdentification = PartnerPersonIdentification {..}
   let mainFormPersonDataPartner1 = PersonDataPartner1 {..}
+  let revenueSelfemployedMainRevenue =
+        Just
+          PartnerAmount
+            { partnerAmountPartner1Amount = Nothing,
+              partnerAmountPartner2Amount = Nothing
+            }
+  let mainFormRevenue = Just Revenue {..}
   let contentMainForm = Just MainForm {..}
   let xmlReportContent = Content {..}
   pure XMLReport {..}
