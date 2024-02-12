@@ -15,6 +15,8 @@ module Centjes.Switzerland.Report.Taxes.ETax
   )
 where
 
+import Centjes.Ledger hiding (Attachment)
+import Centjes.Location
 import Centjes.Switzerland.Report.Taxes.Types
 import Centjes.Switzerland.XML
 import qualified Data.Map as M
@@ -23,6 +25,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
 import Data.Version (showVersion)
+import qualified Money.Amount as Amount
+import qualified Money.Amount as Money (Amount, Rounding (..))
+import qualified Money.ConversionRate as ConversionRate
+import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
 import Text.XML as XML
@@ -135,7 +141,7 @@ data MainForm = MainForm
     -- TODO personDataPartner2
     -- TODO childData
     -- TODO disabledPersonSupport
-    mainFormRevenue :: !(Maybe Revenue)
+    mainFormRevenue :: !(Maybe XMLRevenue)
     -- TODO deduction
     -- TODO revenueCalculation
     -- TODO asset
@@ -201,8 +207,8 @@ instance ToElement PartnerPersonIdentification where
         NodeElement $ ech0119Element "vn" [NodeContent partnerPersonIdentificationVn]
       ]
 
-data Revenue = Revenue
-  { revenueSelfemployedMainRevenue :: !(Maybe PartnerAmount)
+data XMLRevenue = XMLRevenue
+  { xmlRevenueSelfemployedMainRevenue :: !(Maybe PartnerAmount)
   -- TODO employedMainRevenue
   -- TODO employedSidelineRevenue
   -- TODO selfemployedMainRevenue
@@ -239,12 +245,12 @@ data Revenue = Revenue
   }
   deriving (Show)
 
-instance ToElement Revenue where
-  toElement Revenue {..} =
+instance ToElement XMLRevenue where
+  toElement XMLRevenue {..} =
     ech0119Element
       "revenue"
       [ NodeElement $ ech0119Element "selfemployedMainRevenue" $ toNodes r
-        | r <- maybeToList revenueSelfemployedMainRevenue
+        | r <- maybeToList xmlRevenueSelfemployedMainRevenue
       ]
 
 data PartnerAmount = PartnerAmount
@@ -282,13 +288,15 @@ produceXMLReport _ TaxesReport {..} = do
   let partnerPersonIdentificationVn = taxesReportInsuredPersonNumber
   let personDataPartner1PartnerPersonIdentification = PartnerPersonIdentification {..}
   let mainFormPersonDataPartner1 = PersonDataPartner1 {..}
-  let revenueSelfemployedMainRevenue =
+  let xmlRevenueSelfemployedMainRevenue = do
+        a <- unlessZero taxesReportSelfEmploymentRevenue
+        dl <- money1Literal taxesReportCHF a
         Just
           PartnerAmount
-            { partnerAmountPartner1Amount = Nothing,
+            { partnerAmountPartner1Amount = Just dl,
               partnerAmountPartner2Amount = Nothing
             }
-  let mainFormRevenue = Just Revenue {..}
+  let mainFormRevenue = Just XMLRevenue {..}
   let contentMainForm = Just MainForm {..}
   let xmlReportContent = Content {..}
   pure XMLReport {..}
@@ -306,3 +314,23 @@ xmlReportDocument xmlReport =
       documentRoot = toElement xmlReport,
       documentEpilogue = []
     }
+
+-- Zero digits, rounded to 1 CHF
+--
+-- We have to convert to that quantisation factor first.
+money1Literal :: Currency ann -> Money.Amount -> Maybe DecimalLiteral
+money1Literal currency a = do
+  let Located _ qf = currencyQuantisationFactor currency
+  qfOne <- QuantisationFactor.fromWord32 1
+  a' <- fst $ Amount.convert Money.RoundNearest qf a ConversionRate.oneToOne qfOne
+  Amount.toDecimalLiteral qfOne a'
+
+-- -- Two digits, rounded to 5 rappen
+-- --
+-- -- We have to convert to that quantisation factor first.
+-- money2Literal :: Currency ann -> Money.Amount -> Maybe DecimalLiteral
+-- money2Literal currency a = do
+--   let Located _ qf = currencyQuantisationFactor currency
+--   qfTwenty <- QuantisationFactor.fromWord32 20
+--   a' <- fst $ Amount.convert Money.RoundNearest qf a ConversionRate.oneToOne qfTwenty
+--   Amount.toDecimalLiteral qfTwenty a

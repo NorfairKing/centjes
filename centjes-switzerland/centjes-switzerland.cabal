@@ -52,6 +52,7 @@ library
       Centjes.Switzerland.Report.Taxes.ETax
       Centjes.Switzerland.Report.Taxes.Types
       Centjes.Switzerland.Report.Taxes.Typst
+      Centjes.Switzerland.Report.Types
       Centjes.Switzerland.Report.VAT
       Centjes.Switzerland.Report.VAT.EMWST
       Centjes.Switzerland.Report.VAT.Types

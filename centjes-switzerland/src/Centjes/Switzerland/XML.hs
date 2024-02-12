@@ -6,6 +6,8 @@ module Centjes.Switzerland.XML where
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Money.Amount as Amount
+import qualified Money.Amount as Money (Amount)
 import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Numeric.DecimalLiteral as DecimalLiteral
 import Text.XML as XML
@@ -108,3 +110,6 @@ xmlName namespace prefix nameLocalName =
   let nameNamespace = Just namespace
       namePrefix = Just prefix
    in XML.Name {..}
+
+unlessZero :: Money.Amount -> Maybe Money.Amount
+unlessZero a = if a == Amount.zero then Nothing else Just a

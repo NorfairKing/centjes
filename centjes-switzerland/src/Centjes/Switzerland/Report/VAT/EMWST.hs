@@ -532,9 +532,6 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let xmlReportOtherFlowOfFunds = Nothing
   pure XMLReport {..}
 
-unlessZero :: Money.Amount -> Maybe Money.Amount
-unlessZero a = if a == Amount.zero then Nothing else Just a
-
 -- | Produce an XML Document from the XMLReport.
 xmlReportDocument :: XMLReport -> XML.Document
 xmlReportDocument xmlReport =
