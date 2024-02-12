@@ -98,6 +98,8 @@
   - name: realToFrac
     within:
       - Centjes.Report.Balance # TODO get rid of this by putting  positiveFraction in Money.Account
+      - Centjes.Switzerland.Report.Typst
+      - Centjes.Switzerland.Report.VATRate
       - Centjes.Switzerland.Report.VAT.Typst
 
   # Does silent truncation:

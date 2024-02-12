@@ -5,6 +5,7 @@ module Centjes.Switzerland.Report.VATRate
   ( VATRate (..),
     vatRateRatio,
     parseVATRate,
+    formatVATRate,
   )
 where
 
@@ -12,6 +13,7 @@ import Data.Ratio
 import Data.Validity
 import GHC.Generics (Generic)
 import Numeric.Natural
+import Text.Printf
 
 data VATRate
   = -- | 7.7%
@@ -49,3 +51,10 @@ parseVATRate = \case
   0.037 -> pure VATRate2023Hotel
   0.038 -> pure VATRate2024Hotel
   _ -> Nothing
+
+formatVATRate :: VATRate -> String
+formatVATRate =
+  printf "%.1f %%"
+    . (realToFrac :: Ratio Natural -> Double)
+    . (* 100)
+    . vatRateRatio

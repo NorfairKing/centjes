@@ -1,11 +1,14 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Centjes.Switzerland.Report.VAT.Typst
-  ( Input (..),
-    vatReportInput,
+module Centjes.Switzerland.Report.Typst
+  ( AmountWithCurrency,
+    amountToAmountWithCurrency,
+    FormattedAmount,
+    formatAmount,
   )
 where
 
@@ -13,9 +16,7 @@ import Autodocodec
 import qualified Centjes.Description as Description
 import Centjes.Ledger
 import Centjes.Location
-import Centjes.Switzerland.Report.Typst
 import Centjes.Switzerland.Report.VAT.Types
-import Centjes.Switzerland.Report.VATRate
 import qualified Centjes.Timestamp as Timestamp
 import Data.Aeson (FromJSON, ToJSON)
 import Data.List (sortOn)
@@ -209,6 +210,15 @@ vatInputDeductibleExpense DeductibleExpense {..} =
       inputExpenseEvidence = deductibleExpenseEvidence
    in InputExpense {..}
 
+formatVATRate :: VATRate -> String
+formatVATRate = \case
+  VATRate2023Standard -> "7.7 %"
+  VATRate2024Standard -> "8.1 %"
+  VATRate2023Reduced -> "2.5 %"
+  VATRate2024Reduced -> "2.6 %"
+  VATRate2023Hotel -> "3.7 %"
+  VATRate2024Hotel -> "3.8 %"
+
 data InputRevenue = InputRevenue
   { inputRevenueDay :: !Day,
     inputRevenueDescription :: !Text,
@@ -276,3 +286,32 @@ instance HasCodec InputExpense where
           .= inputExpenseVATRate
         <*> requiredField "evidence" "evidence"
           .= inputExpenseEvidence
+
+data AmountWithCurrency = AmountWithCurrency
+  { amountWithCurrencyAmount :: FormattedAmount,
+    amountWithCurrencyCurrency :: CurrencySymbol
+  }
+  deriving (Show, Eq)
+  deriving (FromJSON, ToJSON) via (Autodocodec AmountWithCurrency)
+
+instance HasCodec AmountWithCurrency where
+  codec =
+    object "AmountWithCurrency" $
+      AmountWithCurrency
+        <$> requiredField "formatted" "formatted amount"
+          .= amountWithCurrencyAmount
+        <*> requiredField "symbol" "currency symbol"
+          .= amountWithCurrencyCurrency
+
+amountToAmountWithCurrency :: Currency ann -> Money.Amount -> AmountWithCurrency
+amountToAmountWithCurrency currency amount =
+  let Located _ qf = currencyQuantisationFactor currency
+      symbol = currencySymbol currency
+   in AmountWithCurrency (Amount.format qf amount) symbol
+
+type FormattedAmount = String
+
+formatAmount :: Currency ann -> Money.Amount -> FormattedAmount
+formatAmount currency account =
+  let Located _ qf = currencyQuantisationFactor currency
+   in Amount.format qf account
