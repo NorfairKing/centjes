@@ -38,6 +38,7 @@ import Centjes.Location
 import Centjes.Switzerland.Report.VAT.EMWST
 import Centjes.Switzerland.Report.VAT.Types
 import Centjes.Switzerland.Report.VAT.Typst
+import Centjes.Switzerland.Report.VATRate
 import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
@@ -372,12 +373,3 @@ requireRatioVATRate tl pl r = case r of
   0.037 -> pure VATRate2023Hotel
   0.038 -> pure VATRate2024Hotel
   _ -> validationTFailure $ VATErrorUnknownVATRate tl pl r
-
-vatRateRatio :: VATRate -> Ratio Natural
-vatRateRatio = \case
-  VATRate2023Standard -> 0.077
-  VATRate2024Standard -> 0.081
-  VATRate2023Reduced -> 0.025
-  VATRate2024Reduced -> 0.026
-  VATRate2023Hotel -> 0.037
-  VATRate2024Hotel -> 0.038

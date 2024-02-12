@@ -21,6 +21,7 @@ where
 import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
 import Centjes.Location
+import Centjes.Switzerland.Report.VATRate
 import Centjes.Validation
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Ratio
@@ -194,24 +195,6 @@ data DomesticRevenue ann = DomesticRevenue
   deriving (Show, Eq, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (DomesticRevenue ann)
-
--- TODO check that the rate is valid for the day?
-data VATRate
-  = -- | 7.7%
-    VATRate2023Standard
-  | -- | 8.1%
-    VATRate2024Standard
-  | -- | 2.5%
-    VATRate2023Reduced
-  | -- | 2.6%
-    VATRate2024Reduced
-  | -- | 3.7%
-    VATRate2023Hotel
-  | -- | 3.8%
-    VATRate2024Hotel
-  deriving (Show, Eq, Generic)
-
-instance Validity VATRate
 
 data ForeignRevenue ann = ForeignRevenue
   { foreignRevenueTimestamp :: !Timestamp,
