@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.Types where
 
@@ -12,6 +13,7 @@ import Data.Validity
 import Data.Validity.Time ()
 import Error.Diagnose
 import GHC.Generics (Generic (..))
+import qualified Money.Amount as Amount
 import qualified Money.Amount as Money (Amount)
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import Path
@@ -21,22 +23,32 @@ data Revenue ann = Revenue
     revenueDescription :: !Description,
     revenueGrossAmount :: !Money.Amount,
     revenueCurrency :: !(Currency ann),
-    revenueCHFAmount :: !Money.Amount,
+    revenueGrossCHFAmount :: !Money.Amount,
     -- | Just, if VAT was charged and how much
     revenueVAT :: !(Maybe (VATRevenue ann)),
     -- | Same as gross if no VAT was charged.
     -- Gross - VAT if there was.
-    revenueNettoAmount :: !Money.Amount,
+    revenueNettoCHFAmount :: !Money.Amount,
     -- | Evidence in tarball
     revenueEvidence :: !(NonEmpty (Path Rel File))
   }
   deriving (Show, Eq, Generic)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (Revenue ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (Revenue ann) where
+  validate r@Revenue {..} =
+    mconcat
+      [ genericValidate r,
+        declare "The netto CHF amount is the gross minus VAT" $
+          case revenueVAT of
+            Nothing -> revenueGrossCHFAmount == revenueNettoCHFAmount
+            Just VATRevenue {..} ->
+              Amount.subtract revenueGrossCHFAmount vatRevenueCHFAmount
+                == Just revenueNettoCHFAmount
+      ]
 
+-- Note that VAT must be charged in the same currency as the revenue.
 data VATRevenue ann = VATRevenue
-  { vatRevenueCurrency :: !(Currency ann),
-    vatRevenueAmount :: !Money.Amount,
+  { vatRevenueAmount :: !Money.Amount,
     vatRevenueCHFAmount :: !Money.Amount
   }
   deriving (Show, Eq, Generic)
