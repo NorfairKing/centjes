@@ -128,6 +128,9 @@ configureTaxesInput day Configuration {..} =
       (currentYear, _, _) = toGregorian day
       taxesInputYear = fromMaybe currentYear configYear
       taxesInputInsuredPersonNumber = configInsuredPersonNumber
+      -- TODO configure these properly
+      taxesInputIncomeAccounts = ["income:exports", "income:foreign", "income:domestic"]
+      taxesInputVATIncomeAccountName = fromMaybe "income:vat" configVATIncomeAccountName
    in TaxesInput {..}
 
 data Configuration = Configuration

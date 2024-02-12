@@ -4,6 +4,7 @@
 module Centjes.Switzerland.Report.VATRate
   ( VATRate (..),
     vatRateRatio,
+    parseVATRate,
   )
 where
 

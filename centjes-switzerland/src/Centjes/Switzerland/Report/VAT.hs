@@ -365,11 +365,6 @@ requireRatioVATRate ::
   ann ->
   Ratio Natural ->
   Reporter (VATError ann) VATRate
-requireRatioVATRate tl pl r = case r of
-  0.077 -> pure VATRate2023Standard
-  0.081 -> pure VATRate2024Standard
-  0.025 -> pure VATRate2023Reduced
-  0.026 -> pure VATRate2024Reduced
-  0.037 -> pure VATRate2023Hotel
-  0.038 -> pure VATRate2024Hotel
-  _ -> validationTFailure $ VATErrorUnknownVATRate tl pl r
+requireRatioVATRate tl pl r = case parseVATRate r of
+  Just vr -> pure vr
+  Nothing -> validationTFailure $ VATErrorUnknownVATRate tl pl r

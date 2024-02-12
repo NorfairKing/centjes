@@ -124,6 +124,7 @@ test-suite centjes-switzerland-test
       Centjes.Switzerland.Report.VAT.EMWSTSpec
       Centjes.Switzerland.Report.VAT.Gen
       Centjes.Switzerland.Report.VAT.TypstSpec
+      Centjes.Switzerland.Report.VATRate.Gen
       Centjes.Switzerland.Report.VATSpec
       Centjes.Switzerland.TestUtils
       Paths_centjes_switzerland

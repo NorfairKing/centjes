@@ -47,7 +47,6 @@ import Data.Ratio
 import Data.Time
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import qualified Money.Account as Account
 import qualified Money.Account as Money (Account (..))
 import qualified Money.Amount as Amount
 import qualified Money.Amount as Money (Amount, Rounding (..))
@@ -103,22 +102,27 @@ produceTaxesReport TaxesInput {..} Ledger {..} = do
                       revenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
                       let Located _ revenueCurrency = postingCurrency p1
                       let Located al1 account = postingAccount p1
-                      revenueAmount <- requireNegative tl pl1 account
-                      revenueCHFAmount <- convertDaily al1 dailyPriceGraphs day revenueCurrency taxesReportCHF revenueAmount
+                      revenueGrossAmount <- requireNegative tl pl1 account
+                      revenueGrossCHFAmount <- convertDaily al1 dailyPriceGraphs day revenueCurrency taxesReportCHF revenueGrossAmount
 
-                      case mP2 of
-                        Nothing -> validationTFailure TaxesErrorNoVATPosting
+                      revenueVAT <- case mP2 of
+                        Nothing -> pure Nothing
                         Just (Located pl2 p2) -> do
                           let Located al2 vatAccountName = postingAccountName p2
                           when (vatAccountName /= taxesInputVATIncomeAccountName) $ validationTFailure TaxesErrorVATPostingNotVATAccount
-                          let Located _ revenueVATCurrency = postingCurrency p2
                           let Located _ vatAccount = postingAccount p2
-                          -- TODO require that the vat currency is the same?
-                          revenueVATAmount <- requireNegative tl pl2 vatAccount
-                          revenueVATCHFAmount <- convertDaily al2 dailyPriceGraphs day revenueVATCurrency taxesReportCHF revenueVATAmount
+                          -- TODO require that the vat currency is the same.
+                          vatRevenueAmount <- requireNegative tl pl2 vatAccount
+                          vatRevenueCHFAmount <- convertDaily al2 dailyPriceGraphs day revenueCurrency taxesReportCHF vatRevenueAmount
 
-                          revenueVATRate <- requirePercentageVATRate tl (postingPercentage p2)
-                          pure Revenue {..}
+                          vatRevenueVATRate <- requirePercentageVATRate tl (postingPercentage p2)
+                          pure $ Just VATRevenue {..}
+
+                      revenueNettoCHFAmount <- case revenueVAT of
+                        Nothing -> pure revenueGrossCHFAmount
+                        Just v -> requireSubtractAmount revenueGrossCHFAmount (vatRevenueCHFAmount v)
+
+                      pure Revenue {..}
                     else pure Nothing
           else pure []
 
@@ -137,6 +141,15 @@ requireDescription ::
 requireDescription = \case
   Nothing -> validationTFailure TaxesErrorNoDescription
   Just (Located _ d) -> pure d
+
+requireSubtractAmount ::
+  Money.Amount ->
+  Money.Amount ->
+  Reporter (TaxesError ann) Money.Amount
+requireSubtractAmount a1 a2 =
+  case Amount.subtract a1 a2 of
+    Nothing -> validationTFailure $ TaxesErrorSubtract a1 a2
+    Just a -> pure a
 
 requireSumAmount ::
   Foldable f =>
@@ -217,21 +230,6 @@ requireRatioVATRate ::
   ann ->
   Ratio Natural ->
   Reporter (TaxesError ann) VATRate
-requireRatioVATRate tl pl r = case r of
-  0.077 -> pure VATRate2023Standard
-  0.081 -> pure VATRate2024Standard
-  0.025 -> pure VATRate2023Reduced
-  0.026 -> pure VATRate2024Reduced
-  0.037 -> pure VATRate2023Hotel
-  0.038 -> pure VATRate2024Hotel
-  _ -> validationTFailure $ TaxesErrorUnknownVATRate tl pl r
-
--- TODO move this into a shared module
-vatRateRatio :: VATRate -> Ratio Natural
-vatRateRatio = \case
-  VATRate2023Standard -> 0.077
-  VATRate2024Standard -> 0.081
-  VATRate2023Reduced -> 0.025
-  VATRate2024Reduced -> 0.026
-  VATRate2023Hotel -> 0.037
-  VATRate2024Hotel -> 0.038
+requireRatioVATRate tl pl r = case parseVATRate r of
+  Just vr -> pure vr
+  Nothing -> validationTFailure $ TaxesErrorUnknownVATRate tl pl r

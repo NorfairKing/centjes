@@ -32,7 +32,6 @@ import Data.Time.Format.ISO8601
 import Data.Version (showVersion)
 import qualified Money.Account as Account
 import qualified Money.Amount as Amount
-import qualified Money.Amount as Money (Amount)
 import Numeric.DecimalLiteral (DecimalLiteral)
 import qualified Paths_centjes_switzerland as CentjesSwitzerland (version)
 import Text.XML as XML

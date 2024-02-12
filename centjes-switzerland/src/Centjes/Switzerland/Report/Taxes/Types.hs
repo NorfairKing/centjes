@@ -10,12 +10,15 @@ module Centjes.Switzerland.Report.Taxes.Types
   ( TaxesInput (..),
     TaxesReport (..),
     Revenue (..),
+    VATRevenue (..),
     TaxesError (..),
   )
 where
 
+import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
 import Centjes.Location
+import Centjes.Switzerland.Report.VATRate
 import Centjes.Validation
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Ratio
@@ -25,13 +28,13 @@ import Data.Validity
 import Data.Validity.Time ()
 import Error.Diagnose
 import GHC.Generics (Generic (..))
-import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import qualified Money.Amount as Amount
 import qualified Money.Amount as Money (Amount)
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import Numeric.Natural
 import Path
+import Text.Show.Pretty
 
 -- | The settings we need to produce a 'TaxesReport'
 data TaxesInput = TaxesInput
@@ -97,6 +100,72 @@ instance ToReport (TaxesError SourceSpan) where
         "Incompatible CHF defined"
         [(toDiagnosePosition cdl, This "This currency declaration must use 0.01")]
         []
+    TaxesErrorNoDescription -> Err Nothing "no description" [] []
+    TaxesErrorNoEvidence tl ->
+      Err
+        Nothing
+        "No evidence in transaction"
+        [(toDiagnosePosition tl, This "This transaction is missing evidence")]
+        []
+    TaxesErrorCouldNotConvert al currencyFrom currencyTo _ ->
+      let symbolFrom = currencySymbol currencyFrom
+          symbolTo = currencySymbol currencyTo
+       in Err
+            Nothing
+            ( unwords
+                [ "could not convert from",
+                  CurrencySymbol.toString symbolFrom,
+                  "to",
+                  CurrencySymbol.toString symbolTo
+                ]
+            )
+            [(toDiagnosePosition al, This "this amount")]
+            []
+    TaxesErrorPositiveIncome tl pl _ ->
+      Err
+        Nothing
+        "Positive income amount"
+        [ (toDiagnosePosition pl, Where "in this posting"),
+          (toDiagnosePosition tl, Blank)
+        ]
+        []
+    TaxesErrorNoVATPosting -> Err Nothing "No VAT posting for domestic income" [] []
+    TaxesErrorVATPostingNotVATAccount ->
+      Err
+        Nothing
+        "VAT posting for domestic income had unknown account name"
+        []
+        []
+    TaxesErrorNoVATPercentage tl ->
+      Err
+        Nothing
+        "VAT posting for domestic income did not have a percentage"
+        [ (toDiagnosePosition tl, This "in this transaction")
+        ]
+        []
+    TaxesErrorUnknownVATRate tl pl _ ->
+      Err
+        Nothing
+        "Unknown VAT rate"
+        [ (toDiagnosePosition pl, This "in this percentage"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
+    TaxesErrorSum _ -> Err Nothing "could not sum amounts because the result would get too big" [] []
+    TaxesErrorAdd _ _ -> Err Nothing "could not add amounts because the result wolud get too big" [] []
+    TaxesErrorSubtract _ _ -> Err Nothing "Could not subtract amounts because the result wolud get too big or too small" [] []
+    TaxesErrorReportInvalid report e ->
+      Err
+        Nothing
+        ( unlines
+            [ "Produced VATReport is considered invalid.",
+              "This indicates a bug in this program.",
+              ppShow report,
+              e
+            ]
+        )
+        []
+        []
 
 -- Note that this is a separate type from the DomesticRevenue and
 -- ForeignRevenue types because in the VATReport we have to make sure that the
@@ -104,13 +173,14 @@ instance ToReport (TaxesError SourceSpan) where
 data Revenue ann = Revenue
   { revenueTimestamp :: !Timestamp,
     revenueDescription :: !Description,
-    revenueGrossAmount :: !Money.Amount,
     revenueCurrency :: !(Currency ann),
+    revenueGrossAmount :: !Money.Amount,
     revenueGrossCHFAmount :: !Money.Amount,
     -- | Just, if VAT was charged and how much
     revenueVAT :: !(Maybe (VATRevenue ann)),
     -- | Same as gross if no VAT was charged.
     -- Gross - VAT if there was.
+    -- TODO netto amount without CHF first?
     revenueNettoCHFAmount :: !Money.Amount,
     -- | Evidence in tarball
     revenueEvidence :: !(NonEmpty (Path Rel File))
@@ -132,7 +202,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (Revenue ann) where
 -- Note that VAT must be charged in the same currency as the revenue.
 data VATRevenue ann = VATRevenue
   { vatRevenueAmount :: !Money.Amount,
-    vatRevenueCHFAmount :: !Money.Amount
+    vatRevenueCHFAmount :: !Money.Amount,
+    vatRevenueVATRate :: !VATRate
   }
   deriving (Show, Eq, Generic)
 
