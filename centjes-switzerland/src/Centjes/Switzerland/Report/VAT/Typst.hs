@@ -12,7 +12,6 @@ where
 import Autodocodec
 import qualified Centjes.Description as Description
 import Centjes.Ledger
-import Centjes.Location
 import Centjes.Switzerland.Report.Typst
 import Centjes.Switzerland.Report.VAT.Types
 import Centjes.Switzerland.Report.VATRate
@@ -24,7 +23,6 @@ import Data.Text (Text)
 import Data.Time
 import Data.Time.Calendar.Quarter
 import Money.Account as Money (Account (..))
-import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import Path
 import Text.Printf
@@ -38,12 +36,12 @@ vatReportInput VATReport {..} =
       inputRevenues =
         sortOn inputRevenueDay $
           concat
-            [ map vatInputDomesticRevenue vatReportDomesticRevenues,
-              map vatInputForeignRevenue vatReportExportsRevenues,
-              map vatInputForeignRevenue vatReportForeignRevenues
+            [ map (vatInputDomesticRevenue vatReportCHF) vatReportDomesticRevenues,
+              map (vatInputForeignRevenue vatReportCHF) vatReportExportsRevenues,
+              map (vatInputForeignRevenue vatReportCHF) vatReportForeignRevenues
             ]
       orZero a = if a == Amount.zero then Nothing else Just a
-      inputExpenses = map vatInputDeductibleExpense vatReportDeductibleExpenses
+      inputExpenses = map (vatInputDeductibleExpense vatReportCHF) vatReportDeductibleExpenses
       inputTotalRevenue = formatAmount vatReportCHF vatReportTotalRevenue
       inputTotalExportsRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalExportsRevenue
       inputTotalForeignRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalForeignRevenue
@@ -173,38 +171,38 @@ instance HasCodec Input where
         <*> requiredField "receivable" "receivable"
           .= inputReceivable
 
-vatInputDomesticRevenue :: DomesticRevenue ann -> InputRevenue
-vatInputDomesticRevenue DomesticRevenue {..} =
+vatInputDomesticRevenue :: Currency ann -> DomesticRevenue ann -> InputRevenue
+vatInputDomesticRevenue chfCurrency DomesticRevenue {..} =
   let inputRevenueDay = Timestamp.toDay domesticRevenueTimestamp
       inputRevenueDescription = Description.toText domesticRevenueDescription
       inputRevenueAmount = amountToAmountWithCurrency domesticRevenueCurrency domesticRevenueAmount
-      inputRevenueCHFAmount = formatAmount domesticRevenueCurrency domesticRevenueCHFAmount
+      inputRevenueCHFAmount = formatAmount chfCurrency domesticRevenueCHFAmount
       inputRevenueVATAmount = Just $ amountToAmountWithCurrency domesticRevenueVATCurrency domesticRevenueVATAmount
-      inputRevenueVATCHFAmount = Just $ formatAmount domesticRevenueVATCurrency domesticRevenueVATCHFAmount
+      inputRevenueVATCHFAmount = Just $ formatAmount chfCurrency domesticRevenueVATCHFAmount
       inputRevenueVATRate = Just $ formatVATRate domesticRevenueVATRate
       inputRevenueEvidence = domesticRevenueEvidence
    in InputRevenue {..}
 
-vatInputForeignRevenue :: ForeignRevenue ann -> InputRevenue
-vatInputForeignRevenue ForeignRevenue {..} =
+vatInputForeignRevenue :: Currency ann -> ForeignRevenue ann -> InputRevenue
+vatInputForeignRevenue chfCurrency ForeignRevenue {..} =
   let inputRevenueDay = Timestamp.toDay foreignRevenueTimestamp
       inputRevenueDescription = Description.toText foreignRevenueDescription
       inputRevenueAmount = amountToAmountWithCurrency foreignRevenueCurrency foreignRevenueAmount
-      inputRevenueCHFAmount = formatAmount foreignRevenueCurrency foreignRevenueCHFAmount
+      inputRevenueCHFAmount = formatAmount chfCurrency foreignRevenueCHFAmount
       inputRevenueVATAmount = Nothing
       inputRevenueVATCHFAmount = Nothing
       inputRevenueVATRate = Nothing
       inputRevenueEvidence = foreignRevenueEvidence
    in InputRevenue {..}
 
-vatInputDeductibleExpense :: DeductibleExpense ann -> InputExpense
-vatInputDeductibleExpense DeductibleExpense {..} =
+vatInputDeductibleExpense :: Currency ann -> DeductibleExpense ann -> InputExpense
+vatInputDeductibleExpense chfCurrency DeductibleExpense {..} =
   let inputExpenseDay = Timestamp.toDay deductibleExpenseTimestamp
       inputExpenseDescription = Description.toText deductibleExpenseDescription
       inputExpenseAmount = amountToAmountWithCurrency deductibleExpenseCurrency deductibleExpenseAmount
-      inputExpenseCHFAmount = formatAmount deductibleExpenseCurrency deductibleExpenseCHFAmount
+      inputExpenseCHFAmount = formatAmount chfCurrency deductibleExpenseCHFAmount
       inputExpenseVATAmount = amountToAmountWithCurrency deductibleExpenseVATCurrency deductibleExpenseVATAmount
-      inputExpenseVATCHFAmount = formatAmount deductibleExpenseVATCurrency deductibleExpenseVATCHFAmount
+      inputExpenseVATCHFAmount = formatAmount chfCurrency deductibleExpenseVATCHFAmount
       inputExpenseVATRate = printf "%.1f %%" (realToFrac (deductibleExpenseVATRate * 100) :: Double)
       inputExpenseEvidence = deductibleExpenseEvidence
    in InputExpense {..}
