@@ -11,5 +11,9 @@ spec :: Spec
 spec = do
   genValidSpec @(Posting ())
   genValidSpec @(Transaction ())
+  genValidSpec @(CurrencyDeclaration ())
+  genValidSpec @(AccountDeclaration ())
+  genValidSpec @(TagDeclaration ())
+  genValidSpec @(PriceDeclaration ())
   genValidSpec @(Declaration ())
   genValidSpec @(Module ())

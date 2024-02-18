@@ -14,8 +14,10 @@ module Centjes.Ledger
     Cost (..),
     Percentage (..),
     Attachment (..),
+    Tag (..),
     Currency (..),
     AccountName (..),
+    AccountType (..),
   )
 where
 
@@ -23,6 +25,7 @@ import Centjes.AccountName (AccountName (..))
 import Centjes.AccountType (AccountType (..))
 import Centjes.Location
 import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..))
+import Centjes.Tag
 import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
@@ -30,6 +33,7 @@ import Data.Map.Strict (Map)
 import Data.Ratio
 import Data.Validity
 import Data.Validity.Map ()
+import Data.Validity.Set ()
 import Data.Validity.Vector ()
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -40,16 +44,18 @@ import Money.QuantisationFactor
 import Numeric.Natural
 
 data Ledger ann = Ledger
-  { -- This field will have the source location of the currency _declaration_ that defined it.
+  { -- Note: This field will have the source location of the currency _declaration_ that defined it.
     ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
-    -- This field will have the source location of the account _ declaration_ that defined it.
+    -- Note: This field will have the source location of the account _ declaration_ that defined it.
     ledgerAccounts :: !(Map AccountName (GenLocated ann AccountType)),
+    -- Note: This field will have the source location of the tag _declaration_ that defined it
+    ledgerTags :: !(Map Tag ann),
     ledgerPrices :: !(Vector (GenLocated ann (Price ann))),
     ledgerTransactions :: !(Vector (GenLocated ann (Transaction ann)))
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Ledger ann) where
+instance (Validity ann, Ord ann) => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     mconcat
       [ genericValidate l,
@@ -92,11 +98,13 @@ data Transaction ann = Transaction
     transactionDescription :: !(Maybe (GenLocated ann Description)),
     transactionPostings :: !(Vector (GenLocated ann (Posting ann))),
     transactionAttachments :: !(Vector (GenLocated ann (Attachment ann))),
-    transactionAssertions :: !(Vector (GenLocated ann (Assertion ann)))
+    transactionAssertions :: !(Vector (GenLocated ann (Assertion ann))),
+    -- Note: This field will have the source location of the tag "extra" syntax element
+    transactionTags :: !(Map Tag ann)
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Transaction ann)
+instance (Validity ann, Ord ann) => Validity (Transaction ann)
 
 instance NFData ann => NFData (Transaction ann)
 

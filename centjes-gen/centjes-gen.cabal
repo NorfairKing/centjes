@@ -84,6 +84,8 @@ extra-source-files:
     test_resources/compile/CE_DUPLICATE_ACCOUNT.err
     test_resources/compile/CE_DUPLICATE_CURRENCY.cent
     test_resources/compile/CE_DUPLICATE_CURRENCY.err
+    test_resources/compile/CE_DUPLICATE_TAG.cent
+    test_resources/compile/CE_DUPLICATE_TAG.err
     test_resources/compile/CE_INFER_ACCOUNT_TYPE.cent
     test_resources/compile/CE_INFER_ACCOUNT_TYPE.err
     test_resources/compile/CE_INVALID_AMOUNT.cent
@@ -102,6 +104,8 @@ extra-source-files:
     test_resources/compile/CE_UNDECLARED_ACCOUNT.err
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
     test_resources/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/compile/CE_UNDECLARED_TAG.cent
+    test_resources/compile/CE_UNDECLARED_TAG.err
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err
@@ -120,11 +124,13 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/currency.cent
     test_resources/syntax/declaration/formatted/price.cent
     test_resources/syntax/declaration/formatted/signed.cent
+    test_resources/syntax/declaration/formatted/tag.cent
     test_resources/syntax/declaration/formatted/transaction.cent
     test_resources/syntax/declaration/valid/comment.cent
     test_resources/syntax/declaration/valid/currency.cent
     test_resources/syntax/declaration/valid/price.cent
     test_resources/syntax/declaration/valid/signed.cent
+    test_resources/syntax/declaration/valid/tag.cent
     test_resources/syntax/declaration/valid/transaction.cent
     test_resources/syntax/module/formatted/aligned-amounts.cent
     test_resources/syntax/module/formatted/commented-transaction.cent
@@ -150,6 +156,7 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/with-attachment.cent
     test_resources/syntax/transaction/formatted/with-percentage-fraction.cent
     test_resources/syntax/transaction/formatted/with-percentage.cent
+    test_resources/syntax/transaction/formatted/with-tag.cent
     test_resources/syntax/transaction/valid/currency-conversion-fraction.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
     test_resources/syntax/transaction/valid/example.cent
@@ -160,6 +167,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/with-attachment.cent
     test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
+    test_resources/syntax/transaction/valid/with-tag.cent
 
 source-repository head
   type: git
@@ -177,6 +185,7 @@ library
       Centjes.Location.Gen
       Centjes.Module.Gen
       Centjes.Parse.TestUtils
+      Centjes.Tag.Gen
       Centjes.Timestamp.Gen
       Centjes.Validation.TestUtils
   other-modules:
@@ -221,6 +230,7 @@ test-suite centjes-test
       Centjes.Report.BalanceSpec
       Centjes.Report.CheckSpec
       Centjes.Report.RegisterSpec
+      Centjes.TagSpec
       Centjes.TimestampSpec
       Paths_centjes_gen
   hs-source-dirs:

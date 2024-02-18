@@ -15,6 +15,7 @@ import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
 import Centjes.Parse.Utils
+import Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Data.Text (Text)
 import Numeric.DecimalLiteral (DecimalLiteral)
@@ -48,6 +49,7 @@ import qualified Data.Text as T
       comment         { Located _ (TokenComment _) }
       attach          { Located _ TokenAttach }
       assert          { Located _ TokenAssert }
+      tg              { Located _ TokenTag }
       price           { Located _ TokenPrice }
       file_path       { Located _ (TokenFilePath _) }
       eq              { Located _ TokenEq }
@@ -91,6 +93,7 @@ declaration
   : comment_dec { DeclarationComment $1 }
   | currency_dec { DeclarationCurrency $1 }
   | account_dec { DeclarationAccount $1 }
+  | tag_dec { DeclarationTag $1 }
   | price_dec { DeclarationPrice $1 }
   | transaction_dec { DeclarationTransaction $1 }
 
@@ -117,6 +120,10 @@ account_dec
 account_type
   :: { Located AccountType }
   : var {% parseAccountType $1 }
+
+tag_dec
+  :: { LTagDeclaration }
+  : tg tag newline { sBE $1 $3 $ TagDeclaration $2 }
 
 price_dec
   :: { LPriceDeclaration }
@@ -189,6 +196,7 @@ transaction_extra
   :: { LTransactionExtra }
   : plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
   | plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
+  | plus extra_tag { sBE $1 $2 $ TransactionTag $2 }
 
 attachment
   :: { LAttachment }
@@ -197,6 +205,14 @@ attachment
 assertion
   :: { LAssertion }
   : assert account_name eq account_exp currency_symbol newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
+
+extra_tag
+  :: { LExtraTag }
+  : tg tag newline { sBE $1 $3 $ ExtraTag $2 }
+
+tag
+  :: { LTag }
+  : var {% parseTag $1 }
 
 rel_file_exp
   :: { Located (Path Rel File) }
@@ -262,10 +278,13 @@ parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
 
 parseCurrencySymbol :: Token -> Alex (Located CurrencySymbol)
-parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "CurrencySymbol" (CurrencySymbol.fromText) ans
+parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "CurrencySymbol" CurrencySymbol.fromText ans
 
 parseAccountType :: Token -> Alex (Located AccountType)
-parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountType" (AccountType.fromText) ats
+parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountType" AccountType.fromText ats
+
+parseTag :: Token -> Alex (Located Tag)
+parseTag t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "Tag" Tag.fromText ans
 
 parseDecimalLiteral :: Token -> Located DecimalLiteral
 parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl

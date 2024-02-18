@@ -13,6 +13,7 @@ import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Location
 import Centjes.Module
+import qualified Centjes.Tag as Tag
 import qualified Centjes.Timestamp as Timestamp
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -60,6 +61,8 @@ moduleDoc Module {..} =
             (DecCurrency, DecCurrency) -> False
             -- Group account declarations together
             (DecAccount, DecAccount) -> False
+            -- Group tag declarations together
+            (DecTag, DecTag) -> False
             -- Group price declarations together
             (DecPrice, DecPrice) -> False
             -- Don't group transactions together
@@ -75,6 +78,7 @@ data DecType
   = DecComment
   | DecCurrency
   | DecAccount
+  | DecTag
   | DecPrice
   | DecTransaction
   deriving (Show, Eq)
@@ -84,6 +88,7 @@ decType = \case
   DeclarationComment {} -> DecComment
   DeclarationCurrency {} -> DecCurrency
   DeclarationAccount {} -> DecAccount
+  DeclarationTag {} -> DecTag
   DeclarationPrice {} -> DecPrice
   DeclarationTransaction {} -> DecTransaction
 
@@ -102,6 +107,7 @@ declarationDoc = \case
   DeclarationComment t -> commentDoc t
   DeclarationCurrency cd -> currencyDeclarationDoc cd
   DeclarationAccount ad -> accountDeclarationDoc ad
+  DeclarationTag ad -> tagDeclarationDoc ad
   DeclarationPrice pd -> priceDeclarationDoc pd
   DeclarationTransaction t -> transactionDecDoc t
 
@@ -134,6 +140,12 @@ accountDeclarationDoc (Located _ AccountDeclaration {..}) =
 
 lAccountTypeDoc :: GenLocated l AccountType -> Doc ann
 lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at
+
+tagDeclarationDoc :: GenLocated l (TagDeclaration l) -> Doc ann
+tagDeclarationDoc (Located _ TagDeclaration {..}) =
+  "tag"
+    <+> tagDoc (locatedValue tagDeclarationTag)
+      <> hardline
 
 priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
 priceDeclarationDoc (Located _ PriceDeclaration {..}) =
@@ -210,6 +222,7 @@ transactionExtraDoc =
   ("+" <+>) . \case
     TransactionAttachment a -> attachmentDoc (locatedValue a)
     TransactionAssertion a -> assertionDoc (locatedValue a)
+    TransactionTag t -> extraTagDoc (locatedValue t)
 
 attachmentDoc :: Attachment l -> Doc ann
 attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue fp))
@@ -217,6 +230,13 @@ attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue f
 assertionDoc :: Assertion l -> Doc ann
 assertionDoc (AssertionEquals an (Located _ dl) cs) =
   "assert" <+> lAccountNameDoc an <+> "=" <+> accountDoc dl <+> lCurrencySymbolDoc cs
+
+extraTagDoc :: ExtraTag l -> Doc ann
+extraTagDoc (ExtraTag lt) =
+  "tag" <+> tagDoc (locatedValue lt)
+
+tagDoc :: Tag -> Doc ann
+tagDoc = pretty . Tag.toText
 
 lAccountNameDoc :: GenLocated l AccountName -> Doc ann
 lAccountNameDoc = accountNameDoc . locatedValue

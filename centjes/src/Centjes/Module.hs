@@ -16,6 +16,8 @@ module Centjes.Module
     LAccountDeclaration,
     AccountDeclaration (..),
     AccountType (..),
+    LTagDeclaration,
+    TagDeclaration (..),
     LPriceDeclaration,
     PriceDeclaration (..),
     LCostExpression,
@@ -37,6 +39,10 @@ module Centjes.Module
     Attachment (..),
     LAssertion,
     Assertion (..),
+    LExtraTag,
+    ExtraTag (..),
+    LTag,
+    Tag (..),
     AccountName (..),
     DecimalLiteral (..),
   )
@@ -48,6 +54,7 @@ import Centjes.AccountType
 import Centjes.CurrencySymbol
 import Centjes.Description
 import Centjes.Location
+import Centjes.Tag
 import Centjes.Timestamp
 import Control.Arrow (left)
 import Control.DeepSeq
@@ -56,6 +63,7 @@ import qualified Data.Set as S
 import Data.Text (Text)
 import Data.Validity
 import Data.Validity.Path ()
+import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import Numeric.DecimalLiteral
@@ -79,6 +87,7 @@ data Declaration ann
   = DeclarationComment !(GenLocated ann Text)
   | DeclarationCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | DeclarationAccount !(GenLocated ann (AccountDeclaration ann))
+  | DeclarationTag !(GenLocated ann (TagDeclaration ann))
   | DeclarationPrice !(GenLocated ann (PriceDeclaration ann))
   | DeclarationTransaction !(GenLocated ann (Transaction ann))
   deriving stock (Show, Eq, Generic)
@@ -117,6 +126,17 @@ data AccountDeclaration ann = AccountDeclaration
 instance Validity ann => Validity (AccountDeclaration ann)
 
 instance NFData ann => NFData (AccountDeclaration ann)
+
+type LTagDeclaration = LLocated TagDeclaration
+
+newtype TagDeclaration ann = TagDeclaration
+  { tagDeclarationTag :: GenLocated ann Tag
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (TagDeclaration ann)
+
+instance NFData ann => NFData (TagDeclaration ann)
 
 type LPriceDeclaration = LLocated PriceDeclaration
 
@@ -209,6 +229,7 @@ type LTransactionExtra = LLocated TransactionExtra
 data TransactionExtra ann
   = TransactionAttachment (GenLocated ann (Attachment ann))
   | TransactionAssertion (GenLocated ann (Assertion ann))
+  | TransactionTag (GenLocated ann (ExtraTag ann))
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (TransactionExtra ann)
@@ -236,6 +257,17 @@ data Assertion ann
 instance Validity ann => Validity (Assertion ann)
 
 instance NFData ann => NFData (Assertion ann)
+
+type LExtraTag = LLocated ExtraTag
+
+newtype ExtraTag ann = ExtraTag {unExtraTag :: GenLocated ann Tag}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity ann => Validity (ExtraTag ann)
+
+instance NFData ann => NFData (ExtraTag ann)
+
+type LTag = Located Tag
 
 instance HasCodec (Path Rel File) where
   codec = bimapCodec (left show . parseRelFile) fromRelFile codec <?> "relative filepath"

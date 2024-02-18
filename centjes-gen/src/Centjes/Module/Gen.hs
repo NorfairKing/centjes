@@ -8,6 +8,7 @@ import Centjes.CurrencySymbol.Gen ()
 import Centjes.Description.Gen ()
 import Centjes.Location.Gen ()
 import Centjes.Module
+import Centjes.Tag.Gen ()
 import Centjes.Timestamp.Gen ()
 import Data.GenValidity
 import Data.GenValidity.Path ()
@@ -31,6 +32,8 @@ instance GenValid ann => GenValid (CurrencyDeclaration ann)
 
 instance GenValid ann => GenValid (AccountDeclaration ann)
 
+instance GenValid ann => GenValid (TagDeclaration ann)
+
 instance GenValid ann => GenValid (PriceDeclaration ann)
 
 instance GenValid ann => GenValid (CostExpression ann)
@@ -48,3 +51,5 @@ instance GenValid ann => GenValid (Posting ann)
 instance GenValid ann => GenValid (Attachment ann)
 
 instance GenValid ann => GenValid (Assertion ann)
+
+instance GenValid ann => GenValid (ExtraTag ann)

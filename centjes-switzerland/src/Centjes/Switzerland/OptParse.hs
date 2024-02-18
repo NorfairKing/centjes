@@ -10,6 +10,7 @@ import Autodocodec.Yaml
 import Centjes.AccountName (AccountName)
 import Centjes.Switzerland.Report.Taxes.Types (TaxesInput (..))
 import Centjes.Switzerland.Report.VAT.Types (VATInput (..))
+import Centjes.Tag (Tag (..))
 import Control.Applicative
 import Data.Map (Map)
 import Data.Maybe
@@ -114,6 +115,8 @@ configureVATInput day Configuration {..} =
       vatInputVATId = configVATId
       currentQuarter = dayPeriod day
       vatInputQuarter = fromMaybe currentQuarter configQuarter
+      vatInputTagDeductible = Tag "deductible" -- TODO make this configurable?
+      vatInputTagNotDeductible = Tag "not-deductible" -- TODO make this configurable?
       vatInputDomesticIncomeAccountName = fromMaybe "income:domestic" configDomesticIncomeAccountName
       vatInputExportsIncomeAccountName = fromMaybe "income:exports" configExportsIncomeAccountName
       vatInputForeignIncomeAccountName = fromMaybe "income:foreign" configForeignIncomeAccountName

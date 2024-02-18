@@ -41,12 +41,13 @@ spec = do
     it "produces valid ledgers" $
       forAllValid $ \currencies ->
         forAllValid $ \accounts ->
-          producesValid $ compileTransaction @() currencies accounts
+          forAllValid $ \tags ->
+            producesValid $ compileTransaction @() currencies accounts tags
 
     it "produces valid ledger transactions if all the currencies are known" $
       forAllValid $ \transaction ->
         forAll (sequence (M.fromSet (const genValid) (Module.transactionCurrencySymbols transaction))) $ \currencies -> do
-          case compileTransaction currencies M.empty (Located () transaction) of
+          case compileTransaction currencies M.empty M.empty (Located () transaction) of
             Failure _ -> pure ()
             Success t -> shouldBeValid t
 

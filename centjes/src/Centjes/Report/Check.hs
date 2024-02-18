@@ -82,6 +82,7 @@ checkDeclaration = \case
   DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
   DeclarationAccount _ -> pure ()
+  DeclarationTag _ -> pure ()
   DeclarationPrice _ -> pure ()
   DeclarationTransaction t -> checkTransaction t
 
@@ -89,10 +90,14 @@ checkTransaction :: Located (Module.Transaction SourceSpan) -> CheckerT SourceSp
 checkTransaction (Located tl Module.Transaction {..}) = do
   traverse_ (checkTransactionExtra tl . locatedValue) transactionExtras
 
-checkTransactionExtra :: SourceSpan -> TransactionExtra SourceSpan -> CheckerT SourceSpan ()
+checkTransactionExtra ::
+  SourceSpan ->
+  TransactionExtra SourceSpan ->
+  CheckerT SourceSpan ()
 checkTransactionExtra tl = \case
   TransactionAttachment a -> checkAttachment tl a
   TransactionAssertion _ -> pure ()
+  TransactionTag _ -> pure ()
 
 checkAttachment :: SourceSpan -> LAttachment -> CheckerT SourceSpan ()
 checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
