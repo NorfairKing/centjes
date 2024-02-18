@@ -16,6 +16,8 @@ module Centjes.Module
     LAccountDeclaration,
     AccountDeclaration (..),
     AccountType (..),
+    LTagDeclaration,
+    TagDeclaration (..),
     LPriceDeclaration,
     PriceDeclaration (..),
     LCostExpression,
@@ -85,6 +87,7 @@ data Declaration ann
   = DeclarationComment !(GenLocated ann Text)
   | DeclarationCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | DeclarationAccount !(GenLocated ann (AccountDeclaration ann))
+  | DeclarationTag !(GenLocated ann (TagDeclaration ann))
   | DeclarationPrice !(GenLocated ann (PriceDeclaration ann))
   | DeclarationTransaction !(GenLocated ann (Transaction ann))
   deriving stock (Show, Eq, Generic)
@@ -123,6 +126,17 @@ data AccountDeclaration ann = AccountDeclaration
 instance Validity ann => Validity (AccountDeclaration ann)
 
 instance NFData ann => NFData (AccountDeclaration ann)
+
+type LTagDeclaration = LLocated TagDeclaration
+
+newtype TagDeclaration ann = TagDeclaration
+  { tagDeclarationTag :: Tag ann
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance Validity ann => Validity (TagDeclaration ann)
+
+instance NFData ann => NFData (TagDeclaration ann)
 
 type LPriceDeclaration = LLocated PriceDeclaration
 

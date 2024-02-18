@@ -60,6 +60,8 @@ moduleDoc Module {..} =
             (DecCurrency, DecCurrency) -> False
             -- Group account declarations together
             (DecAccount, DecAccount) -> False
+            -- Group tag declarations together
+            (DecTag, DecTag) -> False
             -- Group price declarations together
             (DecPrice, DecPrice) -> False
             -- Don't group transactions together
@@ -75,6 +77,7 @@ data DecType
   = DecComment
   | DecCurrency
   | DecAccount
+  | DecTag
   | DecPrice
   | DecTransaction
   deriving (Show, Eq)
@@ -84,6 +87,7 @@ decType = \case
   DeclarationComment {} -> DecComment
   DeclarationCurrency {} -> DecCurrency
   DeclarationAccount {} -> DecAccount
+  DeclarationTag {} -> DecTag
   DeclarationPrice {} -> DecPrice
   DeclarationTransaction {} -> DecTransaction
 
@@ -102,6 +106,7 @@ declarationDoc = \case
   DeclarationComment t -> commentDoc t
   DeclarationCurrency cd -> currencyDeclarationDoc cd
   DeclarationAccount ad -> accountDeclarationDoc ad
+  DeclarationTag ad -> tagDeclarationDoc ad
   DeclarationPrice pd -> priceDeclarationDoc pd
   DeclarationTransaction t -> transactionDecDoc t
 
@@ -134,6 +139,11 @@ accountDeclarationDoc (Located _ AccountDeclaration {..}) =
 
 lAccountTypeDoc :: GenLocated l AccountType -> Doc ann
 lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at
+
+tagDeclarationDoc :: GenLocated l (TagDeclaration l) -> Doc ann
+tagDeclarationDoc (Located _ TagDeclaration {..}) =
+  tagDoc tagDeclarationTag
+    <> hardline
 
 priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
 priceDeclarationDoc (Located _ PriceDeclaration {..}) =

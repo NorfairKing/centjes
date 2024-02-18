@@ -82,6 +82,7 @@ checkDeclaration = \case
   DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
   DeclarationAccount _ -> pure ()
+  DeclarationTag _ -> pure ()
   DeclarationPrice _ -> pure ()
   DeclarationTransaction t -> checkTransaction t
 

@@ -120,11 +120,13 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/currency.cent
     test_resources/syntax/declaration/formatted/price.cent
     test_resources/syntax/declaration/formatted/signed.cent
+    test_resources/syntax/declaration/formatted/tag.cent
     test_resources/syntax/declaration/formatted/transaction.cent
     test_resources/syntax/declaration/valid/comment.cent
     test_resources/syntax/declaration/valid/currency.cent
     test_resources/syntax/declaration/valid/price.cent
     test_resources/syntax/declaration/valid/signed.cent
+    test_resources/syntax/declaration/valid/tag.cent
     test_resources/syntax/declaration/valid/transaction.cent
     test_resources/syntax/module/formatted/aligned-amounts.cent
     test_resources/syntax/module/formatted/commented-transaction.cent

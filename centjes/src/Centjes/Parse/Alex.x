@@ -118,6 +118,11 @@ $white_no_nl+ ;
 <account> @var     { lexVar }
 <account> @newline { lexNl `andBegin` 0 }
 
+-- Tag declarations
+<0> @tag        { lex' TokenTag `andBegin` dec_tag}
+<dec_tag> @var     { lexVar }
+<dec_tag> @newline { lexNl `andBegin` 0 }
+
 -- Price declarations
 <0> @price               { lex' TokenPrice `andBegin` price}
 <price> @timestamp       { lexTimestamp }

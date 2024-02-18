@@ -92,6 +92,7 @@ declaration
   : comment_dec { DeclarationComment $1 }
   | currency_dec { DeclarationCurrency $1 }
   | account_dec { DeclarationAccount $1 }
+  | tag_dec { DeclarationTag $1 }
   | price_dec { DeclarationPrice $1 }
   | transaction_dec { DeclarationTransaction $1 }
 
@@ -118,6 +119,10 @@ account_dec
 account_type
   :: { Located AccountType }
   : var {% parseAccountType $1 }
+
+tag_dec
+  :: { LTagDeclaration }
+  : tg tag newline { sBE $1 $3 $ TagDeclaration $2 }
 
 price_dec
   :: { LPriceDeclaration }
@@ -190,7 +195,7 @@ transaction_extra
   :: { LTransactionExtra }
   : plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
   | plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
-  | plus tag { sBE $1 $2 $ TransactionTag $2 }
+  | plus tag_exp { sBE $1 $2 $ TransactionTag $2 }
 
 attachment
   :: { LAttachment }
@@ -200,9 +205,13 @@ assertion
   :: { LAssertion }
   : assert account_name eq account_exp currency_symbol newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
 
-tag
+tag_exp
   :: { LTag }
-  : tg tag_text newline { sBE $1 $3 $ Tag $2 }
+  : tg tag newline { sBE $1 $3 $2 }
+
+tag
+  :: { Tag SourceSpan }
+  : tag_text { Tag $1 }
 
 tag_text
   :: { Located Text }
