@@ -14,6 +14,7 @@ module Centjes.Ledger
     Cost (..),
     Percentage (..),
     Attachment (..),
+    Tag (..),
     Currency (..),
     AccountName (..),
   )
@@ -22,14 +23,16 @@ where
 import Centjes.AccountName (AccountName (..))
 import Centjes.AccountType (AccountType (..))
 import Centjes.Location
-import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..))
+import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..), Tag (..))
 import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
 import Data.Map.Strict (Map)
 import Data.Ratio
+import Data.Set (Set)
 import Data.Validity
 import Data.Validity.Map ()
+import Data.Validity.Set ()
 import Data.Validity.Vector ()
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -49,7 +52,7 @@ data Ledger ann = Ledger
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Ledger ann) where
+instance (Validity ann, Ord ann) => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     mconcat
       [ genericValidate l,
@@ -92,11 +95,12 @@ data Transaction ann = Transaction
     transactionDescription :: !(Maybe (GenLocated ann Description)),
     transactionPostings :: !(Vector (GenLocated ann (Posting ann))),
     transactionAttachments :: !(Vector (GenLocated ann (Attachment ann))),
-    transactionAssertions :: !(Vector (GenLocated ann (Assertion ann)))
+    transactionAssertions :: !(Vector (GenLocated ann (Assertion ann))),
+    transactionTags :: !(Set (GenLocated ann (Tag ann)))
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Transaction ann)
+instance (Validity ann, Ord ann) => Validity (Transaction ann)
 
 instance NFData ann => NFData (Transaction ann)
 

@@ -10,6 +10,7 @@ import Centjes.Timestamp as Timestamp
 import Data.Function
 import Data.GenValidity
 import Data.GenValidity.Map ()
+import Data.GenValidity.Set ()
 import Data.GenValidity.Vector ()
 import Data.List (sortBy)
 import Data.Maybe
@@ -17,7 +18,7 @@ import qualified Data.Vector as V
 import Money.Gen ()
 import Numeric.DecimalLiteral.Gen ()
 
-instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
+instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
   genValid = do
     ledgerCurrencies <- genValid -- TODO deduce the curriencies from the other fields
     ledgerAccounts <- genValid -- TODO deduce the accounts from the other fields
@@ -58,7 +59,7 @@ instance (GenValid ann, Eq ann) => GenValid (Ledger ann) where
         )
       $ shrinkValidStructurally l
 
-instance GenValid ann => GenValid (Transaction ann)
+instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
 
 instance GenValid ann => GenValid (Assertion ann)
 

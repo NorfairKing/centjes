@@ -31,6 +31,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
+import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Validity (Validity)
 import qualified Data.Vector as V
@@ -209,7 +210,10 @@ instance ToReport (CompileError SourceSpan) where
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
 
-compileDeclarations :: [Declaration ann] -> Validation (CompileError ann) (Ledger ann)
+compileDeclarations ::
+  Ord ann =>
+  [Declaration ann] ->
+  Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
   ledgerCurrencies <- compileCurrencyDeclarations declarations
   ledgerAccounts <- compileAccountDeclarations declarations
@@ -401,6 +405,7 @@ compileRational l lre@(Located rel re) = case re of
         pure (Located rel (n / d)) -- TODO err on zero denominator
 
 compileTransaction ::
+  Ord ann =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map AccountName (GenLocated ann AccountType) ->
   GenLocated ann (Module.Transaction ann) ->
@@ -430,8 +435,9 @@ compileTransaction currencies accounts (Located l mt) = do
         (compileAssertion currencies l)
         ( mapMaybe
             ( ( \case
-                  TransactionAttachment _ -> Nothing
                   TransactionAssertion a -> Just a
+                  TransactionAttachment _ -> Nothing
+                  TransactionTag _ -> Nothing
               )
                 . locatedValue
             )
@@ -442,6 +448,18 @@ compileTransaction currencies accounts (Located l mt) = do
           mapMaybe
             ( ( \case
                   TransactionAttachment a -> Just a
+                  TransactionAssertion _ -> Nothing
+                  TransactionTag _ -> Nothing
+              )
+                . locatedValue
+            )
+            (Module.transactionExtras mt)
+  let transactionTags =
+        S.fromList $
+          mapMaybe
+            ( ( \case
+                  TransactionTag t -> Just t
+                  TransactionAttachment _ -> Nothing
                   TransactionAssertion _ -> Nothing
               )
                 . locatedValue

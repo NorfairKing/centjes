@@ -160,6 +160,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/with-attachment.cent
     test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
+    test_resources/syntax/transaction/valid/with-tag.cent
 
 source-repository head
   type: git

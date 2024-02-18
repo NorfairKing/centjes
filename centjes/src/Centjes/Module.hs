@@ -37,6 +37,8 @@ module Centjes.Module
     Attachment (..),
     LAssertion,
     Assertion (..),
+    LTag,
+    Tag (..),
     AccountName (..),
     DecimalLiteral (..),
   )
@@ -209,6 +211,7 @@ type LTransactionExtra = LLocated TransactionExtra
 data TransactionExtra ann
   = TransactionAttachment (GenLocated ann (Attachment ann))
   | TransactionAssertion (GenLocated ann (Assertion ann))
+  | TransactionTag (GenLocated ann (Tag ann))
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (TransactionExtra ann)
@@ -236,6 +239,15 @@ data Assertion ann
 instance Validity ann => Validity (Assertion ann)
 
 instance NFData ann => NFData (Assertion ann)
+
+type LTag = LLocated Tag
+
+newtype Tag ann = Tag {tagText :: GenLocated ann Text}
+  deriving stock (Show, Eq, Ord, Generic)
+
+instance Validity ann => Validity (Tag ann)
+
+instance NFData ann => NFData (Tag ann)
 
 instance HasCodec (Path Rel File) where
   codec = bimapCodec (left show . parseRelFile) fromRelFile codec <?> "relative filepath"

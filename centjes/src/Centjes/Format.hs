@@ -210,6 +210,7 @@ transactionExtraDoc =
   ("+" <+>) . \case
     TransactionAttachment a -> attachmentDoc (locatedValue a)
     TransactionAssertion a -> assertionDoc (locatedValue a)
+    TransactionTag t -> tagDoc (locatedValue t)
 
 attachmentDoc :: Attachment l -> Doc ann
 attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue fp))
@@ -217,6 +218,10 @@ attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue f
 assertionDoc :: Assertion l -> Doc ann
 assertionDoc (AssertionEquals an (Located _ dl) cs) =
   "assert" <+> lAccountNameDoc an <+> "=" <+> accountDoc dl <+> lCurrencySymbolDoc cs
+
+tagDoc :: Tag l -> Doc ann
+tagDoc (Tag (Located _ t)) =
+  "tag" <+> pretty t
 
 lAccountNameDoc :: GenLocated l AccountName -> Doc ann
 lAccountNameDoc = accountNameDoc . locatedValue
