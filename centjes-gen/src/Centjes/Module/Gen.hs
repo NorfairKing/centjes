@@ -6,13 +6,14 @@ import Centjes.AccountName.Gen ()
 import Centjes.AccountType.Gen ()
 import Centjes.CurrencySymbol.Gen ()
 import Centjes.Description.Gen ()
-import Centjes.Location.Gen ()
+import Centjes.Location.Gen
 import Centjes.Module
 import Centjes.Timestamp.Gen ()
 import Data.GenValidity
 import Data.GenValidity.Path ()
-import Data.GenValidity.Text ()
+import Data.GenValidity.Text
 import Data.GenValidity.Time ()
+import qualified Data.Text as T
 import Money.Account.Gen ()
 import Money.QuantisationFactor.Gen ()
 import Numeric.DecimalLiteral.Gen ()
@@ -49,4 +50,8 @@ instance GenValid ann => GenValid (Attachment ann)
 
 instance GenValid ann => GenValid (Assertion ann)
 
-instance GenValid ann => GenValid (Tag ann)
+instance GenValid ann => GenValid (Tag ann) where
+  genValid =
+    fmap Tag $ genLocatedWith $ do
+      let genChar = choose ('A', 'Z')
+      T.cons <$> genChar <*> genTextBy genChar

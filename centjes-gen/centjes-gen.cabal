@@ -150,6 +150,7 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/with-attachment.cent
     test_resources/syntax/transaction/formatted/with-percentage-fraction.cent
     test_resources/syntax/transaction/formatted/with-percentage.cent
+    test_resources/syntax/transaction/formatted/with-tag.cent
     test_resources/syntax/transaction/valid/currency-conversion-fraction.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
     test_resources/syntax/transaction/valid/example.cent

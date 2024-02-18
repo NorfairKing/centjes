@@ -39,6 +39,7 @@ module Centjes.Module
     Assertion (..),
     LTag,
     Tag (..),
+    validateTagText,
     AccountName (..),
     DecimalLiteral (..),
   )
@@ -53,11 +54,14 @@ import Centjes.Location
 import Centjes.Timestamp
 import Control.Arrow (left)
 import Control.DeepSeq
+import Data.Char as Char
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Path ()
+import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import Numeric.DecimalLiteral
@@ -245,7 +249,23 @@ type LTag = LLocated Tag
 newtype Tag ann = Tag {tagText :: GenLocated ann Text}
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity ann => Validity (Tag ann)
+instance Validity ann => Validity (Tag ann) where
+  validate tag@(Tag (Located _ t)) =
+    mconcat
+      [ genericValidate tag,
+        declare "the text is nonempty" $ not $ T.null t,
+        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character, or _, or -, or :" $
+          case c of
+            ':' -> True
+            '-' -> True
+            '_' -> True
+            _
+              | Char.isLatin1 c && Char.isAlphaNum c -> True
+              | otherwise -> False
+      ]
+
+validateTagText :: Text -> Maybe Text
+validateTagText t = locatedValue . tagText <$> constructValid (Tag (Located () t))
 
 instance NFData ann => NFData (Tag ann)
 

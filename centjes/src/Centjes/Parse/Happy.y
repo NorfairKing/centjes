@@ -48,6 +48,7 @@ import qualified Data.Text as T
       comment         { Located _ (TokenComment _) }
       attach          { Located _ TokenAttach }
       assert          { Located _ TokenAssert }
+      tg              { Located _ TokenTag }
       price           { Located _ TokenPrice }
       file_path       { Located _ (TokenFilePath _) }
       eq              { Located _ TokenEq }
@@ -189,6 +190,7 @@ transaction_extra
   :: { LTransactionExtra }
   : plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
   | plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
+  | plus tag { sBE $1 $2 $ TransactionTag $2 }
 
 attachment
   :: { LAttachment }
@@ -197,6 +199,14 @@ attachment
 assertion
   :: { LAssertion }
   : assert account_name eq account_exp currency_symbol newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
+
+tag
+  :: { LTag }
+  : tg tag_text newline { sBE $1 $3 $ Tag $2 }
+
+tag_text
+  :: { Located Text }
+  : var {% parseTagText $1 }
 
 rel_file_exp
   :: { Located (Path Rel File) }
@@ -266,6 +276,9 @@ parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "Curre
 
 parseAccountType :: Token -> Alex (Located AccountType)
 parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountType" (AccountType.fromText) ats
+
+parseTagText :: Token -> Alex (Located Text)
+parseTagText t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "Tag" validateTagText ans
 
 parseDecimalLiteral :: Token -> Located DecimalLiteral
 parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl

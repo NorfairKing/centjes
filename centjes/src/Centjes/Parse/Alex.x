@@ -84,6 +84,7 @@ $alpha = [A-Za-z]
 @account = "account "
 @attach = "attach "
 @assert = "assert "
+@tag = "tag "
 @price = "price "
 @eq = \=
 
@@ -154,9 +155,13 @@ $white_no_nl+ ;
 <assertion> @decimal_literal { lexDL }
 <assertion> @newline         { lexNl `andBegin` transaction}
 
-<extra> @attach             { lex' TokenAttach `andBegin` attachment}
+<extra> @attach         { lex' TokenAttach `andBegin` attachment}
 <attachment> @file_path { lex TokenFilePath }
 <attachment> @newline   { lexNl `andBegin` transaction}
+
+<extra> @tag            { lex' TokenTag `andBegin` tag}
+<tag> @var       { lexVar }
+<tag> @newline   { lexNl `andBegin` transaction}
 
 {
 lexTimestamp :: AlexAction Token
@@ -201,6 +206,7 @@ data TokenClass
   = TokenComment !Text
   | TokenAttach
   | TokenAssert
+  | TokenTag
   | TokenPrice
   | TokenEq
   | TokenTimestamp !String
