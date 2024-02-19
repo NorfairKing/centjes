@@ -116,6 +116,7 @@ configureVATInput day Configuration {..} =
       currentQuarter = dayPeriod day
       vatInputQuarter = fromMaybe currentQuarter configQuarter
       vatInputTagDeductible = Tag "deductible" -- TODO make this configurable?
+      vatInputTagNotDeductible = Tag "not-deductible" -- TODO make this configurable?
       vatInputDomesticIncomeAccountName = fromMaybe "income:domestic" configDomesticIncomeAccountName
       vatInputExportsIncomeAccountName = fromMaybe "income:exports" configExportsIncomeAccountName
       vatInputForeignIncomeAccountName = fromMaybe "income:foreign" configForeignIncomeAccountName

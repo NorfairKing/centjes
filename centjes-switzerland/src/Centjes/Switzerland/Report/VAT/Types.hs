@@ -51,6 +51,7 @@ data VATInput = VATInput
     vatInputVATId :: !Text,
     vatInputQuarter :: !Quarter,
     vatInputTagDeductible :: !Tag,
+    vatInputTagNotDeductible :: !Tag,
     vatInputDomesticIncomeAccountName :: !AccountName,
     vatInputExportsIncomeAccountName :: !AccountName,
     vatInputForeignIncomeAccountName :: !AccountName,
@@ -228,7 +229,8 @@ data ForeignRevenue ann = ForeignRevenue
 instance (Validity ann, Show ann, Ord ann) => Validity (ForeignRevenue ann)
 
 data DeductibleExpense ann = DeductibleExpense
-  { deductibleExpenseTimestamp :: !Timestamp,
+  { deductibleExpensePosting :: !ann,
+    deductibleExpenseTimestamp :: !Timestamp,
     deductibleExpenseDescription :: !Description,
     deductibleExpenseAmount :: !Money.Amount,
     deductibleExpenseCurrency :: !(Currency ann),
@@ -248,6 +250,7 @@ data VATError ann
   = VATErrorNoCHF
   | VATErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
   | VATErrorNoTagDeductible
+  | VATErrorNoTagNotDeductible
   | VATErrorNoDescription
   | VATErrorNoEvidence !ann
   | VATErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
@@ -257,6 +260,9 @@ data VATError ann
   | VATErrorVATPostingNotVATAccount
   | VATErrorNoVATPercentage !ann
   | VATErrorUnknownVATRate !ann !ann !(Ratio Natural)
+  | VATErrorDeductibleAndNotDeductible !ann !ann !ann
+  | VATErrorDeductibleNoExpenses !ann !ann
+  | VATErrorUntaggedExpenses !ann !ann
   | VATErrorSum ![Money.Amount]
   | VATErrorAdd !Money.Amount !Money.Amount
   | VATErrorSubtract !Money.Amount !Money.Amount
@@ -275,6 +281,7 @@ instance ToReport (VATError SourceSpan) where
         [(toDiagnosePosition cdl, This "This currency declaration must use 0.01")]
         []
     VATErrorNoTagDeductible -> Err Nothing "no tag 'deductible' declared" [] []
+    VATErrorNoTagNotDeductible -> Err Nothing "no tag 'not-deductible' declared" [] []
     VATErrorNoDescription -> Err Nothing "no description" [] []
     VATErrorNoEvidence tl ->
       Err
@@ -331,6 +338,31 @@ instance ToReport (VATError SourceSpan) where
         Nothing
         "Unknown VAT rate"
         [ (toDiagnosePosition pl, This "in this percentage"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
+    VATErrorDeductibleAndNotDeductible tl tagl nottagl ->
+      Err
+        Nothing
+        "Transaction marked as both deductible and not deductible"
+        [ (toDiagnosePosition tagl, Where "Tagged as deductible"),
+          (toDiagnosePosition nottagl, This "and as not deductible"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
+    VATErrorDeductibleNoExpenses tl tagl ->
+      Err
+        Nothing
+        "Transaction marked as deductible but contained no expenses"
+        [ (toDiagnosePosition tagl, This "Tagged as deductible"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
+    VATErrorUntaggedExpenses tl pl ->
+      Err
+        Nothing
+        "Expense not marked as either deductible or not-deductible"
+        [ (toDiagnosePosition pl, This "This posting represents an expense that is neither tagged as deductible nor as not-deductible."),
           (toDiagnosePosition tl, Where "in this transaction")
         ]
         []

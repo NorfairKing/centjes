@@ -13,6 +13,7 @@ account income:exports
 account income:vat
 
 tag deductible
+tag not-deductible
 
 2023-12-31
   | Opening balances
@@ -33,6 +34,12 @@ tag deductible
   * expenses:coffee 5 CHF
   ! expenses:vat 0.36 CHF ~ 7.7%
   + attach receipt-coffee.txt
+  + tag not-deductible
+
+2024-01-02
+  | Coffee
+  * assets:bank -5 CHF
+  * expenses:coffee 5 CHF
 
 price 2024-01-07 USD 0.8589 CHF
 
