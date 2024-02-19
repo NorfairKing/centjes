@@ -50,6 +50,7 @@ data VATInput = VATInput
     vatInputOrganisationName :: !Text,
     vatInputVATId :: !Text,
     vatInputQuarter :: !Quarter,
+    vatInputTagDeductible :: !Tag,
     vatInputDomesticIncomeAccountName :: !AccountName,
     vatInputExportsIncomeAccountName :: !AccountName,
     vatInputForeignIncomeAccountName :: !AccountName,
@@ -246,6 +247,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (DeductibleExpense ann)
 data VATError ann
   = VATErrorNoCHF
   | VATErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
+  | VATErrorNoTagDeductible
   | VATErrorNoDescription
   | VATErrorNoEvidence !ann
   | VATErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
@@ -272,6 +274,7 @@ instance ToReport (VATError SourceSpan) where
         "Incompatible CHF defined"
         [(toDiagnosePosition cdl, This "This currency declaration must use 0.01")]
         []
+    VATErrorNoTagDeductible -> Err Nothing "no tag 'deductible' declared" [] []
     VATErrorNoDescription -> Err Nothing "no description" [] []
     VATErrorNoEvidence tl ->
       Err

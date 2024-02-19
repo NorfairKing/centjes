@@ -29,6 +29,7 @@ extra-source-files:
     test_resources/example/quux-dec.txt
     test_resources/example/quux-feb.txt
     test_resources/example/quux-jan.txt
+    test_resources/example/receipt-coffee.txt
     test_resources/example/receipt-computer.txt
     test_resources/example/switzerland.yaml
     test_resources/example/taxes.xml
