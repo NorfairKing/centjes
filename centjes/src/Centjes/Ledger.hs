@@ -98,6 +98,7 @@ data Transaction ann = Transaction
     transactionPostings :: !(Vector (GenLocated ann (Posting ann))),
     transactionAttachments :: !(Vector (GenLocated ann (Attachment ann))),
     transactionAssertions :: !(Vector (GenLocated ann (Assertion ann))),
+    -- Note: This field will have the source location of the tag "extra" syntax element
     transactionTags :: !(Map Tag ann)
   }
   deriving stock (Show, Eq, Generic)

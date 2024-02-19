@@ -105,6 +105,7 @@ extra-source-files:
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
     test_resources/compile/CE_UNDECLARED_CURRENCY.err
     test_resources/compile/CE_UNDECLARED_TAG.cent
+    test_resources/compile/CE_UNDECLARED_TAG.err
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err

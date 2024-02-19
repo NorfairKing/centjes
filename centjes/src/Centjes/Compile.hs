@@ -259,7 +259,7 @@ compileDeclarations declarations = do
           declarations
   transactionTups <-
     traverse
-      (compileTransaction ledgerCurrencies ledgerAccounts)
+      (compileTransaction ledgerCurrencies ledgerAccounts ledgerTags)
       transactions
   let ledgerTransactions =
         V.fromList . sortOnTimestamp Ledger.transactionTimestamp $
@@ -470,13 +470,14 @@ compileRational l lre@(Located rel re) = case re of
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map AccountName (GenLocated ann AccountType) ->
+  Map Tag ann ->
   GenLocated ann (Module.Transaction ann) ->
   Validation
     (CompileError ann)
     ( GenLocated ann (Ledger.Transaction ann),
       [GenLocated ann (Ledger.Price ann)]
     )
-compileTransaction currencies accounts (Located l mt) = do
+compileTransaction currencies accounts tags (Located l mt) = do
   let transactionTimestamp = Module.transactionTimestamp mt
       transactionDescription = Module.transactionDescription mt
   postings <-
@@ -516,17 +517,20 @@ compileTransaction currencies accounts (Located l mt) = do
                 . locatedValue
             )
             (Module.transactionExtras mt)
-  let transactionTags =
-        M.fromList $
-          mapMaybe
+  transactionTags <-
+    M.fromList
+      <$> traverse
+        (compileTag tags l)
+        ( mapMaybe
             ( ( \case
-                  TransactionTag (Located etl (ExtraTag (Located _ t))) -> Just (t, etl)
+                  TransactionTag et -> Just et
                   TransactionAttachment _ -> Nothing
                   TransactionAssertion _ -> Nothing
               )
                 . locatedValue
             )
             (Module.transactionExtras mt)
+        )
   pure
     ( Located l Ledger.Transaction {..},
       prices
@@ -573,6 +577,16 @@ compileAssertion currencies tl (Located l (Module.AssertionEquals lan ldl lqs)) 
   let lqf = currencyQuantisationFactor (locatedValue lc)
   la <- compileDecimalLiteral tl lqf ldl
   pure (Located l (Ledger.AssertionEquals lan la lc))
+
+compileTag ::
+  Map Tag ann ->
+  ann ->
+  GenLocated ann (ExtraTag ann) ->
+  Validation (CompileError ann) (Tag, ann)
+compileTag tags tl (Located etl (ExtraTag lt@(Located _ tag))) =
+  case M.lookup tag tags of
+    Nothing -> validationFailure $ CompileErrorMissingTag tl lt
+    Just _ -> pure (tag, etl)
 
 compileCurrencyDeclarationSymbol ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
