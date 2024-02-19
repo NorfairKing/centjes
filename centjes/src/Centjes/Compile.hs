@@ -21,6 +21,7 @@ import Centjes.Format
 import Centjes.Ledger as Ledger
 import Centjes.Location
 import Centjes.Module as Module
+import qualified Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.DeepSeq
@@ -51,6 +52,8 @@ data CompileError ann
   | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingAccount !ann !(GenLocated ann AccountName)
   | CompileErrorAccountDeclaredTwice !ann !ann !AccountName
+  | CompileErrorMissingTag !ann !(GenLocated ann Tag)
+  | CompileErrorTagDeclaredTwice !ann !ann !Tag
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
   | CompileErrorInvalidPrice !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidPercentage !ann !ann !(GenLocated ann (RationalExpression ann))
@@ -165,6 +168,36 @@ instance ToReport (CompileError SourceSpan) where
                   ]
               ]
         ]
+    CompileErrorMissingTag dl (Located anl t) ->
+      Err
+        (Just "CE_UNDECLARED_TAG")
+        ( unwords
+            [ "Undeclared tag:",
+              Tag.toString t
+            ]
+        )
+        [ (toDiagnosePosition dl, Where "While trying to compile this declaration"),
+          (toDiagnosePosition anl, This "This tag is never declared.")
+        ]
+        [ Hint $
+            unlines'
+              [ "You can declare this tag with a tag declaration:",
+                T.unpack $
+                  T.strip $
+                    formatDeclaration $
+                      DeclarationTag $
+                        noLoc $
+                          TagDeclaration {tagDeclarationTag = noLoc t}
+              ]
+        ]
+    CompileErrorTagDeclaredTwice tl1 tl2 t ->
+      Err
+        (Just "CE_DUPLICATE_TAG")
+        (unwords ["Tag has been declared twice:", Tag.toString t])
+        [ (toDiagnosePosition tl1, Where "This tag has been declared here first"),
+          (toDiagnosePosition tl2, This "This tag has been declared twice")
+        ]
+        []
     CompileErrorInvalidPrice dl (Located ll _) ->
       Err
         (Just "CE_INVALID_PRICE")
@@ -215,6 +248,7 @@ compileDeclarations ::
 compileDeclarations declarations = do
   ledgerCurrencies <- compileCurrencyDeclarations declarations
   ledgerAccounts <- compileAccountDeclarations declarations
+  ledgerTags <- compileTagDeclarations declarations
   declarationPrices <- compilePriceDeclarations ledgerCurrencies declarations
   let transactions =
         mapMaybe
@@ -314,6 +348,37 @@ compileAccountDeclaration (Located dl AccountDeclaration {..}) = do
       Just t -> pure t
       Nothing -> validationFailure $ CompileErrorCouldNotInferAccountType dl accountDeclarationName
   pure (name, Located dl typ)
+
+compileTagDeclarations ::
+  [Declaration ann] ->
+  Validation (CompileError ann) (Map Tag ann)
+compileTagDeclarations declarations = do
+  tups <-
+    mapM
+      compileTagDeclaration
+      ( mapMaybe
+          ( \case
+              DeclarationTag ad -> Just ad
+              _ -> Nothing
+          )
+          declarations
+      )
+  foldM go M.empty tups
+  where
+    go ::
+      Map Tag ann ->
+      (Tag, ann) ->
+      Validation (CompileError ann) (Map Tag ann)
+    go m (an, l2) = case M.lookup an m of
+      Nothing -> pure $ M.insert an l2 m
+      Just l1 -> validationFailure $ CompileErrorTagDeclaredTwice l1 l2 an
+
+compileTagDeclaration ::
+  GenLocated ann (TagDeclaration ann) ->
+  Validation (CompileError ann) (Tag, ann)
+compileTagDeclaration (Located dl TagDeclaration {..}) = do
+  let Located _ tag = tagDeclarationTag
+  pure (tag, dl)
 
 compilePriceDeclarations ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

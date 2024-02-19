@@ -43,10 +43,12 @@ import Money.QuantisationFactor
 import Numeric.Natural
 
 data Ledger ann = Ledger
-  { -- This field will have the source location of the currency _declaration_ that defined it.
+  { -- Note: This field will have the source location of the currency _declaration_ that defined it.
     ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
-    -- This field will have the source location of the account _ declaration_ that defined it.
+    -- Note: This field will have the source location of the account _ declaration_ that defined it.
     ledgerAccounts :: !(Map AccountName (GenLocated ann AccountType)),
+    -- Note: This field will have the source location of the tag _declaration_ that defined it
+    ledgerTags :: !(Map Tag ann),
     ledgerPrices :: !(Vector (GenLocated ann (Price ann))),
     ledgerTransactions :: !(Vector (GenLocated ann (Transaction ann)))
   }

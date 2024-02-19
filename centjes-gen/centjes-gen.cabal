@@ -84,6 +84,8 @@ extra-source-files:
     test_resources/compile/CE_DUPLICATE_ACCOUNT.err
     test_resources/compile/CE_DUPLICATE_CURRENCY.cent
     test_resources/compile/CE_DUPLICATE_CURRENCY.err
+    test_resources/compile/CE_DUPLICATE_TAG.cent
+    test_resources/compile/CE_DUPLICATE_TAG.err
     test_resources/compile/CE_INFER_ACCOUNT_TYPE.cent
     test_resources/compile/CE_INFER_ACCOUNT_TYPE.err
     test_resources/compile/CE_INVALID_AMOUNT.cent
@@ -102,6 +104,7 @@ extra-source-files:
     test_resources/compile/CE_UNDECLARED_ACCOUNT.err
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
     test_resources/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/compile/CE_UNDECLARED_TAG.cent
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err

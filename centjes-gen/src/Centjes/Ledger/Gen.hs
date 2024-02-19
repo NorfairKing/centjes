@@ -22,6 +22,7 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
   genValid = do
     ledgerCurrencies <- genValid -- TODO deduce the curriencies from the other fields
     ledgerAccounts <- genValid -- TODO deduce the accounts from the other fields
+    ledgerTags <- genValid -- TODO deduce the tags from the other fields
     ledgerPrices <-
       V.fromList
         . sortBy
