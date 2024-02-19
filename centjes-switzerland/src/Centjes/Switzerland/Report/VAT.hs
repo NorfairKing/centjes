@@ -121,7 +121,7 @@ produceVATReport VATInput {..} Ledger {..} = do
                         Nothing -> validationTFailure $ VATErrorNoVATPosting tl pl1
                         Just (Located pl2 p2) -> do
                           let Located al2 vatAccountName = postingAccountName p2
-                          when (vatAccountName /= vatInputVATIncomeAccountName) $ validationTFailure VATErrorVATPostingNotVATAccount
+                          when (vatAccountName /= vatInputVATIncomeAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
                           let Located _ domesticRevenueVATCurrency = postingCurrency p2
                           let Located _ vatAccount = postingAccount p2
                           -- TODO require that the vat currency is the same?
@@ -237,7 +237,7 @@ produceVATReport VATInput {..} Ledger {..} = do
                           Just (Located pl2 p2) ->
                             fmap Just $ do
                               let Located _ vatAccountName = postingAccountName p2
-                              when (vatAccountName /= vatInputVATExpensesAccountName) $ validationTFailure VATErrorVATPostingNotVATAccount
+                              when (vatAccountName /= vatInputVATExpensesAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
                               let deductibleExpensePosting = pl1
                               let deductibleExpenseTimestamp = timestamp
                               let Located _ deductibleExpenseCurrency = postingCurrency p1

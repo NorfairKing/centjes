@@ -257,7 +257,7 @@ data VATError ann
   | VATErrorPositiveIncome !ann !ann !Money.Account
   | VATErrorNegativeExpense !ann !ann !Money.Account
   | VATErrorNoVATPosting !ann !ann
-  | VATErrorVATPostingNotVATAccount
+  | VATErrorVATPostingNotVATAccount !ann !ann
   | VATErrorNoVATPercentage !ann
   | VATErrorUnknownVATRate !ann !ann !(Ratio Natural)
   | VATErrorDeductibleAndNotDeductible !ann !ann !ann
@@ -327,11 +327,13 @@ instance ToReport (VATError SourceSpan) where
           (toDiagnosePosition tl, Where "in this transaction")
         ]
         []
-    VATErrorVATPostingNotVATAccount ->
+    VATErrorVATPostingNotVATAccount tl pl ->
       Err
         Nothing
         "What should have been a VAT posting for had unrecognised account name"
-        []
+        [ (toDiagnosePosition pl, This "this posting"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
         []
     VATErrorNoVATPercentage tl ->
       Err
