@@ -256,7 +256,7 @@ data VATError ann
   | VATErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
   | VATErrorPositiveIncome !ann !ann !Money.Account
   | VATErrorNegativeExpense !ann !ann !Money.Account
-  | VATErrorNoVATPosting
+  | VATErrorNoVATPosting !ann !ann
   | VATErrorVATPostingNotVATAccount
   | VATErrorNoVATPercentage !ann
   | VATErrorUnknownVATRate !ann !ann !(Ratio Natural)
@@ -319,11 +319,18 @@ instance ToReport (VATError SourceSpan) where
           (toDiagnosePosition tl, Where "in this transaction")
         ]
         []
-    VATErrorNoVATPosting -> Err Nothing "No VAT posting for domestic income" [] []
+    VATErrorNoVATPosting tl pl ->
+      Err
+        Nothing
+        "Missing VAT posting"
+        [ (toDiagnosePosition pl, This "after this posting"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
     VATErrorVATPostingNotVATAccount ->
       Err
         Nothing
-        "VAT posting for domestic income had unknown account name"
+        "What should have been a VAT posting for had unrecognised account name"
         []
         []
     VATErrorNoVATPercentage tl ->

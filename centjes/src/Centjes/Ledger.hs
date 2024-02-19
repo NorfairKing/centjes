@@ -17,6 +17,7 @@ module Centjes.Ledger
     Tag (..),
     Currency (..),
     AccountName (..),
+    AccountType (..),
   )
 where
 
