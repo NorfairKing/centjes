@@ -181,6 +181,7 @@ library
       Centjes.Location.Gen
       Centjes.Module.Gen
       Centjes.Parse.TestUtils
+      Centjes.Tag.Gen
       Centjes.Timestamp.Gen
       Centjes.Validation.TestUtils
   other-modules:
@@ -225,6 +226,7 @@ test-suite centjes-test
       Centjes.Report.BalanceSpec
       Centjes.Report.CheckSpec
       Centjes.Report.RegisterSpec
+      Centjes.TagSpec
       Centjes.TimestampSpec
       Paths_centjes_gen
   hs-source-dirs:
