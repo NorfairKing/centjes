@@ -15,6 +15,7 @@ import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
 import Centjes.Parse.Utils
+import Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Data.Text (Text)
 import Numeric.DecimalLiteral (DecimalLiteral)
@@ -195,7 +196,7 @@ transaction_extra
   :: { LTransactionExtra }
   : plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
   | plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
-  | plus tag_exp { sBE $1 $2 $ TransactionTag $2 }
+  | plus extra_tag { sBE $1 $2 $ TransactionTag $2 }
 
 attachment
   :: { LAttachment }
@@ -205,17 +206,13 @@ assertion
   :: { LAssertion }
   : assert account_name eq account_exp currency_symbol newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
 
-tag_exp
-  :: { LTag }
-  : tg tag newline { sBE $1 $3 $2 }
+extra_tag
+  :: { LExtraTag }
+  : tg tag newline { sBE $1 $3 $ ExtraTag $2 }
 
 tag
-  :: { Tag SourceSpan }
-  : tag_text { Tag $1 }
-
-tag_text
-  :: { Located Text }
-  : var {% parseTagText $1 }
+  :: { LTag }
+  : var {% parseTag $1 }
 
 rel_file_exp
   :: { Located (Path Rel File) }
@@ -281,13 +278,13 @@ parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
 
 parseCurrencySymbol :: Token -> Alex (Located CurrencySymbol)
-parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "CurrencySymbol" (CurrencySymbol.fromText) ans
+parseCurrencySymbol t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "CurrencySymbol" CurrencySymbol.fromText ans
 
 parseAccountType :: Token -> Alex (Located AccountType)
-parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountType" (AccountType.fromText) ats
+parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountType" AccountType.fromText ats
 
-parseTagText :: Token -> Alex (Located Text)
-parseTagText t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "Tag" validateTagText ans
+parseTag :: Token -> Alex (Located Tag)
+parseTag t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "Tag" Tag.fromText ans
 
 parseDecimalLiteral :: Token -> Located DecimalLiteral
 parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl

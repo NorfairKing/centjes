@@ -13,6 +13,7 @@ import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Location
 import Centjes.Module
+import qualified Centjes.Tag as Tag
 import qualified Centjes.Timestamp as Timestamp
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -142,8 +143,9 @@ lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at
 
 tagDeclarationDoc :: GenLocated l (TagDeclaration l) -> Doc ann
 tagDeclarationDoc (Located _ TagDeclaration {..}) =
-  tagDoc tagDeclarationTag
-    <> hardline
+  "tag"
+    <+> tagDoc (locatedValue tagDeclarationTag)
+      <> hardline
 
 priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
 priceDeclarationDoc (Located _ PriceDeclaration {..}) =
@@ -220,7 +222,7 @@ transactionExtraDoc =
   ("+" <+>) . \case
     TransactionAttachment a -> attachmentDoc (locatedValue a)
     TransactionAssertion a -> assertionDoc (locatedValue a)
-    TransactionTag t -> tagDoc (locatedValue t)
+    TransactionTag t -> extraTagDoc (locatedValue t)
 
 attachmentDoc :: Attachment l -> Doc ann
 attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue fp))
@@ -229,9 +231,12 @@ assertionDoc :: Assertion l -> Doc ann
 assertionDoc (AssertionEquals an (Located _ dl) cs) =
   "assert" <+> lAccountNameDoc an <+> "=" <+> accountDoc dl <+> lCurrencySymbolDoc cs
 
-tagDoc :: Tag l -> Doc ann
-tagDoc (Tag (Located _ t)) =
-  "tag" <+> pretty t
+extraTagDoc :: ExtraTag l -> Doc ann
+extraTagDoc (ExtraTag lt) =
+  "tag" <+> tagDoc (locatedValue lt)
+
+tagDoc :: Tag -> Doc ann
+tagDoc = pretty . Tag.toText
 
 lAccountNameDoc :: GenLocated l AccountName -> Doc ann
 lAccountNameDoc = accountNameDoc . locatedValue

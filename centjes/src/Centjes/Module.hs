@@ -39,9 +39,10 @@ module Centjes.Module
     Attachment (..),
     LAssertion,
     Assertion (..),
+    LExtraTag,
+    ExtraTag (..),
     LTag,
     Tag (..),
-    validateTagText,
     AccountName (..),
     DecimalLiteral (..),
   )
@@ -53,17 +54,16 @@ import Centjes.AccountType
 import Centjes.CurrencySymbol
 import Centjes.Description
 import Centjes.Location
+import Centjes.Tag
 import Centjes.Timestamp
 import Control.Arrow (left)
 import Control.DeepSeq
-import Data.Char as Char
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Path ()
-import Data.Validity.Text
+import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 import Numeric.DecimalLiteral
@@ -130,7 +130,7 @@ instance NFData ann => NFData (AccountDeclaration ann)
 type LTagDeclaration = LLocated TagDeclaration
 
 newtype TagDeclaration ann = TagDeclaration
-  { tagDeclarationTag :: Tag ann
+  { tagDeclarationTag :: GenLocated ann Tag
   }
   deriving stock (Show, Eq, Generic)
 
@@ -229,7 +229,7 @@ type LTransactionExtra = LLocated TransactionExtra
 data TransactionExtra ann
   = TransactionAttachment (GenLocated ann (Attachment ann))
   | TransactionAssertion (GenLocated ann (Assertion ann))
-  | TransactionTag (GenLocated ann (Tag ann))
+  | TransactionTag (GenLocated ann (ExtraTag ann))
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (TransactionExtra ann)
@@ -258,30 +258,16 @@ instance Validity ann => Validity (Assertion ann)
 
 instance NFData ann => NFData (Assertion ann)
 
-type LTag = LLocated Tag
+type LExtraTag = LLocated ExtraTag
 
-newtype Tag ann = Tag {tagText :: GenLocated ann Text}
+newtype ExtraTag ann = ExtraTag {unExtraTag :: GenLocated ann Tag}
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity ann => Validity (Tag ann) where
-  validate tag@(Tag (Located _ t)) =
-    mconcat
-      [ genericValidate tag,
-        declare "the text is nonempty" $ not $ T.null t,
-        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character, or _, or -, or :" $
-          case c of
-            ':' -> True
-            '-' -> True
-            '_' -> True
-            _
-              | Char.isLatin1 c && Char.isAlphaNum c -> True
-              | otherwise -> False
-      ]
+instance Validity ann => Validity (ExtraTag ann)
 
-validateTagText :: Text -> Maybe Text
-validateTagText t = locatedValue . tagText <$> constructValid (Tag (Located () t))
+instance NFData ann => NFData (ExtraTag ann)
 
-instance NFData ann => NFData (Tag ann)
+type LTag = Located Tag
 
 instance HasCodec (Path Rel File) where
   codec = bimapCodec (left show . parseRelFile) fromRelFile codec <?> "relative filepath"

@@ -23,13 +23,13 @@ where
 import Centjes.AccountName (AccountName (..))
 import Centjes.AccountType (AccountType (..))
 import Centjes.Location
-import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..), Tag (..))
+import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..))
+import Centjes.Tag
 import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
 import Data.Map.Strict (Map)
 import Data.Ratio
-import Data.Set (Set)
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Set ()
@@ -96,7 +96,7 @@ data Transaction ann = Transaction
     transactionPostings :: !(Vector (GenLocated ann (Posting ann))),
     transactionAttachments :: !(Vector (GenLocated ann (Attachment ann))),
     transactionAssertions :: !(Vector (GenLocated ann (Assertion ann))),
-    transactionTags :: !(Set (GenLocated ann (Tag ann)))
+    transactionTags :: !(Map Tag ann)
   }
   deriving stock (Show, Eq, Generic)
 

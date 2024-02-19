@@ -31,7 +31,6 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
-import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Validity (Validity)
 import qualified Data.Vector as V
@@ -211,7 +210,6 @@ unlines' :: [String] -> String
 unlines' = intercalate "\n"
 
 compileDeclarations ::
-  Ord ann =>
   [Declaration ann] ->
   Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
@@ -405,7 +403,6 @@ compileRational l lre@(Located rel re) = case re of
         pure (Located rel (n / d)) -- TODO err on zero denominator
 
 compileTransaction ::
-  Ord ann =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map AccountName (GenLocated ann AccountType) ->
   GenLocated ann (Module.Transaction ann) ->
@@ -455,10 +452,10 @@ compileTransaction currencies accounts (Located l mt) = do
             )
             (Module.transactionExtras mt)
   let transactionTags =
-        S.fromList $
+        M.fromList $
           mapMaybe
             ( ( \case
-                  TransactionTag t -> Just t
+                  TransactionTag (Located etl (ExtraTag (Located _ t))) -> Just (t, etl)
                   TransactionAttachment _ -> Nothing
                   TransactionAssertion _ -> Nothing
               )
