@@ -395,7 +395,7 @@ parseUnxpectedDeductibleExpenses ::
   GenLocated ann (Transaction ann) ->
   Maybe (GenLocated ann (Posting ann))
 parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {..}) =
-  (listToMaybe . catMaybes) $ flip map (consequtiveTups (V.toList transactionPostings)) $ \(lp1@(Located pl1 p1), mP2) ->
+  (listToMaybe . catMaybes) $ flip map (consequtiveTups (V.toList transactionPostings)) $ \(lp1@(Located _ p1), mP2) ->
     let Located _ accountName = postingAccountName p1
         Located _ account = postingAccount p1
      in case M.lookup accountName accounts of
@@ -410,7 +410,8 @@ parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {
                     else Just lp1
                 Just (Located _ p2) ->
                   let Located _ accountName2 = postingAccountName p2
-                   in if accountName2 == vatInputExportsIncomeAccountName
+                   in -- If the second posting IS the VAT posting, it's fine.
+                      if accountName2 == vatInputExportsIncomeAccountName
                         then Nothing
                         else Just lp1
             _ -> Nothing
