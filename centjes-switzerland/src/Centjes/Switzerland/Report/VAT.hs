@@ -369,49 +369,8 @@ gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPri
         if not $ dayInQuarter quarter day
           then pure (Nothing :: Maybe (NonEmpty (DeductibleExpense ann)))
           else do
-            -- Every posting and the next
-            let postingsTups =
-                  let l = V.toList transactionPostings
-                   in zip l (map Just (tail l) ++ [Nothing])
-
             let mDeductibleTag = M.lookup vatInputTagDeductible transactionTags
             let mNotDeductibleTag = M.lookup vatInputTagNotDeductible transactionTags
-
-            let parseDeductibleExpenses = fmap (NE.nonEmpty . catMaybes) $ forM postingsTups $ \(Located pl1 p1, mP2) -> do
-                  let Located _ accountName = postingAccountName p1
-                  let Located al1 account = postingAccount p1
-                  case M.lookup accountName ledgerAccounts of
-                    Nothing -> undefined -- Undeclared account, should not happen.
-                    Just (Located _ accountType) -> case accountType of
-                      AccountTypeExpenses | account >= Account.zero ->
-                        case mP2 of
-                          Nothing ->
-                            -- If this IS the VAT posting, it's fine.
-                            if accountName == vatInputVATExpensesAccountName
-                              then pure Nothing
-                              else validationTFailure $ VATErrorNoVATPosting tl pl1
-                          Just (Located pl2 p2) ->
-                            fmap Just $ do
-                              let Located _ vatAccountName = postingAccountName p2
-                              when (vatAccountName /= vatInputVATExpensesAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
-                              let deductibleExpensePosting = pl1
-                              let deductibleExpenseTimestamp = timestamp
-                              let Located _ deductibleExpenseCurrency = postingCurrency p1
-                              deductibleExpenseAmount <- requirePositive tl pl1 account
-                              deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency chf deductibleExpenseAmount
-                              deductibleExpenseDescription <- requireDescription transactionDescription
-                              deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
-                              let Located _ deductibleExpenseVATCurrency = postingCurrency p2
-                              let Located al vatAccount = postingAccount p2
-                              deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
-                              deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount
-                              (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
-                              deductibleExpenseVATRate <-
-                                if deductibleExpenseVATCurrency == chf
-                                  then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate
-                                  else pure reportedVATRate -- No way to check if it's a foreign VAT rate
-                              pure DeductibleExpense {..}
-                      _ -> pure Nothing
 
             case (mDeductibleTag, mNotDeductibleTag) of
               -- Can't tag as both deductible and not-deductible
@@ -425,11 +384,36 @@ gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPri
                   Nothing -> validationTFailure $ VATErrorDeductibleNoExpenses tl tagl
                   Just ne -> pure $ Just ne
               -- If it's not tagged at all, error if there are expenses.
-              (Nothing, Nothing) -> do
-                mDes <- parseDeductibleExpenses
-                case mDes of
+              (Nothing, Nothing) ->
+                case parseUnxpectedDeductibleExpenses vatInput ledgerAccounts lt of
                   Nothing -> pure Nothing
-                  Just (de :| _) -> validationTFailure $ VATErrorUntaggedExpenses tl (deductibleExpensePosting de)
+                  Just lp -> validationTFailure $ VATErrorUntaggedExpenses tl lp
+
+parseUnxpectedDeductibleExpenses ::
+  VATInput ->
+  Map AccountName (GenLocated ann AccountType) ->
+  GenLocated ann (Transaction ann) ->
+  Maybe (GenLocated ann (Posting ann))
+parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {..}) =
+  (listToMaybe . catMaybes) $ flip map (consequtiveTups (V.toList transactionPostings)) $ \(lp1@(Located pl1 p1), mP2) ->
+    let Located _ accountName = postingAccountName p1
+        Located _ account = postingAccount p1
+     in case M.lookup accountName accounts of
+          Nothing -> undefined -- Undeclared account, should not happen.
+          Just (Located _ accountType) -> case accountType of
+            AccountTypeExpenses | account >= Account.zero ->
+              case mP2 of
+                Nothing ->
+                  -- If this IS the VAT posting, it's fine.
+                  if accountName == vatInputVATExpensesAccountName
+                    then Nothing
+                    else Just lp1
+                Just (Located _ p2) ->
+                  let Located _ accountName2 = postingAccountName p2
+                   in if accountName2 == vatInputExportsIncomeAccountName
+                        then Nothing
+                        else Just lp1
+            _ -> Nothing
 
 parseExpectedDeductibleExpenses ::
   Ord ann =>
@@ -439,12 +423,8 @@ parseExpectedDeductibleExpenses ::
   Currency ann ->
   GenLocated ann (Transaction ann) ->
   Reporter (VATError ann) (Maybe (NonEmpty (DeductibleExpense ann)))
-parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Located tl Transaction {..}) = do
-  -- Every posting and the next
-  let postingsTups =
-        let l = V.toList transactionPostings
-         in zip l (map Just (tail l) ++ [Nothing])
-  fmap (NE.nonEmpty . catMaybes) $ forM postingsTups $ \(Located pl1 p1, mP2) -> do
+parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Located tl Transaction {..}) =
+  fmap (NE.nonEmpty . catMaybes) $ forM (consequtiveTups (V.toList transactionPostings)) $ \(Located pl1 p1, mP2) -> do
     let Located _ accountName = postingAccountName p1
     let Located al1 account = postingAccount p1
     case M.lookup accountName accounts of
@@ -481,3 +461,7 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
                     else pure reportedVATRate -- No way to check if it's a foreign VAT rate
                 pure DeductibleExpense {..}
         _ -> pure Nothing
+
+consequtiveTups :: [a] -> [(a, Maybe a)]
+consequtiveTups l =
+  zip l (map Just (tail l) ++ [Nothing])

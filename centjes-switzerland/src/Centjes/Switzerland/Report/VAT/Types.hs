@@ -262,7 +262,7 @@ data VATError ann
   | VATErrorUnknownVATRate !ann !ann !(Ratio Natural)
   | VATErrorDeductibleAndNotDeductible !ann !ann !ann
   | VATErrorDeductibleNoExpenses !ann !ann
-  | VATErrorUntaggedExpenses !ann !ann
+  | VATErrorUntaggedExpenses !ann !(GenLocated ann (Posting ann))
   | VATErrorSum ![Money.Amount]
   | VATErrorAdd !Money.Amount !Money.Amount
   | VATErrorSubtract !Money.Amount !Money.Amount
@@ -367,7 +367,7 @@ instance ToReport (VATError SourceSpan) where
           (toDiagnosePosition tl, Where "in this transaction")
         ]
         []
-    VATErrorUntaggedExpenses tl pl ->
+    VATErrorUntaggedExpenses tl (Located pl _) ->
       Err
         Nothing
         "Expense not marked as either deductible or not-deductible"
