@@ -2,14 +2,15 @@ currency USD 0.01
 currency CHF 0.01
 
 account equity:starting
-account assets:bank:usd
 account assets:bank
+account assets:bank:usd
+account expenses:bank
 account expenses:coffee
 account expenses:hardware
 account expenses:vat
 account income:domestic
-account income:foreign
 account income:exports
+account income:foreign
 account income:vat
 
 tag deductible
@@ -28,7 +29,7 @@ tag not-deductible
   + attach receipt-computer.txt
   + tag deductible
 
-2024-01-02
+2024-01-03
   | Coffee
   * assets:bank -5 CHF
   * expenses:coffee 5 CHF
@@ -36,10 +37,20 @@ tag not-deductible
   + attach receipt-coffee.txt
   + tag not-deductible
 
-2024-01-02
+2024-01-04
   | Coffee
   * assets:bank -5 CHF
   * expenses:coffee 5 CHF
+  + tag not-deductible
+
+2024-01-05
+  | Example with transaction cost
+  * assets:bank -5.5 CHF
+  * expenses:bank 0.5 CHF
+  * expenses:coffee 5 CHF
+  ! expenses:vat 0.0 CHF ~ 8.1%
+  + attach receipt-coffee.txt
+  + tag deductible
 
 price 2024-01-07 USD 0.8589 CHF
 
