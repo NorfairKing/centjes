@@ -68,7 +68,7 @@ produceVATReport ::
   VATInput ->
   Ledger ann ->
   Reporter (VATError ann) (VATReport ann)
-produceVATReport VATInput {..} Ledger {..} = do
+produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
   let vatReportPersonName = vatInputPersonName
   let vatReportOrganisationName = vatInputOrganisationName
   let vatReportVATId = vatInputVATId
@@ -205,75 +205,14 @@ produceVATReport VATInput {..} Ledger {..} = do
         vatReport2024StandardRateVATRevenue
       ]
 
-  vatReportDeductibleExpenses <- fmap (concatMap (maybe [] NE.toList)) $
-    forM (V.toList ledgerTransactions) $
-      \(Located tl Transaction {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        if not $ dayInQuarter vatReportQuarter day
-          then pure (Nothing :: Maybe (NonEmpty (DeductibleExpense ann)))
-          else do
-            -- Every posting and the next
-            let postingsTups =
-                  let l = V.toList transactionPostings
-                   in zip l (map Just (tail l) ++ [Nothing])
+  vatReportDeductibleExpenses <-
+    gatherDeductibleExpenses
+      vatInput
+      ledger
+      vatReportQuarter
+      vatReportCHF
+      dailyPriceGraphs
 
-            let mDeductibleTag = M.lookup vatInputTagDeductible transactionTags
-            let mNotDeductibleTag = M.lookup vatInputTagNotDeductible transactionTags
-
-            let parseDeductibleExpenses = fmap (NE.nonEmpty . catMaybes) $ forM postingsTups $ \(Located pl1 p1, mP2) -> do
-                  let Located _ accountName = postingAccountName p1
-                  let Located al1 account = postingAccount p1
-                  case M.lookup accountName ledgerAccounts of
-                    Nothing -> undefined -- Undeclared account, should not happen.
-                    Just (Located _ accountType) -> case accountType of
-                      AccountTypeExpenses | account >= Account.zero ->
-                        case mP2 of
-                          Nothing ->
-                            -- If this IS the VAT posting, it's fine.
-                            if accountName == vatInputVATExpensesAccountName
-                              then pure Nothing
-                              else validationTFailure $ VATErrorNoVATPosting tl pl1
-                          Just (Located pl2 p2) ->
-                            fmap Just $ do
-                              let Located _ vatAccountName = postingAccountName p2
-                              when (vatAccountName /= vatInputVATExpensesAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
-                              let deductibleExpensePosting = pl1
-                              let deductibleExpenseTimestamp = timestamp
-                              let Located _ deductibleExpenseCurrency = postingCurrency p1
-                              deductibleExpenseAmount <- requirePositive tl pl1 account
-                              deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency vatReportCHF deductibleExpenseAmount
-                              deductibleExpenseDescription <- requireDescription transactionDescription
-                              deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
-                              let Located _ deductibleExpenseVATCurrency = postingCurrency p2
-                              let Located al vatAccount = postingAccount p2
-                              deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
-                              deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency vatReportCHF deductibleExpenseVATAmount
-                              (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
-                              deductibleExpenseVATRate <-
-                                if deductibleExpenseVATCurrency == vatReportCHF
-                                  then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate
-                                  else pure reportedVATRate -- No way to check if it's a foreign VAT rate
-                              pure DeductibleExpense {..}
-                      _ -> pure Nothing
-
-            case (mDeductibleTag, mNotDeductibleTag) of
-              -- Can't tag as both deductible and not-deductible
-              (Just tagl, Just tagnotl) -> validationTFailure $ VATErrorDeductibleAndNotDeductible tl tagl tagnotl
-              -- Ignore the transaction if it's tagged as not-deductible
-              (Nothing, Just _) -> pure Nothing
-              -- If it's tagged as deductible, expect at least one deductible expense
-              (Just tagl, Nothing) -> do
-                mDes <- parseDeductibleExpenses
-                case mDes of
-                  Nothing -> validationTFailure $ VATErrorDeductibleNoExpenses tl tagl
-                  Just ne -> pure $ Just ne
-              -- If it's not tagged at all, error if there are expenses.
-              (Nothing, Nothing) -> do
-                mDes <- parseDeductibleExpenses
-                case mDes of
-                  Nothing -> pure Nothing
-                  Just (de :| _) -> validationTFailure $ VATErrorUntaggedExpenses tl (deductibleExpensePosting de)
   vatReportPaidVAT <- requireSumAmount (map deductibleExpenseVATCHFAmount vatReportDeductibleExpenses)
   let vatReportTotalVATDeductions = vatReportPaidVAT
 
@@ -412,3 +351,82 @@ vatRateRatio = \case
   VATRate2024Reduced -> 0.026
   VATRate2023Hotel -> 0.037
   VATRate2024Hotel -> 0.038
+
+gatherDeductibleExpenses ::
+  Ord ann =>
+  VATInput ->
+  Ledger ann ->
+  Quarter ->
+  Currency ann ->
+  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Reporter (VATError ann) [DeductibleExpense ann]
+gatherDeductibleExpenses VATInput {..} Ledger {..} quarter chf dailyPriceGraphs =
+  fmap (concatMap (maybe [] NE.toList)) $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if not $ dayInQuarter quarter day
+          then pure (Nothing :: Maybe (NonEmpty (DeductibleExpense ann)))
+          else do
+            -- Every posting and the next
+            let postingsTups =
+                  let l = V.toList transactionPostings
+                   in zip l (map Just (tail l) ++ [Nothing])
+
+            let mDeductibleTag = M.lookup vatInputTagDeductible transactionTags
+            let mNotDeductibleTag = M.lookup vatInputTagNotDeductible transactionTags
+
+            let parseDeductibleExpenses = fmap (NE.nonEmpty . catMaybes) $ forM postingsTups $ \(Located pl1 p1, mP2) -> do
+                  let Located _ accountName = postingAccountName p1
+                  let Located al1 account = postingAccount p1
+                  case M.lookup accountName ledgerAccounts of
+                    Nothing -> undefined -- Undeclared account, should not happen.
+                    Just (Located _ accountType) -> case accountType of
+                      AccountTypeExpenses | account >= Account.zero ->
+                        case mP2 of
+                          Nothing ->
+                            -- If this IS the VAT posting, it's fine.
+                            if accountName == vatInputVATExpensesAccountName
+                              then pure Nothing
+                              else validationTFailure $ VATErrorNoVATPosting tl pl1
+                          Just (Located pl2 p2) ->
+                            fmap Just $ do
+                              let Located _ vatAccountName = postingAccountName p2
+                              when (vatAccountName /= vatInputVATExpensesAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
+                              let deductibleExpensePosting = pl1
+                              let deductibleExpenseTimestamp = timestamp
+                              let Located _ deductibleExpenseCurrency = postingCurrency p1
+                              deductibleExpenseAmount <- requirePositive tl pl1 account
+                              deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency chf deductibleExpenseAmount
+                              deductibleExpenseDescription <- requireDescription transactionDescription
+                              deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
+                              let Located _ deductibleExpenseVATCurrency = postingCurrency p2
+                              let Located al vatAccount = postingAccount p2
+                              deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
+                              deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount
+                              (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
+                              deductibleExpenseVATRate <-
+                                if deductibleExpenseVATCurrency == chf
+                                  then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate
+                                  else pure reportedVATRate -- No way to check if it's a foreign VAT rate
+                              pure DeductibleExpense {..}
+                      _ -> pure Nothing
+
+            case (mDeductibleTag, mNotDeductibleTag) of
+              -- Can't tag as both deductible and not-deductible
+              (Just tagl, Just tagnotl) -> validationTFailure $ VATErrorDeductibleAndNotDeductible tl tagl tagnotl
+              -- Ignore the transaction if it's tagged as not-deductible
+              (Nothing, Just _) -> pure Nothing
+              -- If it's tagged as deductible, expect at least one deductible expense
+              (Just tagl, Nothing) -> do
+                mDes <- parseDeductibleExpenses
+                case mDes of
+                  Nothing -> validationTFailure $ VATErrorDeductibleNoExpenses tl tagl
+                  Just ne -> pure $ Just ne
+              -- If it's not tagged at all, error if there are expenses.
+              (Nothing, Nothing) -> do
+                mDes <- parseDeductibleExpenses
+                case mDes of
+                  Nothing -> pure Nothing
+                  Just (de :| _) -> validationTFailure $ VATErrorUntaggedExpenses tl (deductibleExpensePosting de)
