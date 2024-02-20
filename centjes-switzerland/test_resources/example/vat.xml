@@ -80,10 +80,10 @@
             </eCH-0217:turnover>
         </eCH-0217:suppliesPerTaxRate>
         <eCH-0217:inputTaxInvestments>
-            357.47
+            357.84
         </eCH-0217:inputTaxInvestments>
     </eCH-0217:effectiveReportingMethod>
     <eCH-0217:payableTax>
-        -136.12
+        -136.49
     </eCH-0217:payableTax>
 </eCH-0217:VATDeclaration>

@@ -438,29 +438,30 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
               if accountName == vatInputVATExpensesAccountName
                 then pure Nothing
                 else validationTFailure $ VATErrorNoVATPosting tl pl1
-            Just (Located pl2 p2) ->
-              fmap Just $ do
-                let Located _ vatAccountName = postingAccountName p2
-                when (vatAccountName /= vatInputVATExpensesAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
-                let deductibleExpensePosting = pl1
-                let Located _ timestamp = transactionTimestamp
-                let deductibleExpenseTimestamp = timestamp
-                let day = Timestamp.toDay timestamp
-                let Located _ deductibleExpenseCurrency = postingCurrency p1
-                deductibleExpenseAmount <- requirePositive tl pl1 account
-                deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency chf deductibleExpenseAmount
-                deductibleExpenseDescription <- requireDescription transactionDescription
-                deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
-                let Located _ deductibleExpenseVATCurrency = postingCurrency p2
-                let Located al vatAccount = postingAccount p2
-                deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
-                deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount
-                (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
-                deductibleExpenseVATRate <-
-                  if deductibleExpenseVATCurrency == chf
-                    then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate
-                    else pure reportedVATRate -- No way to check if it's a foreign VAT rate
-                pure DeductibleExpense {..}
+            Just (Located pl2 p2) -> do
+              let Located _ vatAccountName = postingAccountName p2
+              if vatAccountName == vatInputVATExpensesAccountName
+                then fmap Just $ do
+                  let deductibleExpensePosting = pl1
+                  let Located _ timestamp = transactionTimestamp
+                  let deductibleExpenseTimestamp = timestamp
+                  let day = Timestamp.toDay timestamp
+                  let Located _ deductibleExpenseCurrency = postingCurrency p1
+                  deductibleExpenseAmount <- requirePositive tl pl1 account
+                  deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency chf deductibleExpenseAmount
+                  deductibleExpenseDescription <- requireDescription transactionDescription
+                  deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
+                  let Located _ deductibleExpenseVATCurrency = postingCurrency p2
+                  let Located al vatAccount = postingAccount p2
+                  deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
+                  deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount
+                  (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
+                  deductibleExpenseVATRate <-
+                    if deductibleExpenseVATCurrency == chf
+                      then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate
+                      else pure reportedVATRate -- No way to check if it's a foreign VAT rate
+                  pure DeductibleExpense {..}
+                else pure Nothing
         _ -> pure Nothing
 
 consequtiveTups :: [a] -> [(a, Maybe a)]

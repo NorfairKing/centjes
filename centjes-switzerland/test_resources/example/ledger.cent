@@ -48,7 +48,7 @@ tag not-deductible
   * assets:bank -5.5 CHF
   * expenses:bank 0.5 CHF
   * expenses:coffee 5 CHF
-  ! expenses:vat 0.0 CHF ~ 8.1%
+  ! expenses:vat 0.37 CHF ~ 8.1%
   + attach receipt-coffee.txt
   + tag deductible
 
