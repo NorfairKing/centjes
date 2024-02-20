@@ -360,10 +360,10 @@ gatherDeductibleExpenses ::
   Currency ann ->
   Map Day (MemoisedPriceGraph (Currency ann)) ->
   Reporter (VATError ann) [DeductibleExpense ann]
-gatherDeductibleExpenses VATInput {..} Ledger {..} quarter chf dailyPriceGraphs =
+gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPriceGraphs =
   fmap (concatMap (maybe [] NE.toList)) $
     forM (V.toList ledgerTransactions) $
-      \(Located tl Transaction {..}) -> do
+      \lt@(Located tl Transaction {..}) -> do
         let Located _ timestamp = transactionTimestamp
         let day = Timestamp.toDay timestamp
         if not $ dayInQuarter quarter day
@@ -420,7 +420,7 @@ gatherDeductibleExpenses VATInput {..} Ledger {..} quarter chf dailyPriceGraphs 
               (Nothing, Just _) -> pure Nothing
               -- If it's tagged as deductible, expect at least one deductible expense
               (Just tagl, Nothing) -> do
-                mDes <- parseDeductibleExpenses
+                mDes <- parseExpectedDeductibleExpenses vatInput ledgerAccounts dailyPriceGraphs chf lt
                 case mDes of
                   Nothing -> validationTFailure $ VATErrorDeductibleNoExpenses tl tagl
                   Just ne -> pure $ Just ne
@@ -430,3 +430,54 @@ gatherDeductibleExpenses VATInput {..} Ledger {..} quarter chf dailyPriceGraphs 
                 case mDes of
                   Nothing -> pure Nothing
                   Just (de :| _) -> validationTFailure $ VATErrorUntaggedExpenses tl (deductibleExpensePosting de)
+
+parseExpectedDeductibleExpenses ::
+  Ord ann =>
+  VATInput ->
+  Map AccountName (GenLocated ann AccountType) ->
+  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Currency ann ->
+  GenLocated ann (Transaction ann) ->
+  Reporter (VATError ann) (Maybe (NonEmpty (DeductibleExpense ann)))
+parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Located tl Transaction {..}) = do
+  -- Every posting and the next
+  let postingsTups =
+        let l = V.toList transactionPostings
+         in zip l (map Just (tail l) ++ [Nothing])
+  fmap (NE.nonEmpty . catMaybes) $ forM postingsTups $ \(Located pl1 p1, mP2) -> do
+    let Located _ accountName = postingAccountName p1
+    let Located al1 account = postingAccount p1
+    case M.lookup accountName accounts of
+      Nothing -> undefined -- Undeclared account, should not happen.
+      Just (Located _ accountType) -> case accountType of
+        AccountTypeExpenses | account >= Account.zero ->
+          case mP2 of
+            Nothing ->
+              -- If this IS the VAT posting, it's fine.
+              if accountName == vatInputVATExpensesAccountName
+                then pure Nothing
+                else validationTFailure $ VATErrorNoVATPosting tl pl1
+            Just (Located pl2 p2) ->
+              fmap Just $ do
+                let Located _ vatAccountName = postingAccountName p2
+                when (vatAccountName /= vatInputVATExpensesAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
+                let deductibleExpensePosting = pl1
+                let Located _ timestamp = transactionTimestamp
+                let deductibleExpenseTimestamp = timestamp
+                let day = Timestamp.toDay timestamp
+                let Located _ deductibleExpenseCurrency = postingCurrency p1
+                deductibleExpenseAmount <- requirePositive tl pl1 account
+                deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency chf deductibleExpenseAmount
+                deductibleExpenseDescription <- requireDescription transactionDescription
+                deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
+                let Located _ deductibleExpenseVATCurrency = postingCurrency p2
+                let Located al vatAccount = postingAccount p2
+                deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
+                deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount
+                (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
+                deductibleExpenseVATRate <-
+                  if deductibleExpenseVATCurrency == chf
+                    then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate
+                    else pure reportedVATRate -- No way to check if it's a foreign VAT rate
+                pure DeductibleExpense {..}
+        _ -> pure Nothing
