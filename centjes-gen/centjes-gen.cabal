@@ -146,6 +146,7 @@ extra-source-files:
     test_resources/syntax/module/valid/multiple-accounts.cent
     test_resources/syntax/module/valid/multiple-currencies.cent
     test_resources/syntax/module/valid/multiple-imports.cent
+    test_resources/syntax/transaction/formatted/btc-coffee.cent
     test_resources/syntax/transaction/formatted/currency-conversion-fraction.cent
     test_resources/syntax/transaction/formatted/currency-conversion.cent
     test_resources/syntax/transaction/formatted/example.cent
@@ -157,6 +158,7 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/with-percentage-fraction.cent
     test_resources/syntax/transaction/formatted/with-percentage.cent
     test_resources/syntax/transaction/formatted/with-tag.cent
+    test_resources/syntax/transaction/valid/btc-coffee.cent
     test_resources/syntax/transaction/valid/currency-conversion-fraction.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
     test_resources/syntax/transaction/valid/example.cent

@@ -19,6 +19,7 @@ import qualified Centjes.Timestamp as Timestamp
 import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Word
 import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Prettyprinter
@@ -176,7 +177,15 @@ transactionDoc Transaction {..} =
       concat
         [ [lTimestampDoc transactionTimestamp],
           map ("  " <>) $ maybe [] descriptionDocs transactionDescription,
-          map (("  " <>) . postingDocHelper (Just maxAccountNameWidth) (Just maxAccountWidth) . locatedValue) transactionPostings,
+          map
+            ( ("  " <>)
+                . postingDocHelper
+                  (Just maxAccountNameWidth)
+                  (Just maxAccountWidth)
+                  (Just maxAccountDecimals)
+                . locatedValue
+            )
+            transactionPostings,
           map (("  " <>) . transactionExtraDoc . locatedValue) transactionExtras
         ]
   where
@@ -184,6 +193,8 @@ transactionDoc Transaction {..} =
     accountNameWidth = Max . T.length . AccountName.toText . locatedValue
     maxAccountWidth = foldMap (accountWidth . postingAccount . locatedValue) transactionPostings
     accountWidth = Max . charactersBeforeDot . locatedValue
+    maxAccountDecimals = foldMap (accountDecimals . postingAccount . locatedValue) transactionPostings
+    accountDecimals = Max . DecimalLiteral.digits . locatedValue
 
 lTimestampDoc :: GenLocated l Timestamp -> Doc ann
 lTimestampDoc = timestampDoc . locatedValue
@@ -195,15 +206,15 @@ descriptionDocs :: GenLocated l Description -> [Doc ann]
 descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
 
 postingDoc :: Posting l -> Doc ann
-postingDoc = postingDocHelper Nothing Nothing
+postingDoc = postingDocHelper Nothing Nothing Nothing
 
-postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Posting l -> Doc ann
-postingDocHelper mMaxAccountNameWidth mMaxAccountWidth Posting {..} =
+postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc ann
+postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =
   maybe id (\pe -> (<+> ("~" <+> lPercentageExpressionDoc pe))) postingPercentage $
     maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
       (if postingReal then "*" else "!")
         <+> maybe id (fill . getMax) mMaxAccountNameWidth (lAccountNameDoc postingAccountName)
-        <+> accountDocHelper mMaxAccountWidth (locatedValue postingAccount)
+        <+> accountDocHelper mMaxAccountWidth mMaxAccountDecimals (locatedValue postingAccount)
         <+> lCurrencySymbolDoc postingCurrencySymbol
 
 lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc ann
@@ -260,14 +271,23 @@ accountNameDoc = pretty . AccountName.toText
 accountDoc :: DecimalLiteral -> Doc ann
 accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
 
-accountDocHelper :: Maybe (Max Int) -> DecimalLiteral -> Doc ann
-accountDocHelper mMaxDigitsBeforeDot dl' =
+accountDocHelper :: Maybe (Max Int) -> Maybe (Max Word8) -> DecimalLiteral -> Doc ann
+accountDocHelper mMaxDigitsBeforeDot mMaxAccountDecimals dl' =
   let dl = DecimalLiteral.setSignRequired dl'
-      padWithSpaces (Max maxChars) =
+      padFrontWithSpaces (Max maxChars) =
         let d = maxChars - charactersBeforeDot dl
          in (pretty (replicate d ' ') <>)
-   in maybe id padWithSpaces mMaxDigitsBeforeDot $
-        decimalLiteralDoc dl
+      padEndWithSpaces (Max maxDigits) =
+        fill $
+          -- +1 if there is a dot anywhere
+          ( if maxDigits == 0
+              then id
+              else succ
+          )
+            (fromIntegral maxDigits + maybe 0 getMax mMaxDigitsBeforeDot)
+   in maybe id padEndWithSpaces mMaxAccountDecimals $
+        maybe id padFrontWithSpaces mMaxDigitsBeforeDot $
+          decimalLiteralDoc dl
 
 charactersBeforeDot :: DecimalLiteral -> Int
 charactersBeforeDot (DecimalLiteral _ m e) =
