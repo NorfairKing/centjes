@@ -36,6 +36,7 @@ with final.haskell.lib;
             --readme-file $out/README.pdf
         '';
       };
+      centjes-vim = final.vimPlugins.centjes-vim;
     };
   };
 
@@ -71,6 +72,7 @@ with final.haskell.lib;
       options = eval.options;
     }).optionsJSON;
 
+  vimPlugins.centjes-vim = final.callPackage ../centjes-vim { };
 
   haskellPackages = prev.haskellPackages.override (old: {
     overrides = composeExtensions (old.overrides or (_: _: { })) (

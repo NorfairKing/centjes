@@ -89,6 +89,7 @@
         };
         example-switzerland-taxes = pkgs.centjes.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/example;
         example-switzerland-vat = pkgs.centjes.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/example;
+        vim-plugin = pkgs.vimPlugins.centjes-vim;
         pre-commit = pre-commit-hooks.lib.${ system}.run {
           src = ./.;
           hooks = {
