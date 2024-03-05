@@ -8,7 +8,7 @@ account expenses:vat
 2023-01-01
   | Opening balances
   * equity:starting -100 CHF
-  * assets:cash +100 CHF
+  * assets:cash     +100 CHF
 
 2023-01-02
   | VAT example with no previous posting

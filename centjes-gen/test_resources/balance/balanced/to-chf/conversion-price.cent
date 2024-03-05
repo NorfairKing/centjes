@@ -7,7 +7,7 @@ account assets
 
 2023-12-18
   | Opening
-  * equity -100 CHF
+  * equity      -100 CHF
   * investments +100 CHF
 
 2023-12-19
@@ -17,4 +17,4 @@ account assets
 
 2023-12-19
   * investments -100 USD
-  * assets +100 USD
+  * assets      +100 USD

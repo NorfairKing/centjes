@@ -9,5 +9,5 @@ account vat2 expenses
   | Opening
   * assets +5 USD
   * equity -5 USD
-  ! vat1 +5 USD
-  ! vat2 +5 USD
+  ! vat1   +5 USD
+  ! vat2   +5 USD

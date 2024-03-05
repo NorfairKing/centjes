@@ -9,15 +9,15 @@ account expenses:coffee
 2023-12-21
   | Opening
   * equity:starting -100 USD
-  * assets:cash +100 USD
+  * assets:cash     +100 USD
 
 -- Comment here
 2023-11-15
   | Coffee
   * expenses:coffee +5 USD
-  * assets:cash -5 USD
+  * assets:cash     -5 USD
 
 2023-11-16
   | More Coffee
   * expenses:coffee +5 USD
-  * assets:cash -5 USD
+  * assets:cash     -5 USD

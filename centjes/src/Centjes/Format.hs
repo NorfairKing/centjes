@@ -6,6 +6,7 @@ module Centjes.Format
   ( formatModule,
     formatDeclaration,
     formatTransaction,
+    formatPosting,
   )
 where
 
@@ -15,6 +16,7 @@ import Centjes.Location
 import Centjes.Module
 import qualified Centjes.Tag as Tag
 import qualified Centjes.Timestamp as Timestamp
+import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
 import Numeric.DecimalLiteral as DecimalLiteral
@@ -30,6 +32,9 @@ formatDeclaration = renderDocText . declarationDoc
 
 formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
+
+formatPosting :: Posting l -> Text
+formatPosting = renderDocText . postingDoc
 
 renderDocText :: Doc ann -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions
@@ -171,9 +176,12 @@ transactionDoc Transaction {..} =
       concat
         [ [lTimestampDoc transactionTimestamp],
           map ("  " <>) $ maybe [] descriptionDocs transactionDescription,
-          map (("  " <>) . postingDoc . locatedValue) transactionPostings,
+          map (("  " <>) . postingDocHelper (Just maxPostingWidth) . locatedValue) transactionPostings,
           map (("  " <>) . transactionExtraDoc . locatedValue) transactionExtras
         ]
+  where
+    maxPostingWidth = foldMap (postingWidth . locatedValue) transactionPostings
+    postingWidth = Max . T.length . AccountName.toText . locatedValue . postingAccountName
 
 lTimestampDoc :: GenLocated l Timestamp -> Doc ann
 lTimestampDoc = timestampDoc . locatedValue
@@ -185,11 +193,14 @@ descriptionDocs :: GenLocated l Description -> [Doc ann]
 descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
 
 postingDoc :: Posting l -> Doc ann
-postingDoc Posting {..} =
+postingDoc = postingDocHelper Nothing
+
+postingDocHelper :: Maybe (Max Int) -> Posting l -> Doc ann
+postingDocHelper mMaxAccountWidth Posting {..} =
   maybe id (\pe -> (<+> ("~" <+> lPercentageExpressionDoc pe))) postingPercentage $
     maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
       (if postingReal then "*" else "!")
-        <+> lAccountNameDoc postingAccountName
+        <+> maybe id (fill . getMax) mMaxAccountWidth (lAccountNameDoc postingAccountName)
         <+> accountDoc (locatedValue postingAccount)
         <+> lCurrencySymbolDoc postingCurrencySymbol
 
