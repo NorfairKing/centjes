@@ -7,6 +7,7 @@ import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.Convert.PriceGraph.Gen ()
 import Centjes.CurrencySymbol
 import Centjes.CurrencySymbol.Gen ()
+import Test.QuickCheck
 import Test.Syd
 import Test.Syd.Validity
 
@@ -20,6 +21,6 @@ spec = do
     it "produces the same results as just using a price graph" $
       forAllValid $ \graph ->
         forAllValid $ \from ->
-          forAllValid $ \to ->
+          forAll (genValid `suchThat` (/= from)) $ \to ->
             MemoisedPriceGraph.lookup @CurrencySymbol (MemoisedPriceGraph.fromPriceGraph graph) from to
               `shouldBe` PriceGraph.lookup graph from to

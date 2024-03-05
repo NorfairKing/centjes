@@ -88,6 +88,9 @@ with final.haskell.lib;
                 hyperlinkSource = false;
                 enableLibraryProfiling = false;
                 enableExecutableProfiling = false;
+                # Ugly hack because we can't just add flags to the 'test' invocation.
+                # Show test output as we go, instead of all at once afterwards.
+                testTarget = (old.testTarget or "") + " --show-details=direct";
 
                 configureFlags = (old.configureFlags or [ ]) ++ [
                   # Optimisations

@@ -77,7 +77,9 @@
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
-      packages.${system}.default = pkgs.centjes;
+      packages.${system} = {
+        default = pkgs.centjes;
+      } // pkgs.centjesReleasePackages;
       checks.${system} = {
         package = self.packages.${system}.default;
         release = pkgs.haskellPackages.centjes;

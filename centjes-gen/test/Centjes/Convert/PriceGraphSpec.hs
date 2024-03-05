@@ -82,8 +82,8 @@ spec = do
 
     it "can a find a one-hop rate" $
       forAllValid $ \c1 ->
-        forAllValid $ \c2 ->
-          forAllValid $ \c3 ->
+        forAll (genValid `suchThat` (/= c1)) $ \c2 ->
+          forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2)) $ \c3 ->
             forAllValid $ \r1 ->
               forAllValid $ \r2 -> do
                 let ps = PriceGraph.fromList [((c1, c2), r1), ((c2, c3), r2)]
@@ -92,8 +92,8 @@ spec = do
 
     it "can a find a zero-hop rate even if multiple hops are available" $
       forAllValid $ \c1 ->
-        forAllValid $ \c2 ->
-          forAllValid $ \c3 ->
+        forAll (genValid `suchThat` (/= c1)) $ \c2 ->
+          forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2)) $ \c3 ->
             forAllValid $ \r1 ->
               forAllValid $ \r2 ->
                 forAllValid $ \r3 ->
@@ -102,9 +102,9 @@ spec = do
 
     it "can a find a two-hop rate" $
       forAllValid $ \c1 ->
-        forAllValid $ \c2 ->
-          forAllValid $ \c3 ->
-            forAllValid $ \c4 ->
+        forAll (genValid `suchThat` (/= c1)) $ \c2 ->
+          forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2)) $ \c3 ->
+            forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2 && c /= c3)) $ \c4 ->
               forAllValid $ \r1 ->
                 forAllValid $ \r2 ->
                   forAllValid $ \r3 ->

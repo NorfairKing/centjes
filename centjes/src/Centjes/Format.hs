@@ -292,7 +292,7 @@ accountDocHelper mMaxDigitsBeforeDot mMaxAccountDecimals dl' =
 charactersBeforeDot :: DecimalLiteral -> Int
 charactersBeforeDot (DecimalLiteral _ m e) =
   -- Assuming sign is required
-  1 + max 1 (floor (logBase 10 (Prelude.fromIntegral m) :: Float) + 1 - fromIntegral e)
+  1 + max 1 (length (show m) - fromIntegral e)
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . DecimalLiteral.format
