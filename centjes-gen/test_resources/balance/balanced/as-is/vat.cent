@@ -13,4 +13,4 @@ account expenses:vat
 2023-12-21
   * assets:cash     -10 USD
   * expenses:coffee +10 USD
-  ! expenses:vat    +0.72 USD ~ 7.8%
+  ! expenses:vat     +0.72 USD ~ 7.8%

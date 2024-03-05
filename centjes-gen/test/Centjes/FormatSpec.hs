@@ -85,7 +85,7 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
             context (show contents) $ do
               expected <- shouldParse parser here rf contents
               shouldBeValid expected
-              context (show expected) $ do
+              context (ppShow expected) $ do
                 let rendered = formatter (expected :: (s SourceSpan))
                 context (unlines ["Rendered:", T.unpack rendered]) $ do
                   actual <- shouldParse parser here rf rendered

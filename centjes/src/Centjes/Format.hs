@@ -176,12 +176,14 @@ transactionDoc Transaction {..} =
       concat
         [ [lTimestampDoc transactionTimestamp],
           map ("  " <>) $ maybe [] descriptionDocs transactionDescription,
-          map (("  " <>) . postingDocHelper (Just maxPostingWidth) . locatedValue) transactionPostings,
+          map (("  " <>) . postingDocHelper (Just maxAccountNameWidth) (Just maxAccountWidth) . locatedValue) transactionPostings,
           map (("  " <>) . transactionExtraDoc . locatedValue) transactionExtras
         ]
   where
-    maxPostingWidth = foldMap (postingWidth . locatedValue) transactionPostings
-    postingWidth = Max . T.length . AccountName.toText . locatedValue . postingAccountName
+    maxAccountNameWidth = foldMap (accountNameWidth . postingAccountName . locatedValue) transactionPostings
+    accountNameWidth = Max . T.length . AccountName.toText . locatedValue
+    maxAccountWidth = foldMap (accountWidth . postingAccount . locatedValue) transactionPostings
+    accountWidth = Max . charactersBeforeDot . locatedValue
 
 lTimestampDoc :: GenLocated l Timestamp -> Doc ann
 lTimestampDoc = timestampDoc . locatedValue
@@ -193,15 +195,15 @@ descriptionDocs :: GenLocated l Description -> [Doc ann]
 descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
 
 postingDoc :: Posting l -> Doc ann
-postingDoc = postingDocHelper Nothing
+postingDoc = postingDocHelper Nothing Nothing
 
-postingDocHelper :: Maybe (Max Int) -> Posting l -> Doc ann
-postingDocHelper mMaxAccountWidth Posting {..} =
+postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Posting l -> Doc ann
+postingDocHelper mMaxAccountNameWidth mMaxAccountWidth Posting {..} =
   maybe id (\pe -> (<+> ("~" <+> lPercentageExpressionDoc pe))) postingPercentage $
     maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
       (if postingReal then "*" else "!")
-        <+> maybe id (fill . getMax) mMaxAccountWidth (lAccountNameDoc postingAccountName)
-        <+> accountDoc (locatedValue postingAccount)
+        <+> maybe id (fill . getMax) mMaxAccountNameWidth (lAccountNameDoc postingAccountName)
+        <+> accountDocHelper mMaxAccountWidth (locatedValue postingAccount)
         <+> lCurrencySymbolDoc postingCurrencySymbol
 
 lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc ann
@@ -257,6 +259,20 @@ accountNameDoc = pretty . AccountName.toText
 
 accountDoc :: DecimalLiteral -> Doc ann
 accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
+
+accountDocHelper :: Maybe (Max Int) -> DecimalLiteral -> Doc ann
+accountDocHelper mMaxDigitsBeforeDot dl' =
+  let dl = DecimalLiteral.setSignRequired dl'
+      padWithSpaces (Max maxChars) =
+        let d = maxChars - charactersBeforeDot dl
+         in (pretty (replicate d ' ') <>)
+   in maybe id padWithSpaces mMaxDigitsBeforeDot $
+        decimalLiteralDoc dl
+
+charactersBeforeDot :: DecimalLiteral -> Int
+charactersBeforeDot (DecimalLiteral _ m e) =
+  -- Assuming sign is required
+  1 + max 1 (floor (logBase 10 (Prelude.fromIntegral m) :: Float) + 1 - fromIntegral e)
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
 decimalLiteralDoc = pretty . DecimalLiteral.format

@@ -2,4 +2,4 @@
   | Example with percentage
   * assets:cash     -10 CHF
   * expenses:coffee +10 CHF
-  ! expenses:vat    +0.80 CHF ~ 77 / 100%
+  ! expenses:vat     +0.80 CHF ~ 77 / 100%

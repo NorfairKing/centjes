@@ -106,6 +106,7 @@
   - name: fromIntegral
     within:
       - Centjes.Compile.compileConversionRate
+      - Centjes.Format
       - Centjes.Formatting.accountWidth
       - Centjes.Import.Cornercard
       - Centjes.Import.Neon

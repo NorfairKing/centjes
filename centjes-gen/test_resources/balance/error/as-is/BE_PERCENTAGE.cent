@@ -14,4 +14,4 @@ account expenses:vat
   | VAT example
   * assets:cash     -10 CHF
   * expenses:coffee +10 CHF
-  ! expenses:vat    +0.90 CHF ~ 7.7%
+  ! expenses:vat     +0.90 CHF ~ 7.7%
