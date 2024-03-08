@@ -34,6 +34,8 @@ extra-source-files:
     test_resources/balance/balanced/to-chf/conversion-price-sorted.txt
     test_resources/balance/balanced/to-chf/conversion-price.cent
     test_resources/balance/balanced/to-chf/conversion-price.txt
+    test_resources/balance/balanced/to-chf/rates.cent
+    test_resources/balance/balanced/to-chf/rates.txt
     test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.cent
     test_resources/balance/error/as-is/BE_ACCOUNT_TOTAL.err
     test_resources/balance/error/as-is/BE_ACCOUNT_TYPE_ASSERTION.cent
@@ -120,6 +122,8 @@ extra-source-files:
     test_resources/register/valid/as-is/empty.txt
     test_resources/register/valid/as-is/example.cent
     test_resources/register/valid/as-is/example.txt
+    test_resources/register/valid/to-chf/rates.cent
+    test_resources/register/valid/to-chf/rates.txt
     test_resources/syntax/declaration/formatted/comment.cent
     test_resources/syntax/declaration/formatted/currency.cent
     test_resources/syntax/declaration/formatted/price.cent

@@ -49,4 +49,7 @@ fromPriceGraph pg@(PriceGraph m) =
    in MemoisedPriceGraph $ M.fromList allRates
 
 lookup :: forall cur. Ord cur => MemoisedPriceGraph cur -> cur -> cur -> Maybe Money.ConversionRate
-lookup (MemoisedPriceGraph m) from to = M.lookup (from, to) m
+lookup (MemoisedPriceGraph m) from to =
+  if from == to
+    then Just ConversionRate.oneToOne
+    else M.lookup (from, to) m

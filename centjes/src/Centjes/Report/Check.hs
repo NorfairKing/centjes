@@ -107,7 +107,10 @@ checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
   -- TODO error when attachment exists but is not readable.
   when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a
 
-checkLedger :: Ord ann => Ledger ann -> Checker ann (BalanceReport ann, Register ann)
+checkLedger ::
+  Ord ann =>
+  Ledger ann ->
+  Checker ann (BalanceReport ann, Register ann)
 checkLedger l = do
   balanceReport <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport FilterAny Nothing l
   register <- mapValidationFailure CheckErrorRegisterError $ produceRegister FilterAny Nothing l

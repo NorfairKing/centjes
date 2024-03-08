@@ -1,0 +1,30 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account assets
+account expenses
+
+price 2024-03-07 CHF 1 USD
+
+2024-03-08
+  | Rate: 1
+  * equity -100 USD
+  * assets +100 USD
+
+2024-03-09
+  | Rate: 2
+  * assets   -1 USD @ 2 CHF
+  * expenses +2 CHF
+
+2024-03-10
+  | Rate: 3
+  * assets   -1 USD @ 3 CHF
+  * expenses +3 CHF
+
+price 2024-03-11 CHF 4 USD
+
+2024-03-12
+  | Rate: 4
+  * assets   -1 USD
+  * expenses +1 USD

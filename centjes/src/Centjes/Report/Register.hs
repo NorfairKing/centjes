@@ -13,13 +13,17 @@ module Centjes.Report.Register
 where
 
 import Centjes.Convert
-import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
+import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
+import Centjes.Convert.PriceGraph (PriceGraph)
+import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.Filter (Filter)
 import qualified Centjes.Filter as Filter
 import Centjes.Ledger
 import Centjes.Location
+import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.DeepSeq
+import Control.Monad.State
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -58,43 +62,21 @@ instance ToReport (RegisterError SourceSpan) where
     RegisterErrorAddError -> undefined
     RegisterErrorConvertError ce -> toReport ce
 
-convertRegister ::
-  forall ann.
-  Ord ann =>
-  MemoisedPriceGraph (Currency ann) ->
-  Currency ann ->
-  Register ann ->
-  Validation (ConvertError ann) (Register ann)
-convertRegister mpg currencyTo = fmap Register . traverse goT . registerTransactions
+unfoldrExactNMWithState ::
+  forall a b m.
+  Monad m =>
+  Int ->
+  (b -> m (a, b)) ->
+  b ->
+  m (Vector a, b)
+unfoldrExactNMWithState n func start =
+  runStateT (V.unfoldrExactNM n func' start) start
   where
-    goT ::
-      ( GenLocated ann Timestamp,
-        Maybe (GenLocated ann Description),
-        Vector
-          ( GenLocated ann (Posting ann),
-            Money.MultiAccount (Currency ann)
-          )
-      ) ->
-      Validation
-        (ConvertError ann)
-        ( GenLocated ann Timestamp,
-          Maybe (GenLocated ann Description),
-          Vector
-            ( GenLocated ann (Posting ann),
-              Money.MultiAccount (Currency ann)
-            )
-        )
-    goT (lt, mld, vps) = (,,) lt mld <$> traverse goP vps
-    goP ::
-      ( GenLocated ann (Posting ann),
-        Money.MultiAccount (Currency ann)
-      ) ->
-      Validation
-        (ConvertError ann)
-        ( GenLocated ann (Posting ann),
-          Money.MultiAccount (Currency ann)
-        )
-    goP (p, ma) = (,) p <$> convertMultiAccount mpg currencyTo ma
+    func' :: b -> StateT b m (a, b)
+    func' b = do
+      (a, b') <- lift $ func b
+      put b'
+      pure (a, b')
 
 produceRegister ::
   forall ann.
@@ -104,9 +86,17 @@ produceRegister ::
   Ledger ann ->
   Validation (RegisterError ann) (Register ann)
 produceRegister f mCurrencySymbolTo ledger = do
+  mCurrencyTo <-
+    mapValidationFailure RegisterErrorConvertError $
+      mapM (lookupConversionCurrency (ledgerCurrencies ledger)) mCurrencySymbolTo
+
   ts <- V.catMaybes <$> mapM (registerTransaction f) (ledgerTransactions ledger)
   let goTransaction ::
-        (Int, Money.MultiAccount (Currency ann)) ->
+        ( Int,
+          Money.MultiAccount (Currency ann),
+          PriceGraph (Currency ann),
+          [GenLocated ann (Price ann)]
+        ) ->
         Validation
           (RegisterError ann)
           ( ( GenLocated ann Timestamp,
@@ -116,53 +106,135 @@ produceRegister f mCurrencySymbolTo ledger = do
                   Money.MultiAccount (Currency ann)
                 )
             ),
-            (Int, Money.MultiAccount (Currency ann))
+            ( Int,
+              Money.MultiAccount (Currency ann),
+              PriceGraph (Currency ann),
+              [GenLocated ann (Price ann)]
+            )
           )
-      goTransaction (ix, runningTotal) = do
+      goTransaction (ix, runningTotal, priceGraph, prices) = do
         let (lts, ld, ps) = V.unsafeIndex ts ix
+
+        -- Add all price declarations with timestamps before this transaction
+        -- to the price graph.
+        (priceGraph', newPrices) <- incorporatePricesUntil lts prices priceGraph
+
         let goPosting ::
-              (Int, Money.MultiAccount (Currency ann)) ->
+              ( Int,
+                Money.MultiAccount (Currency ann),
+                PriceGraph (Currency ann)
+              ) ->
               Validation
                 (RegisterError ann)
                 ( ( GenLocated ann (Posting ann),
                     Money.MultiAccount (Currency ann)
                   ),
-                  (Int, Money.MultiAccount (Currency ann))
+                  ( Int,
+                    Money.MultiAccount (Currency ann),
+                    PriceGraph (Currency ann)
+                  )
                 )
-            goPosting (jx, runningSubTotal) = do
+            goPosting (jx, runningSubTotal, pg) = do
               let lp@(Located _ Posting {..}) = V.unsafeIndex ps jx
               let Located _ currency = postingCurrency
               let Located _ account = postingAccount
+
+              -- If there was a price, insert it into the price graph.
+              let pg' = case postingCost of
+                    Nothing -> pg
+                    Just (Located _ Cost {..}) ->
+                      let Located _ rate = costConversionRate
+                          Located _ from = costCurrency
+                       in PriceGraph.insert currency from rate pg
+
+              (currencyToAdd, accountToAdd) <- case mCurrencyTo of
+                Nothing -> pure (currency, account)
+                Just currencyTo -> do
+                  let mpg = MemoisedPriceGraph.fromPriceGraph pg'
+                  (,) currencyTo
+                    <$> mapValidationFailure
+                      RegisterErrorConvertError
+                      ( convertAccount
+                          mpg
+                          MultiAccount.RoundNearest
+                          currency
+                          account
+                          currencyTo
+                      )
+
               newRunningTotal <-
-                case MultiAccount.addAccount runningSubTotal currency account of
+                case MultiAccount.addAccount runningSubTotal currencyToAdd accountToAdd of
                   Nothing -> validationFailure RegisterErrorAddError
                   Just nt -> pure nt
+
               pure
                 ( (lp, newRunningTotal),
-                  (succ jx, newRunningTotal)
+                  ( succ jx,
+                    newRunningTotal,
+                    pg'
+                  )
                 )
-        newPostings <- V.unfoldrExactNM (V.length ps) goPosting (0, runningTotal)
-        let newRunningTotal =
-              if V.null newPostings
-                then runningTotal
-                else snd (V.last newPostings)
+        (newPostings, (_, newRunningTotal, newPriceGraph)) <-
+          unfoldrExactNMWithState
+            (V.length ps)
+            goPosting
+            (0, runningTotal, priceGraph')
         pure
           ( (lts, ld, newPostings),
-            (succ ix, newRunningTotal)
+            ( succ ix,
+              newRunningTotal,
+              newPriceGraph,
+              newPrices
+            )
           )
 
-  ts' <- V.unfoldrExactNM (V.length ts) goTransaction (0, MultiAccount.zero)
+  ts' <-
+    V.unfoldrExactNM
+      (V.length ts)
+      goTransaction
+      ( 0,
+        MultiAccount.zero,
+        PriceGraph.empty,
+        V.toList $ ledgerPrices ledger
+      )
 
-  let r = Register ts'
+  pure $ Register ts'
 
-  mapValidationFailure RegisterErrorConvertError $ case mCurrencySymbolTo of
-    Nothing -> pure r
-    Just currencySymbolTo -> do
-      currencyTo <- lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
-      convertRegister
-        (pricesToPriceGraph (ledgerPrices ledger))
-        currencyTo
-        r
+incorporatePricesUntil ::
+  Ord ann =>
+  GenLocated ann Timestamp ->
+  [GenLocated ann (Price ann)] ->
+  PriceGraph (Currency ann) ->
+  Validation
+    (RegisterError ann)
+    ( PriceGraph (Currency ann),
+      [GenLocated ann (Price ann)]
+    )
+incorporatePricesUntil (Located _ timestamp) prices priceGraph =
+  go priceGraph prices
+  where
+    go ::
+      Ord ann =>
+      PriceGraph (Currency ann) ->
+      [GenLocated ann (Price ann)] ->
+      Validation
+        (RegisterError ann)
+        ( PriceGraph (Currency ann),
+          [GenLocated ann (Price ann)]
+        )
+    go pg = \case
+      [] -> pure (pg, [])
+      ps@((Located _ Price {..}) : restPrices) -> do
+        let Located _ ts = priceTimestamp
+        case Timestamp.comparePartially ts timestamp of
+          Just LT -> do
+            let Located _ to = priceCurrency
+            let Located _ Cost {..} = priceCost
+            let Located _ rate = costConversionRate
+            let Located _ from = costCurrency
+            let pg' = PriceGraph.insert from to rate pg
+            go pg' restPrices
+          _ -> pure (pg, ps)
 
 registerTransaction ::
   Filter ->
