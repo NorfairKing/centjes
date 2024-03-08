@@ -168,6 +168,10 @@ $white_no_nl+ ;
 <tag> @var       { lexVar }
 <tag> @newline   { lexNl `andBegin` transaction}
 
+-- If we see another timestamp in a transaction, that means it's the next
+-- transaction without an extra newline inbetween.
+<transaction> @timestamp { lexTimestamp `andBegin` transaction_header }
+
 {
 lexTimestamp :: AlexAction Token
 lexTimestamp = lex TokenTimestamp 
@@ -201,7 +205,9 @@ data AlexUserState = AlexUserState
   }
 
 alexInitUserState :: AlexUserState
-alexInitUserState = AlexUserState undefined undefined -- Laziness saves our butt
+alexInitUserState =
+  -- Laziness saves our butt
+  AlexUserState undefined undefined
 
 
 -- The token type, consisting of the source code position and a token class.

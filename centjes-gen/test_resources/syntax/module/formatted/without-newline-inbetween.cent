@@ -1,0 +1,9 @@
+2024-03-08
+  | There is no second newline between this transaction and the next.
+  * expenses:coffee +5 USD
+  * assets:cash     -5 USD
+
+2024-03-08
+  | More Coffee
+  * expenses:coffee +5 USD
+  * assets:cash     -5 USD
