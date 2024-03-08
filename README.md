@@ -1,7 +1,8 @@
 # Centjes
 
-A comprehensive plaintext personal finances tool.
+Plaintext double-entry accounting for the paranoid.
 
+Status: Ready to play around with.
 
 ## Goals
 
@@ -14,8 +15,8 @@ A comprehensive plaintext personal finances tool.
 
 External Providers
   --[ Import ]-> Raw Data
-  --[ Cleaning and Standardising ]-> Baked data
-  --[ Query ]-> (Interactive) Reports and Graphs
+  --[ Cleaning and Standardising ]-> Baked data (`.cent`)
+  --[ Query ]-> Reports
 
 * Raw data is not committed
 * Baked data is committed, as declaratively as pragmatic
