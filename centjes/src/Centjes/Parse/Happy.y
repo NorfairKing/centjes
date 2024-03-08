@@ -45,48 +45,48 @@ import qualified Data.Text as T
 %expect 0
 
 %token 
-      import          { Located _ (TokenImport _)}
-      comment         { Located _ (TokenComment _) }
-      attach          { Located _ TokenAttach }
-      assert          { Located _ TokenAssert }
-      tg              { Located _ TokenTag }
-      price           { Located _ TokenPrice }
-      file_path       { Located _ (TokenFilePath _) }
-      eq              { Located _ TokenEq }
-      timestamp_tok   { Located _ (TokenTimestamp _) }
-      var             { Located _ (TokenVar _) }
-      pipetext        { Located _ (TokenDescription _) }
-      decimal_literal { Located _ (TokenDecimalLiteral _) }
-      plus            { Located _ TokenPlus }
-      star            { Located _ TokenStar }
-      bang            { Located _ TokenBang }
-      at              { Located _ TokenAt }
-      slash           { Located _ TokenSlash }
-      tilde           { Located _ TokenTilde }
-      percent         { Located _ TokenPercent }
-      currency_tok    { Located _ TokenCurrency}
-      account_tok     { Located _ TokenAccount }
-      newline         { Located _ TokenNewLine }
+      tok_import          { Located _ (TokenImport _)}
+      tok_comment         { Located _ (TokenComment _) }
+      tok_attach          { Located _ TokenAttach }
+      tok_assert          { Located _ TokenAssert }
+      tok_tag             { Located _ TokenTag }
+      tok_price           { Located _ TokenPrice }
+      tok_file_path       { Located _ (TokenFilePath _) }
+      tok_eq              { Located _ TokenEq }
+      tok_timestamp       { Located _ (TokenTimestamp _) }
+      tok_var             { Located _ (TokenVar _) }
+      tok_pipetext        { Located _ (TokenDescription _) }
+      tok_decimal_literal { Located _ (TokenDecimalLiteral _) }
+      tok_plus            { Located _ TokenPlus }
+      tok_star            { Located _ TokenStar }
+      tok_bang            { Located _ TokenBang }
+      tok_at              { Located _ TokenAt }
+      tok_slash           { Located _ TokenSlash }
+      tok_tilde           { Located _ TokenTilde }
+      tok_percent         { Located _ TokenPercent }
+      tok_currency        { Located _ TokenCurrency}
+      tok_account         { Located _ TokenAccount }
+      tok_newline         { Located _ TokenNewLine }
 
 
 %%
 
 module
   :: { LModule }
-  : many(newline) many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
+  : newlines many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
 
 import_with_newlines
   :: { Located Import }
-  : import_dec many(newline) { $1 }
+  : import_dec newlines { $1 }
 
 import_dec
   :: { Located Import }
-  : import {% parseImport $1 }
+  : tok_import {% parseImport $1 }
 
 
 declaration_with_newlines
   :: { LDeclaration }
-  : declaration many(newline) { $1 }
+  : declaration newlines { $1 }
 
 declaration
   :: { LDeclaration }
@@ -99,35 +99,35 @@ declaration
 
 comment_dec
   :: { Located Text }
-  : comment { parseComment $1 }
+  : tok_comment { parseComment $1 }
 
 currency_dec
   :: { LCurrencyDeclaration }
-  : currency_tok currency_symbol quantisation_factor newline { sBE $1 $4 $ CurrencyDeclaration $2 $3 }
+  : tok_currency currency_symbol quantisation_factor tok_newline { sBE $1 $4 $ CurrencyDeclaration $2 $3 }
 
 currency_symbol
   :: { Located CurrencySymbol }
-  : var {% parseCurrencySymbol $1 }
+  : tok_var {% parseCurrencySymbol $1 }
 
 quantisation_factor
   :: { Located DecimalLiteral }
-  : decimal_literal { parseDecimalLiteral $1 }
+  : tok_decimal_literal { parseDecimalLiteral $1 }
 
 account_dec
   :: { LAccountDeclaration }
-  : account_tok account_name optional(account_type) newline { sBE $1 $4 $ AccountDeclaration $2 $3 }
+  : tok_account account_name optional(account_type) tok_newline { sBE $1 $4 $ AccountDeclaration $2 $3 }
 
 account_type
   :: { Located AccountType }
-  : var {% parseAccountType $1 }
+  : tok_var {% parseAccountType $1 }
 
 tag_dec
   :: { LTagDeclaration }
-  : tg tag newline { sBE $1 $3 $ TagDeclaration $2 }
+  : tok_tag tag tok_newline { sBE $1 $3 $ TagDeclaration $2 }
 
 price_dec
   :: { LPriceDeclaration }
-  : price timestamp currency_symbol cost_exp newline { sBE $1 $5 $ PriceDeclaration $2 $3 $4 }
+  : tok_price timestamp currency_symbol cost_exp tok_newline { sBE $1 $5 $ PriceDeclaration $2 $3 $4 }
 
 conversion_rate
   :: { LRationalExpression }
@@ -135,12 +135,12 @@ conversion_rate
 
 transaction_dec
   :: { LTransaction }
-  : timestamp newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+  : timestamp tok_newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
   | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 timestamp
   :: { Located Timestamp }
-  : timestamp_tok {% parseTimestamp $1 }
+  : tok_timestamp {% parseTimestamp $1 }
 
 descriptions
   :: { Maybe (Located Description) }
@@ -148,7 +148,7 @@ descriptions
 
 description
   :: { Located Description }
-  : pipetext {% parseDescription $1 }
+  : tok_pipetext {% parseDescription $1 }
 
 postings
   :: { [LPosting] }
@@ -156,33 +156,33 @@ postings
 
 posting
   :: { LPosting }
-  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) newline { sBE $1 $7 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
+  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) tok_newline { sBE $1 $7 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
 
 posting_header
   :: { Located Bool }
-  : star { sL1 $1 True }
-  | bang { sL1 $1 False }
+  : tok_star { sL1 $1 True }
+  | tok_bang { sL1 $1 False }
 
 posting_cost
   :: { LCostExpression }
-  : at cost_exp { $2 }
+  : tok_at cost_exp { $2 }
 
 posting_percentage
   :: { LPercentageExpression }
-  : tilde rational_exp percent { sBE $1 $3 $ PercentageExpression $2 }
+  : tok_tilde rational_exp tok_percent { sBE $1 $3 $ PercentageExpression $2 }
 
 rational_exp
   :: { LRationalExpression }
-  : decimal_literal { sL1 $1 $ RationalExpressionDecimal $ parseDecimalLiteral $1 }
-  | decimal_literal slash decimal_literal { sBE $1 $3 $ RationalExpressionFraction (parseDecimalLiteral $1) (parseDecimalLiteral $3) }
+  : tok_decimal_literal { sL1 $1 $ RationalExpressionDecimal $ parseDecimalLiteral $1 }
+  | tok_decimal_literal tok_slash tok_decimal_literal { sBE $1 $3 $ RationalExpressionFraction (parseDecimalLiteral $1) (parseDecimalLiteral $3) }
 
 account_name
   :: { Located AccountName }
-  : var {% parseAccountName $1 }
+  : tok_var {% parseAccountName $1 }
 
 account_exp
   :: { Located DecimalLiteral }
-  : decimal_literal { parseDecimalLiteral $1 }
+  : tok_decimal_literal { parseDecimalLiteral $1 }
 
 cost_exp
   :: { LCostExpression }
@@ -194,25 +194,25 @@ transaction_extras
 
 transaction_extra
   :: { LTransactionExtra }
-  : plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
-  | plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
-  | plus extra_tag { sBE $1 $2 $ TransactionTag $2 }
+  : tok_plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
+  | tok_plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
+  | tok_plus extra_tag { sBE $1 $2 $ TransactionTag $2 }
 
 attachment
   :: { LAttachment }
-  : attach rel_file_exp newline { sBE $1 $3 $ Attachment $2 }
+  : tok_attach rel_file_exp tok_newline { sBE $1 $3 $ Attachment $2 }
 
 assertion
   :: { LAssertion }
-  : assert account_name eq account_exp currency_symbol newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
+  : tok_assert account_name tok_eq account_exp currency_symbol tok_newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
 
 extra_tag
   :: { LExtraTag }
-  : tg tag newline { sBE $1 $3 $ ExtraTag $2 }
+  : tok_tag tag tok_newline { sBE $1 $3 $ ExtraTag $2 }
 
 tag
   :: { LTag }
-  : var {% parseTag $1 }
+  : tok_var {% parseTag $1 }
 
 rel_file_exp
   :: { Located (Path Rel File) }
@@ -220,8 +220,11 @@ rel_file_exp
 
 file_path_exp
   :: { Located FilePath }
-  : file_path  { parseFilePath $1 }
+  : tok_file_path  { parseFilePath $1 }
 
+newlines
+  :: { [Token] }
+  : many(tok_newline) { $1 }
 
 -- Helpers
 optional(p)
