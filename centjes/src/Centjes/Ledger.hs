@@ -61,6 +61,7 @@ data Ledger ann = Ledger
 instance (Validity ann, Ord ann) => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     let currenciesSet = S.fromList $ map (uncurry Currency) $ M.toList ledgerCurrencies
+        accountsSet = M.keysSet ledgerAccounts
         costCurrencyValid (Located _ Cost {..}) =
           let Cost _ _ = undefined
            in declare "The cost's currency is in the currencies map" $
@@ -82,7 +83,10 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
                     [ decorateList (V.toList transactionPostings) $ \(Located _ Posting {..}) ->
                         let Posting _ _ _ _ _ _ = undefined
                          in mconcat
-                              [ declare "The posting's currency is in the currencies map" $
+                              [ declare "The posting's account name is in the accounts map" $
+                                  let Located _ accountName = postingAccountName
+                                   in accountName `S.member` accountsSet,
+                                declare "The posting's currency is in the currencies map" $
                                   let Located _ currency = postingCurrency
                                    in currency `S.member` currenciesSet,
                                 case postingCost of
@@ -91,9 +95,13 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
                               ],
                       decorateList (V.toList transactionAssertions) $ \(Located _ assertion) ->
                         case assertion of
-                          AssertionEquals _ _ (Located _ currency) ->
-                            declare "The assertion's currency is in the currency map" $
-                              S.member currency currenciesSet
+                          AssertionEquals (Located _ accountName) _ (Located _ currency) ->
+                            mconcat
+                              [ declare "The posting's account name is in the accounts map" $
+                                  accountName `S.member` accountsSet,
+                                declare "The assertion's currency is in the currency map" $
+                                  S.member currency currenciesSet
+                              ]
                     ],
             -- TODO all the account names are declared
             declare "the prices are sorted" $ partiallyOrderedByTimestamp priceTimestamp ledgerPrices,

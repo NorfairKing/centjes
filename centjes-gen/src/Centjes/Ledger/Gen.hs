@@ -17,6 +17,7 @@ import Data.List (sortBy)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import qualified Data.Set as S
 import qualified Data.Vector as V
 import Money.Gen ()
 import Money.QuantisationFactor (QuantisationFactor)
@@ -26,7 +27,7 @@ import Test.QuickCheck
 instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
   genValid = do
     ledgerCurrencies <- genValid
-    ledgerAccounts <- genValid -- TODO deduce the accounts from the other fields
+    ledgerAccounts <- genValid
     ledgerTags <- genValid -- TODO deduce the tags from the other fields
     ledgerPrices <-
       if null ledgerCurrencies
@@ -41,7 +42,7 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
               )
             <$> genListOf (genLocatedWith (genPriceWithCurrencies ledgerCurrencies))
     ledgerTransactions <-
-      if null ledgerCurrencies
+      if null ledgerAccounts || null ledgerCurrencies
         then pure V.empty
         else
           V.fromList
@@ -51,7 +52,7 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
                     . Ledger.transactionTimestamp
                     . locatedValue
               )
-            <$> genListOf (genLocatedWith (genTransactionWithCurrencies ledgerCurrencies))
+            <$> genListOf (genLocatedWith (genTransactionWith ledgerAccounts ledgerCurrencies))
     pure Ledger {..}
   shrinkValid l =
     filter isValid
@@ -84,29 +85,31 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
 instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
 
 -- Map must not be empty
-genTransactionWithCurrencies ::
+genTransactionWith ::
   GenValid ann =>
+  Map AccountName (GenLocated ann AccountType) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Transaction ann)
-genTransactionWithCurrencies currencies = do
+genTransactionWith accounts currencies = do
   transactionTimestamp <- genValid
   transactionDescription <- genValid
-  transactionPostings <- V.fromList <$> genListOf (genLocatedWith (genPostingWithCurrencies currencies))
+  transactionPostings <- V.fromList <$> genListOf (genLocatedWith (genPostingWith accounts currencies))
   transactionAttachments <- genValid
-  transactionAssertions <- V.fromList <$> genListOf (genLocatedWith (genAssertionWithCurrencies currencies))
+  transactionAssertions <- V.fromList <$> genListOf (genLocatedWith (genAssertionWith accounts currencies))
   transactionTags <- genValid
   pure Transaction {..}
 
 instance GenValid ann => GenValid (Posting ann)
 
 -- Map must not be empty
-genPostingWithCurrencies ::
+genPostingWith ::
   GenValid ann =>
+  Map AccountName (GenLocated ann AccountType) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Posting ann)
-genPostingWithCurrencies currencies = do
+genPostingWith accounts currencies = do
   postingReal <- genValid
-  postingAccountName <- genValid
+  postingAccountName <- genLocatedWith $ chooseAccountName accounts
   postingCurrency <- genLocatedWith $ chooseCurrency currencies
   postingAccount <- genValid
   postingCost <-
@@ -120,12 +123,13 @@ genPostingWithCurrencies currencies = do
 instance GenValid ann => GenValid (Assertion ann)
 
 -- Map must not be empty
-genAssertionWithCurrencies ::
+genAssertionWith ::
   GenValid ann =>
+  Map AccountName (GenLocated ann AccountType) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Assertion ann)
-genAssertionWithCurrencies currencies = do
-  an <- genValid
+genAssertionWith accounts currencies = do
+  an <- genLocatedWith $ chooseAccountName accounts
   acc <- genValid
   cur <- genLocatedWith $ chooseCurrency currencies
   pure $ AssertionEquals an acc cur
@@ -158,6 +162,13 @@ genCostWithCurrencies currencies = do
 instance GenValid ann => GenValid (Percentage ann)
 
 instance GenValid ann => GenValid (Currency ann)
+
+-- Map must not be empty
+chooseAccountName ::
+  Map AccountName (GenLocated ann AccountType) ->
+  Gen AccountName
+chooseAccountName =
+  elements . S.toList . M.keysSet
 
 -- Map must not be empty
 chooseCurrency ::
