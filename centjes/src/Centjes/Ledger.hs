@@ -35,7 +35,7 @@ import Data.Map.Strict (Map)
 import Data.Ratio
 import qualified Data.Set as S
 import Data.Validity
-import Data.Validity.Map ()
+import Data.Validity.Map
 import Data.Validity.Set ()
 import Data.Validity.Vector ()
 import Data.Vector (Vector)
@@ -62,6 +62,7 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     let currenciesSet = S.fromList $ map (uncurry Currency) $ M.toList ledgerCurrencies
         accountsSet = M.keysSet ledgerAccounts
+        tagsSet = M.keysSet ledgerTags
         costCurrencyValid (Located _ Cost {..}) =
           let Cost _ _ = undefined
            in declare "The cost's currency is in the currencies map" $
@@ -93,6 +94,9 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
                                   Nothing -> valid
                                   Just lc -> costCurrencyValid lc
                               ],
+                      decorateMap transactionTags $ \tag _ ->
+                        declare "The tag is in the tags map" $
+                          tag `S.member` tagsSet,
                       decorateList (V.toList transactionAssertions) $ \(Located _ assertion) ->
                         case assertion of
                           AssertionEquals (Located _ accountName) _ (Located _ currency) ->
@@ -103,7 +107,6 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
                                   S.member currency currenciesSet
                               ]
                     ],
-            -- TODO all the account names are declared
             declare "the prices are sorted" $ partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
             declare "the transactions are sorted" $
               partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions

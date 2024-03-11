@@ -10,7 +10,7 @@ import Centjes.Module.Gen ()
 import Centjes.Timestamp as Timestamp
 import Data.Function
 import Data.GenValidity
-import Data.GenValidity.Map ()
+import Data.GenValidity.Map
 import Data.GenValidity.Set ()
 import Data.GenValidity.Vector ()
 import Data.List (sortBy)
@@ -28,7 +28,7 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
   genValid = do
     ledgerCurrencies <- genValid
     ledgerAccounts <- genValid
-    ledgerTags <- genValid -- TODO deduce the tags from the other fields
+    ledgerTags <- genValid
     ledgerPrices <-
       if null ledgerCurrencies
         then pure V.empty
@@ -42,17 +42,14 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
               )
             <$> genListOf (genLocatedWith (genPriceWithCurrencies ledgerCurrencies))
     ledgerTransactions <-
-      if null ledgerAccounts || null ledgerCurrencies
-        then pure V.empty
-        else
-          V.fromList
-            . sortBy
-              ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
-                  `on` locatedValue
-                    . Ledger.transactionTimestamp
-                    . locatedValue
-              )
-            <$> genListOf (genLocatedWith (genTransactionWith ledgerAccounts ledgerCurrencies))
+      V.fromList
+        . sortBy
+          ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+              `on` locatedValue
+                . Ledger.transactionTimestamp
+                . locatedValue
+          )
+        <$> genListOf (genLocatedWith (genTransactionWith ledgerAccounts ledgerCurrencies ledgerTags))
     pure Ledger {..}
   shrinkValid l =
     filter isValid
@@ -89,14 +86,24 @@ genTransactionWith ::
   GenValid ann =>
   Map AccountName (GenLocated ann AccountType) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map Tag ann ->
   Gen (Transaction ann)
-genTransactionWith accounts currencies = do
+genTransactionWith accounts currencies tags = do
   transactionTimestamp <- genValid
   transactionDescription <- genValid
-  transactionPostings <- V.fromList <$> genListOf (genLocatedWith (genPostingWith accounts currencies))
+  transactionPostings <-
+    if null accounts || null currencies
+      then pure V.empty
+      else V.fromList <$> genListOf (genLocatedWith (genPostingWith accounts currencies))
   transactionAttachments <- genValid
-  transactionAssertions <- V.fromList <$> genListOf (genLocatedWith (genAssertionWith accounts currencies))
-  transactionTags <- genValid
+  transactionAssertions <-
+    if null accounts || null currencies
+      then pure V.empty
+      else V.fromList <$> genListOf (genLocatedWith (genAssertionWith accounts currencies))
+  transactionTags <-
+    if null tags
+      then pure M.empty
+      else genMapOf ((,) <$> chooseTag tags <*> genValid)
   pure Transaction {..}
 
 instance GenValid ann => GenValid (Posting ann)
@@ -176,3 +183,8 @@ chooseCurrency ::
   Gen (Currency ann)
 chooseCurrency =
   fmap (uncurry Currency) . elements . M.toList
+
+-- Map must not be empty
+chooseTag :: Map Tag ann -> Gen Tag
+chooseTag =
+  elements . S.toList . M.keysSet
