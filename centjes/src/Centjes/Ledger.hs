@@ -7,6 +7,7 @@ module Centjes.Ledger
     Timestamp (..),
     CurrencySymbol (..),
     Price (..),
+    priceCurrencies,
     Transaction (..),
     Assertion (..),
     Description (..),
@@ -31,6 +32,8 @@ import Control.DeepSeq
 import Data.Function
 import Data.Map.Strict (Map)
 import Data.Ratio
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Map ()
 import Data.Validity.Set ()
@@ -92,6 +95,13 @@ data Price ann = Price
 instance Validity ann => Validity (Price ann)
 
 instance NFData ann => NFData (Price ann)
+
+priceCurrencies :: Ord ann => Price ann -> Set (Currency ann)
+priceCurrencies Price {..} =
+  S.fromList
+    [ locatedValue priceCurrency,
+      locatedValue (costCurrency (locatedValue priceCost))
+    ]
 
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
