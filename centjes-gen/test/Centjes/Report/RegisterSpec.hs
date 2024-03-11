@@ -16,6 +16,8 @@ import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
 import Control.Monad.Logger
+import qualified Data.Vector as V
+import qualified Money.MultiAccount as MultiAccount
 import Path
 import Path.IO
 import Test.Syd
@@ -43,6 +45,24 @@ spec = do
             br <- shouldValidate diag $ produceRegister FilterAny Nothing ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderRegisterTable br
+
+        it "produces reports that balance to empty amounts" $ do
+          -- Load the module
+          (ds, diag) <- runNoLoggingT $ loadModules af
+          -- Compile to a ledger
+          ledger <- shouldValidate diag $ compileDeclarations ds
+
+          Register transactions <- shouldValidate diag $ produceRegister FilterAny Nothing ledger
+
+          if null transactions
+            then pure ()
+            else do
+              let (_, _, postings) = V.last transactions
+              if null postings
+                then pure ()
+                else do
+                  let (_, acc) = V.last postings
+                  acc `shouldBe` MultiAccount.zero
 
     scenarioDir "test_resources/register/valid/to-chf" $ \fp -> do
       af <- liftIO $ resolveFile' fp

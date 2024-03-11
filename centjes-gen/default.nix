@@ -18,7 +18,7 @@ mkDerivation {
   testHaskellDepends = [
     base bytestring centjes containers genvalidity-containers
     genvalidity-sydtest monad-logger mtl path path-io QuickCheck
-    really-safe-money safe-coloured-text sydtest text
+    really-safe-money safe-coloured-text sydtest text vector
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";
