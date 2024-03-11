@@ -28,6 +28,7 @@ import Centjes.Validation
 import Control.DeepSeq
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
+import Data.Maybe
 import Data.Time
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
@@ -46,7 +47,7 @@ import qualified Money.QuantisationFactor as Money (QuantisationFactor)
 
 data ConvertError ann
   = ConvertErrorUnknownTarget !CurrencySymbol
-  | ConvertErrorMissingPrice !(Currency ann) !(Currency ann)
+  | ConvertErrorMissingPrice !(Maybe ann) !(Currency ann) !(Currency ann)
   | ConvertErrorInvalidSum !(Currency ann)
   deriving (Show, Eq, Generic)
 
@@ -62,7 +63,7 @@ instance ToReport (ConvertError SourceSpan) where
         ("Unknown currency to convert to: " <> CurrencySymbol.toString cs)
         []
         []
-    ConvertErrorMissingPrice (Currency fromSymbol (Located fromL _)) (Currency toSymbol (Located toL _)) ->
+    ConvertErrorMissingPrice mAl (Currency fromSymbol (Located fromL _)) (Currency toSymbol (Located toL _)) ->
       Err
         (Just "CONVERT_ERROR_MISSING_PRICE")
         ( unwords
@@ -73,9 +74,15 @@ instance ToReport (ConvertError SourceSpan) where
               "cannot be determined"
             ]
         )
-        [ (toDiagnosePosition fromL, Where "Trying to convert from this currency"),
-          (toDiagnosePosition toL, Where "Trying to convert to this currency")
-        ]
+        ( concat
+            [ [ (toDiagnosePosition fromL, Where "from this currency"),
+                (toDiagnosePosition toL, Where "to this currency")
+              ],
+              [ (toDiagnosePosition al, This "Failed to convert this amount")
+                | al <- maybeToList mAl
+              ]
+            ]
+        )
         []
     ConvertErrorInvalidSum (Currency _ (Located cl _)) ->
       Err
@@ -96,18 +103,19 @@ lookupConversionCurrency currencies currencySymbolTo =
 
 convertMultiAccount ::
   Ord ann =>
+  Maybe ann ->
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
   Money.MultiAccount (Currency ann) ->
   Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-convertMultiAccount graph currencyTo ma = do
+convertMultiAccount al graph currencyTo ma = do
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
   (mResult, _) <-
     MultiAccount.convertAllA
       MultiAccount.RoundNearest
       quantisationFactorTo
-      (lookupConversionRate graph currencyTo)
+      (lookupConversionRate al graph currencyTo)
       ma
   case mResult of
     Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
@@ -115,14 +123,15 @@ convertMultiAccount graph currencyTo ma = do
 
 convertAccount ::
   Ord ann =>
+  Maybe ann ->
   MemoisedPriceGraph (Currency ann) ->
   Rounding ->
   Currency ann ->
   Money.Account ->
   Currency ann ->
   Validation (ConvertError ann) Money.Account
-convertAccount graph rounding currencyFrom account currencyTo = do
-  (rate, quantisationFactorFrom) <- lookupConversionRate graph currencyTo currencyFrom
+convertAccount al graph rounding currencyFrom account currencyTo = do
+  (rate, quantisationFactorFrom) <- lookupConversionRate al graph currencyTo currencyFrom
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
   case fst $ Account.convert rounding quantisationFactorFrom account rate quantisationFactorTo of
@@ -131,14 +140,15 @@ convertAccount graph rounding currencyFrom account currencyTo = do
 
 convertAmount ::
   Ord ann =>
+  Maybe ann ->
   MemoisedPriceGraph (Currency ann) ->
   Rounding ->
   Currency ann ->
   Money.Amount ->
   Currency ann ->
   Validation (ConvertError ann) Money.Amount
-convertAmount graph rounding currencyFrom amount currencyTo = do
-  (rate, quantisationFactorFrom) <- lookupConversionRate graph currencyTo currencyFrom
+convertAmount al graph rounding currencyFrom amount currencyTo = do
+  (rate, quantisationFactorFrom) <- lookupConversionRate al graph currencyTo currencyFrom
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
   case fst $ Amount.convert rounding quantisationFactorFrom amount rate quantisationFactorTo of
@@ -148,13 +158,14 @@ convertAmount graph rounding currencyFrom amount currencyTo = do
 lookupConversionRate ::
   forall ann.
   Ord ann =>
+  Maybe ann ->
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
   Currency ann ->
   Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-lookupConversionRate graph currencyTo currencyFrom = do
+lookupConversionRate al graph currencyTo currencyFrom = do
   case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
-    Nothing -> validationFailure $ ConvertErrorMissingPrice currencyTo currencyFrom
+    Nothing -> validationFailure $ ConvertErrorMissingPrice al currencyTo currencyFrom
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
 
 pricesToPriceGraph ::

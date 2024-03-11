@@ -137,7 +137,7 @@ produceRegister f mCurrencySymbolTo ledger = do
             goPosting (jx, runningSubTotal, pg) = do
               let lp@(Located _ Posting {..}) = V.unsafeIndex ps jx
               let Located _ currency = postingCurrency
-              let Located _ account = postingAccount
+              let Located al account = postingAccount
 
               -- If there was a price, insert it into the price graph.
               let pg' = case postingCost of
@@ -155,6 +155,7 @@ produceRegister f mCurrencySymbolTo ledger = do
                     <$> mapValidationFailure
                       RegisterErrorConvertError
                       ( convertAccount
+                          (Just al)
                           mpg
                           MultiAccount.RoundNearest
                           currency

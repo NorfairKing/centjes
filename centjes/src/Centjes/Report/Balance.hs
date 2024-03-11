@@ -429,7 +429,7 @@ convertAccountBalances ::
   AccountBalances ann ->
   Validation (ConvertError ann) (AccountBalances ann)
 convertAccountBalances mpg currencyTo =
-  traverse (convertMultiAccount mpg currencyTo)
+  traverse (convertMultiAccount Nothing mpg currencyTo)
 
 fillAccountBalances ::
   forall ann.
