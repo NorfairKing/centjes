@@ -4,5 +4,5 @@
                      [37mexpenses[m [32m   2.00[m [32mCHF[m            
 [37m2[m [34m2024-03-10[m [33mRate: 3[m [37massets[m   [31m  -1.00[m [31mUSD[m [31m  -4.00[m [31mCHF[m
                      [37mexpenses[m [32m   3.00[m [32mCHF[m [31m  -1.00[m [31mCHF[m
-[37m3[m [34m2024-03-12[m [33mRate: 4[m [37massets[m   [31m  -1.00[m [31mUSD[m [31m  -7.00[m [31mCHF[m
-                     [37mexpenses[m [32m   1.00[m [32mUSD[m [31m  -3.00[m [31mCHF[m
+[37m3[m [34m2024-03-12[m [33mRate: 4[m [37massets[m   [31m  -1.00[m [31mUSD[m [32m   4.25[m [32mCHF[m
+                     [37mexpenses[m [32m   1.00[m [32mUSD[m [32m   4.50[m [32mCHF[m

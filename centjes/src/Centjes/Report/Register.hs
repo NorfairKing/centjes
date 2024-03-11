@@ -144,8 +144,8 @@ produceRegister f mCurrencySymbolTo ledger = do
                     Nothing -> pg
                     Just (Located _ Cost {..}) ->
                       let Located _ rate = costConversionRate
-                          Located _ from = costCurrency
-                       in PriceGraph.insert currency from rate pg
+                          Located _ to = costCurrency
+                       in PriceGraph.insert currency to rate pg
 
               newRunningSubTotal <-
                 case MultiAccount.addAccount runningSubTotal currency account of
@@ -231,10 +231,10 @@ incorporatePricesUntil (Located _ timestamp) prices priceGraph =
         let Located _ ts = priceTimestamp
         case Timestamp.comparePartially ts timestamp of
           Just LT -> do
-            let Located _ to = priceCurrency
+            let Located _ from = priceCurrency
             let Located _ Cost {..} = priceCost
             let Located _ rate = costConversionRate
-            let Located _ from = costCurrency
+            let Located _ to = costCurrency
             let pg' = PriceGraph.insert from to rate pg
             go pg' restPrices
           _ -> pure (pg, ps)
