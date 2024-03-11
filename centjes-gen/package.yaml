@@ -13,6 +13,7 @@ library:
   dependencies:
   - QuickCheck
   - centjes
+  - containers
   - diagnose
   - genvalidity
   - genvalidity-containers
@@ -21,6 +22,7 @@ library:
   - genvalidity-time
   - genvalidity-vector
   - path
+  - really-safe-money
   - really-safe-money-gen
   - sydtest
   - text

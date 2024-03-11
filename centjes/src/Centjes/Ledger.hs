@@ -30,6 +30,7 @@ import Centjes.Tag
 import Centjes.Timestamp as Timestamp
 import Control.DeepSeq
 import Data.Function
+import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Ratio
 import Data.Set (Set)
@@ -60,15 +61,19 @@ data Ledger ann = Ledger
 
 instance (Validity ann, Ord ann) => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
-    mconcat
-      [ genericValidate l,
-        -- TODO all the currencies are consistent
-        -- TODO all the account names are declared
-        declare "the prices are sorted" $
-          partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
-        declare "the transactions are sorted" $
-          partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
-      ]
+    let currenciesSet = S.fromList $ map (uncurry Currency) $ M.toList ledgerCurrencies
+     in mconcat
+          [ genericValidate l,
+            decorateList (V.toList ledgerPrices) $ \(Located _ price) ->
+              declare "The price's currencies are in the currencies map" $
+                priceCurrencies price `S.isSubsetOf` currenciesSet,
+            -- TODO all the currencies are consistent
+            -- TODO all the account names are declared
+            declare "the prices are sorted" $
+              partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
+            declare "the transactions are sorted" $
+              partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
+          ]
 
 instance NFData ann => NFData (Ledger ann)
 

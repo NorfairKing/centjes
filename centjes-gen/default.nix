@@ -10,10 +10,10 @@ mkDerivation {
   version = "0.0.0.0";
   src = ./.;
   libraryHaskellDepends = [
-    base centjes diagnose genvalidity genvalidity-containers
+    base centjes containers diagnose genvalidity genvalidity-containers
     genvalidity-path genvalidity-text genvalidity-time
-    genvalidity-vector path QuickCheck really-safe-money-gen sydtest
-    text vector
+    genvalidity-vector path QuickCheck really-safe-money
+    really-safe-money-gen sydtest text vector
   ];
   testHaskellDepends = [
     base bytestring centjes containers genvalidity-containers
