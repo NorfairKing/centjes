@@ -11,6 +11,8 @@
 - ignore:
     name: "Use underscore"
 - ignore:
+    name: "Use record patterns"
+- ignore:
     name: "Use tuple-section"
 - ignore:
     name: "Use unless"

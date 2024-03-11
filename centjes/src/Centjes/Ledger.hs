@@ -1,13 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-unused-pattern-binds #-}
 
 module Centjes.Ledger
   ( Ledger (..),
     Timestamp (..),
     CurrencySymbol (..),
     Price (..),
-    priceCurrencies,
     Transaction (..),
     Assertion (..),
     Description (..),
@@ -33,7 +33,6 @@ import Data.Function
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Ratio
-import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Map ()
@@ -62,15 +61,42 @@ data Ledger ann = Ledger
 instance (Validity ann, Ord ann) => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
     let currenciesSet = S.fromList $ map (uncurry Currency) $ M.toList ledgerCurrencies
+        costCurrencyValid (Located _ Cost {..}) =
+          let Cost _ _ = undefined
+           in declare "The cost's currency is in the currencies map" $
+                let Located _ currency = costCurrency
+                 in currency `S.member` currenciesSet
      in mconcat
           [ genericValidate l,
-            decorateList (V.toList ledgerPrices) $ \(Located _ price) ->
-              declare "The price's currencies are in the currencies map" $
-                priceCurrencies price `S.isSubsetOf` currenciesSet,
-            -- TODO all the currencies are consistent
+            decorateList (V.toList ledgerPrices) $ \(Located _ Price {..}) ->
+              let Price _ _ _ = undefined
+               in mconcat
+                    [ declare "The price's currency is in the currencies set" $
+                        let Located _ currency = priceCurrency
+                         in currency `S.member` currenciesSet,
+                      costCurrencyValid priceCost
+                    ],
+            decorateList (V.toList ledgerTransactions) $ \(Located _ Transaction {..}) ->
+              let Transaction _ _ _ _ _ _ = undefined
+               in mconcat
+                    [ decorateList (V.toList transactionPostings) $ \(Located _ Posting {..}) ->
+                        let Posting _ _ _ _ _ _ = undefined
+                         in mconcat
+                              [ declare "The posting's currency is in the currencies map" $
+                                  let Located _ currency = postingCurrency
+                                   in currency `S.member` currenciesSet,
+                                case postingCost of
+                                  Nothing -> valid
+                                  Just lc -> costCurrencyValid lc
+                              ],
+                      decorateList (V.toList transactionAssertions) $ \(Located _ assertion) ->
+                        case assertion of
+                          AssertionEquals _ _ (Located _ currency) ->
+                            declare "The assertion's currency is in the currency map" $
+                              S.member currency currenciesSet
+                    ],
             -- TODO all the account names are declared
-            declare "the prices are sorted" $
-              partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
+            declare "the prices are sorted" $ partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
             declare "the transactions are sorted" $
               partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
           ]
@@ -100,13 +126,6 @@ data Price ann = Price
 instance Validity ann => Validity (Price ann)
 
 instance NFData ann => NFData (Price ann)
-
-priceCurrencies :: Ord ann => Price ann -> Set (Currency ann)
-priceCurrencies Price {..} =
-  S.fromList
-    [ locatedValue priceCurrency,
-      locatedValue (costCurrency (locatedValue priceCost))
-    ]
 
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),

@@ -25,7 +25,7 @@ import Test.QuickCheck
 
 instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
   genValid = do
-    ledgerCurrencies <- genValid -- TODO deduce the curriencies from the other fields
+    ledgerCurrencies <- genValid
     ledgerAccounts <- genValid -- TODO deduce the accounts from the other fields
     ledgerTags <- genValid -- TODO deduce the tags from the other fields
     ledgerPrices <-
@@ -41,21 +41,34 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
               )
             <$> genListOf (genLocatedWith (genPriceWithCurrencies ledgerCurrencies))
     ledgerTransactions <-
-      V.fromList
-        . sortBy
-          ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
-              `on` locatedValue
-                . Ledger.transactionTimestamp
-                . locatedValue
-          )
-        <$> genValid
+      if null ledgerCurrencies
+        then pure V.empty
+        else
+          V.fromList
+            . sortBy
+              ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+                  `on` locatedValue
+                    . Ledger.transactionTimestamp
+                    . locatedValue
+              )
+            <$> genListOf (genLocatedWith (genTransactionWithCurrencies ledgerCurrencies))
     pure Ledger {..}
   shrinkValid l =
-    filter (/= l)
+    filter isValid
+      . filter (/= l)
       . map
         ( \l' ->
             l'
-              { ledgerTransactions =
+              { ledgerPrices =
+                  V.fromList $
+                    sortBy
+                      ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
+                          `on` locatedValue
+                            . Ledger.priceTimestamp
+                            . locatedValue
+                      )
+                      (V.toList (ledgerPrices l')),
+                ledgerTransactions =
                   V.fromList $
                     sortBy
                       ( (\t1 t2 -> fromMaybe EQ (Timestamp.comparePartially t1 t2))
@@ -66,13 +79,56 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
                       (V.toList (ledgerTransactions l'))
               }
         )
-      $ shrinkValidStructurally l
+      $ shrinkValidStructurallyWithoutExtraFiltering l
 
 instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
 
-instance GenValid ann => GenValid (Assertion ann)
+-- Map must not be empty
+genTransactionWithCurrencies ::
+  GenValid ann =>
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Gen (Transaction ann)
+genTransactionWithCurrencies currencies = do
+  transactionTimestamp <- genValid
+  transactionDescription <- genValid
+  transactionPostings <- V.fromList <$> genListOf (genLocatedWith (genPostingWithCurrencies currencies))
+  transactionAttachments <- genValid
+  transactionAssertions <- V.fromList <$> genListOf (genLocatedWith (genAssertionWithCurrencies currencies))
+  transactionTags <- genValid
+  pure Transaction {..}
 
 instance GenValid ann => GenValid (Posting ann)
+
+-- Map must not be empty
+genPostingWithCurrencies ::
+  GenValid ann =>
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Gen (Posting ann)
+genPostingWithCurrencies currencies = do
+  postingReal <- genValid
+  postingAccountName <- genValid
+  postingCurrency <- genLocatedWith $ chooseCurrency currencies
+  postingAccount <- genValid
+  postingCost <-
+    frequency
+      [ (1, pure Nothing),
+        (3, fmap Just $ genLocatedWith $ genCostWithCurrencies currencies)
+      ]
+  postingPercentage <- genValid
+  pure Posting {..}
+
+instance GenValid ann => GenValid (Assertion ann)
+
+-- Map must not be empty
+genAssertionWithCurrencies ::
+  GenValid ann =>
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Gen (Assertion ann)
+genAssertionWithCurrencies currencies = do
+  an <- genValid
+  acc <- genValid
+  cur <- genLocatedWith $ chooseCurrency currencies
+  pure $ AssertionEquals an acc cur
 
 instance GenValid ann => GenValid (Price ann)
 
