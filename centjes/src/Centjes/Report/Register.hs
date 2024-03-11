@@ -147,31 +147,33 @@ produceRegister f mCurrencySymbolTo ledger = do
                           Located _ from = costCurrency
                        in PriceGraph.insert currency from rate pg
 
-              (currencyToAdd, accountToAdd) <- case mCurrencyTo of
-                Nothing -> pure (currency, account)
-                Just currencyTo -> do
-                  let mpg = MemoisedPriceGraph.fromPriceGraph pg'
-                  (,) currencyTo
-                    <$> mapValidationFailure
-                      RegisterErrorConvertError
-                      ( convertAccount
-                          (Just al)
-                          mpg
-                          MultiAccount.RoundNearest
-                          currency
-                          account
-                          currencyTo
-                      )
-
-              newRunningTotal <-
-                case MultiAccount.addAccount runningSubTotal currencyToAdd accountToAdd of
+              newRunningSubTotal <-
+                case MultiAccount.addAccount runningSubTotal currency account of
                   Nothing -> validationFailure RegisterErrorAddError
                   Just nt -> pure nt
 
+              -- We need to re-convert every time because the price
+              -- graph might have changed in this transaction, which
+              -- means previous conversions are no longer accurate.
+              --
+              -- TODO consider having separate lines for this in the register report?
+              newConvertedSubTotal <- case mCurrencyTo of
+                Nothing -> pure newRunningSubTotal
+                Just currencyTo -> do
+                  let mpg = MemoisedPriceGraph.fromPriceGraph pg'
+                  mapValidationFailure
+                    RegisterErrorConvertError
+                    ( convertMultiAccount
+                        (Just al)
+                        mpg
+                        currencyTo
+                        newRunningSubTotal
+                    )
+
               pure
-                ( (lp, newRunningTotal),
+                ( (lp, newConvertedSubTotal),
                   ( succ jx,
-                    newRunningTotal,
+                    newRunningSubTotal,
                     pg'
                   )
                 )
