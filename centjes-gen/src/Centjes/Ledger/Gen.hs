@@ -8,6 +8,7 @@ import Centjes.Location
 import Centjes.Location.Gen
 import Centjes.Module.Gen ()
 import Centjes.Timestamp as Timestamp
+import Control.Monad
 import Data.Function
 import Data.GenValidity
 import Data.GenValidity.Map
@@ -40,7 +41,8 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
                     . Ledger.priceTimestamp
                     . locatedValue
               )
-            <$> genListOf (genLocatedWith (genPriceWithCurrencies ledgerCurrencies))
+            . catMaybes
+            <$> genListOf (genMLocatedWith (genPriceWithCurrencies ledgerCurrencies))
     ledgerTransactions <-
       V.fromList
         . sortBy
@@ -122,7 +124,7 @@ genPostingWith accounts currencies = do
   postingCost <-
     frequency
       [ (1, pure Nothing),
-        (3, fmap Just $ genLocatedWith $ genCostWithCurrencies currencies)
+        (3, genMLocatedWith $ genCostWithCurrencies currencies postingCurrency)
       ]
   postingPercentage <- genValid
   pure Posting {..}
@@ -147,12 +149,13 @@ instance (Eq ann, GenValid ann) => GenValid (Price ann)
 genPriceWithCurrencies ::
   GenValid ann =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
-  Gen (Price ann)
+  Gen (Maybe (Price ann))
 genPriceWithCurrencies currencies = do
-  priceTimestamp <- genValid
   priceCurrency <- genLocatedWith $ chooseCurrency currencies
-  priceCost <- genLocatedWith $ genCostWithCurrencies currencies
-  pure Price {..}
+  mCost <- genMLocatedWith $ genCostWithCurrencies currencies priceCurrency
+  forM mCost $ \priceCost -> do
+    priceTimestamp <- genValid
+    pure Price {..}
 
 instance GenValid ann => GenValid (Cost ann)
 
@@ -160,11 +163,14 @@ instance GenValid ann => GenValid (Cost ann)
 genCostWithCurrencies ::
   GenValid ann =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
-  Gen (Cost ann)
-genCostWithCurrencies currencies = do
+  GenLocated ann (Currency ann) ->
+  Gen (Maybe (Cost ann))
+genCostWithCurrencies currencies (Located _ referenceCurrency) = do
   costConversionRate <- genValid
-  costCurrency <- genLocatedWith $ chooseCurrency currencies
-  pure Cost {..}
+  let symbol = currencySymbol referenceCurrency
+  mCurrency <- genMLocatedWith $ chooseMCurrency $ M.delete symbol currencies
+  forM mCurrency $ \costCurrency ->
+    pure Cost {..}
 
 instance GenValid ann => GenValid (Percentage ann)
 
@@ -176,6 +182,15 @@ chooseAccountName ::
   Gen AccountName
 chooseAccountName =
   elements . S.toList . M.keysSet
+
+-- Only Nothing if there are no currencies
+chooseMCurrency ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Gen (Maybe (Currency ann))
+chooseMCurrency currencies =
+  if null currencies
+    then pure Nothing
+    else Just <$> chooseCurrency currencies
 
 -- Map must not be empty
 chooseCurrency ::

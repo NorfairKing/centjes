@@ -55,6 +55,8 @@ data CompileError ann
   | CompileErrorMissingTag !ann !(GenLocated ann Tag)
   | CompileErrorTagDeclaredTwice !ann !ann !Tag
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
+  | CompileErrorCostSameCurrency !ann !ann !ann
+  | CompileErrorPriceSameCurrency !ann !ann !ann
   | CompileErrorInvalidPrice !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidPercentage !ann !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidRational !ann !(GenLocated ann (RationalExpression ann))
@@ -168,6 +170,24 @@ instance ToReport (CompileError SourceSpan) where
                   ]
               ]
         ]
+    CompileErrorCostSameCurrency pl pcl ccl ->
+      Err
+        (Just "CE_COST_SAME_CURRENCY")
+        ""
+        [ (toDiagnosePosition pcl, This "This currency ..."),
+          (toDiagnosePosition ccl, This "... is the same as this currency"),
+          (toDiagnosePosition pl, Where "While trying to compile this posting")
+        ]
+        []
+    CompileErrorPriceSameCurrency pdl dcl ccl ->
+      Err
+        (Just "CE_PRICE_SAME_CURRENCY")
+        ""
+        [ (toDiagnosePosition dcl, This "This currency ..."),
+          (toDiagnosePosition ccl, This "... is the same as this currency"),
+          (toDiagnosePosition pdl, Where "While trying to compile this price declaration")
+        ]
+        []
     CompileErrorMissingTag dl (Located anl t) ->
       Err
         (Just "CE_UNDECLARED_TAG")
@@ -400,6 +420,15 @@ compilePriceDeclaration currencies (Located pdl PriceDeclaration {..}) = do
   let priceTimestamp = priceDeclarationTimestamp
   priceCurrency <- compileCurrencyDeclarationSymbol currencies pdl priceDeclarationCurrencySymbol
   priceCost <- compileCostExpression currencies pdl priceDeclarationCost
+  do
+    let Located dcl pCur = priceCurrency
+    let Located ccl cCur = costCurrency (locatedValue priceCost)
+    when
+      ( currencySymbol pCur
+          == currencySymbol cCur
+      )
+      $ validationFailure
+      $ CompileErrorPriceSameCurrency pdl dcl ccl
   pure $ Located pdl Price {..}
 
 compileCostExpression ::
@@ -553,7 +582,17 @@ compilePosting currencies accounts tl (Located l mp) = do
   postingCurrency <- compileCurrencyDeclarationSymbol currencies tl (Module.postingCurrencySymbol mp)
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
-  postingCost <- mapM (compileCostExpression currencies tl) (Module.postingCost mp)
+  postingCost <- forM (Module.postingCost mp) $ \ce -> do
+    lCost@(Located _ cost) <- compileCostExpression currencies tl ce
+    let Located pcl pCur = postingCurrency
+    let Located ccl cCur = costCurrency cost
+    when
+      ( currencySymbol pCur
+          == currencySymbol cCur
+      )
+      $ validationFailure
+      $ CompileErrorCostSameCurrency tl pcl ccl
+    pure lCost
   postingPercentage <- mapM (compilePercentageExpression tl) (Module.postingPercentage mp)
   pure (Located l Ledger.Posting {..})
 
