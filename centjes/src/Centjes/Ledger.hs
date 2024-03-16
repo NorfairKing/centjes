@@ -134,7 +134,16 @@ data Price ann = Price
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Price ann)
+instance (Validity ann, Eq ann) => Validity (Price ann) where
+  validate p@Price {..} =
+    mconcat
+      [ genericValidate p,
+        declare "The price cost has a different currency" $
+          let Located _ pCur = priceCurrency
+              Located _ Cost {..} = priceCost
+              Located _ cCur = costCurrency
+           in pCur /= cCur
+      ]
 
 instance NFData ann => NFData (Price ann)
 
@@ -182,7 +191,18 @@ data Posting ann = Posting
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Posting ann)
+instance (Validity ann, Eq ann) => Validity (Posting ann) where
+  validate p@Posting {..} =
+    mconcat
+      [ genericValidate p,
+        declare "The posting cost has a different currency" $
+          case postingCost of
+            Nothing -> True
+            Just (Located _ Cost {..}) ->
+              let Located _ pCur = postingCurrency
+                  Located _ cCur = costCurrency
+               in pCur /= cCur
+      ]
 
 instance NFData ann => NFData (Posting ann)
 

@@ -1,0 +1,9 @@
+currency CHF 0.05
+
+account assets
+account expenses
+
+2024-03-16
+  | Cost expression in currency conversion has the same currency symbol.
+  * assets   +1 CHF @ 2 CHF
+  * expenses -2 CHF

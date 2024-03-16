@@ -106,7 +106,7 @@ genTransactionWith accounts currencies tags = do
       else genMapOf ((,) <$> chooseTag tags <*> genValid)
   pure Transaction {..}
 
-instance GenValid ann => GenValid (Posting ann)
+instance (Eq ann, GenValid ann) => GenValid (Posting ann)
 
 -- Map must not be empty
 genPostingWith ::
@@ -141,7 +141,7 @@ genAssertionWith accounts currencies = do
   cur <- genLocatedWith $ chooseCurrency currencies
   pure $ AssertionEquals an acc cur
 
-instance GenValid ann => GenValid (Price ann)
+instance (Eq ann, GenValid ann) => GenValid (Price ann)
 
 -- Map must not be empty
 genPriceWithCurrencies ::

@@ -82,6 +82,8 @@ extra-source-files:
     test_resources/balance/error/to-chf/CONVERT_ERROR_UNKNOWN_TARGET.err
     test_resources/check/CE_MISSING_ATTACHMENT.cent
     test_resources/check/CE_MISSING_ATTACHMENT.err
+    test_resources/compile/CE_COST_SAME_CURRENCY.cent
+    test_resources/compile/CE_COST_SAME_CURRENCY.err
     test_resources/compile/CE_DUPLICATE_ACCOUNT.cent
     test_resources/compile/CE_DUPLICATE_ACCOUNT.err
     test_resources/compile/CE_DUPLICATE_CURRENCY.cent
@@ -102,6 +104,8 @@ extra-source-files:
     test_resources/compile/CE_INVALID_RATIONAL-negative.err
     test_resources/compile/CE_INVALID_RATIONAL-zero.cent
     test_resources/compile/CE_INVALID_RATIONAL-zero.err
+    test_resources/compile/CE_PRICE_SAME_CURRENCY.cent
+    test_resources/compile/CE_PRICE_SAME_CURRENCY.err
     test_resources/compile/CE_UNDECLARED_ACCOUNT.cent
     test_resources/compile/CE_UNDECLARED_ACCOUNT.err
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
