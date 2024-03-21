@@ -39,7 +39,7 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
   runStderrLoggingT $ do
     -- Produce the input.json structure
     (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
-    currencies <- liftIO $ checkValidation diag $ compileCurrencyDeclarations declarations
+    currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
     man <- liftIO newTlsManager
     generatedDeclarations <-
       runConduit $

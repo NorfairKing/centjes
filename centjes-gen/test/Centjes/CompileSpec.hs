@@ -55,10 +55,6 @@ spec = do
     it "produces valid ledgers" $
       producesValid (compileCurrencyDeclaration @())
 
-  describe "compileCurrencyDeclarationDeclarations" $ do
-    it "produces valid ledgers" $
-      producesValid (compileCurrencyDeclarations @())
-
   describe "compileDeclarations" $ do
     it "produces valid ledgers" $
       producesValid (compileDeclarations @())

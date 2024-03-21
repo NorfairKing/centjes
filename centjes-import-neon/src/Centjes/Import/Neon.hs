@@ -42,7 +42,7 @@ runCentjesImportNeon = do
   let inputFp = fromAbsFile settingInput
   contents <- SB.readFile inputFp
   (ds, diag) <- runStderrLoggingT $ loadModules settingLedgerFile
-  currencies <- checkValidation diag $ compileCurrencyDeclarations ds
+  currencies <- checkValidation diag $ compileDeclarationsCurrencies ds
 
   let csvOpts = defaultDecodeOptions {decDelimiter = fromIntegral (Char.ord ';')}
   case Csv.decodeByNameWith csvOpts (LB.fromStrict contents) of

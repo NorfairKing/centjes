@@ -8,7 +8,7 @@
 module Centjes.Compile
   ( CompileError (..),
     compileDeclarations,
-    compileCurrencyDeclarations,
+    compileDeclarationsCurrencies,
     compileCurrencyDeclaration,
     compileTransaction,
     compilePosting,
@@ -266,21 +266,15 @@ compileDeclarations ::
   [Declaration ann] ->
   Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
-  ledgerCurrencies <- compileCurrencyDeclarations declarations
-  ledgerAccounts <- compileAccountDeclarations declarations
-  ledgerTags <- compileTagDeclarations declarations
-  declarationPrices <- compilePriceDeclarations ledgerCurrencies declarations
-  let transactions =
-        mapMaybe
-          ( \case
-              DeclarationTransaction t -> Just t
-              _ -> Nothing
-          )
-          declarations
+  let Declarations {..} = splitDeclarations declarations
+  ledgerCurrencies <- compileCurrencyDeclarations declarationsCurrencies
+  ledgerAccounts <- compileAccountDeclarations declarationsAccounts
+  ledgerTags <- compileTagDeclarations declarationsTags
+  declarationPrices <- compilePriceDeclarations ledgerCurrencies declarationsPrices
   transactionTups <-
     traverse
       (compileTransaction ledgerCurrencies ledgerAccounts ledgerTags)
-      transactions
+      declarationsTransactions
   let ledgerTransactions =
         V.fromList . sortOnTimestamp Ledger.transactionTimestamp $
           map fst transactionTups
@@ -291,6 +285,28 @@ compileDeclarations declarations = do
             declarationPrices ++ transactionPrices
   pure Ledger {..}
 
+data Declarations ann = Declarations
+  { declarationsCurrencies :: ![GenLocated ann (CurrencyDeclaration ann)],
+    declarationsAccounts :: ![GenLocated ann (AccountDeclaration ann)],
+    declarationsTags :: ![GenLocated ann (TagDeclaration ann)],
+    declarationsPrices :: ![GenLocated ann (PriceDeclaration ann)],
+    declarationsTransactions :: ![GenLocated ann (Module.Transaction ann)]
+  }
+
+splitDeclarations ::
+  [Declaration ann] -> Declarations ann
+splitDeclarations = \case
+  [] -> Declarations [] [] [] [] []
+  (d : ds) ->
+    let tup@(Declarations cds ads tds pds ts) = splitDeclarations ds
+     in case d of
+          DeclarationComment _ -> tup
+          DeclarationCurrency c -> Declarations (c : cds) ads tds pds ts
+          DeclarationAccount a -> Declarations cds (a : ads) tds pds ts
+          DeclarationTag t -> Declarations cds ads (t : tds) pds ts
+          DeclarationPrice p -> Declarations cds ads tds (p : pds) ts
+          DeclarationTransaction t -> Declarations cds ads tds pds (t : ts)
+
 sortOnTimestamp :: (a -> GenLocated ann Timestamp) -> [GenLocated ann a] -> [GenLocated ann a]
 sortOnTimestamp getTimestamp =
   sortBy
@@ -300,20 +316,22 @@ sortOnTimestamp getTimestamp =
           . locatedValue
     )
 
-compileCurrencyDeclarations ::
+compileDeclarationsCurrencies ::
   [Declaration ann] ->
   Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
-compileCurrencyDeclarations declarations = do
-  tups <-
-    mapM
-      compileCurrencyDeclaration
-      ( mapMaybe
-          ( \case
-              DeclarationCurrency cd -> Just cd
-              _ -> Nothing
-          )
-          declarations
+compileDeclarationsCurrencies =
+  compileCurrencyDeclarations
+    . mapMaybe
+      ( \case
+          DeclarationCurrency cd -> Just cd
+          _ -> Nothing
       )
+
+compileCurrencyDeclarations ::
+  [GenLocated ann (CurrencyDeclaration ann)] ->
+  Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
+compileCurrencyDeclarations cds = do
+  tups <- traverse compileCurrencyDeclaration cds
   foldM go M.empty tups
   where
     go ::
@@ -324,6 +342,7 @@ compileCurrencyDeclarations declarations = do
       Nothing -> pure $ M.insert symbol lqf m
       Just (Located l1 _) -> validationFailure $ CompileErrorCurrencyDeclaredTwice l1 l2 symbol
 
+-- Prefer compileCurrencyDeclarations
 compileCurrencyDeclaration :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
 compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
   let Located _ symbol = currencyDeclarationSymbol
@@ -334,19 +353,10 @@ compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
   pure (symbol, Located l qf)
 
 compileAccountDeclarations ::
-  [Declaration ann] ->
+  [GenLocated ann (AccountDeclaration ann)] ->
   Validation (CompileError ann) (Map AccountName (GenLocated ann AccountType))
-compileAccountDeclarations declarations = do
-  tups <-
-    mapM
-      compileAccountDeclaration
-      ( mapMaybe
-          ( \case
-              DeclarationAccount ad -> Just ad
-              _ -> Nothing
-          )
-          declarations
-      )
+compileAccountDeclarations ads = do
+  tups <- traverse compileAccountDeclaration ads
   foldM go M.empty tups
   where
     go ::
@@ -370,19 +380,10 @@ compileAccountDeclaration (Located dl AccountDeclaration {..}) = do
   pure (name, Located dl typ)
 
 compileTagDeclarations ::
-  [Declaration ann] ->
+  [GenLocated ann (TagDeclaration ann)] ->
   Validation (CompileError ann) (Map Tag ann)
-compileTagDeclarations declarations = do
-  tups <-
-    mapM
-      compileTagDeclaration
-      ( mapMaybe
-          ( \case
-              DeclarationTag ad -> Just ad
-              _ -> Nothing
-          )
-          declarations
-      )
+compileTagDeclarations tds = do
+  tups <- traverse compileTagDeclaration tds
   foldM go M.empty tups
   where
     go ::
@@ -402,15 +403,9 @@ compileTagDeclaration (Located dl TagDeclaration {..}) = do
 
 compilePriceDeclarations ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
-  [Declaration ann] ->
+  [GenLocated ann (PriceDeclaration ann)] ->
   Validation (CompileError ann) [GenLocated ann (Price ann)]
-compilePriceDeclarations currencies =
-  traverse (compilePriceDeclaration currencies)
-    . mapMaybe
-      ( \case
-          DeclarationPrice pd -> Just pd
-          _ -> Nothing
-      )
+compilePriceDeclarations currencies = traverse (compilePriceDeclaration currencies)
 
 compilePriceDeclaration ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
