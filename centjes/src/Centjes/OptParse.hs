@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -14,9 +12,7 @@ import Control.Applicative
 import Data.Bool
 import Data.Maybe
 import qualified Data.Text as T
-import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
-import GHC.Generics (Generic)
 import Options.Applicative as OptParse
 import Path
 import Path.IO
@@ -25,7 +21,6 @@ import System.Exit
 
 data Instructions
   = Instructions !Dispatch !Settings
-  deriving (Show, Eq, Generic)
 
 getInstructions :: IO Instructions
 getInstructions = do
@@ -37,35 +32,29 @@ getInstructions = do
 data Settings = Settings
   { settingLedgerFile :: !(Path Abs File)
   }
-  deriving (Show, Eq, Generic)
 
 data Dispatch
   = DispatchCheck !CheckSettings
   | DispatchRegister !RegisterSettings
   | DispatchBalance !BalanceSettings
   | DispatchFormat !FormatSettings
-  deriving (Show, Eq, Generic)
 
 data CheckSettings = CheckSettings
-  deriving (Show, Eq, Generic)
 
 data RegisterSettings = RegisterSettings
   { registerSettingFilter :: !Filter,
     registerSettingCurrency :: !(Maybe CurrencySymbol)
   }
-  deriving (Show, Eq, Generic)
 
 data BalanceSettings = BalanceSettings
   { balanceSettingFilter :: !Filter,
     balanceSettingCurrency :: !(Maybe CurrencySymbol),
     balanceSettingShowEmpty :: !ShowEmpty
   }
-  deriving (Show, Eq, Generic)
 
 data FormatSettings = FormatSettings
   { formatSettingFileOrDir :: !(Maybe (Either (Path Abs File) (Path Abs Dir)))
   }
-  deriving (Show, Eq, Generic)
 
 combineToInstructions :: Arguments -> Environment -> Maybe Configuration -> IO Instructions
 combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
@@ -114,8 +103,6 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
 data Configuration = Configuration
   { configLedgerFile :: !(Maybe FilePath)
   }
-  deriving stock (Show, Eq, Generic)
-  deriving (FromJSON, ToJSON) via (Autodocodec Configuration)
 
 instance HasCodec Configuration where
   codec =
@@ -139,7 +126,6 @@ data Environment = Environment
   { envConfigFile :: !(Maybe FilePath),
     envLedgerFile :: !(Maybe FilePath)
   }
-  deriving (Show, Eq, Generic)
 
 getEnvironment :: IO Environment
 getEnvironment = Env.parse (Env.header "Environment") prefixedEnvironmentParser
@@ -155,7 +141,6 @@ environmentParser =
 
 data Arguments
   = Arguments !Command !Flags
-  deriving (Show, Eq, Generic)
 
 -- | Get the command-line arguments
 getArguments :: IO Arguments
@@ -193,7 +178,6 @@ data Command
   | CommandRegister !RegisterArgs
   | CommandBalance !BalanceArgs
   | CommandFormat !FormatArgs
-  deriving (Show, Eq, Generic)
 
 parseCommand :: OptParse.Parser Command
 parseCommand =
@@ -206,7 +190,6 @@ parseCommand =
       ]
 
 data CheckArgs = CheckArgs
-  deriving (Show, Eq, Generic)
 
 parseCommandCheck :: OptParse.ParserInfo CheckArgs
 parseCommandCheck = OptParse.info parser modifier
@@ -218,7 +201,6 @@ data RegisterArgs = RegisterArgs
   { registerArgFilter :: !Filter,
     registerArgConversionCurrency :: !(Maybe CurrencySymbol)
   }
-  deriving (Show, Eq, Generic)
 
 parseCommandRegister :: OptParse.ParserInfo RegisterArgs
 parseCommandRegister = OptParse.info parser modifier
@@ -243,12 +225,10 @@ data BalanceArgs = BalanceArgs
     balanceArgConversionCurrency :: !(Maybe CurrencySymbol),
     balanceArgShowEmpty :: !(Maybe ShowEmpty)
   }
-  deriving (Show, Eq, Generic)
 
 data ShowEmpty
   = ShowEmpty
   | DoNotShowEmpty
-  deriving (Show, Eq, Generic)
 
 parseCommandBalance :: OptParse.ParserInfo BalanceArgs
 parseCommandBalance = OptParse.info parser modifier
@@ -281,7 +261,6 @@ data FormatArgs = FormatArgs
   { formatArgFile :: !(Maybe FilePath),
     formatArgDir :: !(Maybe FilePath)
   }
-  deriving (Show, Eq, Generic)
 
 parseCommandFormat :: OptParse.ParserInfo FormatArgs
 parseCommandFormat = OptParse.info parser modifier
@@ -312,7 +291,6 @@ data Flags = Flags
   { flagConfigFile :: !(Maybe FilePath),
     flagLedgerFile :: !(Maybe FilePath)
   }
-  deriving (Show, Eq, Generic)
 
 parseFlags :: OptParse.Parser Flags
 parseFlags =

@@ -11,7 +11,7 @@ where
 
 import Autodocodec
 import Centjes.Switzerland.Report.Taxes.Types
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (ToJSON)
 import Data.Text (Text)
 import Data.Time
 
@@ -29,8 +29,7 @@ data Input = Input
     inputFirstName :: Text,
     inputYear :: !Year
   }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec Input)
+  deriving (ToJSON) via (Autodocodec Input)
 
 instance HasCodec Input where
   codec =

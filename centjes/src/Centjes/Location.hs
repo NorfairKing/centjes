@@ -4,7 +4,6 @@
 
 module Centjes.Location where
 
-import Control.DeepSeq
 import Data.Validity
 import Data.Validity.Path ()
 import qualified Error.Diagnose.Position as Diagnose (Position (..))
@@ -28,8 +27,6 @@ instance Traversable (GenLocated l) where
 
 instance (Validity l, Validity a) => Validity (GenLocated l a)
 
-instance (NFData l, NFData a) => NFData (GenLocated l a)
-
 type Located a = GenLocated SourceSpan a
 
 type LLocated a = GenLocated SourceSpan (a SourceSpan)
@@ -46,8 +43,6 @@ data SourceSpan = SourceSpan
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity SourceSpan
-
-instance NFData SourceSpan
 
 toDiagnosePosition :: SourceSpan -> Diagnose.Position
 toDiagnosePosition SourceSpan {..} =
@@ -69,5 +64,3 @@ data SourcePosition = SourcePosition
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity SourcePosition
-
-instance NFData SourcePosition

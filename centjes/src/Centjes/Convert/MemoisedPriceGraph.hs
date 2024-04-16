@@ -29,7 +29,7 @@ import Prelude hiding (lookup)
 -- The lookup will only be done the first time, after that laziness will
 -- memoise the result for us.
 newtype MemoisedPriceGraph cur = MemoisedPriceGraph {unMemoisedPriceGraph :: Map (cur, cur) ConversionRate}
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity cur, Show cur, Ord cur) => Validity (MemoisedPriceGraph cur)
 

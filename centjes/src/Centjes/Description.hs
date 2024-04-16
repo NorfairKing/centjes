@@ -1,14 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Description
   ( Description (..),
-    nullDescription,
     fromTextM,
     fromText,
     toText,
@@ -16,9 +14,6 @@ module Centjes.Description
   )
 where
 
-import Autodocodec
-import Control.DeepSeq
-import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -28,18 +23,9 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
 newtype Description = Description {unDescription :: Text}
-  deriving stock (Show, Eq, Ord, Generic)
-  deriving newtype (Semigroup, Monoid, IsString)
+  deriving stock (Show, Eq, Generic)
 
 instance Validity Description
-
-instance NFData Description
-
-instance HasCodec Description where
-  codec = bimapCodec fromText unDescription codec
-
-nullDescription :: Description -> Bool
-nullDescription = T.null . unDescription
 
 fromTextM :: MonadFail m => Text -> m Description
 fromTextM t = case fromText t of

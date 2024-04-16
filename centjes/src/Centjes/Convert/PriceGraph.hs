@@ -13,7 +13,6 @@ module Centjes.Convert.PriceGraph
   )
 where
 
-import Control.DeepSeq
 import Data.Foldable
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -37,8 +36,6 @@ newtype PriceGraph cur = PriceGraph {unPriceGraph :: Map cur (Map cur Conversion
   deriving (Show, Eq, Generic)
 
 instance (Validity cur, Show cur, Ord cur) => Validity (PriceGraph cur)
-
-instance NFData cur => NFData (PriceGraph cur)
 
 empty :: PriceGraph cur
 empty = PriceGraph M.empty

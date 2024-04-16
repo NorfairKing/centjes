@@ -30,7 +30,7 @@ data TaxesInput = TaxesInput
     taxesInputYear :: !Year,
     taxesInputInsuredPersonNumber :: !Text
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance Validity TaxesInput
 
@@ -43,7 +43,7 @@ data TaxesReport ann = TaxesReport
     taxesReportInsuredPersonNumber :: !Text,
     taxesReportCHF :: !(Currency ann)
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann) => Validity (TaxesReport ann) where
   validate vr@TaxesReport {} =
@@ -54,7 +54,7 @@ instance (Validity ann) => Validity (TaxesReport ann) where
 data TaxesError ann
   = TaxesErrorNoCHF
   | TaxesErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann) => Validity (TaxesError ann)
 

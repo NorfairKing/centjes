@@ -21,7 +21,6 @@ module Centjes.Timestamp
 where
 
 import Control.Applicative
-import Control.DeepSeq
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -39,8 +38,6 @@ data Timestamp
   deriving (Show, Eq, Generic)
 
 instance Validity Timestamp
-
-instance NFData Timestamp
 
 comparePartially :: Timestamp -> Timestamp -> Maybe Ordering
 comparePartially ts1 ts2 = case (ts1, ts2) of
@@ -119,8 +116,6 @@ instance Validity MinuteOfDay where
           ms < 24 * 60
       ]
 
-instance NFData MinuteOfDay
-
 minuteToLocalTime :: Day -> MinuteOfDay -> LocalTime
 minuteToLocalTime d (MinuteOfDay ms) = LocalTime d $ timeToTimeOfDay $ fromIntegral ms * 60
 
@@ -134,8 +129,6 @@ instance Validity SecondOfDay where
         declare "The number of seconds is under 24*60*60" $
           ms < 24 * 60 * 60
       ]
-
-instance NFData SecondOfDay
 
 secondToLocalTime :: Day -> SecondOfDay -> LocalTime
 secondToLocalTime d (SecondOfDay ms) = LocalTime d $ timeToTimeOfDay $ fromIntegral ms

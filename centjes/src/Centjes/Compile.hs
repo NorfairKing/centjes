@@ -24,7 +24,6 @@ import Centjes.Module as Module
 import qualified Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Centjes.Validation
-import Control.DeepSeq
 import Control.Monad
 import Data.Function
 import Data.List (intercalate, sortBy)
@@ -61,11 +60,9 @@ data CompileError ann
   | CompileErrorInvalidPercentage !ann !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidRational !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance Validity ann => Validity (CompileError ann)
-
-instance NFData ann => NFData (CompileError ann)
 
 instance ToReport (CompileError SourceSpan) where
   toReport = \case

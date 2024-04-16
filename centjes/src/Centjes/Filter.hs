@@ -9,7 +9,6 @@ module Centjes.Filter
 where
 
 import Centjes.AccountName (AccountName (..))
-import Control.DeepSeq
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -21,11 +20,9 @@ data Filter
   = FilterAny
   | FilterOr [Filter]
   | FilterSubstring Text
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance Validity Filter
-
-instance NFData Filter
 
 predicate :: Filter -> (AccountName -> Bool)
 predicate = \case

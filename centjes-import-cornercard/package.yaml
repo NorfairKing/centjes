@@ -24,7 +24,6 @@ library:
   - text
   - time
   - vector
-  - yaml
 
 executables:
   centjes-import-cornercard:

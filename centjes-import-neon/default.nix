@@ -1,7 +1,7 @@
 { mkDerivation, autodocodec, autodocodec-yaml, base, bytestring
 , cassava, centjes, containers, diagnose, envparse, lib
 , monad-logger, optparse-applicative, path, path-io
-, really-safe-money, text, time, vector, yaml
+, really-safe-money, text, time, vector
 }:
 mkDerivation {
   pname = "centjes-import-neon";
@@ -12,7 +12,7 @@ mkDerivation {
   libraryHaskellDepends = [
     autodocodec autodocodec-yaml base bytestring cassava centjes
     containers diagnose envparse monad-logger optparse-applicative path
-    path-io really-safe-money text time vector yaml
+    path-io really-safe-money text time vector
   ];
   executableHaskellDepends = [ base ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

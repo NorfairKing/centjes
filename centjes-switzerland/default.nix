@@ -7,7 +7,7 @@
 , really-safe-money, really-safe-money-gen, sydtest, sydtest-aeson
 , sydtest-discover, template-haskell, template-haskell-reload, text
 , time, typed-process, validity, validity-time, vector, xml-conduit
-, yaml, zip
+, zip
 }:
 mkDerivation {
   pname = "centjes-switzerland";
@@ -21,7 +21,7 @@ mkDerivation {
     http-client-tls http-types monad-logger mtl optparse-applicative
     path path-io pretty-show really-safe-money template-haskell
     template-haskell-reload text time typed-process validity
-    validity-time vector xml-conduit yaml zip
+    validity-time vector xml-conduit zip
   ];
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];

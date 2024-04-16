@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -12,9 +11,7 @@ import Centjes.Module
 import Control.Applicative
 import Control.Arrow (left)
 import Data.Maybe
-import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
-import GHC.Generics (Generic)
 import Options.Applicative as OptParse
 import Path
 import Path.IO
@@ -35,7 +32,6 @@ data Settings = Settings
     settingExpensesAccountName :: !AccountName,
     settingIncomeAccountName :: !AccountName
   }
-  deriving (Show, Eq, Generic)
 
 combineToSettings :: Flags -> Environment -> Maybe Configuration -> IO Settings
 combineToSettings Flags {..} Environment {..} mConf = do
@@ -56,8 +52,6 @@ data Configuration = Configuration
     configExpensesAccountName :: !(Maybe AccountName),
     configIncomeAccountName :: !(Maybe AccountName)
   }
-  deriving stock (Show, Eq, Generic)
-  deriving (FromJSON, ToJSON) via (Autodocodec Configuration)
 
 -- | We use @autodocodec@ for parsing a YAML config.
 instance HasCodec Configuration where
@@ -89,7 +83,6 @@ data Environment = Environment
     envExpensesAccountName :: !(Maybe AccountName),
     envIncomeAccountName :: !(Maybe AccountName)
   }
-  deriving (Show, Eq, Generic)
 
 getEnvironment :: IO Environment
 getEnvironment = Env.parse (Env.header "Environment") prefixedEnvironmentParser
@@ -145,7 +138,6 @@ data Flags = Flags
     flagExpensesAccountName :: !(Maybe AccountName),
     flagIncomeAccountName :: !(Maybe AccountName)
   }
-  deriving (Show, Eq, Generic)
 
 -- | The 'optparse-applicative' parser for the 'Flags'.
 parseFlags :: OptParse.Parser Flags

@@ -49,16 +49,13 @@ liftValidation v = ValidationT $ pure v
 validationTFailure :: Applicative m => e -> ValidationT e m a
 validationTFailure = ValidationT . pure . validationFailure
 
-mapValidationTFailure :: Functor m => (e1 -> e2) -> ValidationT e1 m a -> ValidationT e2 m a
-mapValidationTFailure f (ValidationT m) = ValidationT $ mapValidationFailure f <$> m
-
 transformValidationT :: (m (Validation e a) -> n (Validation f b)) -> ValidationT e m a -> ValidationT f n b
 transformValidationT func (ValidationT t) = ValidationT $ func t
 
 data Validation e a
   = Failure !(NonEmpty e)
   | Success !a
-  deriving (Eq, Generic, Ord, Show)
+  deriving (Generic, Show)
 
 instance (Validity e, Validity a) => Validity (Validation e a)
 
@@ -81,9 +78,6 @@ instance Monad (Validation e) where
 
 validationFailure :: e -> Validation e a
 validationFailure e = Failure (e :| [])
-
-validationSuccess :: a -> Validation e a
-validationSuccess = Success
 
 mapValidationFailure :: (e1 -> e2) -> Validation e1 a -> Validation e2 a
 mapValidationFailure f = \case
@@ -120,15 +114,3 @@ renderDiagnostic diag errs = foldl' addReport diag (map toReport (NE.toList errs
 
 class ToReport e where
   toReport :: e -> Report String
-
-exampleReport :: Report String
-exampleReport =
-  Err
-    -- vv  OPTIONAL ERROR CODE
-    Nothing
-    -- vv  ERROR MESSAGE
-    "This is my first error report"
-    -- vv  MARKERS
-    [(Position (1, 3) (1, 8) "some_test.txt", This "Some text under the marker")]
-    -- vv  HINTS
-    []

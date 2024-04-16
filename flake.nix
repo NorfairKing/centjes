@@ -11,6 +11,8 @@
     haskell-dependency-graph-nix.url = "github:NorfairKing/haskell-dependency-graph-nix";
     haskell-dependency-graph-nix.inputs.nixpkgs.follows = "nixpkgs";
     haskell-dependency-graph-nix.inputs.pre-commit-hooks.follows = "pre-commit-hooks";
+    weeder-nix.url = "github:NorfairKing/weeder-nix";
+    weeder-nix.flake = false;
     validity.url = "github:NorfairKing/validity";
     validity.flake = false;
     autodocodec.url = "github:NorfairKing/autodocodec";
@@ -38,6 +40,7 @@
     , nixpkgs
     , pre-commit-hooks
     , haskell-dependency-graph-nix
+    , weeder-nix
     , validity
     , safe-coloured-text
     , sydtest
@@ -65,6 +68,7 @@
           (import (template-haskell-reload + "/nix/overlay.nix"))
           (import (linkcheck + "/nix/overlay.nix"))
           (import (seocheck + "/nix/overlay.nix"))
+          (import (weeder-nix + "/nix/overlay.nix"))
           (_:_: { makeDependencyGraph = haskell-dependency-graph-nix.lib.${system}.makeDependencyGraph; })
           (_:_: { evalNixOSConfig = args: import (nixpkgs + "/nixos/lib/eval-config.nix") (args // { inherit system; }); })
           self.overlays.${system}
@@ -92,6 +96,10 @@
         example-switzerland-taxes = pkgs.centjes.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/example;
         example-switzerland-vat = pkgs.centjes.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/example;
         vim-plugin = pkgs.vimPlugins.centjes-vim;
+        weeder-check = pkgs.weeder-nix.makeWeederCheck {
+          weederToml = ./weeder.toml;
+          packages = builtins.attrNames pkgs.haskellPackages.centjesPackages;
+        };
         pre-commit = pre-commit-hooks.lib.${ system}.run {
           src = ./.;
           hooks = {

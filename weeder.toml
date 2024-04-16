@@ -1,0 +1,20 @@
+unused-types = true
+type-class-roots = false
+roots = [
+  # General
+  ".main$",
+  "^Main.spec$",
+  "^Paths_.*",
+  # Generated
+  "Centjes.Parse.Alex",
+  "Centjes.Parse.Happy.happy",
+  # False positives
+  "widgetFile",
+]
+root-instances = [
+  { instance = "ParseRoute App", module = "Centjes.Docs.Site.Foundation" },
+  { instance = "RouteAttrs App", module = "Centjes.Docs.Site.Foundation" },
+  { instance = "Lift DocPage", module = "Centjes.Docs.Site.Static.TH" },
+  { instance = "Lift ModuleOption", module = "Centjes.Docs.Site.ModuleDocs.TH" },
+  { instance = "Lift NixValue", module = "Centjes.Docs.Site.ModuleDocs.TH" },
+]

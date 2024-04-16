@@ -24,7 +24,6 @@ import qualified Centjes.Filter as Filter
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Validation
-import Control.DeepSeq
 import Control.Monad
 import Data.Foldable
 import Data.List (intercalate)
@@ -51,11 +50,6 @@ import qualified Numeric.DecimalLiteral as DecimalLiteral
 import Numeric.Natural
 
 newtype BalancedLedger ann = BalancedLedger {balancedLedgerTransactions :: Vector (GenLocated ann (Transaction ann), AccountBalances ann)}
-  deriving (Show, Eq, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (BalancedLedger ann)
-
-instance NFData ann => NFData (BalancedLedger ann)
 
 type AccountBalances ann = Map AccountName (Money.MultiAccount (Currency ann))
 
@@ -64,7 +58,7 @@ data BalanceReport ann = BalanceReport
     balanceReportFilledBalances :: !(AccountBalances ann),
     balanceReportTotal :: !(Money.MultiAccount (Currency ann))
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceReport ann) where
   validate br@BalanceReport {..} =
@@ -73,8 +67,6 @@ instance (Validity ann, Show ann, Ord ann) => Validity (BalanceReport ann) where
         declare "The total matches the balances" $
           MultiAccount.sum balanceReportBalances == Just balanceReportTotal
       ]
-
-instance NFData ann => NFData (BalanceReport ann)
 
 data BalanceError ann
   = BalanceErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
@@ -94,11 +86,9 @@ data BalanceError ann
   | BalanceErrorConvertError !(ConvertError ann)
   | BalanceErrorCouldNotFill
   | BalanceErrorCouldNotSumTotal ![Money.MultiAccount (Currency ann)]
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceError ann)
-
-instance NFData ann => NFData (BalanceError ann)
 
 instance ToReport (BalanceError SourceSpan) where
   toReport = \case

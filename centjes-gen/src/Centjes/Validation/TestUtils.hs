@@ -2,7 +2,6 @@
 
 module Centjes.Validation.TestUtils
   ( shouldValidate,
-    shouldValidateT,
     shouldFailToValidateT,
     shouldFailToValidate,
   )
@@ -13,9 +12,6 @@ import Data.List.NonEmpty (NonEmpty)
 import qualified Data.Text as T
 import Error.Diagnose
 import Test.Syd
-
-shouldValidateT :: ToReport e => Diagnostic String -> ValidationT e IO a -> IO a
-shouldValidateT diag (ValidationT f) = f >>= shouldValidate diag
 
 shouldValidate :: ToReport e => Diagnostic String -> Validation e a -> IO a
 shouldValidate diag v = case checkValidationPure diag v of

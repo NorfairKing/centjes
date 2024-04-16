@@ -5,7 +5,6 @@
 
 module Centjes.AccountType
   ( AccountType (..),
-    fromTextM,
     fromText,
     toText,
     toString,
@@ -17,7 +16,6 @@ where
 import Centjes.AccountName (AccountName)
 import qualified Centjes.AccountName as AccountName
 import Control.Applicative
-import Control.DeepSeq
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -39,13 +37,6 @@ data AccountType
   deriving stock (Show, Eq, Generic)
 
 instance Validity AccountType
-
-instance NFData AccountType
-
-fromTextM :: MonadFail m => Text -> m AccountType
-fromTextM t = case fromText t of
-  Nothing -> fail $ "Unknown account type: " <> show t
-  Just at -> pure at
 
 fromText :: Text -> Maybe AccountType
 fromText = \case

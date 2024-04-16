@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -33,7 +32,6 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Error.Diagnose
-import GHC.Generics (Generic)
 import Path
 import Path.IO
 import System.Exit
@@ -54,14 +52,12 @@ loadModules' firstPath = do
       liftIO $ dieWithDiag diag
 
 data LoadError = LoadError !(Map (Path Rel File) Text) !LoadError'
-  deriving (Show, Eq, Generic)
 
 data LoadError'
   = LoadErrorImportMissing !(Path Rel File) !(Maybe SourceSpan)
   | LoadErrorNotAFile !(Path Rel File) !(Maybe SourceSpan)
   | LoadErrorNotUtf8 !(Path Rel File) !(Maybe SourceSpan)
   | LoadErrorParseError !(Path Rel File) !(Maybe SourceSpan) !String
-  deriving (Show, Eq, Generic)
 
 instance ToReport LoadError' where
   toReport = \case

@@ -25,10 +25,8 @@ import Centjes.Docs.Site.Assets
 import Centjes.Docs.Site.Constants
 import Centjes.Docs.Site.Static
 import Centjes.Docs.Site.Widget
-import Data.List
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import Language.Haskell.TH.Load
@@ -91,13 +89,6 @@ lookupPage' url = do
     Nothing -> notFound
     Just dp -> pure dp
 
-lookupPagesIn :: [Text] -> Handler [([Text], DocPage)]
-lookupPagesIn dir =
-  mapMaybe (\(k, v) -> (,) <$> stripPrefix dir k <*> pure v)
-    . M.toList
-    . M.filterWithKey (\parts _ -> dir `isPrefixOf` parts)
-    <$> loadDocPages
-
 setCentjesTitle :: MonadWidget m => Html -> m ()
 setCentjesTitle t = setTitle $ "Centjes Documentation - " <> t
 
@@ -109,6 +100,3 @@ yamlDesc = yamlDescVia (codec @a)
 
 yamlDescVia :: forall a. JSONCodec a -> Text
 yamlDescVia = renderPlainSchemaVia
-
-confDocsWithKey :: forall o. HasCodec o => Text -> Text
-confDocsWithKey key = yamlDescVia $ Autodocodec.object "Configuration" $ optionalFieldWith' key (codec @o)

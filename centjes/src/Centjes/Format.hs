@@ -6,7 +6,6 @@ module Centjes.Format
   ( formatModule,
     formatDeclaration,
     formatTransaction,
-    formatPosting,
   )
 where
 
@@ -33,9 +32,6 @@ formatDeclaration = renderDocText . declarationDoc
 
 formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
-
-formatPosting :: Posting l -> Text
-formatPosting = renderDocText . postingDoc
 
 renderDocText :: Doc ann -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions
@@ -87,7 +83,7 @@ data DecType
   | DecTag
   | DecPrice
   | DecTransaction
-  deriving (Show, Eq)
+  deriving (Eq)
 
 decType :: Declaration l -> DecType
 decType = \case
@@ -204,9 +200,6 @@ timestampDoc = pretty . Timestamp.toString
 
 descriptionDocs :: GenLocated l Description -> [Doc ann]
 descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
-
-postingDoc :: Posting l -> Doc ann
-postingDoc = postingDocHelper Nothing Nothing Nothing
 
 postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc ann
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =

@@ -28,7 +28,6 @@ import Centjes.Location
 import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..))
 import Centjes.Tag
 import Centjes.Timestamp as Timestamp
-import Control.DeepSeq
 import Data.Function
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
@@ -112,8 +111,6 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
               partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
           ]
 
-instance NFData ann => NFData (Ledger ann)
-
 partiallyOrderedByTimestamp :: (a -> GenLocated ann Timestamp) -> Vector (GenLocated ann a) -> Bool
 partiallyOrderedByTimestamp getTimestamp =
   partiallyOrderedBy
@@ -145,8 +142,6 @@ instance (Validity ann, Eq ann) => Validity (Price ann) where
            in pCur /= cCur
       ]
 
-instance NFData ann => NFData (Price ann)
-
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
@@ -160,8 +155,6 @@ data Transaction ann = Transaction
 
 instance (Validity ann, Ord ann) => Validity (Transaction ann)
 
-instance NFData ann => NFData (Transaction ann)
-
 data Assertion ann
   = AssertionEquals
       !(GenLocated ann AccountName)
@@ -172,8 +165,6 @@ data Assertion ann
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (Assertion ann)
-
-instance NFData ann => NFData (Assertion ann)
 
 data Posting ann = Posting
   { postingReal :: !Bool,
@@ -204,8 +195,6 @@ instance (Validity ann, Eq ann) => Validity (Posting ann) where
                in pCur /= cCur
       ]
 
-instance NFData ann => NFData (Posting ann)
-
 data Cost ann = Cost
   { -- Note: This field will have the source location of the decimal literal in the cost
     costConversionRate :: !(GenLocated ann ConversionRate),
@@ -215,8 +204,6 @@ data Cost ann = Cost
   deriving stock (Show, Eq, Generic)
 
 instance Validity ann => Validity (Cost ann)
-
-instance NFData ann => NFData (Cost ann)
 
 newtype Percentage ann = Percentage
   { -- Note: This field will have the source location of the decimal literal in
@@ -230,8 +217,6 @@ newtype Percentage ann = Percentage
 
 instance Validity ann => Validity (Percentage ann)
 
-instance NFData ann => NFData (Percentage ann)
-
 data Currency ann = Currency
   { currencySymbol :: !CurrencySymbol,
     -- Note: This field will have the source location of currency _declaration_ that defined it
@@ -240,5 +225,3 @@ data Currency ann = Currency
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity ann => Validity (Currency ann)
-
-instance NFData ann => NFData (Currency ann)

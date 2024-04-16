@@ -18,7 +18,6 @@ library:
   - autodocodec-yaml
   - bytestring
   - containers
-  - deepseq
   - diagnose
   - envparse
   - monad-logger
@@ -42,7 +41,6 @@ library:
   - validity-time
   - validity-vector
   - vector
-  - yaml
 
 executables:
   centjes:

@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -19,9 +18,7 @@ import Data.Text
 import qualified Data.Text as T
 import Data.Time
 import Data.Time.Calendar.Quarter
-import Data.Yaml (FromJSON, ToJSON)
 import qualified Env
-import GHC.Generics (Generic)
 import Options.Applicative as OptParse
 import Path
 import Path.IO
@@ -30,7 +27,6 @@ import System.Exit
 
 data Instructions
   = Instructions !Dispatch !Settings
-  deriving (Show, Eq, Generic)
 
 getInstructions :: IO Instructions
 getInstructions = do
@@ -47,33 +43,28 @@ data Settings = Settings
     settingLedgerFile :: !(Path Rel File),
     settingSetup :: !Setup
   }
-  deriving (Show, Eq, Generic)
 
 data Dispatch
   = DispatchTaxes !TaxesSettings
   | DispatchVAT !VATSettings
   | DispatchDownloadRates !DownloadRatesSettings
-  deriving (Show, Eq, Generic)
 
 data TaxesSettings = TaxesSettings
   { taxesSettingZipFile :: !(Path Abs File),
     taxesSettingReadmeFile :: !(Path Abs File),
     taxesSettingInput :: !TaxesInput
   }
-  deriving (Show, Eq, Generic)
 
 data VATSettings = VATSettings
   { vatSettingZipFile :: !(Path Abs File),
     vatSettingReadmeFile :: !(Path Abs File),
     vatSettingInput :: !VATInput
   }
-  deriving (Show, Eq, Generic)
 
 data DownloadRatesSettings = DownloadRatesSettings
   { downloadRatesSettingBegin :: !Day,
     downloadRatesSettingEnd :: !Day
   }
-  deriving (Show, Eq, Generic)
 
 combineToInstructions ::
   Arguments ->
@@ -151,8 +142,6 @@ data Configuration = Configuration
     configVATExpensesAccount :: !(Maybe AccountName),
     configSetup :: !Setup
   }
-  deriving stock (Show, Eq, Generic)
-  deriving (FromJSON, ToJSON) via (Autodocodec Configuration)
 
 instance HasCodec Configuration where
   codec =
@@ -197,11 +186,6 @@ data Setup = Setup
     setupExpensesAccounts :: !(Set AccountName),
     setupVATIncomeAccount :: !AccountName
   }
-  deriving stock (Show, Eq, Generic)
-  deriving (FromJSON, ToJSON) via (Autodocodec Setup)
-
-instance HasCodec Setup where
-  codec = object "Setup" objectCodec
 
 instance HasObjectCodec Setup where
   objectCodec =
@@ -218,8 +202,6 @@ instance HasObjectCodec Setup where
 data IncomeSetup = IncomeSetup
   { incomeSetupForeign :: !Bool
   }
-  deriving stock (Show, Eq, Generic)
-  deriving (FromJSON, ToJSON) via (Autodocodec IncomeSetup)
 
 instance HasCodec IncomeSetup where
   codec =
@@ -232,8 +214,6 @@ data AssetSetup = AssetSetup
   { assetSetupAccountName :: !AccountName,
     assetSetupEvidence :: !FilePath
   }
-  deriving stock (Show, Eq, Generic)
-  deriving (FromJSON, ToJSON) via (Autodocodec AssetSetup)
 
 instance HasCodec AssetSetup where
   codec =
@@ -259,7 +239,6 @@ data Environment = Environment
     envReadmeFile :: !(Maybe FilePath),
     envConfigFile :: !(Maybe FilePath)
   }
-  deriving (Show, Eq, Generic)
 
 getEnvironment :: IO Environment
 getEnvironment = Env.parse (Env.header "Environment") prefixedEnvironmentParser
@@ -277,7 +256,6 @@ environmentParser =
 
 data Arguments
   = Arguments !Command !Flags
-  deriving (Show, Eq, Generic)
 
 -- | Get the command-line flags
 getArguments :: IO Arguments
@@ -314,7 +292,6 @@ data Command
   = CommandTaxes !TaxesArgs
   | CommandVAT !VATArgs
   | CommandDownloadRates !DownloadRatesArgs
-  deriving (Show, Eq, Generic)
 
 parseCommand :: OptParse.Parser Command
 parseCommand =
@@ -329,7 +306,6 @@ data TaxesArgs = TaxesArgs
   { taxesArgZipFile :: !(Maybe FilePath),
     taxesArgReadmeFile :: !(Maybe FilePath)
   }
-  deriving (Show, Eq, Generic)
 
 parseCommandTaxes :: OptParse.ParserInfo TaxesArgs
 parseCommandTaxes = OptParse.info parser modifier
@@ -360,7 +336,6 @@ data VATArgs = VATArgs
   { vatArgZipFile :: !(Maybe FilePath),
     vatArgReadmeFile :: !(Maybe FilePath)
   }
-  deriving (Show, Eq, Generic)
 
 parseCommandVAT :: OptParse.ParserInfo VATArgs
 parseCommandVAT = OptParse.info parser modifier
@@ -391,7 +366,6 @@ data DownloadRatesArgs = DownloadRatesArgs
   { downloadRatesArgBegin :: !(Maybe Day),
     downloadRatesArgEnd :: !(Maybe Day)
   }
-  deriving (Show, Eq, Generic)
 
 parseCommandDownloadRates :: OptParse.ParserInfo DownloadRatesArgs
 parseCommandDownloadRates = OptParse.info parser modifier
@@ -422,7 +396,6 @@ parseCommandDownloadRates = OptParse.info parser modifier
 data Flags = Flags
   { flagConfigFile :: !(Maybe FilePath)
   }
-  deriving (Show, Eq, Generic)
 
 -- | The 'optparse-applicative' parser for the 'Flags'.
 parseFlags :: OptParse.Parser Flags

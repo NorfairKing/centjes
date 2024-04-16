@@ -44,7 +44,6 @@ library:
   - validity-time
   - vector
   - xml-conduit
-  - yaml
   - zip
 
 executables:

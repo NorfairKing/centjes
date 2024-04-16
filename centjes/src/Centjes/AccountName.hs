@@ -15,7 +15,6 @@ module Centjes.AccountName
 where
 
 import Autodocodec
-import Control.DeepSeq
 import Data.Aeson (FromJSON, FromJSONKey (..), FromJSONKeyFunction (..), ToJSON, ToJSONKey (..))
 import Data.Aeson.Types (toJSONKeyText)
 import qualified Data.Char as Char
@@ -54,8 +53,6 @@ instance Validity AccountName where
                     | otherwise -> False
             ]
       ]
-
-instance NFData AccountName
 
 instance Ord AccountName where
   compare = comparing toText

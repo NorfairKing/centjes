@@ -4,7 +4,7 @@
 , containers, data-default, envparse, file-embed, filepath
 , fsnotify, lib, optparse-applicative, path, path-io, shakespeare
 , template-haskell, template-haskell-reload, text
-, th-lift-instances, time, wai-extra, warp, yesod, yesod-autoreload
+, th-lift-instances, wai-extra, warp, yesod, yesod-autoreload
 , yesod-sitemap, yesod-static, yesod-static-remote
 }:
 mkDerivation {
@@ -19,8 +19,8 @@ mkDerivation {
     cmark-gfm containers data-default envparse file-embed filepath
     fsnotify optparse-applicative path path-io shakespeare
     template-haskell template-haskell-reload text th-lift-instances
-    time wai-extra warp yesod yesod-autoreload yesod-sitemap
-    yesod-static yesod-static-remote
+    wai-extra warp yesod yesod-autoreload yesod-sitemap yesod-static
+    yesod-static-remote
   ];
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];

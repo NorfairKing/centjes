@@ -12,7 +12,6 @@ module Centjes.CurrencySymbol
 where
 
 import Autodocodec
-import Control.DeepSeq
 import qualified Data.Char as Char
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -39,8 +38,6 @@ instance Validity CurrencySymbol where
               | Char.isLatin1 c && Char.isAlphaNum c -> True
               | otherwise -> False
       ]
-
-instance NFData CurrencySymbol
 
 instance HasCodec CurrencySymbol where
   codec = bimapCodec fromText currencySymbolText codec

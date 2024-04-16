@@ -27,9 +27,6 @@ accountNameChunk = fore white . chunk . AccountName.toText
 multiAccountMaxWidth :: Money.MultiAccount currency -> Max Word8
 multiAccountMaxWidth = foldMap accountWidth . MultiAccount.unMultiAccount
 
-multiAccountChunks :: Money.MultiAccount (Currency ann) -> [[Chunk]]
-multiAccountChunks = multiAccountChunksWithWidth Nothing
-
 multiAccountChunksWithWidth :: Maybe (Max Word8) -> Money.MultiAccount (Currency ann) -> [[Chunk]]
 multiAccountChunksWithWidth mWidth ma =
   let accounts = MultiAccount.unMultiAccount ma
@@ -53,9 +50,6 @@ accountWidth a =
   -- , and one extra because of the floor
   Max . (+ 3) $
     floor (logBase 10 (fromIntegral (Amount.toMinimalQuantisations (Account.abs a))) :: Float)
-
-accountChunk :: QuantisationFactor -> Money.Account -> Chunk
-accountChunk = accountChunkWithWidth Nothing
 
 accountChunkWithWidth :: Maybe (Max Word8) -> QuantisationFactor -> Money.Account -> Chunk
 accountChunkWithWidth mWidth qf acc =

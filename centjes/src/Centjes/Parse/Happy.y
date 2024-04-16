@@ -29,11 +29,7 @@ import qualified Data.Text as T
 
 %name moduleParser module
 %name declarationParser declaration
-%name importParser import_dec
 %name transactionParser transaction_dec
-%name postingParser posting
-%name accountNameParser account_name
-%name accountParser account_exp
 
 %tokentype { Token }
 %monad { Alex }
@@ -246,10 +242,6 @@ sL1 (Located l val) b = Located l b
 
 sBE :: Located a -> Located b -> c -> Located c
 sBE (Located begin _) (Located end _) c = Located (combineSpans begin end) c
-
-sBME :: Located a -> Maybe (Located b) -> c -> Located c
-sBME l1 Nothing = sL1 l1
-sBME l1 (Just l2) = sBE l1 l2
 
 sBL :: Located a -> [Located b] -> c -> Located c
 sBL l1 [] = sL1 l1

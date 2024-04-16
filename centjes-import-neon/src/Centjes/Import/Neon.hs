@@ -180,7 +180,6 @@ data Row = Row
     rowWise :: !Bool,
     rowSpaces :: !Bool
   }
-  deriving (Show)
 
 instance FromNamedRecord Row where
   parseNamedRecord r =

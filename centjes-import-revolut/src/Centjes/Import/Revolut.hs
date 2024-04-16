@@ -218,7 +218,6 @@ data Row = Row
     rowState :: !Text,
     rowBalance :: !(Maybe DecimalLiteral)
   }
-  deriving (Show)
 
 instance FromNamedRecord Row where
   parseNamedRecord r =

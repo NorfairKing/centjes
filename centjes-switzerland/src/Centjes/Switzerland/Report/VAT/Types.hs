@@ -58,7 +58,7 @@ data VATInput = VATInput
     vatInputVATIncomeAccountName :: !AccountName,
     vatInputVATExpensesAccountName :: !AccountName
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance Validity VATInput
 
@@ -143,7 +143,7 @@ data VATReport ann = VATReport
     -- Zu bezahlender Betrag
     vatReportPayable :: !Money.Account
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (VATReport ann) where
   validate vr@VATReport {..} =
@@ -193,7 +193,7 @@ data DomesticRevenue ann = DomesticRevenue
     -- | Evidence in tarball
     domesticRevenueEvidence :: !(NonEmpty (Path Rel File))
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (DomesticRevenue ann)
 
@@ -224,7 +224,7 @@ data ForeignRevenue ann = ForeignRevenue
     -- | Evidence in tarball
     foreignRevenueEvidence :: !(NonEmpty (Path Rel File))
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (ForeignRevenue ann)
 
@@ -242,7 +242,7 @@ data DeductibleExpense ann = DeductibleExpense
     -- | Evidence in tarball
     deductibleExpenseEvidence :: !(NonEmpty (Path Rel File))
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (DeductibleExpense ann)
 
@@ -267,7 +267,7 @@ data VATError ann
   | VATErrorAdd !Money.Amount !Money.Amount
   | VATErrorSubtract !Money.Amount !Money.Amount
   | VATErrorReportInvalid !(VATReport ann) !String
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (VATError ann)
 

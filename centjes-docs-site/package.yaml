@@ -39,7 +39,6 @@ library:
   - template-haskell-reload
   - text
   - th-lift-instances
-  - time
   - wai-extra
   - warp
   - yesod

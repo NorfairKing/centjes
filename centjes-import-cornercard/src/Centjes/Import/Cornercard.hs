@@ -175,7 +175,6 @@ data Row = Row
     rowAccount :: !DecimalLiteral,
     rowStatus :: !Text
   }
-  deriving (Show)
 
 instance FromNamedRecord Row where
   parseNamedRecord r =

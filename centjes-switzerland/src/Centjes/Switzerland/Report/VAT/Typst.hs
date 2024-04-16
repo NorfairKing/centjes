@@ -16,7 +16,7 @@ import Centjes.Ledger
 import Centjes.Location
 import Centjes.Switzerland.Report.VAT.Types
 import qualified Centjes.Timestamp as Timestamp
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (ToJSON)
 import Data.List (sortOn)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Text (Text)
@@ -124,8 +124,7 @@ data Input = Input
     --  Guthaben der steuerpflichtigen Person
     inputReceivable :: !(Maybe FormattedAmount)
   }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec Input)
+  deriving (ToJSON) via (Autodocodec Input)
 
 instance HasCodec Input where
   codec =
@@ -227,8 +226,6 @@ data InputRevenue = InputRevenue
     inputRevenueVATRate :: !(Maybe String),
     inputRevenueEvidence :: !(NonEmpty (Path Rel File))
   }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec InputRevenue)
 
 instance HasCodec InputRevenue where
   codec =
@@ -261,8 +258,6 @@ data InputExpense = InputExpense
     inputExpenseVATRate :: !String,
     inputExpenseEvidence :: !(NonEmpty (Path Rel File))
   }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec InputExpense)
 
 instance HasCodec InputExpense where
   codec =
@@ -289,8 +284,6 @@ data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: FormattedAmount,
     amountWithCurrencyCurrency :: CurrencySymbol
   }
-  deriving (Show, Eq)
-  deriving (FromJSON, ToJSON) via (Autodocodec AmountWithCurrency)
 
 instance HasCodec AmountWithCurrency where
   codec =

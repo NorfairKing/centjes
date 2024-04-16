@@ -22,7 +22,6 @@ import Centjes.Ledger
 import Centjes.Location
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
-import Control.DeepSeq
 import Control.Monad.State
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
@@ -42,20 +41,16 @@ newtype Register ann = Register
             )
         )
   }
-  deriving (Show, Eq, Generic)
+  deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (Register ann)
-
-instance NFData ann => NFData (Register ann)
 
 data RegisterError ann
   = RegisterErrorAddError
   | RegisterErrorConvertError !(ConvertError ann)
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (RegisterError ann)
-
-instance NFData ann => NFData (RegisterError ann)
 
 instance ToReport (RegisterError SourceSpan) where
   toReport = \case

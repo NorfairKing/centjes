@@ -40,7 +40,6 @@ library
     , text
     , time
     , vector
-    , yaml
   default-language: Haskell2010
 
 executable centjes-import-revolut

@@ -1,11 +1,9 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.Docs.Site.OptParse.Types where
 
 import Autodocodec
 import Data.Text (Text)
-import GHC.Generics (Generic)
 
 data Flags = Flags
   { flagConfigFile :: !(Maybe FilePath),
@@ -13,7 +11,6 @@ data Flags = Flags
     flagGoogleAnalyticsTracking :: !(Maybe String),
     flagGoogleSearchConsoleVerification :: !(Maybe String)
   }
-  deriving (Show, Eq)
 
 data Environment = Environment
   { envConfigFile :: !(Maybe FilePath),
@@ -21,14 +18,12 @@ data Environment = Environment
     envGoogleAnalyticsTracking :: !(Maybe String),
     envGoogleSearchConsoleVerification :: !(Maybe String)
   }
-  deriving (Show, Eq, Generic)
 
 data Configuration = Configuration
   { confPort :: !(Maybe Int),
     confGoogleAnalyticsTracking :: !(Maybe String),
     confGoogleSearchConsoleVerification :: !(Maybe String)
   }
-  deriving (Show, Eq, Generic)
 
 instance HasCodec Configuration where
   codec =
@@ -46,4 +41,3 @@ data Settings = Settings
     settingGoogleAnalyticsTracking :: !(Maybe Text),
     settingGoogleSearchConsoleVerification :: !(Maybe Text)
   }
-  deriving (Show, Eq, Generic)

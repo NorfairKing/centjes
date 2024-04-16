@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
@@ -21,13 +20,10 @@ import Centjes.Module as Module
 import Centjes.Report.Balance
 import Centjes.Report.Register
 import Centjes.Validation
-import Control.DeepSeq
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Foldable
-import Data.Validity (Validity)
 import Error.Diagnose
-import GHC.Generics (Generic)
 import Path
 import Path.IO
 
@@ -54,11 +50,6 @@ data CheckError ann
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
   | CheckErrorRegisterError !(RegisterError ann)
-  deriving (Show, Eq, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (CheckError ann)
-
-instance NFData ann => NFData (CheckError ann)
 
 instance ToReport (CheckError SourceSpan) where
   toReport = \case
