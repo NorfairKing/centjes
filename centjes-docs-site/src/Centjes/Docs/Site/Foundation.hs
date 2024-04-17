@@ -89,13 +89,13 @@ lookupPage' url = do
     Nothing -> notFound
     Just dp -> pure dp
 
-setCentjesTitle :: MonadWidget m => Html -> m ()
+setCentjesTitle :: (MonadWidget m) => Html -> m ()
 setCentjesTitle t = setTitle $ "Centjes Documentation - " <> t
 
-loadDocPages :: MonadHandler m => m (Map [Text] DocPage)
+loadDocPages :: (MonadHandler m) => m (Map [Text] DocPage)
 loadDocPages = loadIO docPages
 
-yamlDesc :: forall a. HasCodec a => Text
+yamlDesc :: forall a. (HasCodec a) => Text
 yamlDesc = yamlDescVia (codec @a)
 
 yamlDescVia :: forall a. JSONCodec a -> Text

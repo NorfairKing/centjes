@@ -27,7 +27,7 @@ newtype Description = Description {unDescription :: Text}
 
 instance Validity Description
 
-fromTextM :: MonadFail m => Text -> m Description
+fromTextM :: (MonadFail m) => Text -> m Description
 fromTextM t = case fromText t of
   Left err -> fail $ unlines ["Invalid description:", show t, err]
   Right d -> pure d

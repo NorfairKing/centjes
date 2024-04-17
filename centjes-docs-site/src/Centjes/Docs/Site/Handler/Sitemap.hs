@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Centjes.Docs.Site.Handler.Sitemap
   ( getRobotsR,
     getSitemapR,

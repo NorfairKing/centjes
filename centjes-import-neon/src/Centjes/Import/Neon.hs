@@ -196,7 +196,7 @@ instance FromNamedRecord Row where
       <*> (r .: "Wise" >>= parseYesNoBool)
       <*> (r .: "Spaces" >>= parseYesNoBool)
 
-parseYesNoBool :: MonadFail m => Text -> m Bool
+parseYesNoBool :: (MonadFail m) => Text -> m Bool
 parseYesNoBool = \case
   "yes" -> pure True
   "no" -> pure False

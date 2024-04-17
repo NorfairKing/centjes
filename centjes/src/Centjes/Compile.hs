@@ -62,7 +62,7 @@ data CompileError ann
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Generic)
 
-instance Validity ann => Validity (CompileError ann)
+instance (Validity ann) => Validity (CompileError ann)
 
 instance ToReport (CompileError SourceSpan) where
   toReport = \case

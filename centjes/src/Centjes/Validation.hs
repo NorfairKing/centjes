@@ -21,13 +21,13 @@ import System.Exit
 newtype ValidationT e m a = ValidationT {unValidationT :: m (Validation e a)}
   deriving (Functor)
 
-instance Applicative m => Applicative (ValidationT e m) where
+instance (Applicative m) => Applicative (ValidationT e m) where
   pure = ValidationT . pure . Success
   (ValidationT m1) <*> (ValidationT m2) =
     ValidationT $
       (<*>) <$> m1 <*> m2
 
-instance Monad m => Monad (ValidationT e m) where
+instance (Monad m) => Monad (ValidationT e m) where
   (ValidationT m) >>= f = ValidationT $ do
     va <- m
     case va of
@@ -37,16 +37,16 @@ instance Monad m => Monad (ValidationT e m) where
 instance MonadTrans (ValidationT e) where
   lift f = ValidationT $ Success <$> f
 
-instance MonadIO m => MonadIO (ValidationT e m) where
+instance (MonadIO m) => MonadIO (ValidationT e m) where
   liftIO io = ValidationT $ Success <$> liftIO io
 
 runValidationT :: ValidationT e m a -> m (Validation e a)
 runValidationT = unValidationT
 
-liftValidation :: Applicative m => Validation e a -> ValidationT e m a
+liftValidation :: (Applicative m) => Validation e a -> ValidationT e m a
 liftValidation v = ValidationT $ pure v
 
-validationTFailure :: Applicative m => e -> ValidationT e m a
+validationTFailure :: (Applicative m) => e -> ValidationT e m a
 validationTFailure = ValidationT . pure . validationFailure
 
 transformValidationT :: (m (Validation e a) -> n (Validation f b)) -> ValidationT e m a -> ValidationT f n b
@@ -85,18 +85,18 @@ mapValidationFailure f = \case
   Failure errs -> Failure $ NE.map f errs
 
 -- Keep this in sync with renderValidationErrors
-checkValidation :: ToReport e => Diagnostic String -> Validation e a -> IO a
+checkValidation :: (ToReport e) => Diagnostic String -> Validation e a -> IO a
 checkValidation diag = \case
   Success a -> pure a
   Failure errs -> dieWithDiag $ renderDiagnostic diag errs
 
-checkValidationPure :: ToReport e => Diagnostic String -> Validation e a -> Either Text a
+checkValidationPure :: (ToReport e) => Diagnostic String -> Validation e a -> Either Text a
 checkValidationPure diag = \case
   Success a -> Right a
   Failure errs -> Left $ renderValidationErrors diag errs
 
 -- Keep this in sync with checkValidation
-renderValidationErrors :: ToReport e => Diagnostic String -> NonEmpty e -> Text
+renderValidationErrors :: (ToReport e) => Diagnostic String -> NonEmpty e -> Text
 renderValidationErrors diag errs =
   let diag' :: Diagnostic String
       diag' = renderDiagnostic diag errs
@@ -109,7 +109,7 @@ dieWithDiag diag = do
   printDiagnostic stderr WithUnicode (TabSize 2) defaultStyle diag
   exitFailure
 
-renderDiagnostic :: ToReport e => Diagnostic String -> NonEmpty e -> Diagnostic String
+renderDiagnostic :: (ToReport e) => Diagnostic String -> NonEmpty e -> Diagnostic String
 renderDiagnostic diag errs = foldl' addReport diag (map toReport (NE.toList errs))
 
 class ToReport e where

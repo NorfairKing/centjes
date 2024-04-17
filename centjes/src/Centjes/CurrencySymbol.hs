@@ -42,7 +42,7 @@ instance Validity CurrencySymbol where
 instance HasCodec CurrencySymbol where
   codec = bimapCodec fromText currencySymbolText codec
 
-fromTextM :: MonadFail m => Text -> m CurrencySymbol
+fromTextM :: (MonadFail m) => Text -> m CurrencySymbol
 fromTextM t = case fromText t of
   Left e -> fail $ unlines [unwords ["Invalid currency symbol:", show t], e]
   Right cs -> pure cs

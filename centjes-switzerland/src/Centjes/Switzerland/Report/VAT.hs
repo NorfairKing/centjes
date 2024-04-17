@@ -280,7 +280,7 @@ requireAddAmount a1 a2 =
     Just a -> pure a
 
 requireSumAmount ::
-  Foldable f =>
+  (Foldable f) =>
   f Money.Amount ->
   Reporter (VATError ann) Money.Amount
 requireSumAmount amounts =
@@ -289,7 +289,7 @@ requireSumAmount amounts =
     Just a -> pure a
 
 convertDaily ::
-  Ord ann =>
+  (Ord ann) =>
   ann ->
   Map Day (MemoisedPriceGraph (Currency ann)) ->
   Day ->
@@ -353,7 +353,7 @@ vatRateRatio = \case
   VATRate2024Hotel -> 0.038
 
 gatherDeductibleExpenses ::
-  Ord ann =>
+  (Ord ann) =>
   VATInput ->
   Ledger ann ->
   Quarter ->
@@ -417,7 +417,7 @@ parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {
             _ -> Nothing
 
 parseExpectedDeductibleExpenses ::
-  Ord ann =>
+  (Ord ann) =>
   VATInput ->
   Map AccountName (GenLocated ann AccountType) ->
   Map Day (MemoisedPriceGraph (Currency ann)) ->

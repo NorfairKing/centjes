@@ -76,7 +76,7 @@ data Module ann = Module
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (Module ann)
+instance (Validity ann) => Validity (Module ann)
 
 type LDeclaration = Declaration SourceSpan
 
@@ -89,7 +89,7 @@ data Declaration ann
   | DeclarationTransaction !(GenLocated ann (Transaction ann))
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (Declaration ann)
+instance (Validity ann) => Validity (Declaration ann)
 
 newtype Import = Import {importFile :: Path Rel File}
   deriving stock (Show, Generic)
@@ -104,7 +104,7 @@ data CurrencyDeclaration ann = CurrencyDeclaration
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (CurrencyDeclaration ann)
+instance (Validity ann) => Validity (CurrencyDeclaration ann)
 
 type LAccountDeclaration = LLocated AccountDeclaration
 
@@ -114,7 +114,7 @@ data AccountDeclaration ann = AccountDeclaration
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (AccountDeclaration ann)
+instance (Validity ann) => Validity (AccountDeclaration ann)
 
 type LTagDeclaration = LLocated TagDeclaration
 
@@ -123,7 +123,7 @@ newtype TagDeclaration ann = TagDeclaration
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (TagDeclaration ann)
+instance (Validity ann) => Validity (TagDeclaration ann)
 
 type LPriceDeclaration = LLocated PriceDeclaration
 
@@ -136,7 +136,7 @@ data PriceDeclaration ann = PriceDeclaration
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (PriceDeclaration ann)
+instance (Validity ann) => Validity (PriceDeclaration ann)
 
 type LTransaction = LLocated Transaction
 
@@ -148,7 +148,7 @@ data Transaction ann = Transaction
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (Transaction ann)
+instance (Validity ann) => Validity (Transaction ann)
 
 transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
 transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySymbol . locatedValue) . transactionPostings
@@ -165,7 +165,7 @@ data Posting ann = Posting
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (Posting ann)
+instance (Validity ann) => Validity (Posting ann)
 
 type LCostExpression = LLocated CostExpression
 
@@ -175,7 +175,7 @@ data CostExpression ann = CostExpression
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (CostExpression ann)
+instance (Validity ann) => Validity (CostExpression ann)
 
 type LPercentageExpression = LLocated PercentageExpression
 
@@ -184,20 +184,20 @@ newtype PercentageExpression ann = PercentageExpression
   }
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (PercentageExpression ann)
+instance (Validity ann) => Validity (PercentageExpression ann)
 
 type LRationalExpression = LLocated RationalExpression
 
 data RationalExpression ann
   = RationalExpressionDecimal !(GenLocated ann DecimalLiteral)
   | RationalExpressionFraction
+      -- | Numerator
       !(GenLocated ann DecimalLiteral)
-      -- ^ Numerator
+      -- | Denominator
       !(GenLocated ann DecimalLiteral)
-      -- ^ Denominator
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (RationalExpression ann)
+instance (Validity ann) => Validity (RationalExpression ann)
 
 type LTransactionExtra = LLocated TransactionExtra
 
@@ -207,14 +207,14 @@ data TransactionExtra ann
   | TransactionTag (GenLocated ann (ExtraTag ann))
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (TransactionExtra ann)
+instance (Validity ann) => Validity (TransactionExtra ann)
 
 type LAttachment = LLocated Attachment
 
 newtype Attachment ann = Attachment {attachmentPath :: GenLocated ann (Path Rel File)}
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Attachment ann)
+instance (Validity ann) => Validity (Attachment ann)
 
 type LAssertion = LLocated Assertion
 
@@ -225,14 +225,14 @@ data Assertion ann
       !(GenLocated ann CurrencySymbol)
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (Assertion ann)
+instance (Validity ann) => Validity (Assertion ann)
 
 type LExtraTag = LLocated ExtraTag
 
 newtype ExtraTag ann = ExtraTag {unExtraTag :: GenLocated ann Tag}
   deriving stock (Show, Generic)
 
-instance Validity ann => Validity (ExtraTag ann)
+instance (Validity ann) => Validity (ExtraTag ann)
 
 type LTag = Located Tag
 

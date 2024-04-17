@@ -54,7 +54,7 @@
     }:
     let
       system = "x86_64-linux";
-      pkgsFor = nixpkgs: import nixpkgs {
+      pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
         overlays = [
@@ -74,16 +74,17 @@
           self.overlays.${system}
         ];
       };
-      pkgs = pkgsFor nixpkgs;
+      pkgsMusl = pkgs.pkgsMusl;
       mkNixOSModule = import ./nix/nixos-module.nix {
-        inherit (pkgs.centjesReleasePackages) centjes-docs-site;
+        inherit (pkgsMusl.centjesReleasePackages) centjes-docs-site;
       };
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
       packages.${system} = {
-        default = pkgs.centjes;
-      } // pkgs.centjesReleasePackages;
+        default = pkgs.centjesRelease;
+        static = pkgsMusl.centjesRelease;
+      };
       checks.${system} = {
         package = self.packages.${system}.default;
         release = pkgs.haskellPackages.centjes;
@@ -93,9 +94,9 @@
           centjes-nixos-module = self.nixosModules.${system}.default;
           inherit system;
         };
-        example-switzerland-taxes = pkgs.centjes.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/example;
-        example-switzerland-vat = pkgs.centjes.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/example;
-        vim-plugin = pkgs.vimPlugins.centjes-vim;
+        example-switzerland-taxes = pkgsMusl.centjesRelease.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/example;
+        example-switzerland-vat = pkgsMusl.centjesRelease.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/example;
+        vim-plugin = pkgsMusl.vimPlugins.centjes-vim;
         weeder-check = pkgs.weeder-nix.makeWeederCheck {
           weederToml = ./weeder.toml;
           packages = builtins.attrNames pkgs.haskellPackages.centjesPackages;
@@ -103,7 +104,7 @@
         pre-commit = pre-commit-hooks.lib.${ system}.run {
           src = ./.;
           hooks = {
-            hlint. enable = true;
+            hlint.enable = true;
             hpack.enable = true;
             ormolu.enable = true;
             nixpkgs-fmt.enable = true;

@@ -15,10 +15,10 @@ instance GenValid SourceSpan
 
 instance GenValid SourcePosition
 
-genLocatedWith :: GenValid l => Gen a -> Gen (GenLocated l a)
+genLocatedWith :: (GenValid l) => Gen a -> Gen (GenLocated l a)
 genLocatedWith g = Located <$> genValid <*> g
 
-genMLocatedWith :: GenValid l => Gen (Maybe a) -> Gen (Maybe (GenLocated l a))
+genMLocatedWith :: (GenValid l) => Gen (Maybe a) -> Gen (Maybe (GenLocated l a))
 genMLocatedWith g = do
   ma <- g
   forM ma $ \a ->

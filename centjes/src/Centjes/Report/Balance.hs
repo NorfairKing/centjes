@@ -376,7 +376,7 @@ accountLine c a =
 
 produceBalanceReport ::
   forall ann.
-  Ord ann =>
+  (Ord ann) =>
   Filter ->
   Maybe CurrencySymbol ->
   Ledger ann ->
@@ -413,7 +413,7 @@ filterAccountBalances f =
 
 convertAccountBalances ::
   forall ann.
-  Ord ann =>
+  (Ord ann) =>
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
   AccountBalances ann ->
@@ -423,7 +423,7 @@ convertAccountBalances mpg currencyTo =
 
 fillAccountBalances ::
   forall ann.
-  Ord ann =>
+  (Ord ann) =>
   AccountBalances ann ->
   Validation (BalanceError ann) (AccountBalances ann)
 fillAccountBalances bs = foldM go bs (M.toList bs)
@@ -446,7 +446,7 @@ fillAccountBalances bs = foldM go bs (M.toList bs)
 
 produceBalancedLedger ::
   forall ann.
-  Ord ann =>
+  (Ord ann) =>
   Ledger ann ->
   Validation (BalanceError ann) (BalancedLedger ann)
 produceBalancedLedger ledger = do
@@ -510,7 +510,7 @@ checkAccountTypeAssertions accounts tl =
     . M.toList
 
 checkAssertion ::
-  Ord ann =>
+  (Ord ann) =>
   ann ->
   AccountBalances ann ->
   GenLocated ann (Assertion ann) ->
@@ -527,7 +527,7 @@ checkAssertion tl runningTotal a@(Located _ (AssertionEquals lan la lcs)) = do
 
 balanceTransaction ::
   forall ann.
-  Ord ann =>
+  (Ord ann) =>
   GenLocated ann (Transaction ann) ->
   Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
 balanceTransaction (Located tl Transaction {..}) = do
@@ -594,7 +594,7 @@ balanceTransaction (Located tl Transaction {..}) = do
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
 
 checkPercentage ::
-  Eq ann =>
+  (Eq ann) =>
   -- Transaction ann
   ann ->
   -- Posting ann

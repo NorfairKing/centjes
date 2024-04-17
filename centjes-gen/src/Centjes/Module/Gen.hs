@@ -20,36 +20,36 @@ import Numeric.DecimalLiteral.Gen ()
 import Path
 import Test.QuickCheck
 
-instance GenValid ann => GenValid (Module ann)
+instance (GenValid ann) => GenValid (Module ann)
 
-instance GenValid ann => GenValid (Declaration ann)
+instance (GenValid ann) => GenValid (Declaration ann)
 
 instance GenValid Import where
   genValid = genValid `suchThatMap` (fmap Import . replaceExtension ".cent")
   shrinkValid _ = []
 
-instance GenValid ann => GenValid (CurrencyDeclaration ann)
+instance (GenValid ann) => GenValid (CurrencyDeclaration ann)
 
-instance GenValid ann => GenValid (AccountDeclaration ann)
+instance (GenValid ann) => GenValid (AccountDeclaration ann)
 
-instance GenValid ann => GenValid (TagDeclaration ann)
+instance (GenValid ann) => GenValid (TagDeclaration ann)
 
-instance GenValid ann => GenValid (PriceDeclaration ann)
+instance (GenValid ann) => GenValid (PriceDeclaration ann)
 
-instance GenValid ann => GenValid (CostExpression ann)
+instance (GenValid ann) => GenValid (CostExpression ann)
 
-instance GenValid ann => GenValid (PercentageExpression ann)
+instance (GenValid ann) => GenValid (PercentageExpression ann)
 
-instance GenValid ann => GenValid (RationalExpression ann)
+instance (GenValid ann) => GenValid (RationalExpression ann)
 
-instance GenValid ann => GenValid (Transaction ann)
+instance (GenValid ann) => GenValid (Transaction ann)
 
-instance GenValid ann => GenValid (TransactionExtra ann)
+instance (GenValid ann) => GenValid (TransactionExtra ann)
 
-instance GenValid ann => GenValid (Posting ann)
+instance (GenValid ann) => GenValid (Posting ann)
 
-instance GenValid ann => GenValid (Attachment ann)
+instance (GenValid ann) => GenValid (Attachment ann)
 
-instance GenValid ann => GenValid (Assertion ann)
+instance (GenValid ann) => GenValid (Assertion ann)
 
-instance GenValid ann => GenValid (ExtraTag ann)
+instance (GenValid ann) => GenValid (ExtraTag ann)

@@ -43,7 +43,7 @@ data ConvertError ann
   | ConvertErrorInvalidSum !(Currency ann)
   deriving (Show, Generic)
 
-instance Validity ann => Validity (ConvertError ann)
+instance (Validity ann) => Validity (ConvertError ann)
 
 instance ToReport (ConvertError SourceSpan) where
   toReport = \case
@@ -92,7 +92,7 @@ lookupConversionCurrency currencies currencySymbolTo =
     Just lqf -> pure $ Currency currencySymbolTo lqf
 
 convertMultiAccount ::
-  Ord ann =>
+  (Ord ann) =>
   Maybe ann ->
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
@@ -113,7 +113,7 @@ convertMultiAccount al graph currencyTo ma = do
 
 lookupConversionRate ::
   forall ann.
-  Ord ann =>
+  (Ord ann) =>
   Maybe ann ->
   MemoisedPriceGraph (Currency ann) ->
   Currency ann ->
@@ -125,7 +125,7 @@ lookupConversionRate al graph currencyTo currencyFrom = do
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
 
 pricesToPriceGraph ::
-  Ord ann =>
+  (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
   MemoisedPriceGraph (Currency ann)
 pricesToPriceGraph = MemoisedPriceGraph.fromPriceGraph . V.foldl go PriceGraph.empty
@@ -138,7 +138,7 @@ pricesToPriceGraph = MemoisedPriceGraph.fromPriceGraph . V.foldl go PriceGraph.e
        in PriceGraph.insert currencyFrom currencyTo rate g
 
 pricesToDailyPriceGraphs ::
-  Ord ann =>
+  (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
   Map Day (MemoisedPriceGraph (Currency ann))
 pricesToDailyPriceGraphs = fst . V.foldl go (M.empty, PriceGraph.empty)

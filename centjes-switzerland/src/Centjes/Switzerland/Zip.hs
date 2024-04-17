@@ -14,7 +14,7 @@ import qualified Data.Text as T
 import Path
 
 createZipFile ::
-  MonadLoggerIO m =>
+  (MonadLoggerIO m) =>
   Path Abs File ->
   -- Reverse mapping: To -> From
   -- Because the to's are unique but the from's aren't necessarily.

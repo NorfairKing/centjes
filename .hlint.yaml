@@ -16,6 +16,10 @@
     name: "Use tuple-section"
 - ignore:
     name: "Use unless"
+# Until we can upgrade to a newer hlint:
+# https://github.com/ndmitchell/hlint/issues/1557
+- ignore:
+    name: "Unused LANGUAGE pragma"
 
 
 # Functions that we dissallow.

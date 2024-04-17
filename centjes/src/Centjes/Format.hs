@@ -124,7 +124,7 @@ currencyDeclarationDoc (Located _ CurrencyDeclaration {..}) =
   "currency"
     <+> currencySymbolDoc (locatedValue currencyDeclarationSymbol)
     <+> quantisationFactorDoc currencyDeclarationQuantisationFactor
-      <> hardline
+    <> hardline
 
 quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc ann
 quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
@@ -147,7 +147,7 @@ tagDeclarationDoc :: GenLocated l (TagDeclaration l) -> Doc ann
 tagDeclarationDoc (Located _ TagDeclaration {..}) =
   "tag"
     <+> tagDoc (locatedValue tagDeclarationTag)
-      <> hardline
+    <> hardline
 
 priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
 priceDeclarationDoc (Located _ PriceDeclaration {..}) =
@@ -155,7 +155,7 @@ priceDeclarationDoc (Located _ PriceDeclaration {..}) =
     <+> lTimestampDoc priceDeclarationTimestamp
     <+> lCurrencySymbolDoc priceDeclarationCurrencySymbol
     <+> lCostExpressionDoc priceDeclarationCost
-      <> hardline
+    <> hardline
 
 lConversionRateDoc :: GenLocated l (RationalExpression l) -> Doc ann
 lConversionRateDoc = conversionRateDoc . locatedValue

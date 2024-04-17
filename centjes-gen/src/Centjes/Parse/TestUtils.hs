@@ -10,7 +10,7 @@ import Path
 import Test.Syd
 
 shouldParse ::
-  HasCallStack =>
+  (HasCallStack) =>
   (Path Abs Dir -> Path Rel File -> Text -> Either String a) ->
   Path Abs Dir ->
   Path Rel File ->

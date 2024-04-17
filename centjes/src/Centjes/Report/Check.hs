@@ -99,7 +99,7 @@ checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
   when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a
 
 checkLedger ::
-  Ord ann =>
+  (Ord ann) =>
   Ledger ann ->
   Checker ann (BalanceReport ann, Register ann)
 checkLedger l = do

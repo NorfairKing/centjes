@@ -164,7 +164,7 @@ data Assertion ann
       !(GenLocated ann (Currency ann))
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Assertion ann)
+instance (Validity ann) => Validity (Assertion ann)
 
 data Posting ann = Posting
   { postingReal :: !Bool,
@@ -203,7 +203,7 @@ data Cost ann = Cost
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Cost ann)
+instance (Validity ann) => Validity (Cost ann)
 
 newtype Percentage ann = Percentage
   { -- Note: This field will have the source location of the decimal literal in
@@ -215,7 +215,7 @@ newtype Percentage ann = Percentage
   }
   deriving stock (Show, Eq, Generic)
 
-instance Validity ann => Validity (Percentage ann)
+instance (Validity ann) => Validity (Percentage ann)
 
 data Currency ann = Currency
   { currencySymbol :: !CurrencySymbol,
@@ -224,4 +224,4 @@ data Currency ann = Currency
   }
   deriving stock (Show, Eq, Ord, Generic)
 
-instance Validity ann => Validity (Currency ann)
+instance (Validity ann) => Validity (Currency ann)

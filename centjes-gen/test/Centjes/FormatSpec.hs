@@ -58,7 +58,7 @@ centFilesDirSpec dir =
 
 parseFormatRoundtrip ::
   forall s.
-  HasCallStack =>
+  (HasCallStack) =>
   ( Show (s ()),
     GenValid (s ()),
     Show (s SourceSpan),

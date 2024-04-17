@@ -22,7 +22,7 @@ spec = do
 
 parseSpec ::
   forall a.
-  HasCallStack =>
+  (HasCallStack) =>
   (Show a, GenValid a) =>
   String ->
   (Path Abs Dir -> Path Rel File -> Text -> Either String a) ->

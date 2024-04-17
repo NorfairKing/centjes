@@ -100,7 +100,7 @@ secondFromLocalTime (LocalTime d tod) = TimestampSecond d (SecondOfDay (floor (t
 fromText :: Text -> Either String Timestamp
 fromText = fromString . T.unpack
 
-parseTimeEither :: ParseTime a => TimeLocale -> String -> String -> Either String a
+parseTimeEither :: (ParseTime a) => TimeLocale -> String -> String -> Either String a
 parseTimeEither locale format string = case parseTimeM True locale format string of
   Nothing -> Left $ "Failed to parse time value: " <> string <> " via " <> format
   Just r -> Right r

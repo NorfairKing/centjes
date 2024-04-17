@@ -78,7 +78,7 @@ instance IsString AccountName where
 fromText :: Text -> Maybe AccountName
 fromText = either (const Nothing) Just . fromTextOrError
 
-fromTextM :: MonadFail m => Text -> m AccountName
+fromTextM :: (MonadFail m) => Text -> m AccountName
 fromTextM t = case fromTextOrError t of
   Left err -> fail err
   Right an -> pure an

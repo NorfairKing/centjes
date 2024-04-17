@@ -85,7 +85,7 @@ instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
 
 -- Map must not be empty
 genTransactionWith ::
-  GenValid ann =>
+  (GenValid ann) =>
   Map AccountName (GenLocated ann AccountType) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map Tag ann ->
@@ -112,7 +112,7 @@ instance (Eq ann, GenValid ann) => GenValid (Posting ann)
 
 -- Map must not be empty
 genPostingWith ::
-  GenValid ann =>
+  (GenValid ann) =>
   Map AccountName (GenLocated ann AccountType) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Posting ann)
@@ -129,11 +129,11 @@ genPostingWith accounts currencies = do
   postingPercentage <- genValid
   pure Posting {..}
 
-instance GenValid ann => GenValid (Assertion ann)
+instance (GenValid ann) => GenValid (Assertion ann)
 
 -- Map must not be empty
 genAssertionWith ::
-  GenValid ann =>
+  (GenValid ann) =>
   Map AccountName (GenLocated ann AccountType) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Assertion ann)
@@ -147,7 +147,7 @@ instance (Eq ann, GenValid ann) => GenValid (Price ann)
 
 -- Map must not be empty
 genPriceWithCurrencies ::
-  GenValid ann =>
+  (GenValid ann) =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Maybe (Price ann))
 genPriceWithCurrencies currencies = do
@@ -157,11 +157,11 @@ genPriceWithCurrencies currencies = do
     priceTimestamp <- genValid
     pure Price {..}
 
-instance GenValid ann => GenValid (Cost ann)
+instance (GenValid ann) => GenValid (Cost ann)
 
 -- Map must not be empty
 genCostWithCurrencies ::
-  GenValid ann =>
+  (GenValid ann) =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   GenLocated ann (Currency ann) ->
   Gen (Maybe (Cost ann))
@@ -172,9 +172,9 @@ genCostWithCurrencies currencies (Located _ referenceCurrency) = do
   forM mCurrency $ \costCurrency ->
     pure Cost {..}
 
-instance GenValid ann => GenValid (Percentage ann)
+instance (GenValid ann) => GenValid (Percentage ann)
 
-instance GenValid ann => GenValid (Currency ann)
+instance (GenValid ann) => GenValid (Currency ann)
 
 -- Map must not be empty
 chooseAccountName ::

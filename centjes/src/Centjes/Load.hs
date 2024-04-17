@@ -37,12 +37,12 @@ import Path.IO
 import System.Exit
 import Text.Read (readMaybe)
 
-loadModules :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Diagnostic String)
+loadModules :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Diagnostic String)
 loadModules firstPath = do
   (declarations, fileMap) <- loadModules' firstPath
   pure (declarations, diagFromFileMap fileMap)
 
-loadModules' :: forall m. MonadLoggerIO m => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModules' :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModules' firstPath = do
   errOrRes <- runExceptT $ loadModulesOrErr firstPath
   case errOrRes of
@@ -116,7 +116,7 @@ instance ToReport LoadError' where
             _ -> Nothing
           _ -> Nothing
 
-loadModulesOrErr :: forall m. MonadLoggerIO m => Path Abs File -> ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModulesOrErr :: forall m. (MonadLoggerIO m) => Path Abs File -> ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModulesOrErr firstPath = do
   let base = parent firstPath
   flip runStateT M.empty $ do
@@ -176,7 +176,7 @@ diagFromFileMap' =
     . M.toList
 
 readSingleModule ::
-  MonadLoggerIO m =>
+  (MonadLoggerIO m) =>
   Path Abs Dir ->
   Map (Path Rel File) Text ->
   Maybe SourceSpan ->

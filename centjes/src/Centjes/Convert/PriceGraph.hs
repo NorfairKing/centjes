@@ -40,13 +40,13 @@ instance (Validity cur, Show cur, Ord cur) => Validity (PriceGraph cur)
 empty :: PriceGraph cur
 empty = PriceGraph M.empty
 
-singleton :: Ord cur => cur -> cur -> Money.ConversionRate -> PriceGraph cur
+singleton :: (Ord cur) => cur -> cur -> Money.ConversionRate -> PriceGraph cur
 singleton from to rate =
   if from == to
     then empty
     else insert from to rate empty
 
-insert :: forall cur. Ord cur => cur -> cur -> Money.ConversionRate -> PriceGraph cur -> PriceGraph cur
+insert :: forall cur. (Ord cur) => cur -> cur -> Money.ConversionRate -> PriceGraph cur -> PriceGraph cur
 insert from to rate p@(PriceGraph m) =
   if from == to
     then p
@@ -55,10 +55,10 @@ insert from to rate p@(PriceGraph m) =
         M.insertWith M.union to (M.singleton from (ConversionRate.invert rate)) $
           M.insertWith M.union from (M.singleton to rate) m
 
-fromList :: Ord cur => [((cur, cur), Money.ConversionRate)] -> PriceGraph cur
+fromList :: (Ord cur) => [((cur, cur), Money.ConversionRate)] -> PriceGraph cur
 fromList = foldl' (\ps ((c1, c2), r) -> insert c1 c2 r ps) empty
 
-lookup :: forall cur. Ord cur => PriceGraph cur -> cur -> cur -> Maybe Money.ConversionRate
+lookup :: forall cur. (Ord cur) => PriceGraph cur -> cur -> cur -> Maybe Money.ConversionRate
 lookup (PriceGraph m) from to =
   go ConversionRate.oneToOne
     <$> breadthFirstSearch edgesFrom from to
@@ -70,7 +70,7 @@ lookup (PriceGraph m) from to =
     edgesFrom n = fromMaybe M.empty $ M.lookup n m
 
 breadthFirstSearch ::
-  Ord node =>
+  (Ord node) =>
   (node -> Map node edge) ->
   node ->
   node ->

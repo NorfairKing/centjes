@@ -59,7 +59,7 @@ instance ToReport (RegisterError SourceSpan) where
 
 unfoldrExactNMWithState ::
   forall a b m.
-  Monad m =>
+  (Monad m) =>
   Int ->
   (b -> m (a, b)) ->
   b ->
@@ -75,7 +75,7 @@ unfoldrExactNMWithState n func start =
 
 produceRegister ::
   forall ann.
-  Ord ann =>
+  (Ord ann) =>
   Filter ->
   Maybe CurrencySymbol ->
   Ledger ann ->
@@ -199,7 +199,7 @@ produceRegister f mCurrencySymbolTo ledger = do
   pure $ Register ts'
 
 incorporatePricesUntil ::
-  Ord ann =>
+  (Ord ann) =>
   GenLocated ann Timestamp ->
   [GenLocated ann (Price ann)] ->
   PriceGraph (Currency ann) ->
@@ -212,7 +212,7 @@ incorporatePricesUntil (Located _ timestamp) prices priceGraph =
   go priceGraph prices
   where
     go ::
-      Ord ann =>
+      (Ord ann) =>
       PriceGraph (Currency ann) ->
       [GenLocated ann (Price ann)] ->
       Validation
