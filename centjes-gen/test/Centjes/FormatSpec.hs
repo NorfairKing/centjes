@@ -22,6 +22,10 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  parseFormatRoundtrip "currency" parseCurrencyDeclaration formatCurrencyDeclaration
+  parseFormatRoundtrip "account" parseAccountDeclaration formatAccountDeclaration
+  parseFormatRoundtrip "tag" parseTagDeclaration formatTagDeclaration
+  parseFormatRoundtrip "price" parsePriceDeclaration formatPriceDeclaration
   parseFormatRoundtrip "transaction" parseTransaction formatTransaction
   parseFormatRoundtrip "declaration" parseDeclaration formatDeclaration
   parseFormatRoundtrip "module" parseModule formatModule
@@ -68,7 +72,23 @@ parseFormatRoundtrip ::
   (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
   (forall ann. s ann -> Text) ->
   Spec
-parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
+parseFormatRoundtrip name parser formatter =
+  withFrozenCallStack $ parseFormatRoundtripWith id name parser formatter
+
+parseFormatRoundtripWith ::
+  forall s.
+  (HasCallStack) =>
+  ( Show (s ()),
+    GenValid (s ()),
+    Show (s SourceSpan),
+    GenValid (s SourceSpan)
+  ) =>
+  (Text -> Text) ->
+  String ->
+  (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
+  (forall ann. s ann -> Text) ->
+  Spec
+parseFormatRoundtripWith func name parser formatter = withFrozenCallStack $ do
   describe name $ do
     scenarioDir ("test_resources/syntax/" <> name <> "/valid") $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -81,16 +101,17 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
           goldenTextFile (fromAbsFile resultFile) $ do
             here <- getCurrentDir
             rf <- makeRelative here af
-            contents <- T.readFile (fromAbsFile af)
-            context (show contents) $ do
-              expected <- shouldParse parser here rf contents
-              shouldBeValid expected
-              context (ppShow expected) $ do
-                let rendered = formatter (expected :: (s SourceSpan))
-                context (unlines ["Rendered:", T.unpack rendered]) $ do
-                  actual <- shouldParse parser here rf rendered
-                  formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
-                  pure (formatter actual)
+            contents <- func <$> T.readFile (fromAbsFile af)
+            context (show contents) $
+              context (T.unpack contents) $ do
+                expected <- shouldParse parser here rf contents
+                shouldBeValid expected
+                context (ppShow expected) $ do
+                  let rendered = formatter (expected :: (s SourceSpan))
+                  context (unlines ["Rendered:", T.unpack rendered]) $ do
+                    actual <- shouldParse parser here rf rendered
+                    formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
+                    pure (formatter actual)
 
     it "roundtrips valid values back to text the same way" $
       forAllValid $ \expected -> do

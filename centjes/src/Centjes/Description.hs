@@ -27,6 +27,9 @@ newtype Description = Description {unDescription :: Text}
 
 instance Validity Description
 
+instance Semigroup Description where
+  (<>) (Description t1) (Description t2) = Description $ t1 <> "\n" <> t2
+
 fromTextM :: (MonadFail m) => Text -> m Description
 fromTextM t = case fromText t of
   Left err -> fail $ unlines ["Invalid description:", show t, err]

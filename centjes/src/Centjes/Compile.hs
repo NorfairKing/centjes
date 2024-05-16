@@ -261,7 +261,7 @@ unlines' :: [String] -> String
 unlines' = intercalate "\n"
 
 compileDeclarations ::
-  [Declaration ann] ->
+  [GenLocated ann (Declaration ann)] ->
   Validation (CompileError ann) (Ledger ann)
 compileDeclarations declarations = do
   let Declarations {..} = splitDeclarations declarations
@@ -292,10 +292,10 @@ data Declarations ann = Declarations
   }
 
 splitDeclarations ::
-  [Declaration ann] -> Declarations ann
+  [GenLocated ann (Declaration ann)] -> Declarations ann
 splitDeclarations = \case
   [] -> Declarations [] [] [] [] []
-  (d : ds) ->
+  (Located _ d : ds) ->
     let tup@(Declarations cds ads tds pds ts) = splitDeclarations ds
      in case d of
           DeclarationComment _ -> tup
@@ -315,13 +315,13 @@ sortOnTimestamp getTimestamp =
     )
 
 compileDeclarationsCurrencies ::
-  [Declaration ann] ->
+  [GenLocated ann (Declaration ann)] ->
   Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
 compileDeclarationsCurrencies =
   compileCurrencyDeclarations
     . mapMaybe
       ( \case
-          DeclarationCurrency cd -> Just cd
+          Located _ (DeclarationCurrency cd) -> Just cd
           _ -> Nothing
       )
 

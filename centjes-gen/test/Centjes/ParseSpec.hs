@@ -7,6 +7,7 @@ import Centjes.Parse
 import Centjes.Parse.TestUtils
 import Control.Monad
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import GHC.Stack
 import Path
@@ -34,7 +35,7 @@ parseSpec name parser = withFrozenCallStack $ do
         af <- resolveFile' fp
         here <- getCurrentDir
         rf <- makeRelative here af
-        contents <- T.readFile (fromAbsFile af)
+        contents <- T.strip <$> T.readFile (fromAbsFile af)
         context (show contents) $ do
           expected <- shouldParse parser here rf contents
           shouldBeValid expected
@@ -47,7 +48,7 @@ parseSpec name parser = withFrozenCallStack $ do
           goldenStringFile (fromAbsFile errFile) $ do
             here <- getCurrentDir
             rf <- makeRelative here af
-            contents <- T.readFile (fromAbsFile af)
+            contents <- T.strip <$> T.readFile (fromAbsFile af)
             context (show contents) $
               case parser here rf contents of
                 Left err -> pure err

@@ -4,6 +4,10 @@
 module Centjes.Parse.Happy
   ( parseModule
   , parseDeclaration
+  , parseCurrencyDeclaration
+  , parseAccountDeclaration
+  , parseTagDeclaration
+  , parsePriceDeclaration
   , parseTransaction
   ) where
 
@@ -14,13 +18,15 @@ import Centjes.Description as Description
 import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
-import Centjes.Parse.Utils
 import Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Data.Text (Text)
 import Numeric.DecimalLiteral (DecimalLiteral)
 import Path
 import qualified Data.Text as T
+import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.Semigroup
 
 }
 
@@ -29,6 +35,10 @@ import qualified Data.Text as T
 
 %name moduleParser module
 %name declarationParser declaration
+%name currencyDeclarationParser currency_dec
+%name accountDeclarationParser account_dec
+%name tagDeclarationParser tag_dec
+%name priceDeclarationParser price_dec
 %name transactionParser transaction_dec
 
 %tokentype { Token }
@@ -41,8 +51,8 @@ import qualified Data.Text as T
 %expect 0
 
 %token 
+      tok_doubledash      { Located _ TokenDoubleDash }
       tok_import          { Located _ TokenImport }
-      tok_comment         { Located _ (TokenComment _) }
       tok_attach          { Located _ TokenAttach }
       tok_assert          { Located _ TokenAssert }
       tok_tag             { Located _ TokenTag }
@@ -51,7 +61,8 @@ import qualified Data.Text as T
       tok_eq              { Located _ TokenEq }
       tok_timestamp       { Located _ (TokenTimestamp _) }
       tok_var             { Located _ (TokenVar _) }
-      tok_pipetext        { Located _ (TokenDescription _) }
+      tok_pipe            { Located _ TokenPipe }
+      tok_anyline         { Located _ (TokenAnyLine _) }
       tok_decimal_literal { Located _ (TokenDecimalLiteral _) }
       tok_plus            { Located _ TokenPlus }
       tok_star            { Located _ TokenStar }
@@ -62,44 +73,35 @@ import qualified Data.Text as T
       tok_percent         { Located _ TokenPercent }
       tok_currency        { Located _ TokenCurrency}
       tok_account         { Located _ TokenAccount }
-      tok_newline         { Located _ TokenNewLine }
 
 
 %%
 
 module
   :: { LModule }
-  : newlines many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
-
-import_with_newlines
-  :: { LImport }
-  : import_dec newlines { $1 }
+  : many(import_dec) many(declaration) { Module $1 $2 }
 
 import_dec
   :: { LImport }
-  : tok_import rel_file_exp tok_newline { sBE $1 $3 $ Import $2 }
-
-
-declaration_with_newlines
-  :: { LDeclaration }
-  : declaration newlines { $1 }
+  : tok_import rel_file_exp { sBE $1 $2 $ Import $2 }
 
 declaration
   :: { LDeclaration }
-  : comment_dec { DeclarationComment $1 }
-  | currency_dec { DeclarationCurrency $1 }
-  | account_dec { DeclarationAccount $1 }
-  | tag_dec { DeclarationTag $1 }
-  | price_dec { DeclarationPrice $1 }
-  | transaction_dec { DeclarationTransaction $1 }
+  : comment_dec { sL1 $1 $ DeclarationComment $1 }
+  | currency_dec { sL1 $1 $ DeclarationCurrency $1 }
+  | account_dec { sL1 $1 $ DeclarationAccount $1 }
+  | tag_dec { sL1 $1 $ DeclarationTag $1 }
+  | price_dec { sL1 $1 $ DeclarationPrice $1 }
+  | transaction_dec { sL1 $1 $ DeclarationTransaction $1 }
 
 comment_dec
   :: { Located Text }
-  : tok_comment { parseComment $1 }
+  : tok_doubledash tok_anyline { parseAnyLine $2 }
+  | tok_doubledash  { sL1 $1 "" }
 
 currency_dec
   :: { LCurrencyDeclaration }
-  : tok_currency currency_symbol quantisation_factor tok_newline { sBE $1 $4 $ CurrencyDeclaration $2 $3 }
+  : tok_currency currency_symbol quantisation_factor { sBE $1 $3 $ CurrencyDeclaration $2 $3 }
 
 currency_symbol
   :: { Located CurrencySymbol }
@@ -111,7 +113,7 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : tok_account account_name optional(account_type) tok_newline { sBE $1 $4 $ AccountDeclaration $2 $3 }
+  : tok_account account_name optional(account_type) { sBEM $1 $2 $3 $ AccountDeclaration $2 $3 }
 
 account_type
   :: { Located AccountType }
@@ -119,11 +121,11 @@ account_type
 
 tag_dec
   :: { LTagDeclaration }
-  : tok_tag tag tok_newline { sBE $1 $3 $ TagDeclaration $2 }
+  : tok_tag tag { sBE $1 $2 $ TagDeclaration $2 }
 
 price_dec
   :: { LPriceDeclaration }
-  : tok_price timestamp currency_symbol cost_exp tok_newline { sBE $1 $5 $ PriceDeclaration $2 $3 $4 }
+  : tok_price timestamp currency_symbol cost_exp { sBE $1 $4 $ PriceDeclaration $2 $3 $4 }
 
 conversion_rate
   :: { LRationalExpression }
@@ -131,8 +133,7 @@ conversion_rate
 
 transaction_dec
   :: { LTransaction }
-  : timestamp tok_newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
-  | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
+  : timestamp descriptions many(posting) transaction_extras { sBMLL $1 $2 $3 $4 (Transaction $1 $2 $3 $4) }
 
 timestamp
   :: { Located Timestamp }
@@ -140,19 +141,17 @@ timestamp
 
 descriptions
   :: { Maybe (Located Description) }
-  : many(description) { combineDescriptions $1 }
+  : { Nothing }
+  | some(description) { Just (combineDescriptions $1) }
 
+-- TODO get the location of the pipe char in there too.
 description
   :: { Located Description }
-  : tok_pipetext {% parseDescription $1 }
-
-postings
-  :: { [LPosting] }
-  : many(posting) { $1 }
+  : tok_pipe tok_anyline {% mapM (eitherParser "Description" Description.fromText) (parseAnyLine $2) }
 
 posting
   :: { LPosting }
-  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) tok_newline { sBE $1 $7 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
+  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) { sBEMM $1 $4 $5 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
 
 posting_header
   :: { Located Bool }
@@ -200,7 +199,7 @@ extra_attachment
 
 attachment
   :: { LAttachment }
-  : rel_file_exp tok_newline { sBE $1 $2 $ Attachment $1 }
+  : rel_file_exp { sL1 $1 $ Attachment $1 }
 
 extra_assertion
   :: { LExtraAssertion }
@@ -208,11 +207,11 @@ extra_assertion
 
 assertion
   :: { LAssertion }
-  : account_name tok_eq account_exp currency_symbol tok_newline { sBE $1 $5 $ AssertionEquals $1 $3 $4 }
+  : account_name tok_eq account_exp currency_symbol { sBE $1 $4 $ AssertionEquals $1 $3 $4 }
 
 extra_tag
   :: { LExtraTag }
-  : tok_tag tag tok_newline { sBE $1 $3 $ ExtraTag $2 }
+  : tok_tag tag { sBE $1 $2 $ ExtraTag $2 }
 
 tag
   :: { LTag }
@@ -225,10 +224,6 @@ rel_file_exp
 file_path_exp
   :: { Located FilePath }
   : tok_file_path  { parseFilePath $1 }
-
-newlines
-  :: { [Token] }
-  : many(tok_newline) { $1 }
 
 -- Helpers
 optional(p)
@@ -243,6 +238,27 @@ many_rev(p)
   : {- empty -}   { [] }
   | many_rev(p) p { $2 : $1 }
 
+many_sep(sep, p)
+  : many_sep_rev(sep, p) { reverse $1 }
+
+many_sep_rev(sep, p)
+  : {- empty -}   { [] }
+  | many_rev(p) sep p { $3 : $1 }
+
+-- Nonempty list
+some(p)
+  : some_rev(p) { NE.reverse $1 }
+
+some_rev(p)
+  : p             { $1 :| [] }
+  | some_rev(p) p { $2 NE.<| $1 }
+
+some_sep(sep, p)
+  : some_sep_rev(sep, p) { NE.reverse $1 }
+
+some_sep_rev(sep, p)
+  : p                          { $1 :| [] }
+  | some_sep_rev(sep, p) sep p { $3 NE.<| $1 }
 { 
 
 sL1 :: Located a -> b -> Located b
@@ -251,28 +267,39 @@ sL1 (Located l val) b = Located l b
 sBE :: Located a -> Located b -> c -> Located c
 sBE (Located begin _) (Located end _) c = Located (combineSpans begin end) c
 
+sBEM :: Located a -> Located b -> Maybe (Located c) -> d -> Located d
+sBEM l1 l2 Nothing   = sBE l1 l2
+sBEM l1 _  (Just l3) = sBE l1 l3
+
+sBEMM :: Located a -> Located b -> Maybe (Located c) -> Maybe (Located d) -> e -> Located e
+sBEMM l1 l2 mL3 Nothing   = sBEM l1 l2 mL3
+sBEMM l1 _  _   (Just l4) = sBE l1 l4
+
 sBL :: Located a -> [Located b] -> c -> Located c
 sBL l1 [] = sL1 l1
 sBL l1 ls = sBE l1 (last ls)
 
-sBMLL :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> [Located e] -> f -> Located f
-sBMLL l1 l2 Nothing  [] [] = sBE l1 l2
-sBMLL l1 _ (Just l3) [] [] = sBE l1 l3
-sBMLL l1 _ _         ls [] = sBL l1 ls
-sBMLL l1 _ _         _  ls = sBL l1 ls
+sBM :: Located a -> Maybe (Located c) -> f -> Located f
+sBM l1 Nothing   = sL1 l1
+sBM l1 (Just l3) = sBE l1 l3
 
-parseComment :: Token -> Located Text
-parseComment (Located l (TokenComment t)) = Located l t
+sBML :: Located a -> Maybe (Located c) -> [Located d] -> f -> Located f
+sBML l1 ml3 [] = sBM l1 ml3
+sBML l1 _   ls = sBL l1 ls
+
+sBMLL :: Located a -> Maybe (Located c) -> [Located d] -> [Located e] -> f -> Located f
+sBMLL l1 ml3 l4 [] = sBML l1 ml3 l4
+sBMLL l1 _ _ l5 = sBL l1 l5
+
 
 parseTimestamp :: Token -> Alex (Located Timestamp)
 parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Timestamp" Timestamp.fromString ds
 
-parseDescription :: Token -> Alex (Located Description)
-parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> eitherParser "Description" Description.fromText ds 
+parseAnyLine :: Token -> Located Text
+parseAnyLine t@(Located _ (TokenAnyLine text)) = sL1 t text
 
-combineDescriptions :: [Located Description] -> Maybe (Located Description)
-combineDescriptions [] = Nothing
-combineDescriptions dss@(d:ds) = sBL d ds <$> Description.combine (map locatedValue dss)
+combineDescriptions :: NonEmpty (Located Description) -> Located Description
+combineDescriptions dss@(d:|ds) = sBL d ds $ sconcat (NE.map locatedValue dss)
 
 parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
@@ -302,8 +329,20 @@ happyError (Located p t) =
 parseModule :: Path Abs Dir -> Path Rel File -> Text -> Either String LModule
 parseModule base fp = runAlex' moduleParser base fp . T.unpack
 
-parseDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String LDeclaration
-parseDeclaration base fp = runAlex' declarationParser base fp . T.unpack
+parseDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (Declaration SourceSpan)
+parseDeclaration base fp = runAlex' (locatedValue <$> declarationParser) base fp . T.unpack
+
+parseCurrencyDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (CurrencyDeclaration SourceSpan)
+parseCurrencyDeclaration base fp = runAlex' (locatedValue <$> currencyDeclarationParser) base fp . T.unpack
+
+parseAccountDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (AccountDeclaration SourceSpan)
+parseAccountDeclaration base fp = runAlex' (locatedValue <$> accountDeclarationParser) base fp . T.unpack
+
+parseTagDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (TagDeclaration SourceSpan)
+parseTagDeclaration base fp = runAlex' (locatedValue <$> tagDeclarationParser) base fp . T.unpack
+
+parsePriceDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (PriceDeclaration SourceSpan)
+parsePriceDeclaration base fp = runAlex' (locatedValue <$> priceDeclarationParser) base fp . T.unpack
 
 parseTransaction :: Path Abs Dir -> Path Rel File -> Text -> Either String (Transaction SourceSpan)
 parseTransaction base fp = runAlex' (locatedValue <$> transactionParser) base fp . T.unpack

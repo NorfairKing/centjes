@@ -32,10 +32,15 @@ import qualified Data.Text as T
 
 -- Whitespace
 $nl          = [\n\r\f]
-$whitechar   = [\v\t\ ]
-$white_no_nl = $whitechar
 $tab         = \t
-@newline     = $nl
+
+-- We must define to also match on as much whitespace afterwards as possible,
+-- so that when we need to match on a newline, we definitely get the biggest
+-- match considering that a newline starts with two spaces.
+-- Othewise the final cleanup rule of "ignore all other whitespace" will match
+-- more and not allow us to match on the newline.
+@newline     = $nl $white*
+
 
 -- Values
 $digit = [0-9]
@@ -71,7 +76,9 @@ $alpha = [A-Za-z]
   | @day \  @time_of_day
 
 @file_path = [$alpha $digit \_ \- \: .]+
+@anyline = [^\n\r]+
 
+@pipe = "| "
 @star = "* "
 @bang = "! "
 @plus = "+ " 
@@ -87,19 +94,11 @@ $alpha = [A-Za-z]
 @tag = "tag "
 @price = "price "
 @eq = \=
-
-@comment = "-- " .* \n
-
-@description = "| " .* \n
+@doubledash = "-- "
 
 tokens :-
 
--- Skip non-newline whitespace everywhere
-$white_no_nl+ ;
-
 -- The 0 start code means "toplevel declaration"
-
-<0> @newline            { lexNl }
 
 -- Imports
 -- Note: 'import' is not a valid haskell identifier so we use imp instead.
@@ -107,73 +106,68 @@ $white_no_nl+ ;
 <imp> @file_path        { lex TokenFilePath `andBegin` 0 }
 
 -- Comments
-<0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
+<0> @doubledash            { lex' TokenDoubleDash `andBegin` comment }
+<comment> @anyline         { lex (TokenAnyLine . T.pack) }
+<comment> @newline         { begin 0 }
 
 -- Currency declarations
 <0> @currency               { lex' TokenCurrency `andBegin` currency }
 <currency> @var             { lexVar }
-<currency> @decimal_literal { lexDL }
-<currency> @newline         { lexNl `andBegin` 0 }
+<currency> @decimal_literal { lexDL `andBegin` 0 }
 
 -- Account declarations
-<0> @account        { lex' TokenAccount `andBegin` account}
+<0> @account        { lex' TokenAccount `andBegin` account }
 <account> @var     { lexVar }
-<account> @newline { lexNl `andBegin` 0 }
+<account> @newline { begin 0 }
 
 -- Tag declarations
-<0> @tag        { lex' TokenTag `andBegin` dec_tag}
-<dec_tag> @var     { lexVar }
-<dec_tag> @newline { lexNl `andBegin` 0 }
+<0> @tag        { lex' TokenTag `andBegin` dec_tag }
+<dec_tag> @var     { lexVar `andBegin` 0 }
 
 -- Price declarations
-<0> @price               { lex' TokenPrice `andBegin` price}
+<0> @price               { lex' TokenPrice `andBegin` price }
 <price> @timestamp       { lexTimestamp }
 <price> @var             { lexVar }
 <price> @decimal_literal { lexDL }
 <price> @slash           { lexSlash }
-<price> @newline         { lexNl `andBegin` 0 }
+<price> @newline         { begin 0 }
 
 -- Transactions
-<0> @timestamp { lexTimestamp `andBegin` transaction_header }
+<0> @timestamp { lexTimestamp }
 
--- We need a separate state for the newline after the day
-<transaction_header>  @newline  { lexNl `andBegin` transaction}
+<0> @pipe              { lex' TokenPipe `andBegin` description }
+<description> @anyline { lex (TokenAnyLine . T.pack) }
+<description> @newline { begin 0 }
 
-<transaction> @description  { lex (TokenDescription . T.pack . drop (length "| ") . init) }
-<transaction> @newline      { lexNl `andBegin` 0}
-
-
-<transaction> @star        { lex' TokenStar `andBegin` posting }
-<transaction> @bang        { lex' TokenBang `andBegin` posting }
+<0> @star        { lex' TokenStar `andBegin` posting }
+<0> @bang        { lex' TokenBang `andBegin` posting }
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
 <posting> @at              { lexAt }
 <posting> @slash           { lexSlash }
 <posting> @tilde           { lexTilde }
 <posting> @percent         { lexPercent }
-<posting> @newline         { lexNl `andBegin` transaction}
+<posting> @newline         { begin 0 }
 
 
-<transaction> @plus  { lex' TokenPlus `andBegin` extra }
+<0> @plus  { lex' TokenPlus `andBegin` extra }
 
 <extra> @assert             { lex' TokenAssert `andBegin` assertion }
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
-<assertion> @newline         { lexNl `andBegin` transaction}
+<assertion> @newline         { begin 0 }
 
-<extra> @attach         { lex' TokenAttach `andBegin` attachment}
+<extra> @attach         { lex' TokenAttach `andBegin` attachment }
 <attachment> @file_path { lex TokenFilePath }
-<attachment> @newline   { lexNl `andBegin` transaction}
+<attachment> @newline  { begin 0 }
 
-<extra> @tag            { lex' TokenTag `andBegin` tag}
+<extra> @tag            { lex' TokenTag `andBegin` tag }
 <tag> @var       { lexVar }
-<tag> @newline   { lexNl `andBegin` transaction}
+<tag> @newline  { begin 0 }
 
--- If we see another timestamp in a transaction, that means it's the next
--- transaction without an extra newline inbetween.
-<transaction> @timestamp { lexTimestamp `andBegin` transaction_header }
-
+-- Skip any other whitespace everywhere
+$white+ ;
 {
 lexTimestamp :: AlexAction Token
 lexTimestamp = lex TokenTimestamp 
@@ -216,8 +210,7 @@ alexInitUserState =
 type Token = GenLocated SourceSpan TokenClass
 
 data TokenClass
-  = TokenComment !Text
-  | TokenAttach
+  = TokenAttach
   | TokenAssert
   | TokenTag
   | TokenPrice
@@ -225,9 +218,11 @@ data TokenClass
   | TokenTimestamp !String
   | TokenFilePath !FilePath
   | TokenVar !Text
-  | TokenDescription !Text
   | TokenDecimalLiteral !DecimalLiteral
   | TokenFloat !Double
+  | TokenDoubleDash
+  | TokenPipe
+  | TokenAnyLine !Text
   | TokenStar
   | TokenBang
   | TokenPlus
@@ -278,7 +273,7 @@ lex f = lexM (pure . f)
 lexM :: (String -> Alex TokenClass) -> AlexAction Token
 lexM f = \(p,_,_,s) i -> do
   let begin = alexSourcePosition p
-  let end = begin { sourcePositionColumn = sourcePositionColumn begin + i}
+  let end = begin { sourcePositionColumn = sourcePositionColumn begin + i }
   state <- alexGetUserState
   let span =
         SourceSpan
@@ -304,9 +299,13 @@ alexMonadScan' = do
     AlexError (p, _, _, s) -> do
         let desc = case s of
               [] -> "<empty>"
+              (' ': _) -> "<space>"
+              ('\t': _) -> "<tab>"
+              ('\n': _) -> "<newline>"
               (c:_) -> show c
         span <- spanFromSingle p
-        alexError' span ("lexical error at character '" ++ desc ++ "'")
+        state <- alexGetStartCode
+        alexError' span ("lexical error at character " ++ desc ++ " currently in state " ++ show state)
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'

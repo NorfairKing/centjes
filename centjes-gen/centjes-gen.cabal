@@ -138,12 +138,16 @@ extra-source-files:
     test_resources/register/valid/as-is/example.txt
     test_resources/register/valid/to-chf/rates.cent
     test_resources/register/valid/to-chf/rates.txt
+    test_resources/syntax/declaration/formatted/account-with-type.cent
+    test_resources/syntax/declaration/formatted/account.cent
     test_resources/syntax/declaration/formatted/comment.cent
     test_resources/syntax/declaration/formatted/currency.cent
     test_resources/syntax/declaration/formatted/price.cent
     test_resources/syntax/declaration/formatted/signed.cent
     test_resources/syntax/declaration/formatted/tag.cent
     test_resources/syntax/declaration/formatted/transaction.cent
+    test_resources/syntax/declaration/valid/account-with-type.cent
+    test_resources/syntax/declaration/valid/account.cent
     test_resources/syntax/declaration/valid/comment.cent
     test_resources/syntax/declaration/valid/currency.cent
     test_resources/syntax/declaration/valid/price.cent
@@ -152,7 +156,9 @@ extra-source-files:
     test_resources/syntax/declaration/valid/transaction.cent
     test_resources/syntax/module/formatted/aligned-amounts.cent
     test_resources/syntax/module/formatted/commented-transaction.cent
+    test_resources/syntax/module/formatted/empty.cent
     test_resources/syntax/module/formatted/example.cent
+    test_resources/syntax/module/formatted/import.cent
     test_resources/syntax/module/formatted/multiline-comment.cent
     test_resources/syntax/module/formatted/multiple-accounts.cent
     test_resources/syntax/module/formatted/multiple-currencies.cent
@@ -160,7 +166,9 @@ extra-source-files:
     test_resources/syntax/module/formatted/without-newline-inbetween.cent
     test_resources/syntax/module/valid/aligned-amounts.cent
     test_resources/syntax/module/valid/commented-transaction.cent
+    test_resources/syntax/module/valid/empty.cent
     test_resources/syntax/module/valid/example.cent
+    test_resources/syntax/module/valid/import.cent
     test_resources/syntax/module/valid/multiline-comment.cent
     test_resources/syntax/module/valid/multiple-accounts.cent
     test_resources/syntax/module/valid/multiple-currencies.cent
@@ -171,6 +179,10 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/currency-conversion.cent
     test_resources/syntax/transaction/formatted/example.cent
     test_resources/syntax/transaction/formatted/multiline-description.cent
+    test_resources/syntax/transaction/formatted/only-description.cent
+    test_resources/syntax/transaction/formatted/only-timestamp.cent
+    test_resources/syntax/transaction/formatted/single-posting-bang.cent
+    test_resources/syntax/transaction/formatted/single-posting.cent
     test_resources/syntax/transaction/formatted/timestamp-with-minute.cent
     test_resources/syntax/transaction/formatted/timestamp-with-second.cent
     test_resources/syntax/transaction/formatted/with-assertion.cent
@@ -183,6 +195,10 @@ extra-source-files:
     test_resources/syntax/transaction/valid/currency-conversion.cent
     test_resources/syntax/transaction/valid/example.cent
     test_resources/syntax/transaction/valid/multiline-description.cent
+    test_resources/syntax/transaction/valid/only-description.cent
+    test_resources/syntax/transaction/valid/only-timestamp.cent
+    test_resources/syntax/transaction/valid/single-posting-bang.cent
+    test_resources/syntax/transaction/valid/single-posting.cent
     test_resources/syntax/transaction/valid/timestamp-with-minute.cent
     test_resources/syntax/transaction/valid/timestamp-with-second.cent
     test_resources/syntax/transaction/valid/with-assertion.cent
