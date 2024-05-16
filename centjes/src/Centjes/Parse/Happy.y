@@ -62,7 +62,8 @@ import Data.Semigroup
       tok_eq              { Located _ TokenEq }
       tok_timestamp       { Located _ (TokenTimestamp _) }
       tok_var             { Located _ (TokenVar _) }
-      tok_pipetext        { Located _ (TokenDescription _) }
+      tok_pipe            { Located _ TokenPipe }
+      tok_anyline         { Located _ (TokenAnyLine _) }
       tok_decimal_literal { Located _ (TokenDecimalLiteral _) }
       tok_plus            { Located _ TokenPlus }
       tok_star            { Located _ TokenStar }
@@ -150,11 +151,12 @@ timestamp
 
 descriptions
   :: { Located Description }
-  : some(description) { combineDescriptions $1 }
+  : some_sep(tok_newline, description) { combineDescriptions $1 }
 
+-- TODO get the location of the pipe char in there too.
 description
   :: { Located Description }
-  : tok_pipetext {% parseDescription $1 }
+  : tok_pipe tok_anyline {% mapM (eitherParser "Description" Description.fromText) (parseAnyLine $2) }
 
 postings
   :: { [LPosting] }
@@ -269,6 +271,13 @@ some(p)
 some_rev(p)
   : p             { $1 :| [] }
   | some_rev(p) p { $2 NE.<| $1 }
+
+some_sep(sep, p)
+  : some_sep_rev(sep, p) { NE.reverse $1 }
+
+some_sep_rev(sep, p)
+  : p                          { $1 :| [] }
+  | some_sep_rev(sep, p) sep p { $3 NE.<| $1 }
 { 
 
 sL1 :: Located a -> b -> Located b
@@ -299,8 +308,8 @@ parseComment (Located l (TokenComment t)) = Located l t
 parseTimestamp :: Token -> Alex (Located Timestamp)
 parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Timestamp" Timestamp.fromString ds
 
-parseDescription :: Token -> Alex (Located Description)
-parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> eitherParser "Description" Description.fromText ds 
+parseAnyLine :: Token -> Located Text
+parseAnyLine t@(Located _ (TokenAnyLine text)) = sL1 t text
 
 combineDescriptions :: NonEmpty (Located Description) -> Located Description
 combineDescriptions dss@(d:|ds) = sBL d ds $ sconcat (NE.map locatedValue dss)

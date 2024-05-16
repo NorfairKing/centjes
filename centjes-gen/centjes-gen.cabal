@@ -171,6 +171,7 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/currency-conversion.cent
     test_resources/syntax/transaction/formatted/example.cent
     test_resources/syntax/transaction/formatted/multiline-description.cent
+    test_resources/syntax/transaction/formatted/only-description.cent
     test_resources/syntax/transaction/formatted/only-timestamp.cent
     test_resources/syntax/transaction/formatted/timestamp-with-minute.cent
     test_resources/syntax/transaction/formatted/timestamp-with-second.cent

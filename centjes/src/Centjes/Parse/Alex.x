@@ -71,7 +71,9 @@ $alpha = [A-Za-z]
   | @day \  @time_of_day
 
 @file_path = [$alpha $digit \_ \- \: .]+
+@anyline = [^\n\r]+
 
+@pipe = "| "
 @star = "* "
 @bang = "! "
 @plus = "+ " 
@@ -89,8 +91,6 @@ $alpha = [A-Za-z]
 @eq = \=
 
 @comment = "-- " .* \n
-
-@description = "| " .* \n
 
 tokens :-
 
@@ -139,9 +139,11 @@ $white_no_nl+ ;
 -- We need a separate state for the newline after the day
 <transaction_header>  @newline  { lexNl `andBegin` transaction}
 
-<transaction> @description  { lex (TokenDescription . T.pack . drop (length "| ") . init) }
-<transaction> @newline      { lexNl `andBegin` 0}
+<transaction> @pipe    { lex' TokenPipe `andBegin` description }
+<description> @anyline { lex (TokenAnyLine . T.pack) }
+<description> @newline { lex' TokenNewLine `andBegin` 0 }
 
+<transaction> @newline { lexNl `andBegin` 0 }
 
 <transaction> @star        { lex' TokenStar `andBegin` posting }
 <transaction> @bang        { lex' TokenBang `andBegin` posting }
@@ -225,9 +227,10 @@ data TokenClass
   | TokenTimestamp !String
   | TokenFilePath !FilePath
   | TokenVar !Text
-  | TokenDescription !Text
   | TokenDecimalLiteral !DecimalLiteral
   | TokenFloat !Double
+  | TokenPipe
+  | TokenAnyLine !Text
   | TokenStar
   | TokenBang
   | TokenPlus
