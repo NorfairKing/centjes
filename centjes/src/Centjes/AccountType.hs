@@ -34,7 +34,7 @@ data AccountType
     AccountTypeExpenses
   | -- | Never positive
     AccountTypeIncome
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity AccountType
 

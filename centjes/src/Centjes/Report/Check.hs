@@ -24,7 +24,11 @@ import Centjes.Validation
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Foldable
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.Maybe
+import Data.Set (Set)
+import qualified Data.Set as S
 import Error.Diagnose
 import Path
 import Path.IO
@@ -51,6 +55,7 @@ doCompleteCheck declarations = do
 data CheckError ann
   = CheckErrorDeclarationOutOfOrder !(GenLocated ann Timestamp) !(GenLocated ann Timestamp)
   | CheckErrorMissingAttachment !ann !(Attachment ann)
+  | CheckErrorUnusedAccount !(GenLocated ann (AccountDeclaration ann))
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
   | CheckErrorRegisterError !(RegisterError ann)
@@ -73,6 +78,12 @@ instance ToReport (CheckError SourceSpan) where
           (toDiagnosePosition fl, This "This file is missing")
         ]
         []
+    CheckErrorUnusedAccount (Located dl _) ->
+      Err
+        (Just "CE_UNUSED_ACCOUNT")
+        "This account has been declared but is never used."
+        [(toDiagnosePosition dl, This "This account is declared here but is never used.")]
+        [Hint "Either use it or delete this declaration."]
     CheckErrorCompileError ce -> toReport ce
     CheckErrorBalanceError be -> toReport be
     CheckErrorRegisterError re -> toReport re
@@ -80,6 +91,7 @@ instance ToReport (CheckError SourceSpan) where
 checkDeclarations :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 checkDeclarations declarations = do
   checkDeclarationOrdering declarations
+  checkAccountUsage declarations
   -- Check declarations individually
   traverse_ checkDeclaration declarations
 
@@ -106,6 +118,35 @@ checkDeclarationOrdering = go . mapMaybe timestampAndSource
                 _ -> pure ()
         let checkRest = go (lt2 : rest)
         checkFirstTup <* checkRest
+
+checkAccountUsage :: forall ann. [Declaration ann] -> CheckerT ann ()
+checkAccountUsage declarations =
+  let go ::
+        (Map AccountName (GenLocated ann (AccountDeclaration ann)), Set AccountName) ->
+        Declaration ann ->
+        (Map AccountName (GenLocated ann (AccountDeclaration ann)), Set AccountName)
+      go t@(ds, us) = \case
+        DeclarationComment _ -> t
+        DeclarationCurrency _ -> t
+        DeclarationAccount lad@(Located _ ad) ->
+          let Located _ an = accountDeclarationName ad
+           in (M.insert an lad ds, us)
+        DeclarationTag _ -> t
+        DeclarationPrice _ -> t
+        DeclarationTransaction (Located _ Module.Transaction {..}) ->
+          let accounts =
+                S.fromList $
+                  map
+                    ( \(Located _ Module.Posting {..}) ->
+                        locatedValue postingAccountName
+                    )
+                    transactionPostings
+           in (ds, S.union accounts us)
+
+      (declared, used) = foldl' go (M.empty, S.empty) declarations
+      unuseds = M.difference declared $ M.fromSet (const ()) used
+   in for_ unuseds $ \unused ->
+        validationTFailure $ CheckErrorUnusedAccount unused
 
 checkDeclaration :: Declaration SourceSpan -> CheckerT SourceSpan ()
 checkDeclaration = \case

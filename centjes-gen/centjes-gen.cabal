@@ -84,6 +84,8 @@ extra-source-files:
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.err
     test_resources/check/CE_MISSING_ATTACHMENT.cent
     test_resources/check/CE_MISSING_ATTACHMENT.err
+    test_resources/check/CE_UNUSED_ACCOUNT.cent
+    test_resources/check/CE_UNUSED_ACCOUNT.err
     test_resources/compile/CE_COST_SAME_CURRENCY.cent
     test_resources/compile/CE_COST_SAME_CURRENCY.err
     test_resources/compile/CE_DUPLICATE_ACCOUNT.cent

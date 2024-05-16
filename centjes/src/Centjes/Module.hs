@@ -112,7 +112,7 @@ data AccountDeclaration ann = AccountDeclaration
   { accountDeclarationName :: !(GenLocated ann AccountName),
     accountDeclarationType :: !(Maybe (GenLocated ann AccountType))
   }
-  deriving stock (Show, Generic)
+  deriving stock (Show, Eq, Ord, Generic)
 
 instance (Validity ann) => Validity (AccountDeclaration ann)
 
