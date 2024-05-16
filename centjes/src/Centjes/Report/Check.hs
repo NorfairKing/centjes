@@ -38,7 +38,7 @@ type CheckerT ann a = ValidationT (CheckError ann) IO a
 type Checker ann a = Validation (CheckError ann) a
 
 doCompleteCheck ::
-  [Declaration SourceSpan] ->
+  [LDeclaration] ->
   CheckerT
     SourceSpan
     ( Ledger SourceSpan,
@@ -46,9 +46,8 @@ doCompleteCheck ::
       Register SourceSpan
     )
 doCompleteCheck declarations = do
-  () <- checkDeclarations declarations
+  () <- checkLDeclarations declarations
   ledger <- liftValidation $ mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
-  () <- checkDeclarations declarations
   (balanceReport, register) <- liftValidation $ checkLedger ledger
   pure (ledger, balanceReport, register)
 
@@ -101,6 +100,9 @@ instance ToReport (CheckError SourceSpan) where
     CheckErrorCompileError ce -> toReport ce
     CheckErrorBalanceError be -> toReport be
     CheckErrorRegisterError re -> toReport re
+
+checkLDeclarations :: [LDeclaration] -> CheckerT SourceSpan ()
+checkLDeclarations = checkDeclarations . map locatedValue
 
 checkDeclarations :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 checkDeclarations declarations = do

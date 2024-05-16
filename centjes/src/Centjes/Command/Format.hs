@@ -164,8 +164,10 @@ idempotenceTest base rf m = do
               ]
 
 fillInDigits :: Map CurrencySymbol (GenLocated ann QuantisationFactor) -> LModule -> LModule
-fillInDigits currencies m = m {moduleDeclarations = map goDeclaration (moduleDeclarations m)}
+fillInDigits currencies m = m {moduleDeclarations = map goLDeclaration (moduleDeclarations m)}
   where
+    goLDeclaration :: GenLocated ann (Declaration ann) -> GenLocated ann (Declaration ann)
+    goLDeclaration = fmap goDeclaration
     goDeclaration :: Declaration ann -> Declaration ann
     goDeclaration = \case
       DeclarationTransaction t -> DeclarationTransaction $ goTransaction <$> t

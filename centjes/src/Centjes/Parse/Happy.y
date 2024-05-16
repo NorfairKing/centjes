@@ -28,7 +28,7 @@ import qualified Data.Text as T
 -- https://gitlab.haskell.org/ghc/ghc/-/blob/e2520df3fffa0cf22fb19c5fb872832d11c07d35/compiler/GHC/Parser.y
 
 %name moduleParser module
-%name declarationParser declaration_dec
+%name declarationParser declaration
 %name transactionParser transaction_dec
 
 %tokentype { Token }
@@ -86,12 +86,12 @@ declaration_with_newlines
 
 declaration
   :: { LDeclaration }
-  : comment_dec { DeclarationComment $1 }
-  | currency_dec { DeclarationCurrency $1 }
-  | account_dec { DeclarationAccount $1 }
-  | tag_dec { DeclarationTag $1 }
-  | price_dec { DeclarationPrice $1 }
-  | transaction_dec { DeclarationTransaction $1 }
+  : comment_dec tok_newline { sBE $1 $2 $ DeclarationComment $1 }
+  | currency_dec tok_newline { sBE $1 $2 $ DeclarationCurrency $1 }
+  | account_dec tok_newline { sBE $1 $2 $ DeclarationAccount $1 }
+  | tag_dec tok_newline { sBE $1 $2 $ DeclarationTag $1 }
+  | price_dec tok_newline { sBE $1 $2 $ DeclarationPrice $1 }
+  | transaction_dec tok_newline { sBE $1 $2 $ DeclarationTransaction $1 }
 
 comment_dec
   :: { Located Text }
@@ -99,7 +99,7 @@ comment_dec
 
 currency_dec
   :: { LCurrencyDeclaration }
-  : tok_currency currency_symbol quantisation_factor tok_newline { sBE $1 $4 $ CurrencyDeclaration $2 $3 }
+  : tok_currency currency_symbol quantisation_factor { sBE $1 $3 $ CurrencyDeclaration $2 $3 }
 
 currency_symbol
   :: { Located CurrencySymbol }
@@ -111,7 +111,8 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : tok_account account_name optional(account_type) tok_newline { sBE $1 $4 $ AccountDeclaration $2 $3 }
+  : tok_account account_name { sBE $1 $2 $ AccountDeclaration $2 Nothing }
+  | tok_account account_name account_type { sBE $1 $3 $ AccountDeclaration $2 (Just $3) }
 
 account_type
   :: { Located AccountType }
@@ -119,11 +120,11 @@ account_type
 
 tag_dec
   :: { LTagDeclaration }
-  : tok_tag tag tok_newline { sBE $1 $3 $ TagDeclaration $2 }
+  : tok_tag tag { sBE $1 $2 $ TagDeclaration $2 }
 
 price_dec
   :: { LPriceDeclaration }
-  : tok_price timestamp currency_symbol cost_exp tok_newline { sBE $1 $5 $ PriceDeclaration $2 $3 $4 }
+  : tok_price timestamp currency_symbol cost_exp { sBE $1 $4 $ PriceDeclaration $2 $3 $4 }
 
 conversion_rate
   :: { LRationalExpression }
@@ -302,8 +303,8 @@ happyError (Located p t) =
 parseModule :: Path Abs Dir -> Path Rel File -> Text -> Either String LModule
 parseModule base fp = runAlex' moduleParser base fp . T.unpack
 
-parseDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String LDeclaration
-parseDeclaration base fp = runAlex' declarationParser base fp . T.unpack
+parseDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (Declaration SourceSpan)
+parseDeclaration base fp = runAlex' (locatedValue <$> declarationParser) base fp . T.unpack
 
 parseTransaction :: Path Abs Dir -> Path Rel File -> Text -> Either String (Transaction SourceSpan)
 parseTransaction base fp = runAlex' (locatedValue <$> transactionParser) base fp . T.unpack
