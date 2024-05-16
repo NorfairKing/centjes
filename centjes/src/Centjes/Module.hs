@@ -87,14 +87,14 @@ data Module ann = Module
     -- import bank.cent
     -- @
     moduleImports :: [GenLocated ann (Import ann)],
-    -- | Other declarations
-    moduleDeclarations :: [Declaration ann]
+    -- | Other declarations such as currencies,accounts,transactions,...
+    moduleDeclarations :: [GenLocated ann (Declaration ann)]
   }
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (Module ann)
 
-type LDeclaration = Declaration SourceSpan
+type LDeclaration = LLocated Declaration
 
 -- | Declaration
 --

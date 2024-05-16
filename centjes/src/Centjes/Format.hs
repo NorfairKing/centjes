@@ -47,12 +47,12 @@ moduleDoc Module {..} =
         go Nothing moduleDeclarations
       ]
   where
-    go :: Maybe DecType -> [Declaration l] -> [Doc ann]
+    go :: Maybe DecType -> [GenLocated l (Declaration l)] -> [Doc ann]
     go _ [] = []
-    go Nothing (d : ds) =
+    go Nothing (Located _ d : ds) =
       -- No newline up front, but remember the declaration type
       declarationDoc d : go (Just (decType d)) ds
-    go (Just dt) (d : ds) =
+    go (Just dt) (Located _ d : ds) =
       let dt' = decType d
           insertEmptyLine = case (dt, dt') of
             -- Group comments together

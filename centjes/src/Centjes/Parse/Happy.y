@@ -28,7 +28,7 @@ import qualified Data.Text as T
 -- https://gitlab.haskell.org/ghc/ghc/-/blob/e2520df3fffa0cf22fb19c5fb872832d11c07d35/compiler/GHC/Parser.y
 
 %name moduleParser module
-%name declarationParser declaration
+%name declarationParser declaration_dec
 %name transactionParser transaction_dec
 
 %tokentype { Token }
