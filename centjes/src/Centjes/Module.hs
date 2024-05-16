@@ -2,6 +2,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Module
@@ -20,6 +21,7 @@ module Centjes.Module
     TagDeclaration (..),
     LPriceDeclaration,
     PriceDeclaration (..),
+    priceDeclarationCurrencySymbols,
     LCostExpression,
     CostExpression (..),
     LPercentageExpression,
@@ -221,6 +223,13 @@ data PriceDeclaration ann = PriceDeclaration
 
 instance (Validity ann) => Validity (PriceDeclaration ann)
 
+priceDeclarationCurrencySymbols :: PriceDeclaration ann -> Set CurrencySymbol
+priceDeclarationCurrencySymbols PriceDeclaration {..} =
+  let Located _ ps = priceDeclarationCurrencySymbol
+      Located _ cd = priceDeclarationCost
+      Located _ cs = costExpressionCurrencySymbol cd
+   in S.fromList [ps, cs]
+
 type LTransaction = LLocated Transaction
 
 -- | Transaction
@@ -245,7 +254,23 @@ data Transaction ann = Transaction
 instance (Validity ann) => Validity (Transaction ann)
 
 transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
-transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySymbol . locatedValue) . transactionPostings
+transactionCurrencySymbols Transaction {..} =
+  S.unions $
+    map
+      ( \(Located _ Posting {..}) ->
+          S.unions
+            [ S.singleton (locatedValue postingCurrencySymbol),
+              maybe
+                S.empty
+                ( S.singleton
+                    . locatedValue
+                    . costExpressionCurrencySymbol
+                    . locatedValue
+                )
+                postingCost
+            ]
+      )
+      transactionPostings
 
 type LPosting = LLocated Posting
 

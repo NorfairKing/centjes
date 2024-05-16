@@ -149,28 +149,10 @@ checkCurrencyUsage declarations =
         DeclarationAccount _ -> t
         DeclarationTag _ -> t
         DeclarationPrice (Located _ pdl) ->
-          let Located _ ps = priceDeclarationCurrencySymbol pdl
-              Located _ cd = priceDeclarationCost pdl
-              Located _ cs = costExpressionCurrencySymbol cd
-           in (ds, S.insert ps $ S.insert cs us)
-        DeclarationTransaction (Located _ Module.Transaction {..}) ->
-          let currencys =
-                S.unions $
-                  map
-                    ( \(Located _ Module.Posting {..}) ->
-                        S.unions
-                          [ S.singleton (locatedValue postingCurrencySymbol),
-                            maybe
-                              S.empty
-                              ( S.singleton
-                                  . locatedValue
-                                  . costExpressionCurrencySymbol
-                                  . locatedValue
-                              )
-                              postingCost
-                          ]
-                    )
-                    transactionPostings
+          let currencys = priceDeclarationCurrencySymbols pdl
+           in (ds, S.union currencys us)
+        DeclarationTransaction (Located _ transaction) ->
+          let currencys = transactionCurrencySymbols transaction
            in (ds, S.union currencys us)
 
       (declared, used) = foldl' go (M.empty, S.empty) declarations
