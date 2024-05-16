@@ -57,6 +57,7 @@ data CheckError ann
   | CheckErrorMissingAttachment !ann !(Attachment ann)
   | CheckErrorUnusedCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | CheckErrorUnusedAccount !(GenLocated ann (AccountDeclaration ann))
+  | CheckErrorUnusedTag !(GenLocated ann (TagDeclaration ann))
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
   | CheckErrorRegisterError !(RegisterError ann)
@@ -91,6 +92,12 @@ instance ToReport (CheckError SourceSpan) where
         "This account has been declared but is never used."
         [(toDiagnosePosition dl, This "This account is declared here but is never used.")]
         [Hint "Either use it or delete this declaration."]
+    CheckErrorUnusedTag (Located dl _) ->
+      Err
+        (Just "CE_UNUSED_TAG")
+        "This tag has been declared but is never used."
+        [(toDiagnosePosition dl, This "This tag is declared here but is never used.")]
+        [Hint "Either use it or delete this declaration."]
     CheckErrorCompileError ce -> toReport ce
     CheckErrorBalanceError be -> toReport be
     CheckErrorRegisterError re -> toReport re
@@ -100,6 +107,7 @@ checkDeclarations declarations = do
   checkDeclarationOrdering declarations
   checkCurrencyUsage declarations
   checkAccountUsage declarations
+  checkTagUsage declarations
   -- Check declarations individually
   traverse_ checkDeclaration declarations
 
@@ -140,13 +148,11 @@ checkCurrencyUsage declarations =
            in (M.insert cs lcd ds, us)
         DeclarationAccount _ -> t
         DeclarationTag _ -> t
-        -- TODO cost
         DeclarationPrice (Located _ pdl) ->
           let Located _ ps = priceDeclarationCurrencySymbol pdl
               Located _ cd = priceDeclarationCost pdl
               Located _ cs = costExpressionCurrencySymbol cd
            in (ds, S.insert ps $ S.insert cs us)
-        -- TODO cost
         DeclarationTransaction (Located _ Module.Transaction {..}) ->
           let currencys =
                 S.unions $
@@ -200,6 +206,40 @@ checkAccountUsage declarations =
       unuseds = M.difference declared $ M.fromSet (const ()) used
    in for_ unuseds $ \unused ->
         validationTFailure $ CheckErrorUnusedAccount unused
+
+checkTagUsage :: forall ann. [Declaration ann] -> CheckerT ann ()
+checkTagUsage declarations =
+  let go ::
+        (Map Tag (GenLocated ann (TagDeclaration ann)), Set Tag) ->
+        Declaration ann ->
+        (Map Tag (GenLocated ann (TagDeclaration ann)), Set Tag)
+      go t@(ds, us) = \case
+        DeclarationComment _ -> t
+        DeclarationCurrency _ -> t
+        DeclarationAccount _ -> t
+        DeclarationTag ltd@(Located _ td) ->
+          let Located _ tn = tagDeclarationTag td
+           in (M.insert tn ltd ds, us)
+        DeclarationPrice _ -> t
+        DeclarationTransaction (Located _ Module.Transaction {..}) ->
+          let tags =
+                S.unions $
+                  map
+                    ( \case
+                        Located _ (TransactionAttachment _) ->
+                          S.empty
+                        Located _ (TransactionAssertion _) ->
+                          S.empty
+                        Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag)))) ->
+                          S.singleton tag
+                    )
+                    transactionExtras
+           in (ds, S.union tags us)
+
+      (declared, used) = foldl' go (M.empty, S.empty) declarations
+      unuseds = M.difference declared $ M.fromSet (const ()) used
+   in for_ unuseds $ \unused ->
+        validationTFailure $ CheckErrorUnusedTag unused
 
 checkDeclaration :: Declaration SourceSpan -> CheckerT SourceSpan ()
 checkDeclaration = \case

@@ -90,6 +90,8 @@ extra-source-files:
     test_resources/check/CE_UNUSED_CURRENCY-price.err
     test_resources/check/CE_UNUSED_CURRENCY.cent
     test_resources/check/CE_UNUSED_CURRENCY.err
+    test_resources/check/CE_UNUSED_TAG.cent
+    test_resources/check/CE_UNUSED_TAG.err
     test_resources/compile/CE_COST_SAME_CURRENCY.cent
     test_resources/compile/CE_COST_SAME_CURRENCY.err
     test_resources/compile/CE_DUPLICATE_ACCOUNT.cent
