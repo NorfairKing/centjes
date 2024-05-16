@@ -48,7 +48,11 @@ instance (GenValid ann) => GenValid (TransactionExtra ann)
 
 instance (GenValid ann) => GenValid (Posting ann)
 
+instance (GenValid ann) => GenValid (ExtraAttachment ann)
+
 instance (GenValid ann) => GenValid (Attachment ann)
+
+instance (GenValid ann) => GenValid (ExtraAssertion ann)
 
 instance (GenValid ann) => GenValid (Assertion ann)
 

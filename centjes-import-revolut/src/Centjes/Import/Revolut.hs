@@ -194,10 +194,12 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
         [ noLoc $
             TransactionAssertion $
               noLoc $
-                AssertionEquals
-                  (noLoc assetsAccountName)
-                  (noLoc bl)
-                  (noLoc rowCurrency)
+                ExtraAssertion $
+                  noLoc $
+                    AssertionEquals
+                      (noLoc assetsAccountName)
+                      (noLoc bl)
+                      (noLoc rowCurrency)
           | bl <- maybeToList mbl
         ]
   pure

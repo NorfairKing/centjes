@@ -190,17 +190,25 @@ transaction_extras
 
 transaction_extra
   :: { LTransactionExtra }
-  : tok_plus attachment { sBE $1 $2 $ TransactionAttachment $2 }
-  | tok_plus assertion { sBE $1 $2 $ TransactionAssertion $2 }
+  : tok_plus extra_attachment { sBE $1 $2 $ TransactionAttachment $2 }
+  | tok_plus extra_assertion { sBE $1 $2 $ TransactionAssertion $2 }
   | tok_plus extra_tag { sBE $1 $2 $ TransactionTag $2 }
+
+extra_attachment
+  :: { LExtraAttachment }
+  : tok_attach attachment { sBE $1 $2 $ ExtraAttachment $2 }
 
 attachment
   :: { LAttachment }
-  : tok_attach rel_file_exp tok_newline { sBE $1 $3 $ Attachment $2 }
+  : rel_file_exp tok_newline { sBE $1 $2 $ Attachment $1 }
+
+extra_assertion
+  :: { LExtraAssertion }
+  : tok_assert assertion { sBE $1 $2 $ ExtraAssertion $2 }
 
 assertion
   :: { LAssertion }
-  : tok_assert account_name tok_eq account_exp currency_symbol tok_newline { sBE $1 $6 $ AssertionEquals $2 $4 $5 }
+  : account_name tok_eq account_exp currency_symbol tok_newline { sBE $1 $5 $ AssertionEquals $1 $3 $4 }
 
 extra_tag
   :: { LExtraTag }

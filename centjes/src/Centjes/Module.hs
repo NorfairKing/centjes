@@ -35,8 +35,12 @@ module Centjes.Module
     Posting (..),
     LTransactionExtra,
     TransactionExtra (..),
+    LExtraAttachment,
+    ExtraAttachment (..),
     LAttachment,
     Attachment (..),
+    LExtraAssertion,
+    ExtraAssertion (..),
     LAssertion,
     Assertion (..),
     LExtraTag,
@@ -70,8 +74,17 @@ import Path
 
 type LModule = Module SourceSpan
 
+-- | Module
+--
+-- A file with imports and declarations
 data Module ann = Module
-  { moduleImports :: [GenLocated ann Import],
+  { -- | Import declaration
+    --
+    -- @
+    -- import bank.cent
+    -- @
+    moduleImports :: [GenLocated ann Import],
+    -- | Other declarations
     moduleDeclarations :: [Declaration ann]
   }
   deriving stock (Show, Generic)
@@ -80,17 +93,61 @@ instance (Validity ann) => Validity (Module ann)
 
 type LDeclaration = Declaration SourceSpan
 
+-- | Declaration
+--
+-- A single declaration.
 data Declaration ann
-  = DeclarationComment !(GenLocated ann Text)
-  | DeclarationCurrency !(GenLocated ann (CurrencyDeclaration ann))
-  | DeclarationAccount !(GenLocated ann (AccountDeclaration ann))
-  | DeclarationTag !(GenLocated ann (TagDeclaration ann))
-  | DeclarationPrice !(GenLocated ann (PriceDeclaration ann))
-  | DeclarationTransaction !(GenLocated ann (Transaction ann))
+  = -- | Comment
+    --
+    -- @
+    -- -- This is a comment
+    -- @
+    DeclarationComment !(GenLocated ann Text)
+  | -- | Currency declaration
+    --
+    -- @
+    -- currency EUR 0.01
+    -- @
+    DeclarationCurrency !(GenLocated ann (CurrencyDeclaration ann))
+  | -- | Account declaration
+    --
+    -- @
+    -- account assets
+    -- @
+    DeclarationAccount !(GenLocated ann (AccountDeclaration ann))
+  | -- | Tag declaration
+    --
+    -- @
+    -- tag deductible
+    -- @
+    DeclarationTag !(GenLocated ann (TagDeclaration ann))
+  | -- | Price declaration
+    --
+    -- @
+    -- price 2024-05-16 USD 1.00 EUR
+    -- @
+    DeclarationPrice !(GenLocated ann (PriceDeclaration ann))
+  | -- | Transaction declaration
+    --
+    -- @
+    -- 2024-05-16
+    --   | Description
+    --   * assets -5 USD @ 1 EUR
+    --   * expenses -5 EUR
+    --   + attach receipt.pdf
+    --   + tag deductible
+    --   + assert assets = 0 USD
+    -- @
+    DeclarationTransaction !(GenLocated ann (Transaction ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (Declaration ann)
 
+-- | Import declaration
+--
+-- @
+-- bank.cent
+-- @
 newtype Import = Import {importFile :: Path Rel File}
   deriving stock (Show, Generic)
 
@@ -98,6 +155,11 @@ instance Validity Import
 
 type LCurrencyDeclaration = LLocated CurrencyDeclaration
 
+-- | Currency declaration
+--
+-- @
+-- USD 0.01
+-- @
 data CurrencyDeclaration ann = CurrencyDeclaration
   { currencyDeclarationSymbol :: !(GenLocated ann CurrencySymbol),
     currencyDeclarationQuantisationFactor :: !(GenLocated ann DecimalLiteral)
@@ -108,6 +170,17 @@ instance (Validity ann) => Validity (CurrencyDeclaration ann)
 
 type LAccountDeclaration = LLocated AccountDeclaration
 
+-- | Account declaration declaration
+--
+-- @
+-- assets
+-- @
+--
+-- or
+--
+-- @
+-- fancyname assets
+-- @
 data AccountDeclaration ann = AccountDeclaration
   { accountDeclarationName :: !(GenLocated ann AccountName),
     accountDeclarationType :: !(Maybe (GenLocated ann AccountType))
@@ -118,6 +191,11 @@ instance (Validity ann) => Validity (AccountDeclaration ann)
 
 type LTagDeclaration = LLocated TagDeclaration
 
+-- | Tag declaration
+--
+-- @
+-- deductible
+-- @
 newtype TagDeclaration ann = TagDeclaration
   { tagDeclarationTag :: GenLocated ann Tag
   }
@@ -127,6 +205,11 @@ instance (Validity ann) => Validity (TagDeclaration ann)
 
 type LPriceDeclaration = LLocated PriceDeclaration
 
+-- | Price declaration
+--
+-- @
+-- 2024-05-16 USD 1.00 CHF
+-- @
 data PriceDeclaration ann = PriceDeclaration
   { priceDeclarationTimestamp :: !(GenLocated ann Timestamp),
     priceDeclarationCurrencySymbol :: !(GenLocated ann CurrencySymbol),
@@ -140,6 +223,17 @@ instance (Validity ann) => Validity (PriceDeclaration ann)
 
 type LTransaction = LLocated Transaction
 
+-- | Transaction
+--
+-- @
+-- 2024-05-16
+--   | Description
+--   * assets -5 USD @ 1 EUR
+--   * expenses -5 EUR
+--   + attach receipt.pdf
+--   + tag deductible
+--   + assert assets = 0 USD
+-- @
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
     transactionDescription :: !(Maybe (GenLocated ann Description)),
@@ -155,6 +249,11 @@ transactionCurrencySymbols = S.fromList . map (locatedValue . postingCurrencySym
 
 type LPosting = LLocated Posting
 
+-- | Posting
+--
+-- @
+-- assets -5 USD @ 1 EUR
+-- @
 data Posting ann = Posting
   { postingReal :: !Bool,
     postingAccountName :: !(GenLocated ann AccountName),
@@ -169,6 +268,17 @@ instance (Validity ann) => Validity (Posting ann)
 
 type LCostExpression = LLocated CostExpression
 
+-- | Cost expression
+--
+-- @
+-- 1 EUR
+-- @
+--
+-- or
+--
+-- @
+-- 1 / 1 EUR
+-- @
 data CostExpression ann = CostExpression
   { costExpressionConversionRate :: !(GenLocated ann (RationalExpression ann)),
     costExpressionCurrencySymbol :: !(GenLocated ann CurrencySymbol)
@@ -179,6 +289,17 @@ instance (Validity ann) => Validity (CostExpression ann)
 
 type LPercentageExpression = LLocated PercentageExpression
 
+-- | Percentage expression
+--
+-- @
+-- 50 %
+-- @
+--
+-- or
+--
+-- @
+-- 1 / 2 %
+-- @
 newtype PercentageExpression ann = PercentageExpression
   { unPercentageExpression :: GenLocated ann (RationalExpression ann)
   }
@@ -188,6 +309,17 @@ instance (Validity ann) => Validity (PercentageExpression ann)
 
 type LRationalExpression = LLocated RationalExpression
 
+-- | Rational expression
+--
+-- @
+-- 50 %
+-- @
+--
+-- or
+--
+-- @
+-- 1 / 2 %
+-- @
 data RationalExpression ann
   = RationalExpressionDecimal !(GenLocated ann DecimalLiteral)
   | RationalExpressionFraction
@@ -201,23 +333,73 @@ instance (Validity ann) => Validity (RationalExpression ann)
 
 type LTransactionExtra = LLocated TransactionExtra
 
+-- | Transaction extra
 data TransactionExtra ann
-  = TransactionAttachment (GenLocated ann (Attachment ann))
-  | TransactionAssertion (GenLocated ann (Assertion ann))
-  | TransactionTag (GenLocated ann (ExtraTag ann))
+  = -- | Attachment
+    --
+    -- @
+    -- + attach receipt.pdf
+    -- @
+    TransactionAttachment (GenLocated ann (ExtraAttachment ann))
+  | -- | Assertion
+    --
+    -- @
+    -- + assert assets = 5 USD
+    -- @
+    TransactionAssertion (GenLocated ann (ExtraAssertion ann))
+  | -- | Tag
+    --
+    -- @
+    -- + tag deductible
+    -- @
+    TransactionTag (GenLocated ann (ExtraTag ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (TransactionExtra ann)
 
+-- | Attachmnet
+--
+-- @
+-- attach receipt.pdf
+-- @
+type LExtraAttachment = LLocated ExtraAttachment
+
+newtype ExtraAttachment ann = ExtraAttachment {unExtraAttachment :: GenLocated ann (Attachment ann)}
+  deriving stock (Show, Eq, Generic)
+
+instance (Validity ann) => Validity (ExtraAttachment ann)
+
 type LAttachment = LLocated Attachment
 
+-- | Attachmnet
+--
+-- @
+-- receipt.pdf
+-- @
 newtype Attachment ann = Attachment {attachmentPath :: GenLocated ann (Path Rel File)}
   deriving stock (Show, Eq, Generic)
 
 instance (Validity ann) => Validity (Attachment ann)
 
+type LExtraAssertion = LLocated ExtraAssertion
+
+-- | Assertion
+--
+-- @
+-- assert assets = 5 USD
+-- @
+newtype ExtraAssertion ann = ExtraAssertion {unExtraAssertion :: GenLocated ann (Assertion ann)}
+  deriving stock (Show, Generic)
+
+instance (Validity ann) => Validity (ExtraAssertion ann)
+
 type LAssertion = LLocated Assertion
 
+-- | Assertion
+--
+-- @
+-- assets = 5 USD
+-- @
 data Assertion ann
   = AssertionEquals
       !(GenLocated ann AccountName)
@@ -229,6 +411,11 @@ instance (Validity ann) => Validity (Assertion ann)
 
 type LExtraTag = LLocated ExtraTag
 
+-- | Tag
+--
+-- @
+-- tag deductible
+-- @
 newtype ExtraTag ann = ExtraTag {unExtraTag :: GenLocated ann Tag}
   deriving stock (Show, Generic)
 

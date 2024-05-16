@@ -237,16 +237,22 @@ lRationalDecimalLiteralDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional 
 transactionExtraDoc :: TransactionExtra l -> Doc ann
 transactionExtraDoc =
   ("+" <+>) . \case
-    TransactionAttachment a -> attachmentDoc (locatedValue a)
-    TransactionAssertion a -> assertionDoc (locatedValue a)
+    TransactionAttachment a -> extraAttachmentDoc (locatedValue a)
+    TransactionAssertion a -> extraAssertionDoc (locatedValue a)
     TransactionTag t -> extraTagDoc (locatedValue t)
 
-attachmentDoc :: Attachment l -> Doc ann
-attachmentDoc (Attachment fp) = "attach" <+> pretty (fromRelFile (locatedValue fp))
+extraAttachmentDoc :: ExtraAttachment l -> Doc ann
+extraAttachmentDoc (ExtraAttachment (Located _ (Attachment (Located _ fp)))) =
+  "attach"
+    <+> pretty (fromRelFile fp)
 
-assertionDoc :: Assertion l -> Doc ann
-assertionDoc (AssertionEquals an (Located _ dl) cs) =
-  "assert" <+> lAccountNameDoc an <+> "=" <+> accountDoc dl <+> lCurrencySymbolDoc cs
+extraAssertionDoc :: ExtraAssertion l -> Doc ann
+extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) cs))) =
+  "assert"
+    <+> lAccountNameDoc an
+    <+> "="
+    <+> accountDoc dl
+    <+> lCurrencySymbolDoc cs
 
 extraTagDoc :: ExtraTag l -> Doc ann
 extraTagDoc (ExtraTag lt) =

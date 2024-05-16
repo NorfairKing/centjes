@@ -263,8 +263,8 @@ checkTransactionExtra tl = \case
   TransactionAssertion _ -> pure ()
   TransactionTag _ -> pure ()
 
-checkAttachment :: SourceSpan -> LAttachment -> CheckerT SourceSpan ()
-checkAttachment tl (Located _ a@(Attachment (Located l fp))) = do
+checkAttachment :: SourceSpan -> LExtraAttachment -> CheckerT SourceSpan ()
+checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located l fp))))) = do
   let base = sourceSpanBase l
   let af = base </> fp
   exists <- liftIO $ doesFileExist af

@@ -531,7 +531,7 @@ compileTransaction currencies accounts tags (Located l mt) = do
         V.fromList $
           mapMaybe
             ( ( \case
-                  TransactionAttachment a -> Just a
+                  TransactionAttachment (Located _ (ExtraAttachment a)) -> Just a
                   TransactionAssertion _ -> Nothing
                   TransactionTag _ -> Nothing
               )
@@ -601,9 +601,9 @@ compileAccountName accounts tl lan@(Located _ an) =
 compileAssertion ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   ann ->
-  GenLocated ann (Module.Assertion ann) ->
+  GenLocated ann (Module.ExtraAssertion ann) ->
   Validation (CompileError ann) (GenLocated ann (Ledger.Assertion ann))
-compileAssertion currencies tl (Located l (Module.AssertionEquals lan ldl lqs)) = do
+compileAssertion currencies tl (Located l (ExtraAssertion (Located _ (Module.AssertionEquals lan ldl lqs)))) = do
   lc <- compileCurrencyDeclarationSymbol currencies tl lqs
   let lqf = currencyQuantisationFactor (locatedValue lc)
   la <- compileDecimalLiteral tl lqf ldl
