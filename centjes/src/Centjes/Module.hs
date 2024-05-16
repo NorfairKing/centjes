@@ -8,6 +8,7 @@
 module Centjes.Module
   ( LModule,
     Module (..),
+    LImport,
     Import (..),
     LDeclaration,
     Declaration (..),
@@ -85,7 +86,7 @@ data Module ann = Module
     -- @
     -- import bank.cent
     -- @
-    moduleImports :: [GenLocated ann Import],
+    moduleImports :: [GenLocated ann (Import ann)],
     -- | Other declarations
     moduleDeclarations :: [Declaration ann]
   }
@@ -145,15 +146,17 @@ data Declaration ann
 
 instance (Validity ann) => Validity (Declaration ann)
 
+type LImport = LLocated Import
+
 -- | Import declaration
 --
 -- @
 -- bank.cent
 -- @
-newtype Import = Import {importFile :: Path Rel File}
+newtype Import ann = Import {importFile :: GenLocated ann (Path Rel File)}
   deriving stock (Show, Generic)
 
-instance Validity Import
+instance (Validity ann) => Validity (Import ann)
 
 type LCurrencyDeclaration = LLocated CurrencyDeclaration
 

@@ -41,7 +41,7 @@ import qualified Data.Text as T
 %expect 0
 
 %token 
-      tok_import          { Located _ (TokenImport _)}
+      tok_import          { Located _ TokenImport }
       tok_comment         { Located _ (TokenComment _) }
       tok_attach          { Located _ TokenAttach }
       tok_assert          { Located _ TokenAssert }
@@ -72,12 +72,12 @@ module
   : newlines many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
 
 import_with_newlines
-  :: { Located Import }
+  :: { LImport }
   : import_dec newlines { $1 }
 
 import_dec
-  :: { Located Import }
-  : tok_import {% parseImport $1 }
+  :: { LImport }
+  : tok_import rel_file_exp tok_newline { sBE $1 $3 $ Import $2 }
 
 
 declaration_with_newlines
@@ -260,9 +260,6 @@ sBMLL l1 l2 Nothing  [] [] = sBE l1 l2
 sBMLL l1 _ (Just l3) [] [] = sBE l1 l3
 sBMLL l1 _ _         ls [] = sBL l1 ls
 sBMLL l1 _ _         _  ls = sBL l1 ls
-
-parseImport :: Token -> Alex (Located Import)
-parseImport t@(Located _ (TokenImport s)) = sL1 t <$> parseImportFrom s
 
 parseComment :: Token -> Located Text
 parseComment (Located l (TokenComment t)) = Located l t

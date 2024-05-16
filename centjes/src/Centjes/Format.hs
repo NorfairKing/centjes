@@ -94,11 +94,11 @@ decType = \case
   DeclarationPrice {} -> DecPrice
   DeclarationTransaction {} -> DecTransaction
 
-lImportDoc :: GenLocated l Import -> Doc ann
+lImportDoc :: GenLocated l (Import l) -> Doc ann
 lImportDoc = importDoc . locatedValue
 
-importDoc :: Import -> Doc ann
-importDoc (Import fp) =
+importDoc :: Import l -> Doc ann
+importDoc (Import (Located _ fp)) =
   let pString = fromRelFile $ case splitExtension fp of
         Just (rest, ".cent") -> rest
         _ -> fp

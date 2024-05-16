@@ -1,11 +1,10 @@
 module Centjes.Parse.Utils where
 
-import Centjes.Module
 import Centjes.Parse.Alex
 import Path
 
-parseImportFrom :: String -> Alex Import
-parseImportFrom s = fmap Import $ do
+parseRelFileFrom :: String -> Alex (Path Rel File)
+parseRelFileFrom s = do
   rp <- maybeParser "relfile path" parseRelFile s
   case fileExtension rp of
     Just ".cent" -> pure rp

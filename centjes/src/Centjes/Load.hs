@@ -132,7 +132,8 @@ loadModulesOrErr firstPath = do
         (ExceptT LoadError m)
         [LDeclaration]
     go originalBase currentBase m = do
-      restDecls <- forM (moduleImports m) $ \(Located il (Import rf)) -> do
+      restDecls <- forM (moduleImports m) $ \(Located il (Import (Located _ mn))) -> do
+        rf <- liftIO $ replaceExtension ".cent" mn
         let af = currentBase </> rf
         m' <- readSingle originalBase (Just il) af
         go originalBase (parent af) m'

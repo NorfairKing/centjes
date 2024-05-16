@@ -79,7 +79,7 @@ $alpha = [A-Za-z]
 @slash = "/ "
 @percent = "%"
 @tilde = "~"
-@import = "import " .* \n
+@import = "import "
 @currency = "currency "
 @account = "account "
 @attach = "attach "
@@ -102,7 +102,9 @@ $white_no_nl+ ;
 <0> @newline            { lexNl }
 
 -- Imports
-<0> @import             { lex (TokenImport . drop (length "import ") . init) }
+-- Note: 'import' is not a valid haskell identifier so we use imp instead.
+<0> @import             { lex' TokenImport `andBegin` imp }
+<imp> @file_path        { lex TokenFilePath `andBegin` 0 }
 
 -- Comments
 <0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
@@ -236,7 +238,7 @@ data TokenClass
   | TokenPercent
   | TokenCurrency
   | TokenAccount
-  | TokenImport !FilePath
+  | TokenImport
   | TokenNewLine
   | TokenEOF
   deriving ( Show, Eq )
