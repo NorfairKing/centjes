@@ -19,6 +19,7 @@ import Centjes.Location
 import Centjes.Module
 import qualified Centjes.Tag as Tag
 import qualified Centjes.Timestamp as Timestamp
+import Data.List (intercalate, intersperse)
 import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -193,7 +194,7 @@ transactionDecDoc = transactionDoc . locatedValue
 transactionDoc :: Transaction l -> Doc ann
 transactionDoc Transaction {..} =
   mconcat $
-    map (<> hardline) $
+    intersperse hardline $
       concat
         [ [lTimestampDoc transactionTimestamp],
           map ("  " <>) $ maybe [] descriptionDocs transactionDescription,

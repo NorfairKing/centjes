@@ -85,7 +85,7 @@ parseFormatRoundtrip name parser formatter = withFrozenCallStack $ do
           goldenTextFile (fromAbsFile resultFile) $ do
             here <- getCurrentDir
             rf <- makeRelative here af
-            contents <- T.readFile (fromAbsFile af)
+            contents <- T.strip <$> T.readFile (fromAbsFile af)
             context (show contents) $
               context (T.unpack contents) $ do
                 expected <- shouldParse parser here rf contents

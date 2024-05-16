@@ -27,6 +27,7 @@ import Path
 import qualified Data.Text as T
 import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Semigroup
 
 }
 
@@ -137,16 +138,19 @@ conversion_rate
 
 transaction_dec
   :: { LTransaction }
-  : timestamp tok_newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+  : timestamp tok_newline descriptions { sBE $1 $3 $ Transaction $1 (Just $3) [] [] }
   | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
+
+-- : timestamp tok_newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+-- | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 timestamp
   :: { Located Timestamp }
   : tok_timestamp {% parseTimestamp $1 }
 
 descriptions
-  :: { Maybe (Located Description) }
-  : many(description) { combineDescriptions $1 }
+  :: { Located Description }
+  : some(description) { combineDescriptions $1 }
 
 description
   :: { Located Description }
@@ -298,9 +302,8 @@ parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Times
 parseDescription :: Token -> Alex (Located Description)
 parseDescription t@(Located _ (TokenDescription ds)) = sL1 t <$> eitherParser "Description" Description.fromText ds 
 
-combineDescriptions :: [Located Description] -> Maybe (Located Description)
-combineDescriptions [] = Nothing
-combineDescriptions dss@(d:ds) = sBL d ds <$> Description.combine (map locatedValue dss)
+combineDescriptions :: NonEmpty (Located Description) -> Located Description
+combineDescriptions dss@(d:|ds) = sBL d ds $ sconcat (NE.map locatedValue dss)
 
 parseAccountName :: Token -> Alex (Located AccountName)
 parseAccountName t@(Located _ (TokenVar ans)) = sL1 t <$> maybeParser "AccountName" AccountName.fromText ans
