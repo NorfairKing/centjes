@@ -173,6 +173,7 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/multiline-description.cent
     test_resources/syntax/transaction/formatted/only-description.cent
     test_resources/syntax/transaction/formatted/only-timestamp.cent
+    test_resources/syntax/transaction/formatted/single-posting.cent
     test_resources/syntax/transaction/formatted/timestamp-with-minute.cent
     test_resources/syntax/transaction/formatted/timestamp-with-second.cent
     test_resources/syntax/transaction/formatted/with-assertion.cent

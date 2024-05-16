@@ -141,7 +141,7 @@ $white_no_nl+ ;
 
 <transaction> @pipe    { lex' TokenPipe `andBegin` description }
 <description> @anyline { lex (TokenAnyLine . T.pack) }
-<description> @newline { lex' TokenNewLine `andBegin` 0 }
+<description> @newline { lex' TokenNewLine `andBegin` transaction }
 
 <transaction> @newline { lexNl `andBegin` 0 }
 

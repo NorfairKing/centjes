@@ -139,11 +139,12 @@ conversion_rate
 
 transaction_dec
   :: { LTransaction }
-  : timestamp tok_newline descriptions { sBE $1 $3 $ Transaction $1 (Just $3) [] [] }
+  : timestamp tok_newline postings { sBL $1 $3 $ Transaction $1 Nothing $3 [] }
+  | timestamp tok_newline descriptions postings %shift { sBL $1 $4 $ Transaction $1 (Just $3) $4 [] }
+  | timestamp tok_newline descriptions %shift { sBE $1 $3 $ Transaction $1 (Just $3) [] [] }
   | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 -- : timestamp tok_newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
--- | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
 
 timestamp
   :: { Located Timestamp }
@@ -160,7 +161,7 @@ description
 
 postings
   :: { [LPosting] }
-  : many_sep(tok_newline, posting) { $1 }
+  : some_sep(tok_newline, posting) { NE.toList $1 }
 
 posting
   :: { LPosting }
