@@ -55,6 +55,7 @@ doCompleteCheck declarations = do
 data CheckError ann
   = CheckErrorDeclarationOutOfOrder !(GenLocated ann Timestamp) !(GenLocated ann Timestamp)
   | CheckErrorMissingAttachment !ann !(Attachment ann)
+  | CheckErrorUnusedCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | CheckErrorUnusedAccount !(GenLocated ann (AccountDeclaration ann))
   | CheckErrorCompileError !(CompileError ann)
   | CheckErrorBalanceError !(BalanceError ann)
@@ -78,6 +79,12 @@ instance ToReport (CheckError SourceSpan) where
           (toDiagnosePosition fl, This "This file is missing")
         ]
         []
+    CheckErrorUnusedCurrency (Located dl _) ->
+      Err
+        (Just "CE_UNUSED_CURRENCY")
+        "This currency has been declared but is never used."
+        [(toDiagnosePosition dl, This "This currency is declared here but is never used.")]
+        [Hint "Either use it or delete this declaration."]
     CheckErrorUnusedAccount (Located dl _) ->
       Err
         (Just "CE_UNUSED_ACCOUNT")
@@ -91,6 +98,7 @@ instance ToReport (CheckError SourceSpan) where
 checkDeclarations :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 checkDeclarations declarations = do
   checkDeclarationOrdering declarations
+  checkCurrencyUsage declarations
   checkAccountUsage declarations
   -- Check declarations individually
   traverse_ checkDeclaration declarations
@@ -118,6 +126,51 @@ checkDeclarationOrdering = go . mapMaybe timestampAndSource
                 _ -> pure ()
         let checkRest = go (lt2 : rest)
         checkFirstTup <* checkRest
+
+checkCurrencyUsage :: forall ann. [Declaration ann] -> CheckerT ann ()
+checkCurrencyUsage declarations =
+  let go ::
+        (Map CurrencySymbol (GenLocated ann (CurrencyDeclaration ann)), Set CurrencySymbol) ->
+        Declaration ann ->
+        (Map CurrencySymbol (GenLocated ann (CurrencyDeclaration ann)), Set CurrencySymbol)
+      go t@(ds, us) = \case
+        DeclarationComment _ -> t
+        DeclarationCurrency lcd@(Located _ cd) ->
+          let Located _ cs = currencyDeclarationSymbol cd
+           in (M.insert cs lcd ds, us)
+        DeclarationAccount _ -> t
+        DeclarationTag _ -> t
+        -- TODO cost
+        DeclarationPrice (Located _ pdl) ->
+          let Located _ ps = priceDeclarationCurrencySymbol pdl
+              Located _ cd = priceDeclarationCost pdl
+              Located _ cs = costExpressionCurrencySymbol cd
+           in (ds, S.insert ps $ S.insert cs us)
+        -- TODO cost
+        DeclarationTransaction (Located _ Module.Transaction {..}) ->
+          let currencys =
+                S.unions $
+                  map
+                    ( \(Located _ Module.Posting {..}) ->
+                        S.unions
+                          [ S.singleton (locatedValue postingCurrencySymbol),
+                            maybe
+                              S.empty
+                              ( S.singleton
+                                  . locatedValue
+                                  . costExpressionCurrencySymbol
+                                  . locatedValue
+                              )
+                              postingCost
+                          ]
+                    )
+                    transactionPostings
+           in (ds, S.union currencys us)
+
+      (declared, used) = foldl' go (M.empty, S.empty) declarations
+      unuseds = M.difference declared $ M.fromSet (const ()) used
+   in for_ unuseds $ \unused ->
+        validationTFailure $ CheckErrorUnusedCurrency unused
 
 checkAccountUsage :: forall ann. [Declaration ann] -> CheckerT ann ()
 checkAccountUsage declarations =
