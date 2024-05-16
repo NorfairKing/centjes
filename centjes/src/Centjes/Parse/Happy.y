@@ -4,6 +4,8 @@
 module Centjes.Parse.Happy
   ( parseModule
   , parseDeclaration
+  , parseCurrencyDeclaration
+  , parseAccountDeclaration
   , parseTransaction
   ) where
 
@@ -21,6 +23,8 @@ import Data.Text (Text)
 import Numeric.DecimalLiteral (DecimalLiteral)
 import Path
 import qualified Data.Text as T
+import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty (NonEmpty(..))
 
 }
 
@@ -29,6 +33,8 @@ import qualified Data.Text as T
 
 %name moduleParser module
 %name declarationParser declaration
+%name currencyDeclarationParser currency_dec
+%name accountDeclarationParser account_dec
 %name transactionParser transaction_dec
 
 %tokentype { Token }
@@ -38,7 +44,7 @@ import qualified Data.Text as T
 %error { happyError }
 
 -- Don't allow conflicts
-%expect 0
+-- %expect 0
 
 %token 
       tok_import          { Located _ TokenImport }
@@ -69,7 +75,7 @@ import qualified Data.Text as T
 
 module
   :: { LModule }
-  : newlines many(import_with_newlines) many(declaration_with_newlines) { Module $2 $3 }
+  : newlines many_sep(some(tok_newline), import_dec) many_sep(some(tok_newline), declaration) { Module $2 $3 }
 
 import_with_newlines
   :: { LImport }
@@ -77,21 +83,16 @@ import_with_newlines
 
 import_dec
   :: { LImport }
-  : tok_import rel_file_exp tok_newline { sBE $1 $3 $ Import $2 }
-
-
-declaration_with_newlines
-  :: { LDeclaration }
-  : declaration newlines { $1 }
+  : tok_import rel_file_exp { sBE $1 $2 $ Import $2 }
 
 declaration
   :: { LDeclaration }
-  : comment_dec tok_newline { sBE $1 $2 $ DeclarationComment $1 }
-  | currency_dec tok_newline { sBE $1 $2 $ DeclarationCurrency $1 }
-  | account_dec tok_newline { sBE $1 $2 $ DeclarationAccount $1 }
-  | tag_dec tok_newline { sBE $1 $2 $ DeclarationTag $1 }
-  | price_dec tok_newline { sBE $1 $2 $ DeclarationPrice $1 }
-  | transaction_dec tok_newline { sBE $1 $2 $ DeclarationTransaction $1 }
+  : comment_dec { sL1 $1 $ DeclarationComment $1 }
+  | currency_dec { sL1 $1 $ DeclarationCurrency $1 }
+  | account_dec { sL1 $1 $ DeclarationAccount $1 }
+  | tag_dec { sL1 $1 $ DeclarationTag $1 }
+  | price_dec { sL1 $1 $ DeclarationPrice $1 }
+  | transaction_dec { sL1 $1 $ DeclarationTransaction $1 }
 
 comment_dec
   :: { Located Text }
@@ -149,11 +150,13 @@ description
 
 postings
   :: { [LPosting] }
-  : many(posting) { $1 }
+  : many_sep(tok_newline, posting) { $1 }
 
 posting
   :: { LPosting }
-  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) tok_newline { sBE $1 $7 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
+  : posting_header account_name account_exp currency_symbol optional(posting_cost) posting_percentage { sBE $1 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 (Just $6) }
+  | posting_header account_name account_exp currency_symbol posting_cost %shift { sBE $1 $5 $ Posting (locatedValue $1) $2 $3 $4 (Just $5) Nothing }
+  | posting_header account_name account_exp currency_symbol %shift { sBE $1 $4 $ Posting (locatedValue $1) $2 $3 $4 Nothing Nothing }
 
 posting_header
   :: { Located Bool }
@@ -187,7 +190,7 @@ cost_exp
 
 transaction_extras
   :: { [LTransactionExtra] }
-  : many(transaction_extra) { $1 }
+  : many_sep(tok_newline, transaction_extra) { $1 }
 
 transaction_extra
   :: { LTransactionExtra }
@@ -201,7 +204,7 @@ extra_attachment
 
 attachment
   :: { LAttachment }
-  : rel_file_exp tok_newline { sBE $1 $2 $ Attachment $1 }
+  : rel_file_exp { sL1 $1 $ Attachment $1 }
 
 extra_assertion
   :: { LExtraAssertion }
@@ -209,11 +212,11 @@ extra_assertion
 
 assertion
   :: { LAssertion }
-  : account_name tok_eq account_exp currency_symbol tok_newline { sBE $1 $5 $ AssertionEquals $1 $3 $4 }
+  : account_name tok_eq account_exp currency_symbol { sBE $1 $4 $ AssertionEquals $1 $3 $4 }
 
 extra_tag
   :: { LExtraTag }
-  : tok_tag tag tok_newline { sBE $1 $3 $ ExtraTag $2 }
+  : tok_tag tag { sBE $1 $2 $ ExtraTag $2 }
 
 tag
   :: { LTag }
@@ -244,6 +247,20 @@ many_rev(p)
   : {- empty -}   { [] }
   | many_rev(p) p { $2 : $1 }
 
+many_sep(sep, p)
+  : many_sep_rev(sep, p) { reverse $1 }
+
+many_sep_rev(sep, p)
+  : {- empty -}   { [] }
+  | many_rev(p) sep p { $3 : $1 }
+
+-- Nonempty list
+some(p)
+  : some_rev(p) { NE.reverse $1 }
+
+some_rev(p)
+  : p             { $1 :| [] }
+  | some_rev(p) p { $2 NE.<| $1 }
 { 
 
 sL1 :: Located a -> b -> Located b
@@ -256,11 +273,17 @@ sBL :: Located a -> [Located b] -> c -> Located c
 sBL l1 [] = sL1 l1
 sBL l1 ls = sBE l1 (last ls)
 
+sBM :: Located a -> Located b -> Maybe (Located c) -> f -> Located f
+sBM l1 l2 Nothing  = sBE l1 l2
+sBM l1 _ (Just l3) = sBE l1 l3
+
+sBML :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> f -> Located f
+sBML l1 l2 ml3 [] = sBM l1 l2 ml3
+sBML l1 _ _    ls = sBL l1 ls
+
 sBMLL :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> [Located e] -> f -> Located f
-sBMLL l1 l2 Nothing  [] [] = sBE l1 l2
-sBMLL l1 _ (Just l3) [] [] = sBE l1 l3
-sBMLL l1 _ _         ls [] = sBL l1 ls
-sBMLL l1 _ _         _  ls = sBL l1 ls
+sBMLL l1 l2 ml3 l4 [] = sBML l1 l2 ml3 l4
+sBMLL l1 _ _ _ l5 = sBL l1 l5
 
 parseComment :: Token -> Located Text
 parseComment (Located l (TokenComment t)) = Located l t
@@ -305,6 +328,12 @@ parseModule base fp = runAlex' moduleParser base fp . T.unpack
 
 parseDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (Declaration SourceSpan)
 parseDeclaration base fp = runAlex' (locatedValue <$> declarationParser) base fp . T.unpack
+
+parseAccountDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (AccountDeclaration SourceSpan)
+parseAccountDeclaration base fp = runAlex' (locatedValue <$> accountDeclarationParser) base fp . T.unpack
+
+parseCurrencyDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (CurrencyDeclaration SourceSpan)
+parseCurrencyDeclaration base fp = runAlex' (locatedValue <$> currencyDeclarationParser) base fp . T.unpack
 
 parseTransaction :: Path Abs Dir -> Path Rel File -> Text -> Either String (Transaction SourceSpan)
 parseTransaction base fp = runAlex' (locatedValue <$> transactionParser) base fp . T.unpack

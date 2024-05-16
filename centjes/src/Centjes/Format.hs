@@ -5,6 +5,8 @@
 module Centjes.Format
   ( formatModule,
     formatDeclaration,
+    formatCurrencyDeclaration,
+    formatAccountDeclaration,
     formatTransaction,
   )
 where
@@ -30,6 +32,12 @@ formatModule = renderDocText . moduleDoc
 formatDeclaration :: Declaration l -> Text
 formatDeclaration = renderDocText . declarationDoc
 
+formatCurrencyDeclaration :: CurrencyDeclaration l -> Text
+formatCurrencyDeclaration = renderDocText . currencyDeclarationDoc
+
+formatAccountDeclaration :: AccountDeclaration l -> Text
+formatAccountDeclaration = renderDocText . accountDeclarationDoc
+
 formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
 
@@ -51,7 +59,7 @@ moduleDoc Module {..} =
     go _ [] = []
     go Nothing (Located _ d : ds) =
       -- No newline up front, but remember the declaration type
-      declarationDoc d : go (Just (decType d)) ds
+      declarationDoc d <> hardline : go (Just (decType d)) ds
     go (Just dt) (Located _ d : ds) =
       let dt' = decType d
           insertEmptyLine = case (dt, dt') of
@@ -74,7 +82,7 @@ moduleDoc Module {..} =
               then (hardline :)
               else id
           )
-            $ declarationDoc d : go (Just dt') ds
+            $ declarationDoc d <> hardline : go (Just dt') ds
 
 data DecType
   = DecComment
@@ -107,8 +115,8 @@ importDoc (Import (Located _ fp)) =
 declarationDoc :: Declaration l -> Doc ann
 declarationDoc = \case
   DeclarationComment t -> commentDoc t
-  DeclarationCurrency cd -> currencyDeclarationDoc cd
-  DeclarationAccount ad -> accountDeclarationDoc ad
+  DeclarationCurrency cd -> lCurrencyDeclarationDoc cd
+  DeclarationAccount ad -> lAccountDeclarationDoc ad
   DeclarationTag ad -> tagDeclarationDoc ad
   DeclarationPrice pd -> priceDeclarationDoc pd
   DeclarationTransaction t -> transactionDecDoc t
@@ -119,18 +127,23 @@ commentDoc (Located _ t) =
       commentLine l = "--" <+> pretty l <> hardline
    in mconcat $ map commentLine ls
 
-currencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc ann
-currencyDeclarationDoc (Located _ CurrencyDeclaration {..}) =
+lCurrencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc ann
+lCurrencyDeclarationDoc = currencyDeclarationDoc . locatedValue
+
+currencyDeclarationDoc :: CurrencyDeclaration l -> Doc ann
+currencyDeclarationDoc CurrencyDeclaration {..} =
   "currency"
     <+> currencySymbolDoc (locatedValue currencyDeclarationSymbol)
     <+> quantisationFactorDoc currencyDeclarationQuantisationFactor
-    <> hardline
 
 quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc ann
 quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
 
-accountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
-accountDeclarationDoc (Located _ AccountDeclaration {..}) =
+lAccountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
+lAccountDeclarationDoc = accountDeclarationDoc . locatedValue
+
+accountDeclarationDoc :: AccountDeclaration l -> Doc ann
+accountDeclarationDoc AccountDeclaration {..} =
   maybe
     id
     (\at -> (<+> lAccountTypeDoc at))
@@ -138,7 +151,6 @@ accountDeclarationDoc (Located _ AccountDeclaration {..}) =
     ( "account"
         <+> lAccountNameDoc accountDeclarationName
     )
-    <> hardline
 
 lAccountTypeDoc :: GenLocated l AccountType -> Doc ann
 lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at
