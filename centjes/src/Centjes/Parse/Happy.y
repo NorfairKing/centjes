@@ -7,6 +7,7 @@ module Centjes.Parse.Happy
   , parseCurrencyDeclaration
   , parseAccountDeclaration
   , parseTagDeclaration
+  , parsePriceDeclaration
   , parseTransaction
   ) where
 
@@ -37,6 +38,7 @@ import Data.List.NonEmpty (NonEmpty(..))
 %name currencyDeclarationParser currency_dec
 %name accountDeclarationParser account_dec
 %name tagDeclarationParser tag_dec
+%name priceDeclarationParser price_dec
 %name transactionParser transaction_dec
 
 %tokentype { Token }
@@ -331,14 +333,17 @@ parseModule base fp = runAlex' moduleParser base fp . T.unpack
 parseDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (Declaration SourceSpan)
 parseDeclaration base fp = runAlex' (locatedValue <$> declarationParser) base fp . T.unpack
 
-parseTagDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (TagDeclaration SourceSpan)
-parseTagDeclaration base fp = runAlex' (locatedValue <$> tagDeclarationParser) base fp . T.unpack
-
 parseCurrencyDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (CurrencyDeclaration SourceSpan)
 parseCurrencyDeclaration base fp = runAlex' (locatedValue <$> currencyDeclarationParser) base fp . T.unpack
 
 parseAccountDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (AccountDeclaration SourceSpan)
 parseAccountDeclaration base fp = runAlex' (locatedValue <$> accountDeclarationParser) base fp . T.unpack
+
+parseTagDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (TagDeclaration SourceSpan)
+parseTagDeclaration base fp = runAlex' (locatedValue <$> tagDeclarationParser) base fp . T.unpack
+
+parsePriceDeclaration :: Path Abs Dir -> Path Rel File -> Text -> Either String (PriceDeclaration SourceSpan)
+parsePriceDeclaration base fp = runAlex' (locatedValue <$> priceDeclarationParser) base fp . T.unpack
 
 parseTransaction :: Path Abs Dir -> Path Rel File -> Text -> Either String (Transaction SourceSpan)
 parseTransaction base fp = runAlex' (locatedValue <$> transactionParser) base fp . T.unpack

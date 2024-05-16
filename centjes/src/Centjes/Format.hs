@@ -8,6 +8,7 @@ module Centjes.Format
     formatCurrencyDeclaration,
     formatAccountDeclaration,
     formatTagDeclaration,
+    formatPriceDeclaration,
     formatTransaction,
   )
 where
@@ -41,6 +42,9 @@ formatAccountDeclaration = renderDocText . accountDeclarationDoc
 
 formatTagDeclaration :: TagDeclaration l -> Text
 formatTagDeclaration = renderDocText . tagDeclarationDoc
+
+formatPriceDeclaration :: PriceDeclaration l -> Text
+formatPriceDeclaration = renderDocText . priceDeclarationDoc
 
 formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
@@ -122,7 +126,7 @@ declarationDoc = \case
   DeclarationCurrency cd -> lCurrencyDeclarationDoc cd
   DeclarationAccount ad -> lAccountDeclarationDoc ad
   DeclarationTag ad -> lTagDeclarationDoc ad
-  DeclarationPrice pd -> priceDeclarationDoc pd
+  DeclarationPrice pd -> lPriceDeclarationDoc pd
   DeclarationTransaction t -> transactionDecDoc t
 
 commentDoc :: GenLocated l Text -> Doc ann
@@ -167,13 +171,15 @@ tagDeclarationDoc TagDeclaration {..} =
   "tag"
     <+> tagDoc (locatedValue tagDeclarationTag)
 
-priceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
-priceDeclarationDoc (Located _ PriceDeclaration {..}) =
+lPriceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
+lPriceDeclarationDoc = priceDeclarationDoc . locatedValue
+
+priceDeclarationDoc :: PriceDeclaration l -> Doc ann
+priceDeclarationDoc PriceDeclaration {..} =
   "price"
     <+> lTimestampDoc priceDeclarationTimestamp
     <+> lCurrencySymbolDoc priceDeclarationCurrencySymbol
     <+> lCostExpressionDoc priceDeclarationCost
-    <> hardline
 
 lConversionRateDoc :: GenLocated l (RationalExpression l) -> Doc ann
 lConversionRateDoc = conversionRateDoc . locatedValue
