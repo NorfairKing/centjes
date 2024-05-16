@@ -37,6 +37,18 @@ spec = do
                 Failure _ -> pure ()
                 Success p -> shouldBeValid p
 
+  describe "compilePriceDeclaration" $ do
+    it "produces valid ledgers" $
+      forAllValid $ \currencies ->
+        producesValid $ compilePriceDeclaration @() currencies
+
+    it "produces valid ledger priceDeclarations if all the currencies are known" $
+      forAllValid $ \priceDeclaration ->
+        forAll (sequence (M.fromSet (const genValid) (Module.priceDeclarationCurrencySymbols priceDeclaration))) $ \currencies -> do
+          case compilePriceDeclaration currencies (Located () priceDeclaration) of
+            Failure _ -> pure ()
+            Success t -> shouldBeValid t
+
   describe "compileTransaction" $ do
     it "produces valid ledgers" $
       forAllValid $ \currencies ->

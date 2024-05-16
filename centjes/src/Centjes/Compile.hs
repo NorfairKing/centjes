@@ -10,6 +10,7 @@ module Centjes.Compile
     compileDeclarations,
     compileDeclarationsCurrencies,
     compileCurrencyDeclaration,
+    compilePriceDeclaration,
     compileTransaction,
     compilePosting,
   )
