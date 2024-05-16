@@ -24,6 +24,7 @@ spec :: Spec
 spec = do
   parseFormatRoundtrip "currency" parseCurrencyDeclaration formatCurrencyDeclaration
   parseFormatRoundtrip "account" parseAccountDeclaration formatAccountDeclaration
+  parseFormatRoundtrip "tag" parseTagDeclaration formatTagDeclaration
   parseFormatRoundtrip "transaction" parseTransaction formatTransaction
   parseFormatRoundtrip "declaration" parseDeclaration formatDeclaration
   parseFormatRoundtrip "module" parseModule formatModule

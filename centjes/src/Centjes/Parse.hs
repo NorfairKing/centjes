@@ -3,6 +3,7 @@ module Centjes.Parse
     parseDeclaration,
     parseCurrencyDeclaration,
     parseAccountDeclaration,
+    parseTagDeclaration,
     parseTransaction,
   )
 where
@@ -12,5 +13,6 @@ import Centjes.Parse.Happy
     parseCurrencyDeclaration,
     parseDeclaration,
     parseModule,
+    parseTagDeclaration,
     parseTransaction,
   )
