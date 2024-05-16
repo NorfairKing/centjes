@@ -89,8 +89,7 @@ $alpha = [A-Za-z]
 @tag = "tag "
 @price = "price "
 @eq = \=
-
-@comment = "-- " .* \n
+@doubledash = "-- "
 
 tokens :-
 
@@ -107,7 +106,9 @@ $white_no_nl+ ;
 <imp> @file_path        { lex TokenFilePath `andBegin` 0 }
 
 -- Comments
-<0> @comment            { lex (TokenComment . T.pack . drop (length "-- ") . init) }
+<0> @doubledash            { lex' TokenDoubleDash `andBegin` comment }
+<comment> @anyline         { lex (TokenAnyLine . T.pack) }
+<comment> @newline         { lex' TokenNewLine `andBegin` 0 }
 
 -- Currency declarations
 <0> @currency               { lex' TokenCurrency `andBegin` currency }
@@ -229,6 +230,7 @@ data TokenClass
   | TokenVar !Text
   | TokenDecimalLiteral !DecimalLiteral
   | TokenFloat !Double
+  | TokenDoubleDash
   | TokenPipe
   | TokenAnyLine !Text
   | TokenStar
