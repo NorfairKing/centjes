@@ -49,7 +49,7 @@ import Data.Semigroup
 %error { happyError }
 
 -- Don't allow conflicts
--- %expect 0
+%expect 0
 
 %token 
       tok_doubledash      { Located _ TokenDoubleDash }
@@ -74,7 +74,6 @@ import Data.Semigroup
       tok_percent         { Located _ TokenPercent }
       tok_currency        { Located _ TokenCurrency}
       tok_account         { Located _ TokenAccount }
-      tok_newline         { Located _ TokenNewLine }
 
 
 %%
@@ -114,8 +113,7 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : tok_account account_name { sBE $1 $2 $ AccountDeclaration $2 Nothing }
-  | tok_account account_name account_type { sBE $1 $3 $ AccountDeclaration $2 (Just $3) }
+  : tok_account account_name optional(account_type) { sBEM $1 $2 $3 $ AccountDeclaration $2 $3 }
 
 account_type
   :: { Located AccountType }
@@ -135,15 +133,16 @@ conversion_rate
 
 transaction_dec
   :: { LTransaction }
-  : timestamp optional(description) many(posting) transaction_extras { sBMLL $1 $2 $3 $4 (Transaction $1 $2 $3 $4) }
+  : timestamp descriptions many(posting) transaction_extras { sBMLL $1 $2 $3 $4 (Transaction $1 $2 $3 $4) }
 
 timestamp
   :: { Located Timestamp }
   : tok_timestamp {% parseTimestamp $1 }
 
 descriptions
-  :: { Located Description }
-  : some(description) { combineDescriptions $1 }
+  :: { Maybe (Located Description) }
+  : { Nothing }
+  | some(description) { Just (combineDescriptions $1) }
 
 -- TODO get the location of the pipe char in there too.
 description
@@ -152,9 +151,7 @@ description
 
 posting
   :: { LPosting }
-  : posting_header account_name account_exp currency_symbol optional(posting_cost) posting_percentage { sBE $1 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 (Just $6) }
-  | posting_header account_name account_exp currency_symbol posting_cost %shift { sBE $1 $5 $ Posting (locatedValue $1) $2 $3 $4 (Just $5) Nothing }
-  | posting_header account_name account_exp currency_symbol %shift { sBE $1 $4 $ Posting (locatedValue $1) $2 $3 $4 Nothing Nothing }
+  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) { sBEMM $1 $4 $5 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
 
 posting_header
   :: { Located Bool }
@@ -269,6 +266,14 @@ sL1 (Located l val) b = Located l b
 
 sBE :: Located a -> Located b -> c -> Located c
 sBE (Located begin _) (Located end _) c = Located (combineSpans begin end) c
+
+sBEM :: Located a -> Located b -> Maybe (Located c) -> d -> Located d
+sBEM l1 l2 Nothing   = sBE l1 l2
+sBEM l1 _  (Just l3) = sBE l1 l3
+
+sBEMM :: Located a -> Located b -> Maybe (Located c) -> Maybe (Located d) -> e -> Located e
+sBEMM l1 l2 mL3 Nothing   = sBEM l1 l2 mL3
+sBEMM l1 _  _   (Just l4) = sBE l1 l4
 
 sBL :: Located a -> [Located b] -> c -> Located c
 sBL l1 [] = sL1 l1

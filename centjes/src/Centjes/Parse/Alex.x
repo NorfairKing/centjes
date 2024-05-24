@@ -109,16 +109,16 @@ tokens :-
 <currency> @decimal_literal { lexDL `andBegin` 0 }
 
 -- Account declarations
-<0> @account        { lex' TokenAccount `andBegin` account}
+<0> @account        { lex' TokenAccount `andBegin` account }
 <account> @var     { lexVar }
 <account> @newline { begin 0 }
 
 -- Tag declarations
-<0> @tag        { lex' TokenTag `andBegin` dec_tag}
+<0> @tag        { lex' TokenTag `andBegin` dec_tag }
 <dec_tag> @var     { lexVar `andBegin` 0 }
 
 -- Price declarations
-<0> @price               { lex' TokenPrice `andBegin` price}
+<0> @price               { lex' TokenPrice `andBegin` price }
 <price> @timestamp       { lexTimestamp }
 <price> @var             { lexVar }
 <price> @decimal_literal { lexDL }
@@ -150,12 +150,12 @@ tokens :-
 <assertion> @decimal_literal { lexDL }
 <assertion> @newline@white*  { begin 0 }
 
-<extra> @attach         { lex' TokenAttach `andBegin` attachment}
+<extra> @attach         { lex' TokenAttach `andBegin` attachment }
 <attachment> @file_path { lex TokenFilePath }
 <attachment> @newline   { begin 0 }
 <attachment> @newline@white*  { begin 0 }
 
-<extra> @tag            { lex' TokenTag `andBegin` tag}
+<extra> @tag            { lex' TokenTag `andBegin` tag }
 <tag> @var       { lexVar }
 <tag> @newline@white*  { begin 0 }
 
@@ -266,7 +266,7 @@ lex f = lexM (pure . f)
 lexM :: (String -> Alex TokenClass) -> AlexAction Token
 lexM f = \(p,_,_,s) i -> do
   let begin = alexSourcePosition p
-  let end = begin { sourcePositionColumn = sourcePositionColumn begin + i}
+  let end = begin { sourcePositionColumn = sourcePositionColumn begin + i }
   state <- alexGetUserState
   let span =
         SourceSpan
