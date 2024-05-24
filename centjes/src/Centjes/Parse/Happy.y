@@ -98,6 +98,7 @@ declaration
 comment_dec
   :: { Located Text }
   : tok_doubledash tok_anyline { parseAnyLine $2 }
+  | tok_doubledash  { sL1 $1 "" }
 
 currency_dec
   :: { LCurrencyDeclaration }

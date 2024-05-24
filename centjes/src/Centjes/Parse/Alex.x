@@ -34,6 +34,7 @@ import qualified Data.Text as T
 $nl          = [\n\r\f]
 $tab         = \t
 @newline     = $nl
+-- TODO remove this and use $white
 @white       = [\n\r\f\v\t\ ]
 
 -- Values
@@ -70,7 +71,7 @@ $alpha = [A-Za-z]
   | @day \  @time_of_day
 
 @file_path = [$alpha $digit \_ \- \: .]+
-@anyline = [^\n\r]*
+@anyline = [^\n\r]+
 
 @pipe = "| "
 @star = "* "
@@ -101,7 +102,8 @@ tokens :-
 
 -- Comments
 <0> @doubledash            { lex' TokenDoubleDash `andBegin` comment }
-<comment> @anyline         { lex (TokenAnyLine . T.pack) `andBegin` 0 }
+<comment> @anyline         { lex (TokenAnyLine . T.pack) }
+<comment> @newline@white*         { begin 0 }
 
 -- Currency declarations
 <0> @currency               { lex' TokenCurrency `andBegin` currency }
@@ -129,7 +131,8 @@ tokens :-
 <0> @timestamp { lexTimestamp }
 
 <0> @pipe              { lex' TokenPipe `andBegin` description }
-<description> @anyline { lex (TokenAnyLine . T.pack) `andBegin` 0 }
+<description> @anyline { lex (TokenAnyLine . T.pack) }
+<description> @newline@white* { begin 0 }
 
 <0> @star        { lex' TokenStar `andBegin` posting }
 <0> @bang        { lex' TokenBang `andBegin` posting }
