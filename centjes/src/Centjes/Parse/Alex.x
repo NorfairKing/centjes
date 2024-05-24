@@ -34,7 +34,7 @@ import qualified Data.Text as T
 $nl          = [\n\r\f]
 $tab         = \t
 @newline     = $nl
-$white       = [\n\r\f\v\t\ ]
+@white       = [\n\r\f\v\t\ ]
 
 -- Values
 $digit = [0-9]
@@ -92,9 +92,6 @@ $alpha = [A-Za-z]
 
 tokens :-
 
--- Skip whitespace everywhere
-$white+ ;
-
 -- The 0 start code means "toplevel declaration"
 
 -- Imports
@@ -129,42 +126,41 @@ $white+ ;
 <price> @newline         { begin 0 }
 
 -- Transactions
-<0> @timestamp { lexTimestamp `andBegin` transaction }
+<0> @timestamp { lexTimestamp }
 
-<transaction> @pipe    { lex' TokenPipe `andBegin` description }
-<description> @anyline { lex (TokenAnyLine . T.pack) `andBegin` transaction }
+<0> @pipe              { lex' TokenPipe `andBegin` description }
+<description> @anyline { lex (TokenAnyLine . T.pack) `andBegin` 0 }
 
-<transaction> @star        { lex' TokenStar `andBegin` posting }
-<transaction> @bang        { lex' TokenBang `andBegin` posting }
+<0> @star        { lex' TokenStar `andBegin` posting }
+<0> @bang        { lex' TokenBang `andBegin` posting }
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
 <posting> @at              { lexAt }
 <posting> @slash           { lexSlash }
 <posting> @tilde           { lexTilde }
 <posting> @percent         { lexPercent }
-<posting> @newline         { begin transaction}
+<posting> @newline@white*  { begin 0 }
 
 
-<transaction> @plus  { lex' TokenPlus `andBegin` extra }
+<0> @plus  { lex' TokenPlus `andBegin` extra }
 
 <extra> @assert             { lex' TokenAssert `andBegin` assertion }
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
-<assertion> @newline         { begin transaction}
+<assertion> @newline@white*  { begin 0 }
 
 <extra> @attach         { lex' TokenAttach `andBegin` attachment}
 <attachment> @file_path { lex TokenFilePath }
-<attachment> @newline   { begin transaction}
+<attachment> @newline   { begin 0 }
+<attachment> @newline@white*  { begin 0 }
 
 <extra> @tag            { lex' TokenTag `andBegin` tag}
 <tag> @var       { lexVar }
-<tag> @newline   { begin transaction}
+<tag> @newline@white*  { begin 0 }
 
--- If we see another timestamp in a transaction, that means it's the next
--- transaction without an extra newline inbetween.
-<transaction> @timestamp { lexTimestamp `andBegin` transaction }
-
+-- Skip any other whitespace everywhere
+@white+ ;
 {
 lexTimestamp :: AlexAction Token
 lexTimestamp = lex TokenTimestamp 
@@ -298,9 +294,11 @@ alexMonadScan' = do
               [] -> "<empty>"
               (' ': _) -> "<space>"
               ('\t': _) -> "<tab>"
+              ('\n': _) -> "<newline>"
               (c:_) -> show c
         span <- spanFromSingle p
-        alexError' span ("lexical error at character '" ++ desc ++ "'")
+        state <- alexGetStartCode
+        alexError' span ("lexical error at character " ++ desc ++ " currently in state " ++ show state)
     AlexSkip  inp' len -> do
         alexSetInput inp'
         alexMonadScan'
