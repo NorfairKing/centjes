@@ -219,8 +219,7 @@ alexInitUserState =
 type Token = GenLocated SourceSpan TokenClass
 
 data TokenClass
-  = TokenComment !Text
-  | TokenAttach
+  = TokenAttach
   | TokenAssert
   | TokenTag
   | TokenPrice

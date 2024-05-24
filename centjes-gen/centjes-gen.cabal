@@ -146,6 +146,7 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/transaction.cent
     test_resources/syntax/declaration/valid/comment.cent
     test_resources/syntax/declaration/valid/currency.cent
+    test_resources/syntax/declaration/valid/import.cent
     test_resources/syntax/declaration/valid/price.cent
     test_resources/syntax/declaration/valid/signed.cent
     test_resources/syntax/declaration/valid/tag.cent
@@ -160,6 +161,7 @@ extra-source-files:
     test_resources/syntax/module/formatted/without-newline-inbetween.cent
     test_resources/syntax/module/valid/aligned-amounts.cent
     test_resources/syntax/module/valid/commented-transaction.cent
+    test_resources/syntax/module/valid/empty.cent
     test_resources/syntax/module/valid/example.cent
     test_resources/syntax/module/valid/multiline-comment.cent
     test_resources/syntax/module/valid/multiple-accounts.cent

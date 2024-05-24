@@ -52,8 +52,8 @@ import Data.Semigroup
 -- %expect 0
 
 %token 
+      tok_doubledash      { Located _ TokenDoubleDash }
       tok_import          { Located _ TokenImport }
-      tok_comment         { Located _ (TokenComment _) }
       tok_attach          { Located _ TokenAttach }
       tok_assert          { Located _ TokenAssert }
       tok_tag             { Located _ TokenTag }
@@ -102,7 +102,7 @@ declaration
 
 comment_dec
   :: { Located Text }
-  : tok_comment { parseComment $1 }
+  : tok_doubledash tok_anyline { parseAnyLine $2 }
 
 currency_dec
   :: { LCurrencyDeclaration }
@@ -303,8 +303,6 @@ sBMLL :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> [Located 
 sBMLL l1 l2 ml3 l4 [] = sBML l1 l2 ml3 l4
 sBMLL l1 _ _ _ l5 = sBL l1 l5
 
-parseComment :: Token -> Located Text
-parseComment (Located l (TokenComment t)) = Located l t
 
 parseTimestamp :: Token -> Alex (Located Timestamp)
 parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Timestamp" Timestamp.fromString ds

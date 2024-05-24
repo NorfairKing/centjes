@@ -19,7 +19,7 @@ import Centjes.Location
 import Centjes.Module
 import qualified Centjes.Tag as Tag
 import qualified Centjes.Timestamp as Timestamp
-import Data.List (intercalate, intersperse)
+import Data.List (intersperse)
 import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -133,7 +133,7 @@ declarationDoc = \case
 commentDoc :: GenLocated l Text -> Doc ann
 commentDoc (Located _ t) =
   let ls = if T.null t then [""] else T.lines t
-      commentLine l = "--" <+> pretty l <> hardline
+      commentLine l = "--" <+> pretty l
    in mconcat $ map commentLine ls
 
 lCurrencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc ann
