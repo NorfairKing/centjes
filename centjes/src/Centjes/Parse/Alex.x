@@ -114,12 +114,11 @@ $white+ ;
 -- Account declarations
 <0> @account        { lex' TokenAccount `andBegin` account}
 <account> @var     { lexVar }
-<account> @newline { lexNl `andBegin` 0 }
+<account> @newline { begin 0 }
 
 -- Tag declarations
 <0> @tag        { lex' TokenTag `andBegin` dec_tag}
-<dec_tag> @var     { lexVar }
-<dec_tag> @newline { lexNl `andBegin` 0 }
+<dec_tag> @var     { lexVar `andBegin` 0 }
 
 -- Price declarations
 <0> @price               { lex' TokenPrice `andBegin` price}
@@ -127,19 +126,16 @@ $white+ ;
 <price> @var             { lexVar }
 <price> @decimal_literal { lexDL }
 <price> @slash           { lexSlash }
-<price> @newline         { lexNl `andBegin` 0 }
+<price> @newline         { begin 0 }
 
 -- Transactions
-<0> @timestamp { lexTimestamp `andBegin` transaction_header }
-
--- We need a separate state for the newline after the day
-<transaction_header>  @newline  { lexNl `andBegin` transaction}
+<0> @timestamp { lexTimestamp `andBegin` transaction }
 
 <transaction> @pipe    { lex' TokenPipe `andBegin` description }
 <description> @anyline { lex (TokenAnyLine . T.pack) }
 <description> @newline { lex' TokenNewLine `andBegin` transaction }
 
-<transaction> @newline { lexNl `andBegin` 0 }
+<transaction> @newline { begin 0 }
 
 <transaction> @star        { lex' TokenStar `andBegin` posting }
 <transaction> @bang        { lex' TokenBang `andBegin` posting }
@@ -149,7 +145,7 @@ $white+ ;
 <posting> @slash           { lexSlash }
 <posting> @tilde           { lexTilde }
 <posting> @percent         { lexPercent }
-<posting> @newline         { lexNl `andBegin` transaction}
+<posting> @newline         { begin transaction}
 
 
 <transaction> @plus  { lex' TokenPlus `andBegin` extra }
@@ -158,19 +154,19 @@ $white+ ;
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
-<assertion> @newline         { lexNl `andBegin` transaction}
+<assertion> @newline         { begin transaction}
 
 <extra> @attach         { lex' TokenAttach `andBegin` attachment}
 <attachment> @file_path { lex TokenFilePath }
-<attachment> @newline   { lexNl `andBegin` transaction}
+<attachment> @newline   { begin transaction}
 
 <extra> @tag            { lex' TokenTag `andBegin` tag}
 <tag> @var       { lexVar }
-<tag> @newline   { lexNl `andBegin` transaction}
+<tag> @newline   { begin transaction}
 
 -- If we see another timestamp in a transaction, that means it's the next
 -- transaction without an extra newline inbetween.
-<transaction> @timestamp { lexTimestamp `andBegin` transaction_header }
+<transaction> @timestamp { lexTimestamp `andBegin` transaction }
 
 {
 lexTimestamp :: AlexAction Token
