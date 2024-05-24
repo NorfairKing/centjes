@@ -81,11 +81,7 @@ import Data.Semigroup
 
 module
   :: { LModule }
-  : newlines many_sep(some(tok_newline), import_dec) many_sep(some(tok_newline), declaration) { Module $2 $3 }
-
-import_with_newlines
-  :: { LImport }
-  : import_dec newlines { $1 }
+  : many(import_dec) many(declaration) { Module $1 $2 }
 
 import_dec
   :: { LImport }
@@ -139,12 +135,7 @@ conversion_rate
 
 transaction_dec
   :: { LTransaction }
-  : timestamp tok_newline postings { sBL $1 $3 $ Transaction $1 Nothing $3 [] }
-  | timestamp tok_newline descriptions postings %shift { sBL $1 $4 $ Transaction $1 (Just $3) $4 [] }
-  | timestamp tok_newline descriptions %shift { sBE $1 $3 $ Transaction $1 (Just $3) [] [] }
-  | timestamp %shift { sL1 $1 $ Transaction $1 Nothing [] [] }
-
--- : timestamp tok_newline descriptions postings transaction_extras { sBMLL $1 $2 $3 $4 $5 (Transaction $1 $3 $4 $5) }
+  : timestamp optional(description) many(posting) transaction_extras { sBMLL $1 $2 $3 $4 (Transaction $1 $2 $3 $4) }
 
 timestamp
   :: { Located Timestamp }
@@ -152,16 +143,12 @@ timestamp
 
 descriptions
   :: { Located Description }
-  : some_sep(tok_newline, description) { combineDescriptions $1 }
+  : some(description) { combineDescriptions $1 }
 
 -- TODO get the location of the pipe char in there too.
 description
   :: { Located Description }
   : tok_pipe tok_anyline {% mapM (eitherParser "Description" Description.fromText) (parseAnyLine $2) }
-
-postings
-  :: { [LPosting] }
-  : some_sep(tok_newline, posting) { NE.toList $1 }
 
 posting
   :: { LPosting }
@@ -201,7 +188,7 @@ cost_exp
 
 transaction_extras
   :: { [LTransactionExtra] }
-  : many_sep(tok_newline, transaction_extra) { $1 }
+  : many(transaction_extra) { $1 }
 
 transaction_extra
   :: { LTransactionExtra }
@@ -240,10 +227,6 @@ rel_file_exp
 file_path_exp
   :: { Located FilePath }
   : tok_file_path  { parseFilePath $1 }
-
-newlines
-  :: { [Token] }
-  : many(tok_newline) { $1 }
 
 -- Helpers
 optional(p)
@@ -291,17 +274,17 @@ sBL :: Located a -> [Located b] -> c -> Located c
 sBL l1 [] = sL1 l1
 sBL l1 ls = sBE l1 (last ls)
 
-sBM :: Located a -> Located b -> Maybe (Located c) -> f -> Located f
-sBM l1 l2 Nothing  = sBE l1 l2
-sBM l1 _ (Just l3) = sBE l1 l3
+sBM :: Located a -> Maybe (Located c) -> f -> Located f
+sBM l1 Nothing   = sL1 l1
+sBM l1 (Just l3) = sBE l1 l3
 
-sBML :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> f -> Located f
-sBML l1 l2 ml3 [] = sBM l1 l2 ml3
-sBML l1 _ _    ls = sBL l1 ls
+sBML :: Located a -> Maybe (Located c) -> [Located d] -> f -> Located f
+sBML l1 ml3 [] = sBM l1 ml3
+sBML l1 _   ls = sBL l1 ls
 
-sBMLL :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> [Located e] -> f -> Located f
-sBMLL l1 l2 ml3 l4 [] = sBML l1 l2 ml3 l4
-sBMLL l1 _ _ _ l5 = sBL l1 l5
+sBMLL :: Located a -> Maybe (Located c) -> [Located d] -> [Located e] -> f -> Located f
+sBMLL l1 ml3 l4 [] = sBML l1 ml3 l4
+sBMLL l1 _ _ l5 = sBL l1 l5
 
 
 parseTimestamp :: Token -> Alex (Located Timestamp)

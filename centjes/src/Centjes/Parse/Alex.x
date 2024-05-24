@@ -104,7 +104,7 @@ $white+ ;
 
 -- Comments
 <0> @doubledash            { lex' TokenDoubleDash `andBegin` comment }
-<comment> @anyline         { lex (TokenAnyLine . T.pack) `andBegin` 0}
+<comment> @anyline         { lex (TokenAnyLine . T.pack) `andBegin` 0 }
 
 -- Currency declarations
 <0> @currency               { lex' TokenCurrency `andBegin` currency }
@@ -132,10 +132,7 @@ $white+ ;
 <0> @timestamp { lexTimestamp `andBegin` transaction }
 
 <transaction> @pipe    { lex' TokenPipe `andBegin` description }
-<description> @anyline { lex (TokenAnyLine . T.pack) }
-<description> @newline { lex' TokenNewLine `andBegin` transaction }
-
-<transaction> @newline { begin 0 }
+<description> @anyline { lex (TokenAnyLine . T.pack) `andBegin` transaction }
 
 <transaction> @star        { lex' TokenStar `andBegin` posting }
 <transaction> @bang        { lex' TokenBang `andBegin` posting }
