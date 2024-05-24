@@ -18,7 +18,6 @@ import Centjes.Description as Description
 import Centjes.Location
 import Centjes.Module
 import Centjes.Parse.Alex
-import Centjes.Parse.Utils
 import Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Data.Text (Text)

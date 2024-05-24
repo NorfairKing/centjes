@@ -41,7 +41,6 @@ library
       Centjes.Parse
       Centjes.Parse.Alex
       Centjes.Parse.Happy
-      Centjes.Parse.Utils
       Centjes.Report.Balance
       Centjes.Report.Check
       Centjes.Report.Register

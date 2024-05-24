@@ -190,7 +190,7 @@ data AccountDeclaration ann = AccountDeclaration
   { accountDeclarationName :: !(GenLocated ann AccountName),
     accountDeclarationType :: !(Maybe (GenLocated ann AccountType))
   }
-  deriving stock (Show, Eq, Ord, Generic)
+  deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (AccountDeclaration ann)
 
@@ -393,7 +393,7 @@ instance (Validity ann) => Validity (TransactionExtra ann)
 type LExtraAttachment = LLocated ExtraAttachment
 
 newtype ExtraAttachment ann = ExtraAttachment {unExtraAttachment :: GenLocated ann (Attachment ann)}
-  deriving stock (Show, Eq, Generic)
+  deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (ExtraAttachment ann)
 

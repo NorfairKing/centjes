@@ -44,9 +44,6 @@ data SourceSpan = SourceSpan
 
 instance Validity SourceSpan
 
-instance Semigroup SourceSpan where
-  (<>) = combineSpans
-
 toDiagnosePosition :: SourceSpan -> Diagnose.Position
 toDiagnosePosition SourceSpan {..} =
   Diagnose.Position
