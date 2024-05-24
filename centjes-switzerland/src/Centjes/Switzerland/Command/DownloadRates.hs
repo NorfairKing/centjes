@@ -122,6 +122,13 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
                     priceDeclarationCost = noLoc $ CostExpression {..}
                  in PriceDeclaration {..}
             )
-          .| C.map (DeclarationPrice . noLoc)
+          .| C.map (noLoc . DeclarationPrice . noLoc)
           .| C.sinkList
-    liftIO $ SB.writeFile "currency-rates.cent" $ TE.encodeUtf8 $ formatModule $ Module {moduleImports = [], moduleDeclarations = generatedDeclarations}
+    liftIO $
+      SB.writeFile "currency-rates.cent" $
+        TE.encodeUtf8 $
+          formatModule $
+            Module
+              { moduleImports = [],
+                moduleDeclarations = generatedDeclarations
+              }

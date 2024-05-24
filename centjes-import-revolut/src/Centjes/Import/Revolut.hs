@@ -82,7 +82,7 @@ runCentjesImportRevolut = do
                       )
                   )
               )
-      let m = Module {moduleImports = [], moduleDeclarations = ts}
+      let m = Module {moduleImports = [], moduleDeclarations = map noLoc ts}
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 
 data ImportError = ImportError !FilePath !Int ImportError'
