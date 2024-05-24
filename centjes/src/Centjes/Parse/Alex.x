@@ -32,10 +32,9 @@ import qualified Data.Text as T
 
 -- Whitespace
 $nl          = [\n\r\f]
-$whitechar   = [\v\t\ ]
-$white_no_nl = $whitechar
 $tab         = \t
 @newline     = $nl
+$white       = [\n\r\f\v\t\ ]
 
 -- Values
 $digit = [0-9]
@@ -93,12 +92,10 @@ $alpha = [A-Za-z]
 
 tokens :-
 
--- Skip non-newline whitespace everywhere
-$white_no_nl+ ;
+-- Skip whitespace everywhere
+$white+ ;
 
 -- The 0 start code means "toplevel declaration"
-
-<0> @newline            { lexNl }
 
 -- Imports
 -- Note: 'import' is not a valid haskell identifier so we use imp instead.
@@ -107,14 +104,12 @@ $white_no_nl+ ;
 
 -- Comments
 <0> @doubledash            { lex' TokenDoubleDash `andBegin` comment }
-<comment> @anyline         { lex (TokenAnyLine . T.pack) }
-<comment> @newline         { lex' TokenNewLine `andBegin` 0 }
+<comment> @anyline         { lex (TokenAnyLine . T.pack) `andBegin` 0}
 
 -- Currency declarations
 <0> @currency               { lex' TokenCurrency `andBegin` currency }
 <currency> @var             { lexVar }
-<currency> @decimal_literal { lexDL }
-<currency> @newline         { lexNl `andBegin` 0 }
+<currency> @decimal_literal { lexDL `andBegin` 0 }
 
 -- Account declarations
 <0> @account        { lex' TokenAccount `andBegin` account}
@@ -308,6 +303,8 @@ alexMonadScan' = do
     AlexError (p, _, _, s) -> do
         let desc = case s of
               [] -> "<empty>"
+              (' ': _) -> "<space>"
+              ('\t': _) -> "<tab>"
               (c:_) -> show c
         span <- spanFromSingle p
         alexError' span ("lexical error at character '" ++ desc ++ "'")
