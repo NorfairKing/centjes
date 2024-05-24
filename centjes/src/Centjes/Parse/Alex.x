@@ -70,7 +70,7 @@ $alpha = [A-Za-z]
   | @day \  @time_of_day
 
 @file_path = [$alpha $digit \_ \- \: .]+
-@anyline = [^\n\r]+
+@anyline = [^\n\r]*
 
 @pipe = "| "
 @star = "* "
@@ -111,7 +111,7 @@ tokens :-
 -- Account declarations
 <0> @account        { lex' TokenAccount `andBegin` account }
 <account> @var     { lexVar }
-<account> @newline { begin 0 }
+<account> @newline@white* { begin 0 }
 
 -- Tag declarations
 <0> @tag        { lex' TokenTag `andBegin` dec_tag }
@@ -123,7 +123,7 @@ tokens :-
 <price> @var             { lexVar }
 <price> @decimal_literal { lexDL }
 <price> @slash           { lexSlash }
-<price> @newline         { begin 0 }
+<price> @newline@white*         { begin 0 }
 
 -- Transactions
 <0> @timestamp { lexTimestamp }
