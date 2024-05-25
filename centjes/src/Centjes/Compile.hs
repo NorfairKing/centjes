@@ -33,6 +33,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
 import qualified Data.Text as T
+import Data.Traversable
 import Data.Validity (Validity)
 import qualified Data.Vector as V
 import Error.Diagnose
@@ -575,7 +576,7 @@ compilePosting currencies accounts tl (Located l mp) = do
   postingCurrency <- compileCurrencyDeclarationSymbol currencies tl (Module.postingCurrencySymbol mp)
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
-  postingCost <- forM (Module.postingCost mp) $ \ce -> do
+  postingCost <- for (Module.postingCost mp) $ \ce -> do
     lCost@(Located _ cost) <- compileCostExpression currencies tl ce
     let Located pcl pCur = postingCurrency
     let Located ccl cCur = costCurrency cost
@@ -586,7 +587,7 @@ compilePosting currencies accounts tl (Located l mp) = do
       $ validationFailure
       $ CompileErrorCostSameCurrency tl pcl ccl
     pure lCost
-  postingPercentage <- mapM (compilePercentageExpression tl) (Module.postingPercentage mp)
+  postingPercentage <- traverse (compilePercentageExpression tl) (Module.postingPercentage mp)
   pure (Located l Ledger.Posting {..})
 
 compileAccountName ::

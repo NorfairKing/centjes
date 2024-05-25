@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -568,7 +569,7 @@ balanceTransaction (Located tl Transaction {..}) = do
                     Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl a' c a
                     Just a'' -> pure $ M.insert an a'' bs
 
-          forM_ mPercentage $ \lpct@(Located pctl _) -> do
+          for_ mPercentage $ \lpct@(Located pctl _) -> do
             lp <-
               case transactionPostings V.!? pred ix of
                 Nothing -> validationFailure $ BalanceErrorPercentageNoPrevious tl pctl

@@ -83,9 +83,9 @@ produceRegister ::
 produceRegister f mCurrencySymbolTo ledger = do
   mCurrencyTo <-
     mapValidationFailure RegisterErrorConvertError $
-      mapM (lookupConversionCurrency (ledgerCurrencies ledger)) mCurrencySymbolTo
+      traverse (lookupConversionCurrency (ledgerCurrencies ledger)) mCurrencySymbolTo
 
-  ts <- V.catMaybes <$> mapM (registerTransaction f) (ledgerTransactions ledger)
+  ts <- V.catMaybes <$> traverse (registerTransaction f) (ledgerTransactions ledger)
   let goTransaction ::
         ( Int,
           Money.MultiAccount (Currency ann),
@@ -248,7 +248,7 @@ registerTransaction ::
 registerTransaction f (Located _ t) = do
   postings <-
     V.catMaybes
-      <$> mapM
+      <$> traverse
         (registerPosting f)
         (transactionPostings t)
   pure $
