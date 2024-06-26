@@ -5,8 +5,8 @@ where
 
 import qualified Codec.Archive.Zip as Zip
 import Conduit
+import Control.Monad
 import Control.Monad.Logger
-import Control.Monad.Writer
 import qualified Data.ByteString as SB
 import Data.Map (Map)
 import qualified Data.Map as M

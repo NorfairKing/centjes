@@ -20,7 +20,6 @@ module Centjes.Timestamp
   )
 where
 
-import Control.Applicative
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -82,8 +81,11 @@ toString ts =
 fromString :: String -> Either String Timestamp
 fromString s =
   (secondFromLocalTime <$> parseTimeEither defaultTimeLocale "%F %H:%M:%S" s)
-    <|> (minuteFromLocalTime <$> parseTimeEither defaultTimeLocale "%F %H:%M" s)
-    <|> (TimestampDay <$> parseTimeEither defaultTimeLocale "%F" s)
+    `altEither` (minuteFromLocalTime <$> parseTimeEither defaultTimeLocale "%F %H:%M" s)
+    `altEither` (TimestampDay <$> parseTimeEither defaultTimeLocale "%F" s)
+  where
+    altEither (Right a) _ = Right a
+    altEither (Left _) e = e
 
 toDay :: Timestamp -> Day
 toDay = \case

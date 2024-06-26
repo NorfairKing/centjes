@@ -41,7 +41,7 @@ import Centjes.Switzerland.Report.VAT.Typst
 import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
-import Control.Monad.Writer
+import Control.Monad
 import Data.Foldable as Foldable
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
