@@ -146,7 +146,7 @@ with final.haskell.lib;
                 $out/bin/${exeName} &
                 sleep 1                             
                 ${final.linkcheck}/bin/linkcheck http://localhost:8080 --fetchers 2 --log-level Info --check-fragments
-                ${final.seocheck}/bin/seocheck http://localhost:8080   --fetchers 2 --log-level Info
+                ${final.seocheck}/bin/seocheck http://localhost:8080   --fetchers 2 --log-level LevelInfo
                 ${final.killall}/bin/killall ${exeName}   
               '';
             });
@@ -215,6 +215,7 @@ with final.haskell.lib;
                   # haskell can be linked statically.
                   enableRelocatedStaticLibs = true;
                   enableShared = false;
+                  enableDwarf = false;
                 }
             else pkg;
         in

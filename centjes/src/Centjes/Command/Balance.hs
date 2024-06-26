@@ -41,7 +41,7 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
 
 renderBalanceReportTable :: ShowEmpty -> BalanceReport ann -> [Chunk]
 renderBalanceReportTable se br =
-  let t = table (renderBalanceReport se br)
+  let t = table (map (map pure) (renderBalanceReport se br))
    in renderTable t
 
 renderBalanceReport :: ShowEmpty -> BalanceReport ann -> [[Chunk]]

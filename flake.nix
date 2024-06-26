@@ -6,7 +6,7 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     haskell-dependency-graph-nix.url = "github:NorfairKing/haskell-dependency-graph-nix";
     haskell-dependency-graph-nix.inputs.nixpkgs.follows = "nixpkgs";
@@ -21,6 +21,8 @@
     safe-coloured-text.flake = false;
     sydtest.url = "github:NorfairKing/sydtest";
     sydtest.flake = false;
+    opt-env-conf.url = "github:NorfairKing/opt-env-conf";
+    opt-env-conf.flake = false;
     really-safe-money.url = "github:NorfairKing/really-safe-money";
     really-safe-money.flake = false;
     yesod-autoreload.url = "github:NorfairKing/yesod-autoreload";
@@ -44,6 +46,7 @@
     , validity
     , safe-coloured-text
     , sydtest
+    , opt-env-conf
     , autodocodec
     , really-safe-money
     , yesod-autoreload
@@ -61,6 +64,7 @@
           (import (validity + "/nix/overlay.nix"))
           (import (safe-coloured-text + "/nix/overlay.nix"))
           (import (sydtest + "/nix/overlay.nix"))
+          (import (opt-env-conf + "/nix/overlay.nix"))
           (import (autodocodec + "/nix/overlay.nix"))
           (import (really-safe-money + "/nix/overlay.nix"))
           (import (yesod-autoreload + "/nix/overlay.nix"))
@@ -123,21 +127,14 @@
         packages = p: builtins.attrValues p.centjesPackages;
         withHoogle = true;
         doBenchmark = true;
-        buildInputs = (with pkgs; [
+        buildInputs = with pkgs; [
           cabal-install
           pkg-config
           libxml2
           typst
           typstfmt
           zlib
-        ]) ++ (with pre-commit-hooks.packages.${system};
-          [
-            hlint
-            hpack
-            nixpkgs-fmt
-            ormolu
-            cabal2nix
-          ]);
+        ] ++ self.checks.${system}.pre-commit.enabledPackages;
         shellHook = self.checks.${system}.pre-commit.shellHook;
 
         DEVELOPMENT = "True";
