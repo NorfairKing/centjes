@@ -41,7 +41,7 @@ runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
 
 renderRegisterTable :: Register ann -> [Chunk]
 renderRegisterTable register =
-  let t = table (renderRegister register)
+  let t = table (map (map pure) (renderRegister register))
    in renderTable t
 
 renderRegister :: Register ann -> [[Chunk]]

@@ -14,8 +14,7 @@ compileTypst inputFile outputFile = do
         setStderr inherit $
           proc
             "typst"
-            [ "-v",
-              "compile",
+            [ "compile",
               fromAbsFile inputFile,
               fromAbsFile outputFile
             ]
