@@ -1,0 +1,16 @@
+currency CHF 0.01
+
+account income:work
+account assets:cash
+account liabilities:taxes:federal
+account liabilities:taxes:cantonal
+
+2024-07-12
+  | Starting
+  * assets:cash +0 CHF
+
+2024-07-13
+  * income:work                -10 CHF
+  ! liabilities:taxes:federal   -1 CHF ~ 10%
+  ! liabilities:taxes:cantonal  -1 CHF ~ 10%
+  * assets:cash                +10 CHF
