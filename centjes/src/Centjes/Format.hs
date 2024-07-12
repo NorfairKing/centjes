@@ -24,6 +24,7 @@ import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Word
+import Money.Amount (Rounding (..))
 import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Prettyprinter
@@ -228,7 +229,7 @@ descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedVa
 
 postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc ann
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =
-  maybe id (\pe -> (<+> ("~" <+> lPercentageExpressionDoc pe))) postingPercentage $
+  maybe id (\pe -> (<+> lPercentageExpressionDoc pe)) postingPercentage $
     maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
       (if postingReal then "*" else "!")
         <+> maybe id (fill . getMax) mMaxAccountNameWidth (lAccountNameDoc postingAccountName)
@@ -242,7 +243,19 @@ lCostExpressionDoc (Located _ CostExpression {..}) =
 
 lPercentageExpressionDoc :: GenLocated l (PercentageExpression l) -> Doc ann
 lPercentageExpressionDoc (Located _ PercentageExpression {..}) =
-  lRationalExpressionDoc unPercentageExpression
+  "~"
+    <> ( case percentageExpressionInclusive of
+           Nothing -> ""
+           Just True -> "i"
+           Just False -> "e"
+       )
+    <> ( case percentageExpressionRounding of
+           Nothing -> ""
+           Just RoundUp -> "u"
+           Just RoundDown -> "d"
+           Just RoundNearest -> "n"
+       )
+    <+> lRationalExpressionDoc percentageExpressionRationalExpression
     <> "%"
 
 lRationalExpressionDoc :: GenLocated l (RationalExpression l) -> Doc ann

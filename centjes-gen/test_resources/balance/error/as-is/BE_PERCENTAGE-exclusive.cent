@@ -1,0 +1,11 @@
+currency CHF 0.05
+
+account income:work
+account assets:cash
+account liabilities:taxes
+
+2024-07-13
+  | Work
+  * assets:cash       +10   CHF
+  * income:work       -10   CHF
+  ! liabilities:taxes  -1.5 CHF ~e 10%

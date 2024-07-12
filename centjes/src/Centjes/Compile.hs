@@ -40,6 +40,7 @@ import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import Money.Amount (Rounding (..))
 import qualified Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor
@@ -456,7 +457,9 @@ compilePercentageExpression ::
   GenLocated ann (PercentageExpression ann) ->
   Validation (CompileError ann) (GenLocated ann (Percentage ann))
 compilePercentageExpression pl (Located pel PercentageExpression {..}) = do
-  unPercentage <- compilePercentage pl pel unPercentageExpression
+  let percentageInclusive = fromMaybe True percentageExpressionInclusive
+  let percentageRounding = fromMaybe RoundNearest percentageExpressionRounding
+  percentageRatio <- compilePercentage pl pel percentageExpressionRationalExpression
   pure $ Located pel Percentage {..}
 
 compilePercentage ::

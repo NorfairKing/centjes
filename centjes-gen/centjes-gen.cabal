@@ -22,6 +22,8 @@ extra-source-files:
     test_resources/balance/balanced/as-is/empty.txt
     test_resources/balance/balanced/as-is/example.cent
     test_resources/balance/balanced/as-is/example.txt
+    test_resources/balance/balanced/as-is/taxes.cent
+    test_resources/balance/balanced/as-is/taxes.txt
     test_resources/balance/balanced/as-is/total-bigger.cent
     test_resources/balance/balanced/as-is/total-bigger.txt
     test_resources/balance/balanced/as-is/vat.cent
@@ -54,10 +56,12 @@ extra-source-files:
     test_resources/balance/error/as-is/BE_OFF_BALANCE-two-postings.err
     test_resources/balance/error/as-is/BE_OFF_BALANCE-two.cent
     test_resources/balance/error/as-is/BE_OFF_BALANCE-two.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE-exclusive.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE-exclusive.err
+    test_resources/balance/error/as-is/BE_PERCENTAGE-inclusive.cent
+    test_resources/balance/error/as-is/BE_PERCENTAGE-inclusive.err
     test_resources/balance/error/as-is/BE_PERCENTAGE-zero.cent
     test_resources/balance/error/as-is/BE_PERCENTAGE-zero.err
-    test_resources/balance/error/as-is/BE_PERCENTAGE.cent
-    test_resources/balance/error/as-is/BE_PERCENTAGE.err
     test_resources/balance/error/as-is/BE_PERCENTAGE_CURRENCY.cent
     test_resources/balance/error/as-is/BE_PERCENTAGE_CURRENCY.err
     test_resources/balance/error/as-is/BE_PERCENTAGE_FRACTION.cent

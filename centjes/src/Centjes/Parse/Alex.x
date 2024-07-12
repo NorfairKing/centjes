@@ -1,4 +1,5 @@
 {
+{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS -w -Wunused-imports #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-} -- Because the comments in the generated code said so.
 module Centjes.Parse.Alex
@@ -19,6 +20,7 @@ module Centjes.Parse.Alex
 
 import Centjes.Location
 import Data.Text (Text)
+import Money.Amount as Amount (Rounding(..))
 import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Prelude hiding (lex)
@@ -85,7 +87,7 @@ $alpha = [A-Za-z]
 @at = "@ "
 @slash = "/ "
 @percent = "%"
-@tilde = "~"
+@tilde = "~" [i e]? [u d n]?
 @import = "import "
 @currency = "currency "
 @account = "account "
@@ -185,7 +187,19 @@ lexSlash :: AlexAction Token
 lexSlash = lex' TokenSlash
 
 lexTilde :: AlexAction Token
-lexTilde = lex' TokenTilde
+lexTilde = lex $ \case
+  "~" -> TokenTilde Nothing Nothing
+  "~u" -> TokenTilde Nothing (Just RoundUp)
+  "~d" -> TokenTilde Nothing (Just RoundDown)
+  "~n" -> TokenTilde Nothing (Just RoundNearest)
+  "~i" -> TokenTilde (Just True) Nothing
+  "~e" -> TokenTilde (Just False) Nothing
+  "~iu" -> TokenTilde (Just True) (Just RoundUp)
+  "~eu" -> TokenTilde (Just False) (Just RoundUp)
+  "~id" -> TokenTilde (Just True) (Just RoundDown)
+  "~ed" -> TokenTilde (Just False) (Just RoundDown)
+  "~in" -> TokenTilde (Just True) (Just RoundNearest)
+  "~en" -> TokenTilde (Just False) (Just RoundNearest)
 
 lexPercent :: AlexAction Token
 lexPercent = lex' TokenPercent
@@ -229,7 +243,7 @@ data TokenClass
   | TokenDot
   | TokenAt
   | TokenSlash
-  | TokenTilde
+  | TokenTilde !(Maybe Bool) !(Maybe Amount.Rounding)
   | TokenPercent
   | TokenCurrency
   | TokenAccount

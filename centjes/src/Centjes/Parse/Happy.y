@@ -20,13 +20,14 @@ import Centjes.Module
 import Centjes.Parse.Alex
 import Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
-import Data.Text (Text)
-import Numeric.DecimalLiteral (DecimalLiteral)
-import Path
-import qualified Data.Text as T
-import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
+import Data.Text (Text)
+import Money.Amount (Rounding(..))
+import Numeric.DecimalLiteral (DecimalLiteral)
+import Path
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Text as T
 
 }
 
@@ -69,7 +70,7 @@ import Data.Semigroup
       tok_bang            { Located _ TokenBang }
       tok_at              { Located _ TokenAt }
       tok_slash           { Located _ TokenSlash }
-      tok_tilde           { Located _ TokenTilde }
+      tok_tilde           { Located _ (TokenTilde _ _) }
       tok_percent         { Located _ TokenPercent }
       tok_currency        { Located _ TokenCurrency}
       tok_account         { Located _ TokenAccount }
@@ -164,7 +165,10 @@ posting_cost
 
 posting_percentage
   :: { LPercentageExpression }
-  : tok_tilde rational_exp tok_percent { sBE $1 $3 $ PercentageExpression $2 }
+  : tok_tilde rational_exp tok_percent {
+        let (mInclusive, mRounding) = parseTilde $1
+        in sBE $1 $3 $ PercentageExpression mInclusive mRounding $2
+      }
 
 rational_exp
   :: { LRationalExpression }
@@ -312,6 +316,9 @@ parseAccountType t@(Located _ (TokenVar ats)) = sL1 t <$> maybeParser "AccountTy
 
 parseTag :: Token -> Alex (Located Tag)
 parseTag t@(Located _ (TokenVar ans)) = sL1 t <$> eitherParser "Tag" Tag.fromText ans
+
+parseTilde :: Token -> (Maybe Bool, Maybe Rounding)
+parseTilde (Located _ (TokenTilde mInclusive mRounding)) = (mInclusive, mRounding)
 
 parseDecimalLiteral :: Token -> Located DecimalLiteral
 parseDecimalLiteral t@(Located _ (TokenDecimalLiteral dl)) = sL1 t dl

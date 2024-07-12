@@ -570,10 +570,15 @@ balanceTransaction (Located tl Transaction {..}) = do
                     Just a'' -> pure $ M.insert an a'' bs
 
           for_ mPercentage $ \lpct@(Located pctl _) -> do
-            lp <-
-              case transactionPostings V.!? pred ix of
-                Nothing -> validationFailure $ BalanceErrorPercentageNoPrevious tl pctl
-                Just lp -> pure lp
+            let go i =
+                  case transactionPostings V.!? pred i of
+                    Nothing -> validationFailure $ BalanceErrorPercentageNoPrevious tl pctl
+                    Just lp@(Located _ p) ->
+                      if postingReal p
+                        then pure lp
+                        else go (pred i)
+
+            lp <- go ix
             checkPercentage tl pl lp lc la lpct
 
           convertedBalances' <-
@@ -615,73 +620,147 @@ checkPercentage
   (Located ppl p)
   (Located cl currency)
   (Located al thisAccount)
-  (Located pctl (Percentage (Located rl ratio))) = do
+  (Located pctl (Percentage inclusive rounding (Located rl ratio))) = do
     let Located pcl newCurrency = postingCurrency p
     when (newCurrency /= currency) $ validationFailure $ BalanceErrorPercentageCurrency tl pcl cl
     let Located pal previousAccount = postingAccount p
-    -- T: Total amount (previous posting's amount)
-    -- P: Part amount (this posting's amount)
-    -- f: Fraction (The percentage)
-    -- E: Exclusive (The exclusive version of T)
-    --
-    -- These are defined as:
-    -- T = (E + E * f) and P = E * f
-    --
-    -- Rewritten as:
-    -- T = E * (1 + f)
-    -- E = T / (1 + f)
-    --
-    -- E = P / f
-    --
-    -- P / f = T / (1 + f)
-    --
-    -- We calculate Both P based on T and f
-    -- and compare that to the actual P.
-    --
-    -- We then suggest "fixed" versions of all three of the parts by computing
-    -- them from the other two:
-    --
-    -- Each defined in terms of the other two:
-    -- P = T * (f / (1 + f))
-    -- T = P * ((1 + f) / f)
-    -- f = P / (T / (1 + f))
-    --   = (1 + f) * P / T
-    let computedPRatio = ratio / (1 + ratio)
-    (computedP, whereToRoundNext) <- case Account.fractionRatio Account.RoundNearest previousAccount computedPRatio of
-      (Nothing, _) -> validationFailure $ BalanceErrorPercentageFraction' tl pal computedPRatio
-      (Just cP, actualRatio) ->
-        pure
-          ( cP,
-            case compare computedPRatio actualRatio of
-              LT -> Account.RoundDown
-              EQ -> Account.RoundNearest
-              GT -> Account.RoundUp
-          )
-    when (computedP /= thisAccount) $ do
-      mComputedT <-
-        if ratio == 0
-          then pure Nothing
-          else do
-            let computedTRatio = (1 + ratio) / ratio
-            case fst $ Account.fractionRatio whereToRoundNext thisAccount computedTRatio of
-              Nothing -> validationFailure $ BalanceErrorPercentageFraction' tl al computedTRatio
-              Just cT -> pure $ Just $ Located pal cT
+    if inclusive
+      then do
+        -- T: Total amount (previous posting's amount)
+        -- P: Part amount (this posting's amount)
+        -- f: Fraction (The percentage)
+        -- E: Exclusive (The exclusive version of T)
+        --
+        -- These are defined as:
+        -- T = (E + E * f) and P = E * f
+        --
+        -- Rewritten as:
+        -- T = E * (1 + f)
+        -- E = T / (1 + f)
+        --
+        -- E = P / f
+        --
+        -- P / f = T / (1 + f)
+        --
+        -- We calculate:
+        --   * P based on T and f
+        --   * f based on P and T
+        -- and compare those to the actual P and f.
+        --
+        -- We then suggest "fixed" versions of all three of the parts by computing
+        -- them from the other two:
+        --
+        -- Each defined in terms of the other two:
+        -- P = T * (f / (1 + f))
+        -- T = P * ((1 + f) / f)
+        -- f = P / (T / (1 + f))
+        --   = (1 + f) * P / T
+        let computedPRatio = ratio / (1 + ratio)
+        (computedP, whereToRoundNext) <- case Account.fractionRatio rounding previousAccount computedPRatio of
+          (Nothing, _) -> validationFailure $ BalanceErrorPercentageFraction' tl pal computedPRatio
+          (Just cP, actualRatio) ->
+            pure
+              ( cP,
+                case compare computedPRatio actualRatio of
+                  LT -> Account.RoundDown
+                  EQ -> Account.RoundNearest
+                  GT -> Account.RoundUp
+              )
+        when (computedP /= thisAccount) $ do
+          mComputedT <-
+            if ratio == 0
+              then pure Nothing
+              else do
+                let computedTRatio = (1 + ratio) / ratio
+                case fst $ Account.fractionRatio whereToRoundNext thisAccount computedTRatio of
+                  Nothing -> validationFailure $ BalanceErrorPercentageFraction' tl al computedTRatio
+                  Just cT -> pure $ Just $ Located pal cT
 
-      let mComputedRatio = do
-            let Located _ qf = currencyQuantisationFactor currency
-            rate <- ConversionRate.toRatio <$> Account.rate qf previousAccount qf thisAccount
-            pure $ Located rl $ rate * (1 + ratio)
+          let mComputedRatio = do
+                let Located _ qf = currencyQuantisationFactor currency
+                rate <- ConversionRate.toRatio <$> Account.rate qf previousAccount qf thisAccount
+                pure $ Located rl $ rate * (1 + ratio)
 
-      validationFailure $
-        BalanceErrorPercentage
-          tl
-          pl
-          ppl
-          pctl
-          currency
-          (Located al computedP)
-          mComputedT
-          mComputedRatio
+          validationFailure $
+            BalanceErrorPercentage
+              -- Transaction location
+              tl
+              -- Posting location
+              pl
+              -- Previous posting location
+              ppl
+              -- Percentage location
+              pctl
+              -- Currency
+              currency
+              -- Computed P
+              (Located al computedP)
+              -- Computed T
+              mComputedT
+              -- Computed f
+              mComputedRatio
+      else do
+        -- E: Exclusive (previous posting's amount)
+        -- P: Part amount (this posting's amount)
+        -- T: Total amount (E + P)
+        -- f: Fraction (The percentage)
+        --
+        -- These are defined as:
+        -- E + P = T and P = E * f
+        --
+        -- Rewritten as:
+        -- E = T - P
+        -- E = P / f
+        --
+        -- P / f = T - P
+        --
+        -- We calculate:
+        --   * P based on E and f
+        --   * f based on E and P
+        -- and compare that to the actual P and f.
+        --
+        -- We then suggest "fixed" versions of all three of the parts by computing
+        -- them from the other two:
+        --
+        -- Each defined in terms of the other two:
+        -- P = E * f
+        -- E = P / f
+        -- f = P / E
+        case Account.fractionRatio rounding previousAccount ratio of
+          (Nothing, _) -> validationFailure $ BalanceErrorPercentageFraction' tl pal ratio
+          (Just computedP, _) ->
+            when (computedP /= thisAccount) $ do
+              mComputedE <-
+                if ratio == 0
+                  then pure Nothing
+                  else do
+                    let factor = 1 / ratio
+                    case fst $ Account.fractionRatio rounding thisAccount factor of
+                      Nothing -> validationFailure $ BalanceErrorPercentageFraction' tl al factor
+                      Just cE -> pure $ Just $ Located pal cE
+              let mComputedRatio = do
+                    let Located _ qf = currencyQuantisationFactor currency
+                    rate <- ConversionRate.toRatio <$> Account.rate qf previousAccount qf thisAccount
+                    pure $ Located rl rate
+
+              validationFailure $
+                BalanceErrorPercentage
+                  -- Transaction location
+                  tl
+                  -- Posting location
+                  pl
+                  -- Previous posting location
+                  ppl
+                  -- Percentage location
+                  pctl
+                  -- Currency
+                  currency
+                  -- Computed P
+                  (Located al computedP)
+                  -- Computed E
+                  mComputedE
+                  -- Computed f
+                  mComputedRatio
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"

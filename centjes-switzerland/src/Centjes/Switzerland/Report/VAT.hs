@@ -319,7 +319,7 @@ requirePercentageRate ::
   Reporter (VATError ann) (ann, Ratio Natural)
 requirePercentageRate tl = \case
   Nothing -> validationTFailure $ VATErrorNoVATPercentage tl
-  Just (Located pl (Percentage (Located _ r))) -> pure (pl, r)
+  Just (Located pl (Percentage _ _ (Located _ r))) -> pure (pl, r)
 
 requirePercentageVATRate ::
   ann ->

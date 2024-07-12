@@ -72,6 +72,7 @@ import Data.Validity.Path ()
 import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import Money.Amount (Rounding (..))
 import Numeric.DecimalLiteral
 import Path
 
@@ -328,8 +329,10 @@ type LPercentageExpression = LLocated PercentageExpression
 -- @
 -- 1 / 2 %
 -- @
-newtype PercentageExpression ann = PercentageExpression
-  { unPercentageExpression :: GenLocated ann (RationalExpression ann)
+data PercentageExpression ann = PercentageExpression
+  { percentageExpressionInclusive :: !(Maybe Bool),
+    percentageExpressionRounding :: !(Maybe Rounding),
+    percentageExpressionRationalExpression :: !(GenLocated ann (RationalExpression ann))
   }
   deriving stock (Show, Generic)
 

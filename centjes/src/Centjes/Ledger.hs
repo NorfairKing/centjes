@@ -41,6 +41,7 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import qualified Money.Account as Money (Account)
+import Money.Amount (Rounding (..))
 import Money.ConversionRate (ConversionRate)
 import Money.QuantisationFactor
 import Numeric.Natural
@@ -205,13 +206,15 @@ data Cost ann = Cost
 
 instance (Validity ann) => Validity (Cost ann)
 
-newtype Percentage ann = Percentage
-  { -- Note: This field will have the source location of the decimal literal in
+data Percentage ann = Percentage
+  { percentageInclusive :: !Bool,
+    percentageRounding :: !Rounding,
+    -- Note: This field will have the source location of the decimal literal in
     -- the percentage expression
     -- Note: This field does not contain a percentage anymore. I.e. the /100
     -- has already been applied. It is just called this because of what it's
     -- called in the module. TODO maybe we want to rename it?
-    unPercentage :: GenLocated ann (Ratio Natural)
+    percentageRatio :: !(GenLocated ann (Ratio Natural))
   }
   deriving stock (Show, Eq, Generic)
 
