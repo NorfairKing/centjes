@@ -380,10 +380,11 @@ produceBalanceReport ::
   (Ord ann) =>
   Filter ->
   Maybe CurrencySymbol ->
+  Bool ->
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
-produceBalanceReport f mCurrencySymbolTo l = do
-  bl <- produceBalancedLedger l
+produceBalanceReport f mCurrencySymbolTo showVirtual l = do
+  bl <- produceBalancedLedger showVirtual l
   let v = balancedLedgerTransactions bl
   let balances =
         filterAccountBalances f $
@@ -448,11 +449,12 @@ fillAccountBalances bs = foldM go bs (M.toList bs)
 produceBalancedLedger ::
   forall ann.
   (Ord ann) =>
+  Bool ->
   Ledger ann ->
   Validation (BalanceError ann) (BalancedLedger ann)
-produceBalancedLedger ledger = do
+produceBalancedLedger showVirtual ledger = do
   tups <- for (ledgerTransactions ledger) $ \t ->
-    (,) t <$> balanceTransaction t
+    (,) t <$> balanceTransaction showVirtual t
 
   let constructBalancedVector ::
         (Int, AccountBalances ann) ->
@@ -529,9 +531,10 @@ checkAssertion tl runningTotal a@(Located _ (AssertionEquals lan la lcs)) = do
 balanceTransaction ::
   forall ann.
   (Ord ann) =>
+  Bool ->
   GenLocated ann (Transaction ann) ->
   Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
-balanceTransaction (Located tl Transaction {..}) = do
+balanceTransaction showVirtual (Located tl Transaction {..}) = do
   let incorporatePosting ::
         -- (Balances for transaction balance checking, balances of acounts)
         (AccountBalances ann, AccountBalances ann) ->
@@ -586,7 +589,7 @@ balanceTransaction (Located tl Transaction {..}) = do
               then addAccountToBalances convertedCurrency convertedAccount convertedBalances
               else pure convertedBalances
           actualBalances' <-
-            if real -- Don't count virtual posting for this report
+            if real || showVirtual -- Don't count virtual posting for this report
               then addAccountToBalances currency account actualBalances
               else pure actualBalances
           pure (convertedBalances', actualBalances')

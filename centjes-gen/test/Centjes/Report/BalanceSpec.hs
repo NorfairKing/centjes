@@ -27,13 +27,16 @@ spec :: Spec
 spec = do
   describe "balanceTransaction" $ do
     it "produces valid balances" $
-      producesValid $
+      producesValid2 $
         balanceTransaction @()
 
   describe "produceBalanceReport" $ do
     it "produces valid reports" $
-      producesValid3
-        (produceBalanceReport @())
+      forAllValid $ \f ->
+        forAllValid $ \mCur ->
+          forAllValid $ \showVirtual ->
+            forAllValid $ \ledger ->
+              shouldBeValid $ produceBalanceReport @() f mCur showVirtual ledger
 
     scenarioDir "test_resources/balance/balanced/as-is" $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -46,7 +49,7 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            br <- shouldValidate diag $ produceBalanceReport FilterAny Nothing ledger
+            br <- shouldValidate diag $ produceBalanceReport FilterAny Nothing False ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderBalanceReportTable ShowEmpty br
 
@@ -61,7 +64,7 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            br <- shouldValidate diag $ produceBalanceReport FilterAny (Just (CurrencySymbol "CHF")) ledger
+            br <- shouldValidate diag $ produceBalanceReport FilterAny (Just (CurrencySymbol "CHF")) False ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderBalanceReportTable ShowEmpty br
 
@@ -76,7 +79,7 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            errs <- shouldFailToValidate $ produceBalanceReport FilterAny Nothing ledger
+            errs <- shouldFailToValidate $ produceBalanceReport FilterAny Nothing False ledger
             pure $ renderValidationErrors diag errs
 
     scenarioDir "test_resources/balance/error/to-chf" $ \fp -> do
@@ -90,5 +93,5 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            errs <- shouldFailToValidate $ produceBalanceReport FilterAny (Just (CurrencySymbol "CHF")) ledger
+            errs <- shouldFailToValidate $ produceBalanceReport FilterAny (Just (CurrencySymbol "CHF")) False ledger
             pure $ renderValidationErrors diag errs

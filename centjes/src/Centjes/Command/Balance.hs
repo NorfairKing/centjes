@@ -35,7 +35,11 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   br <-
     liftIO $
       checkValidation diagnostic $
-        produceBalanceReport balanceSettingFilter balanceSettingCurrency ledger
+        produceBalanceReport
+          balanceSettingFilter
+          balanceSettingCurrency
+          balanceSettingShowVirtual
+          ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable balanceSettingShowEmpty br
 

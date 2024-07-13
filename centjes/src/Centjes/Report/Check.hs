@@ -261,6 +261,12 @@ checkLedger ::
   Ledger ann ->
   Checker ann (BalanceReport ann, Register ann)
 checkLedger l = do
-  balanceReport <- mapValidationFailure CheckErrorBalanceError $ produceBalanceReport FilterAny Nothing l
+  balanceReport <-
+    mapValidationFailure CheckErrorBalanceError $
+      produceBalanceReport
+        FilterAny
+        Nothing
+        False
+        l
   register <- mapValidationFailure CheckErrorRegisterError $ produceRegister FilterAny Nothing l
   pure (balanceReport, register)

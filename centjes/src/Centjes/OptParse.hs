@@ -49,7 +49,8 @@ data RegisterSettings = RegisterSettings
 data BalanceSettings = BalanceSettings
   { balanceSettingFilter :: !Filter,
     balanceSettingCurrency :: !(Maybe CurrencySymbol),
-    balanceSettingShowEmpty :: !ShowEmpty
+    balanceSettingShowEmpty :: !ShowEmpty,
+    balanceSettingShowVirtual :: !Bool
   }
 
 data FormatSettings = FormatSettings
@@ -91,6 +92,7 @@ combineToInstructions (Arguments cmd Flags {..}) Environment {..} mConf = do
         let balanceSettingFilter = balanceArgFilter
         let balanceSettingCurrency = balanceArgConversionCurrency
         let balanceSettingShowEmpty = fromMaybe DoNotShowEmpty balanceArgShowEmpty
+        let balanceSettingShowVirtual = fromMaybe False balanceArgShowVirtual
         pure $ DispatchBalance BalanceSettings {..}
       CommandFormat FormatArgs {..} -> do
         formatSettingFileOrDir <- case (formatArgFile, formatArgDir) of
@@ -223,7 +225,8 @@ parseCommandRegister = OptParse.info parser modifier
 data BalanceArgs = BalanceArgs
   { balanceArgFilter :: !Filter,
     balanceArgConversionCurrency :: !(Maybe CurrencySymbol),
-    balanceArgShowEmpty :: !(Maybe ShowEmpty)
+    balanceArgShowEmpty :: !(Maybe ShowEmpty),
+    balanceArgShowVirtual :: !(Maybe Bool)
   }
 
 data ShowEmpty
@@ -255,6 +258,14 @@ parseCommandBalance = OptParse.info parser modifier
                       help "Show empty balances instead of hiding them"
                     ]
                 )
+          )
+        <*> optional
+          ( switch
+              ( mconcat
+                  [ long "virtual",
+                    help "Show virtual amounts too"
+                  ]
+              )
           )
 
 data FormatArgs = FormatArgs
