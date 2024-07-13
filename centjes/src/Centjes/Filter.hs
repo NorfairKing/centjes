@@ -9,6 +9,7 @@ module Centjes.Filter
 where
 
 import Centjes.AccountName (AccountName (..))
+import qualified Centjes.AccountName as AccountName
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -27,7 +28,7 @@ instance Validity Filter
 predicate :: Filter -> (AccountName -> Bool)
 predicate = \case
   FilterAny -> const True
-  FilterSubstring t -> \(AccountName ts) -> any (T.isInfixOf t) ts
+  FilterSubstring t -> T.isInfixOf t . AccountName.toText
   FilterOr fs -> \an -> any (`predicate` an) fs
 
 args :: OptParse.Parser Filter
