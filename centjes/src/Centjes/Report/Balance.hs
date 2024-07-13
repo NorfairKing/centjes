@@ -282,6 +282,7 @@ instance ToReport (BalanceError SourceSpan) where
                         AccountTypeEquity -> "negative"
                         AccountTypeExpenses -> "positive"
                         AccountTypeIncome -> "negative"
+                        AccountTypeOther -> "any number" -- Unused
                     ]
                 ]
           ),

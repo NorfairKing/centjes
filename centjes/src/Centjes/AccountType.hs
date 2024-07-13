@@ -34,6 +34,8 @@ data AccountType
     AccountTypeExpenses
   | -- | Never positive
     AccountTypeIncome
+  | -- | No assertions
+    AccountTypeOther
   deriving stock (Show, Eq, Generic)
 
 instance Validity AccountType
@@ -45,6 +47,7 @@ fromText = \case
   "equity" -> Just AccountTypeEquity
   "expenses" -> Just AccountTypeExpenses
   "income" -> Just AccountTypeIncome
+  "other" -> Just AccountTypeOther
   _ -> Nothing
 
 -- | Prefer 'toText' over 'toString'.
@@ -55,6 +58,7 @@ toText = \case
   AccountTypeEquity -> "equity"
   AccountTypeExpenses -> "expenses"
   AccountTypeIncome -> "income"
+  AccountTypeOther -> "other"
 
 -- | Prefer 'toText' over 'toString'.
 toString :: AccountType -> String
@@ -67,6 +71,7 @@ assertion = \case
   AccountTypeEquity -> (<= Account.zero)
   AccountTypeExpenses -> (>= Account.zero)
   AccountTypeIncome -> (<= Account.zero)
+  AccountTypeOther -> (const True)
 
 fromAccountName :: AccountName -> Maybe AccountType
 fromAccountName an =
@@ -75,6 +80,7 @@ fromAccountName an =
     <|> go AccountTypeEquity "equity"
     <|> go AccountTypeExpenses "expenses"
     <|> go AccountTypeIncome "income"
+    <|> go AccountTypeOther "other"
   where
     go :: AccountType -> Text -> Maybe AccountType
     go t substring =
