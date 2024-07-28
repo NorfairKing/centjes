@@ -1,8 +1,10 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.Switzerland.Report.Taxes.Types
@@ -22,6 +24,7 @@ import Data.Validity.Time ()
 import Error.Diagnose
 import GHC.Generics (Generic (..))
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
+import OptEnvConf
 
 -- | The settings we need to produce a 'TaxesReport'
 data TaxesInput = TaxesInput
@@ -33,6 +36,38 @@ data TaxesInput = TaxesInput
   deriving (Show, Generic)
 
 instance Validity TaxesInput
+
+instance HasParser TaxesInput where
+  settingsParser = parseTaxesInput
+
+{-# ANN parseTaxesInput ("NOCOVER" :: String) #-}
+parseTaxesInput :: Parser TaxesInput
+parseTaxesInput = do
+  taxesInputLastName <-
+    setting
+      [ help "your first name",
+        conf "first-name"
+      ]
+  taxesInputFirstName <-
+    setting
+      [ help "your last name",
+        conf "last-name"
+      ]
+  taxesInputYear <-
+    choice
+      [ setting
+          [ help "the year to produce the report for",
+            conf "year"
+          ],
+        runIO $ (\d -> let (y, _, _) = toGregorian d in y) . utctDay <$> getCurrentTime
+      ]
+  taxesInputInsuredPersonNumber <-
+    setting
+      [ help "The AHV identifier. e.g. 746.1111.2222.33",
+        conf "ahv-id",
+        example "746.1111.2222.33"
+      ]
+  pure TaxesInput {..}
 
 -- | The information we need to produce Taxes reports like the pdfs, zip files,
 -- or xml files.

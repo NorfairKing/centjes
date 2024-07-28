@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -18,13 +19,18 @@ module Centjes.Switzerland.Report.VAT.Types
   )
 where
 
+import Autodocodec
+import qualified Centjes.AccountName as AccountName
 import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
 import Centjes.Location
+import qualified Centjes.Tag as Tag
 import Centjes.Validation
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Ratio
 import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Time
 import Data.Time.Calendar.Quarter
 import Data.Validity
 import Data.Validity.Time ()
@@ -36,6 +42,7 @@ import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import Numeric.Natural
+import OptEnvConf
 import Path
 import Text.Show.Pretty
 
@@ -61,6 +68,99 @@ data VATInput = VATInput
   deriving (Show, Generic)
 
 instance Validity VATInput
+
+instance HasParser VATInput where
+  settingsParser = parseVATInput
+
+{-# ANN parseVATInput ("NOCOVER" :: String) #-}
+parseVATInput :: Parser VATInput
+parseVATInput = do
+  vatInputPersonName <-
+    choice
+      [ setting
+          [ help "Your legal name",
+            conf "person-name"
+          ],
+        (\f l -> T.pack (unwords [f, l]))
+          <$> setting
+            [ help "your first name",
+              conf "first-name"
+            ]
+          <*> setting
+            [ help "your last name",
+              conf "last-name"
+            ]
+      ]
+  vatInputOrganisationName <-
+    setting
+      [ help "The organisation's legal name",
+        conf "organisation-name"
+      ]
+  vatInputVATId <-
+    setting
+      [ help "the VAT identifier",
+        conf "vat-id",
+        example "111.222.333"
+      ]
+  vatInputQuarter <-
+    choice
+      [ setting
+          [ help "the quarter to produce the report for",
+            confWith "quarter" $ codecViaAeson "Quarter"
+          ],
+        runIO $ dayQuarter . utctDay <$> getCurrentTime
+      ]
+  vatInputTagDeductible <-
+    setting
+      [ help "tag to use for deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-deductible",
+        value "deductible"
+      ]
+  vatInputTagNotDeductible <-
+    setting
+      [ help "tag to use for non-deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-not-deductible",
+        value "not-deductible"
+      ]
+  vatInputDomesticIncomeAccountName <-
+    setting
+      [ help "Account name of your domestic income",
+        reader $ eitherReader AccountName.fromStringOrError,
+        conf "domestic-income-account",
+        value "income:domestic"
+      ]
+  vatInputExportsIncomeAccountName <-
+    setting
+      [ help "Account name of your exports' income",
+        reader $ eitherReader AccountName.fromStringOrError,
+        conf "exports-income-account",
+        value "income:exports"
+      ]
+  vatInputForeignIncomeAccountName <-
+    setting
+      [ help "Account name of your foreign income",
+        reader $ eitherReader AccountName.fromStringOrError,
+        conf "foreign-income-account",
+        value "income:foreign"
+      ]
+  vatInputVATIncomeAccountName <-
+    setting
+      [ help "Account name of your the VAT you've charged",
+        reader $ eitherReader AccountName.fromStringOrError,
+        conf "vat-income-account",
+        value "income:vat"
+      ]
+  vatInputVATExpensesAccountName <-
+    setting
+      [ help "Account name of your the VAT you've paid",
+        reader $ eitherReader AccountName.fromStringOrError,
+        conf "vat-expenses-account",
+        value "expenses:vat"
+      ]
+
+  pure VATInput {..}
 
 -- | The information we need to produce VAT reports like the pdfs, zip files,
 -- or xml files.

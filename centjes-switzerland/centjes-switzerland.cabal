@@ -14,6 +14,7 @@ extra-source-files:
     assets/etax-schema.xsd
     assets/taxes.typ
     assets/vat.typ
+    test_resources/documentation.txt
     test_resources/empty/input.json
     test_resources/empty/ledger.cent
     test_resources/empty/switzerland.yaml
@@ -26,6 +27,7 @@ extra-source-files:
     test_resources/example/input.json
     test_resources/example/joe-feb.txt
     test_resources/example/ledger.cent
+    test_resources/example/options.nix
     test_resources/example/quux-dec.txt
     test_resources/example/quux-feb.txt
     test_resources/example/quux-jan.txt
@@ -33,7 +35,9 @@ extra-source-files:
     test_resources/example/receipt-computer.txt
     test_resources/example/switzerland.yaml
     test_resources/example/taxes.xml
+    test_resources/example/test_resources/documentation.txt
     test_resources/example/vat.xml
+    options.nix
 
 source-repository head
   type: git
@@ -71,20 +75,18 @@ library
       aeson
     , aeson-pretty
     , autodocodec
-    , autodocodec-yaml
     , base >=4.7 && <5
     , bytestring
     , centjes
     , conduit
     , containers
     , diagnose
-    , envparse
     , http-client
     , http-client-tls
     , http-types
     , monad-logger
     , mtl
-    , optparse-applicative
+    , opt-env-conf
     , path
     , path-io
     , pretty-show
@@ -117,6 +119,7 @@ test-suite centjes-switzerland-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Centjes.Switzerland.OptParseSpec
       Centjes.Switzerland.Report.Taxes.ETaxSpec
       Centjes.Switzerland.Report.Taxes.Gen
       Centjes.Switzerland.Report.TaxesSpec
@@ -144,6 +147,8 @@ test-suite centjes-switzerland-test
     , genvalidity-sydtest
     , genvalidity-time
     , monad-logger
+    , opt-env-conf
+    , opt-env-conf-test
     , path
     , path-io
     , really-safe-money
