@@ -3,7 +3,6 @@
 
 module Centjes.Filter
   ( Filter (..),
-    args,
     predicate,
   )
 where
@@ -15,7 +14,7 @@ import qualified Data.Text as T
 import Data.Validity
 import Data.Validity.Text ()
 import GHC.Generics (Generic)
-import Options.Applicative as OptParse
+import OptEnvConf
 
 data Filter
   = FilterAny
@@ -25,23 +24,24 @@ data Filter
 
 instance Validity Filter
 
+instance HasParser Filter where
+  settingsParser =
+    choice
+      [ FilterOr
+          <$> some
+            ( FilterSubstring
+                <$> setting
+                  [ help "filter",
+                    reader str,
+                    argument,
+                    metavar "FILTER"
+                  ]
+            ),
+        pure FilterAny
+      ]
+
 predicate :: Filter -> (AccountName -> Bool)
 predicate = \case
   FilterAny -> const True
   FilterSubstring t -> T.isInfixOf t . AccountName.toText
   FilterOr fs -> \an -> any (`predicate` an) fs
-
-args :: OptParse.Parser Filter
-args =
-  (FilterOr <$> some arg)
-    <|> pure FilterAny
-
-arg :: OptParse.Parser Filter
-arg =
-  FilterSubstring
-    <$> strArgument
-      ( mconcat
-          [ help "filter",
-            metavar "FILTER"
-          ]
-      )

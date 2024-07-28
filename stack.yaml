@@ -44,17 +44,23 @@ extra-deps:
   - really-safe-money-autodocodec
   - really-safe-money-gen
 - github: NorfairKing/safe-coloured-text
-  commit: 61f14d21b7399fe97da24e484c2f9fedaf532bb8
+  commit: 26b7657428f277f819a0831cbddddb7f4c5408f9
   subdirs:
   - safe-coloured-text
   - safe-coloured-text-layout
   - safe-coloured-text-gen
 - github: NorfairKing/autodocodec
-  commit: 36779707f38ec3aeb0a591ff8043a63717c96ea2
+  commit: b435803c3367b06c0d38acd90a54ba63e63fb6be
   subdirs:
     - autodocodec
-    - autodocodec-yaml
+    - autodocodec-nix
     - autodocodec-schema
+    - autodocodec-yaml
+- github: NorfairKing/opt-env-conf
+  commit: fc52edbea266bda495b0d5e4a0d7ccdf1d8deb3e
+  subdirs:
+    - opt-env-conf
+    - opt-env-conf-test
 
 
 system-ghc: true

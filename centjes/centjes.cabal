@@ -68,6 +68,7 @@ library
     , envparse
     , monad-logger
     , mtl
+    , opt-env-conf
     , optparse-applicative
     , path
     , path-io

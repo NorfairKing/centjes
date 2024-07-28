@@ -47,6 +47,7 @@ tests:
     - genvalidity-sydtest
     - monad-logger
     - mtl
+    - opt-env-conf-test
     - path
     - path-io
     - really-safe-money
