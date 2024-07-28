@@ -3,13 +3,16 @@
 
 module Centjes.Tag
   ( Tag (..),
+    Centjes.Tag.fromString,
     fromText,
     toText,
     toString,
   )
 where
 
+import Autodocodec
 import qualified Data.Char as Char
+import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -35,6 +38,17 @@ instance Validity Tag where
               | Char.isLatin1 c && Char.isAlphaNum c -> True
               | otherwise -> False
       ]
+
+instance HasCodec Tag where
+  codec = bimapCodec Centjes.Tag.fromText toText codec
+
+instance IsString Tag where
+  fromString s = case Centjes.Tag.fromString s of
+    Left err -> error err
+    Right t -> t
+
+fromString :: String -> Either String Tag
+fromString = fromText . T.pack
 
 fromText :: Text -> Either String Tag
 fromText = prettyValidate . Tag

@@ -25,6 +25,9 @@
 
   <ul .menu-list>
     <li>
+      <a href=@{CentjesImportCornercardR}>
+        Cornercard
+    <li>
       <a href=@{CentjesImportRevolutR}>
         Revolut
     <li>
@@ -43,8 +46,11 @@
           <a href=@{CentjesSwitzerlandCommandR "taxes"}>
             Taxes
         <li>
+          <a href=@{CentjesSwitzerlandCommandR "vat"}>
+            VAT
+        <li>
           <a href=@{CentjesSwitzerlandCommandR "download-rates"}>
-            Download Exchangerates
+            Download Rates
 
   <p .menu-label>
     Contribution

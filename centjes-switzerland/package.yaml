@@ -5,6 +5,7 @@ github: "NorfairKing/centjes"
 extra-source-files:
 - assets/**/*
 - test_resources/**/*
+- options.nix
 
 dependencies:
 - base >= 4.7 && < 5
@@ -17,20 +18,18 @@ library:
   - aeson
   - aeson-pretty
   - autodocodec
-  - autodocodec-yaml
   - bytestring
   - centjes
   - conduit
   - containers
   - containers
   - diagnose
-  - envparse
   - http-client
   - http-client-tls
   - http-types
   - monad-logger
+  - opt-env-conf
   - mtl
-  - optparse-applicative
   - path
   - path-io
   - pretty-show
@@ -69,7 +68,6 @@ tests:
     dependencies: 
     - QuickCheck
     - aeson
-    - autodocodec-yaml
     - centjes
     - centjes-gen
     - centjes-switzerland
@@ -78,6 +76,8 @@ tests:
     - genvalidity-sydtest
     - genvalidity-time
     - monad-logger  
+    - opt-env-conf
+    - opt-env-conf-test
     - path            
     - path-io
     - really-safe-money

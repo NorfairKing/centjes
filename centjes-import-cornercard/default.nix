@@ -1,6 +1,5 @@
-{ mkDerivation, autodocodec, autodocodec-yaml, base, bytestring
-, cassava, centjes, containers, diagnose, envparse, lib
-, monad-logger, optparse-applicative, path, path-io
+{ mkDerivation, base, bytestring, cassava, centjes, containers
+, diagnose, lib, monad-logger, opt-env-conf, path, path-io
 , really-safe-money, text, time, vector
 }:
 mkDerivation {
@@ -10,9 +9,8 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    autodocodec autodocodec-yaml base bytestring cassava centjes
-    containers diagnose envparse monad-logger optparse-applicative path
-    path-io really-safe-money text time vector
+    base bytestring cassava centjes containers diagnose monad-logger
+    opt-env-conf path path-io really-safe-money text time vector
   ];
   executableHaskellDepends = [ base ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

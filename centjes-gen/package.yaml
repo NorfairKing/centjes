@@ -2,11 +2,12 @@ name: centjes-gen
 version: 0.0.0.0
 github: "NorfairKing/centjes"
 
-dependencies:
-- base >= 4.7 && < 5
-
 extra-source-files:
 - test_resources/**/*
+- options.nix
+
+dependencies:
+- base >= 4.7 && < 5
 
 library:
   source-dirs: src
@@ -47,6 +48,7 @@ tests:
     - genvalidity-sydtest
     - monad-logger
     - mtl
+    - opt-env-conf-test
     - path
     - path-io
     - really-safe-money

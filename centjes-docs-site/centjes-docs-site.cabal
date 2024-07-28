@@ -14,11 +14,13 @@ license:        MIT
 build-type:     Simple
 extra-source-files:
     routes
+    content/pages/centjes-import-cornercard.markdown
     content/pages/centjes-import-neon.markdown
     content/pages/centjes-import-revolut.markdown
     content/pages/centjes-switzerland.markdown
     content/pages/centjes-switzerland/download-rates.markdown
     content/pages/centjes-switzerland/taxes.markdown
+    content/pages/centjes-switzerland/vat.markdown
     content/pages/centjes.markdown
     content/pages/centjes/balance.markdown
     content/pages/centjes/check.markdown
@@ -34,6 +36,8 @@ extra-source-files:
     templates/nixos-module.hamlet
     templates/option-docs.hamlet
     templates/page.hamlet
+    test_resources/documentation.txt
+    options.nix
 
 source-repository head
   type: git
@@ -49,6 +53,7 @@ library
       Centjes.Docs.Site.Foundation
       Centjes.Docs.Site.Handler
       Centjes.Docs.Site.Handler.Centjes
+      Centjes.Docs.Site.Handler.CentjesImportCornercard
       Centjes.Docs.Site.Handler.CentjesImportNeon
       Centjes.Docs.Site.Handler.CentjesImportRevolut
       Centjes.Docs.Site.Handler.CentjesSwitzerland
@@ -61,7 +66,6 @@ library
       Centjes.Docs.Site.ModuleDocs
       Centjes.Docs.Site.ModuleDocs.TH
       Centjes.Docs.Site.OptParse
-      Centjes.Docs.Site.OptParse.Types
       Centjes.Docs.Site.Static
       Centjes.Docs.Site.Static.TH
       Centjes.Docs.Site.Widget
@@ -78,19 +82,20 @@ library
     , base >=4.7
     , bytestring
     , centjes
+    , centjes-import-cornercard
     , centjes-import-neon
     , centjes-import-revolut
     , centjes-switzerland
     , cmark-gfm
     , containers
     , data-default
-    , envparse
     , file-embed
     , filepath
     , fsnotify
-    , optparse-applicative
+    , opt-env-conf
     , path
     , path-io
+    , safe-coloured-text
     , shakespeare
     , template-haskell
     , template-haskell-reload
@@ -113,6 +118,24 @@ executable centjes-docs-site
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      base >=4.7
     , centjes-docs-site
+  default-language: Haskell2010
+
+test-suite centjes-docs-site-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Centjes.Docs.Site.OptParseSpec
+      Paths_centjes_docs_site
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      base >=4.7
+    , centjes-docs-site
+    , opt-env-conf-test
+    , sydtest
   default-language: Haskell2010

@@ -17,4 +17,5 @@ root-instances = [
   { instance = "Lift DocPage", module = "Centjes.Docs.Site.Static.TH" },
   { instance = "Lift ModuleOption", module = "Centjes.Docs.Site.ModuleDocs.TH" },
   { instance = "Lift NixValue", module = "Centjes.Docs.Site.ModuleDocs.TH" },
+  { instance = "IsString Tag", module = "Centjes.Tag" },
 ]

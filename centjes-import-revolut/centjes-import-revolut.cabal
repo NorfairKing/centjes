@@ -23,17 +23,14 @@ library
   hs-source-dirs:
       src
   build-depends:
-      autodocodec
-    , autodocodec-yaml
-    , base >=4.7 && <5
+      base >=4.7 && <5
     , bytestring
     , cassava
     , centjes
     , containers
     , diagnose
-    , envparse
     , monad-logger
-    , optparse-applicative
+    , opt-env-conf
     , path
     , path-io
     , really-safe-money

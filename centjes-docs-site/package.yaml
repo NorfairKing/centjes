@@ -10,6 +10,10 @@ extra-source-files:
 - content/pages/**/*
 - content/unreleased.markdown
 - templates/**/*
+- test_resources/**/*
+- options.nix
+dependencies:
+- base >= 4.7
 
 library:
   source-dirs: src
@@ -18,23 +22,23 @@ library:
   - aeson
   - autodocodec
   - autodocodec-yaml
-  - base >= 4.7
   - bytestring
+  - centjes
+  - centjes-import-cornercard
+  - centjes-import-neon
+  - centjes-import-revolut
+  - centjes-switzerland
   - cmark-gfm
   - containers
   - data-default
-  - envparse
   - file-embed
   - filepath
   - fsnotify
-  - optparse-applicative
+  - opt-env-conf
   - path
   - path-io
+  - safe-coloured-text
   - shakespeare
-  - centjes
-  - centjes-import-revolut
-  - centjes-import-neon
-  - centjes-switzerland
   - template-haskell
   - template-haskell-reload
   - text
@@ -56,5 +60,19 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - base >= 4.7 && < 5
     - centjes-docs-site
+
+tests:
+  centjes-docs-site-test:
+    main: Spec.hs
+    source-dirs: test
+    build-tools: sydtest-discover
+    ghc-options:
+    - -Wall
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - centjes-docs-site
+    - sydtest
+    - opt-env-conf-test

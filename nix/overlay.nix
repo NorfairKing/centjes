@@ -23,6 +23,7 @@ with final.haskell.lib;
       ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
         taxes \
         --config-file $src/switzerland.yaml \
+        --base-dir $src \
         --zip-file $out/packet.zip \
         --readme-file $out/README.pdf
     '';
@@ -38,6 +39,7 @@ with final.haskell.lib;
       ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
         vat \
         --config-file $src/switzerland.yaml \
+        --base-dir $src \
         --zip-file $out/packet.zip \
         --readme-file $out/README.pdf
     '';
@@ -60,7 +62,7 @@ with final.haskell.lib;
                 "--ghc-option=-optl=-static"
                 # Static                                               
                 "--extra-lib-dirs=${final.gmp6.override { withStatic = true; }}/lib"
-                "--extra-lib-dirs=${final.libffi.overrideAttrs (old: { dontDisableStatic = true; })}/lib"
+                "--extra-lib-dirs=${final.libffi.overrideAttrs (_: { dontDisableStatic = true; })}/lib"
                 "--extra-lib-dirs=${final.zlib.static}/lib"
                 # tinfo                                           
                 "--extra-lib-dirs=${final.ncurses.override { enableStatic = true; }}/lib"

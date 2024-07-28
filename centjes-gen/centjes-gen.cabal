@@ -126,6 +126,7 @@ extra-source-files:
     test_resources/compile/CE_UNDECLARED_CURRENCY.err
     test_resources/compile/CE_UNDECLARED_TAG.cent
     test_resources/compile/CE_UNDECLARED_TAG.err
+    test_resources/documentation.txt
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err
@@ -210,6 +211,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
     test_resources/syntax/transaction/valid/with-tag.cent
+    options.nix
 
 source-repository head
   type: git
@@ -271,6 +273,7 @@ test-suite centjes-test
       Centjes.LedgerSpec
       Centjes.LoadSpec
       Centjes.ModuleSpec
+      Centjes.OptParseSpec
       Centjes.ParseSpec
       Centjes.Report.BalanceSpec
       Centjes.Report.CheckSpec
@@ -294,6 +297,7 @@ test-suite centjes-test
     , genvalidity-sydtest
     , monad-logger
     , mtl
+    , opt-env-conf-test
     , path
     , path-io
     , really-safe-money

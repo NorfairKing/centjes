@@ -19,8 +19,6 @@ module Centjes.Docs.Site.Foundation
   )
 where
 
-import Autodocodec
-import Autodocodec.Yaml
 import Centjes.Docs.Site.Assets
 import Centjes.Docs.Site.Constants
 import Centjes.Docs.Site.Static
@@ -94,9 +92,3 @@ setCentjesTitle t = setTitle $ "Centjes Documentation - " <> t
 
 loadDocPages :: (MonadHandler m) => m (Map [Text] DocPage)
 loadDocPages = loadIO docPages
-
-yamlDesc :: forall a. (HasCodec a) => Text
-yamlDesc = yamlDescVia (codec @a)
-
-yamlDescVia :: forall a. JSONCodec a -> Text
-yamlDescVia = renderPlainSchemaVia

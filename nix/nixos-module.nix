@@ -18,16 +18,11 @@ in
         description = "Centjes' documentation site service";
         type = types.nullOr (types.submodule {
           options = {
-            enable = mkEnableOption ("Centjes Docs Site");
-            config = mkOption {
-              description = "The contents of the config file, as an attribute set. This will be translated to Yaml and put in the right place along with the rest of the options defined in this submodule.";
-              type = types.attrs;
-              default = { };
-            };
-            port = mkOption {
-              description = "The port to serve sync requests on";
-              type = types.int;
-              example = 8000;
+            enable = mkEnableOption "Centjes Docs Site";
+            pkg = mkOption {
+              description = "The docs site package";
+              type = types.package;
+              default = centjes-docs-site;
             };
             hosts = mkOption {
               description = "The host to serve the docs site on";
@@ -35,22 +30,16 @@ in
               default = [ ];
               example = [ "docs.centjes.online" ];
             };
-            google-analytics-tracking = mkOption {
-              description = "The Google analytics tracking code";
-              type = types.nullOr types.str;
-              example = "XX-XXXXXXXX-XX";
-              default = null;
+            config = mkOption {
+              description = "Typed settings passed by config file";
+              default = { };
+              type = types.submodule {
+                options = import ../centjes-docs-site/options.nix { inherit lib; };
+              };
             };
-            google-search-console-verification = mkOption {
-              description = "The Google search console verification code";
-              type = types.nullOr types.str;
-              example = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-              default = null;
-            };
-            pkg = mkOption {
-              description = "The docs site package";
-              type = types.package;
-              default = centjes-docs-site;
+            extraConfig = mkOption {
+              description = "The contents of the config file, as an attribute set. This will be translated to Yaml and put in the right place along with the rest of the options defined in this submodule.";
+              default = { };
             };
           };
         });
@@ -58,14 +47,10 @@ in
     };
   config =
     let
-      working-dir = "/www/centjes/${envname}/";
-      attrOrNull = name: value: optionalAttrs (!builtins.isNull value) { "${name}" = value; };
       # The docs server
-      docs-site-config = with cfg.docs-site; mergeListRecursively [
-        (attrOrNull "port" port)
-        (attrOrNull "google-analytics-tracking" google-analytics-tracking)
-        (attrOrNull "google-search-console-verification" google-search-console-verification)
-        cfg.docs-site.config
+      docs-site-config = mergeListRecursively [
+        (builtins.removeAttrs cfg.docs-site.config [ "override" "overrideDerivation" ])
+        cfg.docs-site.extraConfig
       ];
       docsSiteConfigFile = (pkgs.formats.yaml { }).generate "centjes-docs-site-config.yaml" docs-site-config;
       docs-site-service =
@@ -75,25 +60,21 @@ in
             {
               description = "Centjes docs site ${envname} Service";
               wantedBy = [ "multi-user.target" ];
-              environment =
-                {
-                  "CENTJES_DOCS_SITE_CONFIG_FILE" = "${docsSiteConfigFile}";
-                };
-              script =
-                ''
-                  ${pkg}/bin/centjes-docs-site
-                '';
-              serviceConfig =
-                {
-                  Restart = "always";
-                  RestartSec = 1;
-                  Nice = 15;
-                };
-              unitConfig =
-                {
-                  StartLimitIntervalSec = 0;
-                  # ensure Restart=always is always honoured
-                };
+              environment = {
+                "CENTJES_DOCS_SITE_CONFIG_FILE" = "${docsSiteConfigFile}";
+              };
+              script = ''
+                ${pkg}/bin/centjes-docs-site
+              '';
+              serviceConfig = {
+                Restart = "always";
+                RestartSec = 1;
+                Nice = 15;
+              };
+              unitConfig = {
+                StartLimitIntervalSec = 0;
+                # ensure Restart=always is always honoured
+              };
             };
         };
       docs-site-host =
@@ -111,7 +92,7 @@ in
     in
     mkIf (cfg.enable or false) {
       systemd.services = docs-site-service;
-      networking.firewall.allowedTCPPorts = (optional (cfg.docs-site.enable or false) cfg.docs-site.port);
+      networking.firewall.allowedTCPPorts = (optional (cfg.docs-site.enable or false) cfg.docs-site.config.port);
       services.nginx.virtualHosts = docs-site-host;
     };
 }

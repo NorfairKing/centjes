@@ -8,16 +8,13 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - autodocodec
-  - autodocodec-yaml
   - bytestring
   - cassava
   - centjes
   - containers
   - diagnose
-  - envparse
   - monad-logger
-  - optparse-applicative
+  - opt-env-conf
   - path
   - path-io
   - really-safe-money

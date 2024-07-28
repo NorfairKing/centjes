@@ -9,24 +9,6 @@
 <h2 .title .is-2>
   Reference
 
-<h3 .title .is-3>
-  Arguments
-
 <div .content>
   <pre>
-    #{argsHelpText}
-
-<h3 .title .is-3>
-  Environment
-
-<div .content>
-  <pre>
-    #{envHelpText}
-
-<h3 .title .is-3>
-  Configuration
-
-<div .content>
-  <pre>
-    #{confHelpText}
-
+    #{optionsReferenceDocs}

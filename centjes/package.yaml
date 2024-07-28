@@ -12,17 +12,14 @@ library:
   - happy
   - autoexporter
   dependencies:
-  - aeson
   - array
   - autodocodec
-  - autodocodec-yaml
   - bytestring
   - containers
   - diagnose
-  - envparse
   - monad-logger
   - mtl
-  - optparse-applicative
+  - opt-env-conf
   - path
   - path-io
   - prettyprinter

@@ -2,29 +2,29 @@
 , system
 , centjes-nixos-module
 }:
-nixosTest ({ lib, pkgs, ... }:
-with lib;
 let
   docs-port = 8001;
 in
-{
+nixosTest {
   name = "centjes-e2e-test";
   nodes = {
     docsserver = {
       imports = [
         centjes-nixos-module
       ];
-      system.stateVersion = "23.11";
+      system.stateVersion = "24.05";
       services.centjes.production = {
         enable = true;
         docs-site = {
           enable = true;
-          port = docs-port;
+          config = {
+            port = docs-port;
+          };
         };
       };
     };
-    client = { config, ... }: {
-      system.stateVersion = "23.11";
+    client = {
+      system.stateVersion = "24.05";
     };
   };
   testScript = ''
@@ -41,4 +41,4 @@ in
     docsserver.wait_for_open_port(${builtins.toString docs-port})
     client.succeed("curl docsserver:${builtins.toString docs-port}")
   '';
-})
+}

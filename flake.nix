@@ -113,6 +113,8 @@
             ormolu.enable = true;
             nixpkgs-fmt.enable = true;
             nixpkgs-fmt.excludes = [ ".*/default.nix" ];
+            deadnix.enable = true;
+            deadnix.excludes = [ ".*/default.nix" ];
             cabal2nix.enable = true;
             typstfmt = {
               enable = true;
@@ -132,7 +134,6 @@
           pkg-config
           libxml2
           typst
-          typstfmt
           zlib
         ] ++ self.checks.${system}.pre-commit.enabledPackages;
         shellHook = self.checks.${system}.pre-commit.shellHook;

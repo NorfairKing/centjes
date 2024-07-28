@@ -1,0 +1,146 @@
+[36mUsage: [m[33mcentjes-switzerland[m [37m--config-file[m [33mFILE_PATH[m COMMAND [37m--base-dir[m [33mDIRECTORY_PATH[m [37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m
+
+[36mAll settings[m:
+  [34mPath to the configuration file[m
+  option: [37m--config-file[m [33mFILE_PATH[m
+  env: [37mCENTJES_SWITZERLAND_CONFIG_FILE[m [33mFILE_PATH[m
+  
+  [34mbase directory[m
+  option: [37m--base-dir[m [33mDIRECTORY_PATH[m
+  env: [37mCENTJES_SWITZERLAND_BASE_DIR[m [33mDIRECTORY_PATH[m
+  config:
+    [37mbase-dir[m: # [32mor null[m
+      [33m<string>[m
+  
+  [34mledger file[m
+  option: [37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m
+  env: [37mCENTJES_SWITZERLAND_LEDGER[m [33mFILE_PATH[m
+  config:
+    [37mledger[m: # [32mor null[m
+      [33m<string>[m
+  
+
+[36mAll commands[m:
+  [34mproduce a tax report[m
+  command: [35mtaxes[m
+    [34mPath to the zip file to create[m
+    
+    [34mPath to the readme file to create[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+  
+  [34mproduce a VAT report[m
+  command: [35mvat[m
+    [34mpath to the zip file to create[m
+    option: [37m--zip-file[m [33mFILE_PATH[m
+    env: [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m
+    config:
+      [37mzip-file[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mpath to the readme file to create[m
+    option: [37m--readme-file[m [33mFILE_PATH[m
+    env: [37mCENTJES_SWITZERLAND_README_FILE[m [33mFILE_PATH[m
+    config:
+      [37mreadme-file[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+    [34mTODO[m
+    
+  
+  [34mDownload exchange rates[m
+  command: [35mdownload-rates[m
+    [34mThe begin date (inclusive), default: Start of the year[m
+    option: [37m--begin[m [33mYYYY-MM-DD[m
+    env: [37mCENTJES_SWITZERLAND_BEGIN[m [33mYYYY-MM-DD[m
+    config:
+      [37mbegin[m: # [32mor null[m
+        # Day
+        [33m<string>[m
+    
+    [34mThe final date (inclusive), default: Yesterday[m
+    option: [37m--end[m [33mYYYY-MM-DD[m
+    env: [37mCENTJES_SWITZERLAND_END[m [33mYYYY-MM-DD[m
+    config:
+      [37mend[m: # [32mor null[m
+        # Day
+        [33m<string>[m
+    
+  
+
+[36mOptions[m:
+  [37m--config-file[m [34mPath to the configuration file[m 
+  [35mtaxes[m [34mproduce a tax report[m
+  [35mvat[m [34mproduce a VAT report[m
+      [37m--zip-file[m    [34mpath to the zip file to create[m    default: [33m"vat-packet.zip"[m
+      [37m--readme-file[m [34mpath to the readme file to create[m default: [33m"README.pdf"[m    
+  [35mdownload-rates[m [34mDownload exchange rates[m
+      [37m--begin[m [34mThe begin date (inclusive), default: Start of the year[m 
+      [37m--end[m   [34mThe final date (inclusive), default: Yesterday[m         
+  [37m--base-dir[m [34mbase directory[m 
+  [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
+
+[36mEnvironment Variables[m:
+  [37mCENTJES_SWITZERLAND_CONFIG_FILE[m [33mFILE_PATH[m     [34mPath to the configuration file[m                        
+  [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m        [34mpath to the zip file to create[m                        
+  [37mCENTJES_SWITZERLAND_README_FILE[m [33mFILE_PATH[m     [34mpath to the readme file to create[m                     
+  [37mCENTJES_SWITZERLAND_BEGIN[m [33mYYYY-MM-DD[m          [34mThe begin date (inclusive), default: Start of the year[m
+  [37mCENTJES_SWITZERLAND_END[m [33mYYYY-MM-DD[m            [34mThe final date (inclusive), default: Yesterday[m        
+  [37mCENTJES_SWITZERLAND_BASE_DIR[m [33mDIRECTORY_PATH[m   [34mbase directory[m                                        
+  [37mCENTJES_SWITZERLAND_LEDGER[m [33mFILE_PATH[m          [34mledger file[m                                           
+
+[36mConfiguration Values[m:
+  [34mpath to the zip file to create[m
+  [37mzip-file[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mpath to the readme file to create[m
+  [37mreadme-file[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mThe begin date (inclusive), default: Start of the year[m
+  [37mbegin[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
+  [34mThe final date (inclusive), default: Yesterday[m
+  [37mend[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
+  [34mbase directory[m
+  [37mbase-dir[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mledger file[m
+  [37mledger[m:
+    # [32mor null[m
+    [33m<string>[m
+
