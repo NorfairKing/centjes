@@ -18,7 +18,7 @@ in
         description = "Centjes' documentation site service";
         type = types.nullOr (types.submodule {
           options = {
-            enable = mkEnableOption ("Centjes Docs Site");
+            enable = mkEnableOption "Centjes Docs Site";
             config = mkOption {
               description = "The contents of the config file, as an attribute set. This will be translated to Yaml and put in the right place along with the rest of the options defined in this submodule.";
               type = types.attrs;

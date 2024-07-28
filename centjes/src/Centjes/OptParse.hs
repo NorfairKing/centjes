@@ -4,20 +4,14 @@
 
 module Centjes.OptParse where
 
-import Autodocodec
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Filter (Filter)
-import qualified Centjes.Filter as Filter
 import Control.Applicative
-import Data.Bool
-import Data.Maybe
 import qualified Data.Text as T
 import OptEnvConf
 import Path
 import Path.IO
 import Paths_centjes (version)
-import qualified System.Environment as System
-import System.Exit
 
 getInstructions :: IO Instructions
 getInstructions = runSettingsParser version "really safe double-entry accounting"

@@ -211,6 +211,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
     test_resources/syntax/transaction/valid/with-tag.cent
+    options.nix
 
 source-repository head
   type: git

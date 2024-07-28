@@ -60,16 +60,13 @@ library
       aeson
     , array
     , autodocodec
-    , autodocodec-yaml
     , base >=4.7 && <5
     , bytestring
     , containers
     , diagnose
-    , envparse
     , monad-logger
     , mtl
     , opt-env-conf
-    , optparse-applicative
     , path
     , path-io
     , prettyprinter

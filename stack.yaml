@@ -13,6 +13,8 @@ packages:
 - centjes-docs-site
 
 
+- /home/syd/src/opt-env-conf/opt-env-conf
+- /home/syd/src/opt-env-conf/opt-env-conf-test
 ghc-options:
   "$locals": -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Widentities -Wredundant-constraints -Wcpp-undef -O0 -Wunused-packages
 
@@ -56,11 +58,11 @@ extra-deps:
     - autodocodec-nix
     - autodocodec-schema
     - autodocodec-yaml
-- github: NorfairKing/opt-env-conf
-  commit: fc52edbea266bda495b0d5e4a0d7ccdf1d8deb3e
-  subdirs:
-    - opt-env-conf
-    - opt-env-conf-test
+      # - github: NorfairKing/opt-env-conf
+      #   commit: fc52edbea266bda495b0d5e4a0d7ccdf1d8deb3e
+      #   subdirs:
+      #     - opt-env-conf
+      #     - opt-env-conf-test
 
 
 system-ghc: true
