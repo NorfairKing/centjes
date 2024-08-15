@@ -26,59 +26,63 @@ data Settings = Settings
   }
 
 instance HasParser Settings where
-  settingsParser =
-    subEnv_ "centjes-import-revolut" $
-      withConfigurableYamlConfig (runIO $ resolveFile' "revolut.yaml") $ do
-        settingLedgerFile <-
-          filePathSetting
-            [ help "main ledger file",
-              short 'l',
-              name "ledger",
-              value "ledger.cent"
-            ]
-        settingInput <-
-          filePathSetting
-            [ help "input file",
-              argument,
-              metavar "CSV_FILE"
-            ]
-        settingOutput <-
-          filePathSetting
-            [ help "help output ledger file",
-              short 'o',
-              name "output",
-              value "revolut.cent"
-            ]
-        settingAssetsAccountName <-
-          setting
-            [ help "Assets account name",
-              reader $ eitherReader AccountName.fromStringOrError,
-              name "assets-account",
-              value "assets:revolut:checking",
-              metavar "ACCOUNT_NAME"
-            ]
-        settingExpensesAccountName <-
-          setting
-            [ help "Expenses account name",
-              reader $ eitherReader AccountName.fromStringOrError,
-              name "expenses-account",
-              value "expenses:unknown:revolut",
-              metavar "ACCOUNT_NAME"
-            ]
-        settingIncomeAccountName <-
-          setting
-            [ help "Income account name",
-              reader $ eitherReader AccountName.fromStringOrError,
-              name "income-account",
-              value "income:unknown:revolut",
-              metavar "ACCOUNT_NAME"
-            ]
-        settingFeesAccountName <-
-          setting
-            [ help "Fees account name",
-              reader $ eitherReader AccountName.fromStringOrError,
-              name "fees-account",
-              value "expenses:banking:revolut",
-              metavar "ACCOUNT_NAME"
-            ]
-        pure Settings {..}
+  settingsParser = parseSettings
+
+{-# ANN parseSettings ("NOCOVER" :: String) #-}
+parseSettings :: Parser Settings
+parseSettings =
+  subEnv_ "centjes-import-revolut" $
+    withConfigurableYamlConfig (runIO $ resolveFile' "revolut.yaml") $ do
+      settingLedgerFile <-
+        filePathSetting
+          [ help "main ledger file",
+            short 'l',
+            name "ledger",
+            value "ledger.cent"
+          ]
+      settingInput <-
+        filePathSetting
+          [ help "input file",
+            argument,
+            metavar "CSV_FILE"
+          ]
+      settingOutput <-
+        filePathSetting
+          [ help "help output ledger file",
+            short 'o',
+            name "output",
+            value "revolut.cent"
+          ]
+      settingAssetsAccountName <-
+        setting
+          [ help "Assets account name",
+            reader $ eitherReader AccountName.fromStringOrError,
+            name "assets-account",
+            value "assets:revolut:checking",
+            metavar "ACCOUNT_NAME"
+          ]
+      settingExpensesAccountName <-
+        setting
+          [ help "Expenses account name",
+            reader $ eitherReader AccountName.fromStringOrError,
+            name "expenses-account",
+            value "expenses:unknown:revolut",
+            metavar "ACCOUNT_NAME"
+          ]
+      settingIncomeAccountName <-
+        setting
+          [ help "Income account name",
+            reader $ eitherReader AccountName.fromStringOrError,
+            name "income-account",
+            value "income:unknown:revolut",
+            metavar "ACCOUNT_NAME"
+          ]
+      settingFeesAccountName <-
+        setting
+          [ help "Fees account name",
+            reader $ eitherReader AccountName.fromStringOrError,
+            name "fees-account",
+            value "expenses:banking:revolut",
+            metavar "ACCOUNT_NAME"
+          ]
+      pure Settings {..}

@@ -31,6 +31,8 @@
     yesod-static-remote.flake = false;
     template-haskell-reload.url = "github:NorfairKing/template-haskell-reload";
     template-haskell-reload.flake = false;
+    dekking.url = "github:NorfairKing/dekking";
+    dekking.flake = false;
     linkcheck.url = "github:NorfairKing/linkcheck";
     linkcheck.flake = false;
     seocheck.url = "github:NorfairKing/seocheck";
@@ -52,6 +54,7 @@
     , yesod-autoreload
     , yesod-static-remote
     , template-haskell-reload
+    , dekking
     , linkcheck
     , seocheck
     }:
@@ -70,6 +73,7 @@
           (import (yesod-autoreload + "/nix/overlay.nix"))
           (import (yesod-static-remote + "/nix/overlay.nix"))
           (import (template-haskell-reload + "/nix/overlay.nix"))
+          (import (dekking + "/nix/overlay.nix"))
           (import (linkcheck + "/nix/overlay.nix"))
           (import (seocheck + "/nix/overlay.nix"))
           (import (weeder-nix + "/nix/overlay.nix"))
@@ -101,6 +105,21 @@
         example-switzerland-taxes = pkgsMusl.centjesRelease.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/example;
         example-switzerland-vat = pkgsMusl.centjesRelease.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/example;
         vim-plugin = pkgsMusl.vimPlugins.centjes-vim;
+        coverage-report = pkgs.dekking.makeCoverageReport {
+          name = "test-coverage-report";
+          packages = [
+            "centjes"
+            "centjes-import-cornercard"
+            "centjes-import-neon"
+            "centjes-import-revolut"
+            "centjes-switzerland"
+          ];
+          coverage = [
+            "centjes-gen"
+            # Not a Haskell package
+            # "centjes-vim"
+          ];
+        };
         weeder-check = pkgs.weeder-nix.makeWeederCheck {
           weederToml = ./weeder.toml;
           packages = builtins.attrNames pkgs.haskellPackages.centjesPackages;

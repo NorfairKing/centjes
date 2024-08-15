@@ -263,7 +263,9 @@ some_sep(sep, p)
 some_sep_rev(sep, p)
   : p                          { $1 :| [] }
   | some_sep_rev(sep, p) sep p { $3 NE.<| $1 }
+
 { 
+{-# ANN module ("NOCOVER" :: String) #-}
 
 sL1 :: Located a -> b -> Located b
 sL1 (Located l val) b = Located l b

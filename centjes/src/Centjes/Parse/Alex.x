@@ -25,6 +25,7 @@ import Numeric.DecimalLiteral as DecimalLiteral
 import Path
 import Prelude hiding (lex)
 import qualified Data.Text as T
+
 }
 
 %wrapper "monadUserState"
@@ -171,6 +172,8 @@ tokens :-
 -- Skip any other whitespace everywhere
 $white+ ;
 {
+{-# ANN module ("NOCOVER" :: String) #-}
+ 
 lexTimestamp :: AlexAction Token
 lexTimestamp = lex TokenTimestamp 
 
