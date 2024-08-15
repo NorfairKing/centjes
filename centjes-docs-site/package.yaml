@@ -20,8 +20,6 @@ library:
   build-tools: autoexporter
   dependencies:
   - aeson
-  - autodocodec
-  - autodocodec-yaml
   - bytestring
   - centjes
   - centjes-import-cornercard

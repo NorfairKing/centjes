@@ -77,8 +77,6 @@ library
       autoexporter:autoexporter
   build-depends:
       aeson
-    , autodocodec
-    , autodocodec-yaml
     , base >=4.7
     , bytestring
     , centjes
