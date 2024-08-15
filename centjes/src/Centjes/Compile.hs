@@ -35,6 +35,7 @@ import Data.Ratio
 import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
@@ -518,7 +519,31 @@ compileTransaction currencies accounts tags (Located l mt) = do
               pure $ Located pl $ Ledger.Price transactionTimestamp (postingCurrency p) lc
           )
           postings
-  transactionAssertions <-
+  Extras {..} <- compileExtras currencies tags l (Module.transactionExtras mt)
+  let transactionAttachments = extraAttachments
+  let transactionAssertions = extraAssertions
+  let transactionTags = extraTags
+  pure
+    ( Located l Ledger.Transaction {..},
+      prices
+    )
+
+data Extras ann = Extras
+  { extraAttachments :: Vector (GenLocated ann (Ledger.Attachment ann)),
+    extraAssertions :: Vector (GenLocated ann (Ledger.Assertion ann)),
+    extraTags :: Map Tag ann
+  }
+
+compileExtras ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map Tag ann ->
+  ann ->
+  [GenLocated ann (TransactionExtra ann)] ->
+  Validation
+    (CompileError ann)
+    (Extras ann)
+compileExtras currencies tags l tes = do
+  extraAssertions <-
     V.fromList
       <$> traverse
         (compileAssertion currencies l)
@@ -530,9 +555,9 @@ compileTransaction currencies accounts tags (Located l mt) = do
               )
                 . locatedValue
             )
-            (Module.transactionExtras mt)
+            tes
         )
-  let transactionAttachments =
+  let extraAttachments =
         V.fromList $
           mapMaybe
             ( ( \case
@@ -542,8 +567,8 @@ compileTransaction currencies accounts tags (Located l mt) = do
               )
                 . locatedValue
             )
-            (Module.transactionExtras mt)
-  transactionTags <-
+            tes
+  extraTags <-
     M.fromList
       <$> traverse
         (compileTag tags l)
@@ -555,12 +580,9 @@ compileTransaction currencies accounts tags (Located l mt) = do
               )
                 . locatedValue
             )
-            (Module.transactionExtras mt)
+            tes
         )
-  pure
-    ( Located l Ledger.Transaction {..},
-      prices
-    )
+  pure Extras {..}
 
 compilePosting ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
