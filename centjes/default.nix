@@ -1,6 +1,6 @@
 { mkDerivation, alex, array, autodocodec, autoexporter, base
-, bytestring, containers, diagnose, happy, lib, monad-logger, mtl
-, opt-env-conf, path, path-io, prettyprinter
+, bytestring, containers, diagnose, dlist, happy, lib, monad-logger
+, mtl, opt-env-conf, path, path-io, prettyprinter
 , prettyprinter-ansi-terminal, really-safe-money
 , safe-coloured-text, safe-coloured-text-layout
 , safe-coloured-text-terminfo, text, time, unliftio, validity
@@ -14,8 +14,8 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    array autodocodec base bytestring containers diagnose monad-logger
-    mtl opt-env-conf path path-io prettyprinter
+    array autodocodec base bytestring containers diagnose dlist
+    monad-logger mtl opt-env-conf path path-io prettyprinter
     prettyprinter-ansi-terminal really-safe-money safe-coloured-text
     safe-coloured-text-layout safe-coloured-text-terminfo text time
     unliftio validity validity-containers validity-path validity-text

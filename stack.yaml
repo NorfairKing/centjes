@@ -49,6 +49,13 @@ extra-deps:
   - safe-coloured-text
   - safe-coloured-text-layout
   - safe-coloured-text-gen
+- github: NorfairKing/validity
+  commit: 51b8843b9bd5228160b99f653d3271147245d689
+  subdirs:
+    - validity
+    - validity-dlist
+    - genvalidity
+    - genvalidity-dlist
 - github: NorfairKing/autodocodec
   commit: b435803c3367b06c0d38acd90a54ba63e63fb6be
   subdirs:

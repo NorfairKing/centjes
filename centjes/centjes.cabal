@@ -63,6 +63,7 @@ library
     , bytestring
     , containers
     , diagnose
+    , dlist
     , monad-logger
     , mtl
     , opt-env-conf

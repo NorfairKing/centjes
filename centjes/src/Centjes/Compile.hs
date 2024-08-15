@@ -26,6 +26,8 @@ import qualified Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad
+import Data.DList (DList (..))
+import qualified Data.DList as DList
 import Data.Function
 import Data.List (intercalate, sortBy)
 import Data.Map.Strict (Map)
@@ -35,7 +37,6 @@ import Data.Ratio
 import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
-import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
@@ -520,8 +521,8 @@ compileTransaction currencies accounts tags (Located l mt) = do
           )
           postings
   Extras {..} <- compileExtras currencies tags l (Module.transactionExtras mt)
-  let transactionAttachments = extraAttachments
-  let transactionAssertions = extraAssertions
+  let transactionAttachments = V.fromList $ DList.toList extraAttachments
+  let transactionAssertions = V.fromList $ DList.toList extraAssertions
   let transactionTags = extraTags
   pure
     ( Located l Ledger.Transaction {..},
@@ -529,10 +530,28 @@ compileTransaction currencies accounts tags (Located l mt) = do
     )
 
 data Extras ann = Extras
-  { extraAttachments :: Vector (GenLocated ann (Ledger.Attachment ann)),
-    extraAssertions :: Vector (GenLocated ann (Ledger.Assertion ann)),
-    extraTags :: Map Tag ann
+  { extraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
+    extraAssertions :: !(DList (GenLocated ann (Ledger.Assertion ann))),
+    extraTags :: !(Map Tag ann)
   }
+
+-- We need this semigroup instance to show as many errors as possible.
+instance Semigroup (Extras ann) where
+  (<>) e1 e2 =
+    Extras
+      { extraAttachments = extraAttachments e1 <> extraAttachments e2,
+        extraAssertions = extraAssertions e1 <> extraAssertions e2,
+        extraTags = M.union (extraTags e1) (extraTags e2)
+      }
+
+instance Monoid (Extras ann) where
+  mempty =
+    Extras
+      { extraAttachments = mempty,
+        extraAssertions = mempty,
+        extraTags = M.empty
+      }
+  mappend = (<>)
 
 compileExtras ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
@@ -542,47 +561,25 @@ compileExtras ::
   Validation
     (CompileError ann)
     (Extras ann)
-compileExtras currencies tags l tes = do
-  extraAssertions <-
-    V.fromList
-      <$> traverse
-        (compileAssertion currencies l)
-        ( mapMaybe
-            ( ( \case
-                  TransactionAssertion a -> Just a
-                  TransactionAttachment _ -> Nothing
-                  TransactionTag _ -> Nothing
-              )
-                . locatedValue
-            )
-            tes
-        )
-  let extraAttachments =
-        V.fromList $
-          mapMaybe
-            ( ( \case
-                  TransactionAttachment (Located _ (ExtraAttachment a)) -> Just a
-                  TransactionAssertion _ -> Nothing
-                  TransactionTag _ -> Nothing
-              )
-                . locatedValue
-            )
-            tes
-  extraTags <-
-    M.fromList
-      <$> traverse
-        (compileTag tags l)
-        ( mapMaybe
-            ( ( \case
-                  TransactionTag et -> Just et
-                  TransactionAttachment _ -> Nothing
-                  TransactionAssertion _ -> Nothing
-              )
-                . locatedValue
-            )
-            tes
-        )
-  pure Extras {..}
+compileExtras currencies tags l = foldMap $ compileExtra currencies tags l
+
+compileExtra ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map Tag ann ->
+  ann ->
+  GenLocated ann (TransactionExtra ann) ->
+  Validation
+    (CompileError ann)
+    (Extras ann)
+compileExtra currencies tags l (Located _ e) = case e of
+  TransactionAssertion a ->
+    (\ca -> mempty {extraAssertions = DList.singleton ca})
+      <$> compileAssertion currencies l a
+  TransactionAttachment (Located _ (ExtraAttachment a)) ->
+    pure $ mempty {extraAttachments = DList.singleton a}
+  TransactionTag et ->
+    (\ct -> mempty {extraTags = uncurry M.singleton ct})
+      <$> compileTag tags l et
 
 compilePosting ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

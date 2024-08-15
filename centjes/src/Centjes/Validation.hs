@@ -76,6 +76,13 @@ instance Monad (Validation e) where
   Success a >>= f = f a
   Failure es >>= _ = Failure es
 
+instance (Semigroup a) => Semigroup (Validation e a) where
+  (<>) f1 f2 = (<>) <$> f1 <*> f2
+
+instance (Monoid a) => Monoid (Validation e a) where
+  mempty = Success mempty
+  mappend = (<>)
+
 validationFailure :: e -> Validation e a
 validationFailure e = Failure (e :| [])
 

@@ -125,6 +125,58 @@ packages:
     subdir: safe-coloured-text-gen
     url: https://github.com/NorfairKing/safe-coloured-text/archive/26b7657428f277f819a0831cbddddb7f4c5408f9.tar.gz
 - completed:
+    name: validity
+    pantry-tree:
+      sha256: 97cdf88d0789d4d42c3b5c24bc37b1391c2f2ad949ca58fefe3a2416a9161de4
+      size: 442
+    sha256: 18255f037d3e448e6e7798b66636fcf27f87c880cb0ebb8bb2ffbf8801b64b5b
+    size: 134046
+    subdir: validity
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+    version: 0.12.1.0
+  original:
+    subdir: validity
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+- completed:
+    name: validity-dlist
+    pantry-tree:
+      sha256: 15b58ba10d86dc987995c2ec179de0e2274e767ef999c2fb5e8ddc99a66e125c
+      size: 402
+    sha256: 18255f037d3e448e6e7798b66636fcf27f87c880cb0ebb8bb2ffbf8801b64b5b
+    size: 134046
+    subdir: validity-dlist
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+    version: 0.1.0.1
+  original:
+    subdir: validity-dlist
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+- completed:
+    name: genvalidity
+    pantry-tree:
+      sha256: f811121be1cf3bf481911d3782d95e27adea1b39de0d6a6090a61d4f882e1613
+      size: 748
+    sha256: 18255f037d3e448e6e7798b66636fcf27f87c880cb0ebb8bb2ffbf8801b64b5b
+    size: 134046
+    subdir: genvalidity
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+    version: 1.1.1.0
+  original:
+    subdir: genvalidity
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+- completed:
+    name: genvalidity-dlist
+    pantry-tree:
+      sha256: b0f19f9fbd0c0b4adbbaad480dbfe378570f623a1a52113c3d93b7462243e98d
+      size: 411
+    sha256: 18255f037d3e448e6e7798b66636fcf27f87c880cb0ebb8bb2ffbf8801b64b5b
+    size: 134046
+    subdir: genvalidity-dlist
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+    version: 0.1.0.1
+  original:
+    subdir: genvalidity-dlist
+    url: https://github.com/NorfairKing/validity/archive/51b8843b9bd5228160b99f653d3271147245d689.tar.gz
+- completed:
     name: autodocodec
     pantry-tree:
       sha256: bfd0c35f68dabfb37837599b56040beacb9063f892bf5473ed47732c7840bfcd
