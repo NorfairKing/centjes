@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
@@ -17,6 +18,7 @@ import Centjes.Module (CostExpression (..), Declaration (..), Module (..), Price
 import Centjes.Switzerland.OptParse
 import Centjes.Validation
 import Conduit
+import Control.Concurrent
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import qualified Data.Conduit.Combinators as C
@@ -45,7 +47,12 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
       runConduit $
         -- For each day
         yieldMany [downloadRatesSettingBegin .. downloadRatesSettingEnd]
-          .| C.map id -- TODO add in a delay
+          .| C.mapM
+            ( \a -> do
+                -- Gentle delay
+                liftIO $ threadDelay 100_000
+                pure a
+            )
           -- Do a query to the rates endpoint
           .| C.concatMap
             ( \day -> do
