@@ -125,7 +125,7 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
           .| C.map (noLoc . DeclarationPrice . noLoc)
           .| C.sinkList
     liftIO $
-      SB.writeFile "currency-rates.cent" $
+      SB.writeFile (fromAbsFile downloadRatesSettingDestination) $
         TE.encodeUtf8 $
           formatModule $
             Module

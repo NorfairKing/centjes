@@ -10,20 +10,32 @@
     description = "base directory";
     type = lib.types.nullOr lib.types.str;
   };
-  begin = lib.mkOption {
-    default = null;
-    description = "The begin date (inclusive), default: Start of the year";
-    type = lib.types.nullOr lib.types.str;
-  };
   domestic-income-account = lib.mkOption {
     default = null;
     description = "Account name of your domestic income";
     type = lib.types.nullOr lib.types.str;
   };
-  end = lib.mkOption {
-    default = null;
-    description = "The final date (inclusive), default: Yesterday";
-    type = lib.types.nullOr lib.types.str;
+  download-rates = lib.mkOption {
+    default = { };
+    type = lib.types.submodule {
+      options = {
+        begin = lib.mkOption {
+          default = null;
+          description = "The begin date (inclusive), default: Start of the year";
+          type = lib.types.nullOr lib.types.str;
+        };
+        end = lib.mkOption {
+          default = null;
+          description = "The final date (inclusive), default: Yesterday";
+          type = lib.types.nullOr lib.types.str;
+        };
+        output = lib.mkOption {
+          default = null;
+          description = "Where to put the resulting file";
+          type = lib.types.nullOr lib.types.str;
+        };
+      };
+    };
   };
   exports-income-account = lib.mkOption {
     default = null;
@@ -65,11 +77,6 @@
     description = "the quarter to produce the report for";
     type = lib.types.nullOr lib.types.unspecified;
   };
-  readme-file = lib.mkOption {
-    default = null;
-    description = "path to the readme file to create";
-    type = lib.types.nullOr lib.types.str;
-  };
   tag-deductible = lib.mkOption {
     default = null;
     description = "tag to use for deductible purchases";
@@ -79,6 +86,40 @@
     default = null;
     description = "tag to use for non-deductible purchases";
     type = lib.types.nullOr lib.types.str;
+  };
+  taxes = lib.mkOption {
+    default = { };
+    type = lib.types.submodule {
+      options = {
+        readme-file = lib.mkOption {
+          default = null;
+          description = "Path to the readme file to create";
+          type = lib.types.nullOr lib.types.str;
+        };
+        zip-file = lib.mkOption {
+          default = null;
+          description = "Path to the zip file to create";
+          type = lib.types.nullOr lib.types.str;
+        };
+      };
+    };
+  };
+  vat = lib.mkOption {
+    default = { };
+    type = lib.types.submodule {
+      options = {
+        readme-file = lib.mkOption {
+          default = null;
+          description = "path to the readme file to create";
+          type = lib.types.nullOr lib.types.str;
+        };
+        zip-file = lib.mkOption {
+          default = null;
+          description = "path to the zip file to create";
+          type = lib.types.nullOr lib.types.str;
+        };
+      };
+    };
   };
   vat-expenses-account = lib.mkOption {
     default = null;
@@ -99,10 +140,5 @@
     default = null;
     description = "the year to produce the report for";
     type = lib.types.nullOr lib.types.int;
-  };
-  zip-file = lib.mkOption {
-    default = null;
-    description = "path to the zip file to create";
-    type = lib.types.nullOr lib.types.str;
   };
 }

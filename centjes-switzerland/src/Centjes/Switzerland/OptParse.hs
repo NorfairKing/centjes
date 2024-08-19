@@ -100,19 +100,21 @@ instance HasParser TaxesSettings where
 {-# ANN parseTaxesSettings ("NOCOVER" :: String) #-}
 parseTaxesSettings :: Parser TaxesSettings
 parseTaxesSettings = do
-  taxesSettingZipFile <-
-    filePathSetting
-      [ help "Path to the zip file to create",
-        name "zip-file",
-        value "tax-packet.zip"
-      ]
-  taxesSettingReadmeFile <-
-    filePathSetting
-      [ help "Path to the readme file to create",
-        name "readme-file",
-        value "README.pdf"
-      ]
   taxesSettingInput <- settingsParser
+  (taxesSettingZipFile, taxesSettingReadmeFile) <- subConfig_ "taxes" $ do
+    zf <-
+      filePathSetting
+        [ help "Path to the zip file to create",
+          name "zip-file",
+          value "tax-packet.zip"
+        ]
+    rf <-
+      filePathSetting
+        [ help "Path to the readme file to create",
+          name "readme-file",
+          value "README.pdf"
+        ]
+    pure (zf, rf)
   pure TaxesSettings {..}
 
 data VATSettings = VATSettings
@@ -127,24 +129,27 @@ instance HasParser VATSettings where
 {-# ANN parseVATSettings ("NOCOVER" :: String) #-}
 parseVATSettings :: Parser VATSettings
 parseVATSettings = do
-  vatSettingZipFile <-
-    filePathSetting
-      [ help "path to the zip file to create",
-        name "zip-file",
-        value "vat-packet.zip"
-      ]
-  vatSettingReadmeFile <-
-    filePathSetting
-      [ help "path to the readme file to create",
-        name "readme-file",
-        value "README.pdf"
-      ]
   vatSettingInput <- settingsParser
+  (vatSettingZipFile, vatSettingReadmeFile) <- subConfig_ "vat" $ do
+    zf <-
+      filePathSetting
+        [ help "path to the zip file to create",
+          name "zip-file",
+          value "vat-packet.zip"
+        ]
+    rf <-
+      filePathSetting
+        [ help "path to the readme file to create",
+          name "readme-file",
+          value "README.pdf"
+        ]
+    pure (zf, rf)
   pure VATSettings {..}
 
 data DownloadRatesSettings = DownloadRatesSettings
   { downloadRatesSettingBegin :: !Day,
-    downloadRatesSettingEnd :: !Day
+    downloadRatesSettingEnd :: !Day,
+    downloadRatesSettingDestination :: !(Path Abs File)
   }
 
 instance HasParser DownloadRatesSettings where
@@ -152,7 +157,7 @@ instance HasParser DownloadRatesSettings where
 
 {-# ANN parseDownloadRatesSettings ("NOCOVER" :: String) #-}
 parseDownloadRatesSettings :: Parser DownloadRatesSettings
-parseDownloadRatesSettings = do
+parseDownloadRatesSettings = subConfig_ "download-rates" $ do
   downloadRatesSettingBegin <-
     choice
       [ setting
@@ -176,5 +181,11 @@ parseDownloadRatesSettings = do
             metavar "YYYY-MM-DD"
           ],
         runIO $ addDays (-1) . utctDay <$> getCurrentTime
+      ]
+  downloadRatesSettingDestination <-
+    filePathSetting
+      [ help "Where to put the resulting file",
+        name "output",
+        short 'o'
       ]
   pure DownloadRatesSettings {..}
