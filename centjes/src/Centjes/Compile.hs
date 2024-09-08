@@ -19,6 +19,7 @@ where
 
 import qualified Centjes.AccountName as AccountName
 import qualified Centjes.AccountType as AccountType
+import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Format
 import Centjes.Ledger as Ledger
 import Centjes.Location
@@ -35,6 +36,8 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
+import Data.Set (Set)
+import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
@@ -61,6 +64,7 @@ data CompileError ann
   | CompileErrorMissingTag !ann !(GenLocated ann Tag)
   | CompileErrorTagDeclaredTwice !ann !ann !Tag
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
+  | CompileErrorInvalidAccountCurrency !ann !ann !ann !ann !(GenLocated ann (Currency ann)) !(Set (Currency ann))
   | CompileErrorCostSameCurrency !ann !ann !ann
   | CompileErrorPriceSameCurrency !ann !ann !ann
   | CompileErrorInvalidPrice !ann !(GenLocated ann (RationalExpression ann))
@@ -69,7 +73,7 @@ data CompileError ann
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Generic)
 
-instance (Validity ann) => Validity (CompileError ann)
+instance (Validity ann, Ord ann) => Validity (CompileError ann)
 
 instance ToReport (CompileError SourceSpan) where
   toReport = \case
@@ -182,6 +186,25 @@ instance ToReport (CompileError SourceSpan) where
                     "assets"
                   ]
               ]
+        ]
+    CompileErrorInvalidAccountCurrency tl pl al adl (Located cl _) allowedCurrencies ->
+      Err
+        (Just "CE_INVALID_ACCOUNT_CURRENCY")
+        ""
+        [ (toDiagnosePosition adl, Where "Based on this account declaration"),
+          (toDiagnosePosition cl, This "this currency is not allowed"),
+          (toDiagnosePosition al, This "in this account."),
+          (toDiagnosePosition pl, Where "While trying to compile this posting"),
+          (toDiagnosePosition tl, Where "In this transaction")
+        ]
+        [ Hint $
+            case map (CurrencySymbol.toString . currencySymbol) $ S.toList allowedCurrencies of
+              [cur] -> unwords ["Only", cur, "is allowed."]
+              curs ->
+                unwords
+                  [ "Only these currencies are allowed: ",
+                    show curs
+                  ]
         ]
     CompileErrorCostSameCurrency pl pcl ccl ->
       Err
@@ -535,6 +558,7 @@ compileRational l lre@(Located rel re) = case re of
         pure (Located rel (n / d)) -- TODO err on zero denominator
 
 compileTransaction ::
+  (Ord ann) =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map AccountName (GenLocated ann (Account ann)) ->
   Map Tag ann ->
@@ -621,6 +645,7 @@ compileExtra currencies tags l (Located _ e) = case e of
       <$> compileTag tags l et
 
 compilePosting ::
+  (Ord ann) =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map AccountName (GenLocated ann (Account ann)) ->
   ann ->
@@ -630,11 +655,13 @@ compilePosting ::
     (GenLocated ann (Ledger.Posting ann))
 compilePosting currencies accounts tl (Located l mp) = do
   let postingReal = Module.postingReal mp
-  -- To make sure the account is declared.
-  _ <- compileAccountName accounts tl $ Module.postingAccountName mp
-  let postingAccountName = Module.postingAccountName mp
+
+  let postingAccountName@(Located al _) = Module.postingAccountName mp
+  account <- compileAccountName accounts tl postingAccountName
 
   postingCurrency <- compileCurrencySymbol currencies tl (Module.postingCurrencySymbol mp)
+  checkAccountCurrencyAssertion tl l al account postingCurrency
+
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
   postingCost <- for (Module.postingCost mp) $ \ce -> do
@@ -655,11 +682,27 @@ compileAccountName ::
   Map AccountName (GenLocated ann (Account ann)) ->
   ann ->
   GenLocated ann Module.AccountName ->
-  Validation (CompileError ann) (GenLocated ann AccountType)
+  Validation (CompileError ann) (GenLocated ann (Account ann))
 compileAccountName accounts tl lan@(Located _ an) =
   case M.lookup an accounts of
-    Just (Located l acc) -> pure (Located l (accountType acc))
+    Just (Located l acc) -> pure (Located l acc)
     Nothing -> validationFailure $ CompileErrorMissingAccount tl lan
+
+checkAccountCurrencyAssertion ::
+  (Ord ann) =>
+  ann ->
+  ann ->
+  ann ->
+  GenLocated ann (Account ann) ->
+  GenLocated ann (Currency ann) ->
+  Validation (CompileError ann) ()
+checkAccountCurrencyAssertion tl pl al (Located adl Account {..}) lcur@(Located _ cur) =
+  case accountCurrencies of
+    Nothing -> pure ()
+    Just allowedCurrencies ->
+      if S.member cur allowedCurrencies
+        then pure ()
+        else validationFailure $ CompileErrorInvalidAccountCurrency tl pl al adl lcur allowedCurrencies
 
 compileAssertion ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

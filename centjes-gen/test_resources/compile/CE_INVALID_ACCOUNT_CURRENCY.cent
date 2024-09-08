@@ -1,0 +1,11 @@
+currency USD 0.01
+currency CHF 0.05
+account assets
+  + assert currency CHF
+account expenses
+  + assert currency CHF
+
+2024-09-08
+  | Coffee
+  * assets -5 USD
+  * expenses 5 USD

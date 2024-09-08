@@ -108,6 +108,8 @@ extra-source-files:
     test_resources/compile/CE_DUPLICATE_TAG.err
     test_resources/compile/CE_INFER_ACCOUNT_TYPE.cent
     test_resources/compile/CE_INFER_ACCOUNT_TYPE.err
+    test_resources/compile/CE_INVALID_ACCOUNT_CURRENCY.cent
+    test_resources/compile/CE_INVALID_ACCOUNT_CURRENCY.err
     test_resources/compile/CE_INVALID_AMOUNT.cent
     test_resources/compile/CE_INVALID_AMOUNT.err
     test_resources/compile/CE_INVALID_PERCENTAGE.cent
