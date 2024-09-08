@@ -55,8 +55,8 @@ import Data.Validity
 import Data.Validity.Time ()
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Money.Account as Money (Account (..))
 import qualified Money.Account as Account
+import qualified Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import qualified Money.QuantisationFactor as QuantisationFactor
@@ -257,8 +257,8 @@ requireNegative ::
   Reporter (VATError ann) Money.Amount
 requireNegative tl pl account =
   case account of
-    Positive _ -> validationTFailure $ VATErrorPositiveIncome tl pl account
-    Negative a -> pure a
+    Money.Positive _ -> validationTFailure $ VATErrorPositiveIncome tl pl account
+    Money.Negative a -> pure a
 
 requirePositive ::
   ann ->
@@ -267,8 +267,8 @@ requirePositive ::
   Reporter (VATError ann) Money.Amount
 requirePositive tl pl account =
   case account of
-    Negative _ -> validationTFailure $ VATErrorNegativeExpense tl pl account
-    Positive a -> pure a
+    Money.Negative _ -> validationTFailure $ VATErrorNegativeExpense tl pl account
+    Money.Positive a -> pure a
 
 requireAddAmount ::
   Money.Amount ->
@@ -391,7 +391,7 @@ gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPri
 
 parseUnxpectedDeductibleExpenses ::
   VATInput ->
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   GenLocated ann (Transaction ann) ->
   Maybe (GenLocated ann (Posting ann))
 parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {..}) =
@@ -400,7 +400,7 @@ parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {
         Located _ account = postingAccount p1
      in case M.lookup accountName accounts of
           Nothing -> undefined -- Undeclared account, should not happen.
-          Just (Located _ accountType) -> case accountType of
+          Just (Located _ acc) -> case accountType acc of
             AccountTypeExpenses | account >= Account.zero ->
               case mP2 of
                 Nothing ->
@@ -419,7 +419,7 @@ parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {
 parseExpectedDeductibleExpenses ::
   (Ord ann) =>
   VATInput ->
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   Map Day (MemoisedPriceGraph (Currency ann)) ->
   Currency ann ->
   GenLocated ann (Transaction ann) ->
@@ -430,7 +430,7 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
     let Located al1 account = postingAccount p1
     case M.lookup accountName accounts of
       Nothing -> undefined -- Undeclared account, should not happen.
-      Just (Located _ accountType) -> case accountType of
+      Just (Located _ acc) -> case accountType acc of
         AccountTypeExpenses | account >= Account.zero ->
           case mP2 of
             Nothing ->
