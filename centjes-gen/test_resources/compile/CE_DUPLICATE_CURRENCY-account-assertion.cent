@@ -1,0 +1,5 @@
+currency USD 0.01
+
+account assets
+  + assert currency USD
+  + assert currency USD
