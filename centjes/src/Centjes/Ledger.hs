@@ -131,7 +131,7 @@ data Account ann = Account
     --
     -- Nothing means "any"
     -- Just S.empty "none"
-    accountCurrencies :: Maybe (Set (GenLocated ann (Currency ann)))
+    accountCurrencies :: Maybe (Set (Currency ann))
   }
   deriving stock (Show, Eq, Generic)
 

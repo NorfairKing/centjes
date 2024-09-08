@@ -4,6 +4,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Compile
   ( CompileError (..),
@@ -34,7 +35,6 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Ratio
-import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
@@ -57,6 +57,7 @@ data CompileError ann
   | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingAccount !ann !(GenLocated ann AccountName)
   | CompileErrorAccountDeclaredTwice !ann !ann !AccountName
+  | CompileErrorAccountCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingTag !ann !(GenLocated ann Tag)
   | CompileErrorTagDeclaredTwice !ann !ann !Tag
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
@@ -155,6 +156,14 @@ instance ToReport (CompileError SourceSpan) where
         (unwords ["Account has been declared twice:", AccountName.toString an])
         [ (toDiagnosePosition al1, Where "This account has been declared here first"),
           (toDiagnosePosition al2, This "This account has been declared twice")
+        ]
+        []
+    CompileErrorAccountCurrencyDeclaredTwice cl1 cl2 symbol ->
+      Err
+        (Just "CE_DUPLICATE_ACCOUNT_CURRENCY")
+        (unwords ["Account assertion has duplicate currency assertion for:", show (currencySymbolText symbol)])
+        [ (toDiagnosePosition cl1, Where "This currency has been asserted here first"),
+          (toDiagnosePosition cl2, This "This currency has been asserted twice")
         ]
         []
     CompileErrorCouldNotInferAccountType dl (Located anl an) ->
@@ -375,6 +384,7 @@ compileAccountDeclarations currencies ads = do
       Just (Located l1 _) -> validationFailure $ CompileErrorAccountDeclaredTwice l1 l2 an
 
 compileAccountDeclaration ::
+  forall ann.
   (Ord ann) =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   GenLocated ann (AccountDeclaration ann) ->
@@ -386,21 +396,29 @@ compileAccountDeclaration currencies (Located dl AccountDeclaration {..}) = do
     Nothing -> case AccountType.fromAccountName name of
       Just t -> pure t
       Nothing -> validationFailure $ CompileErrorCouldNotInferAccountType dl accountDeclarationName
-  allowedCurrencies <-
-    S.fromList
-      <$> traverse (compileAccountAssertionCurrency currencies) accountDeclarationAssertions
-  let accountCurrencies =
-        if null allowedCurrencies
-          then Nothing
-          else Just allowedCurrencies -- TODO check for duplicates
+  currencyAssertions <- traverse (compileAccountAssertionCurrency currencies) accountDeclarationAssertions
+  accountCurrencies <-
+    if null currencyAssertions
+      then pure Nothing
+      else Just . M.keysSet <$> foldM goCurrency M.empty currencyAssertions
   pure (name, Located dl Account {..})
+  where
+    goCurrency ::
+      Map (Currency ann) ann ->
+      GenLocated ann (Currency ann) ->
+      Validation (CompileError ann) (Map (Currency ann) ann)
+    goCurrency assertedCurrencies (Located l2 cur) =
+      case M.lookup cur assertedCurrencies of
+        Just l1 -> validationFailure $ CompileErrorAccountCurrencyDeclaredTwice l1 l2 (currencySymbol cur)
+        Nothing -> pure $ M.insert cur l2 assertedCurrencies
 
 compileAccountAssertionCurrency ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   GenLocated ann (AccountAssertion ann) ->
   Validation (CompileError ann) (GenLocated ann (Currency ann))
-compileAccountAssertionCurrency currencies (Located al (AccountAssertionCurrency lcs)) =
-  compileCurrencySymbol currencies al lcs
+compileAccountAssertionCurrency currencies (Located al (AccountAssertionCurrency lcs)) = do
+  Located _ cur <- compileCurrencySymbol currencies al lcs
+  pure $ Located al cur
 
 compileTagDeclarations ::
   [GenLocated ann (TagDeclaration ann)] ->
