@@ -357,30 +357,30 @@ compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
 
 compileAccountDeclarations ::
   [GenLocated ann (AccountDeclaration ann)] ->
-  Validation (CompileError ann) (Map AccountName (GenLocated ann AccountType))
+  Validation (CompileError ann) (Map AccountName (GenLocated ann (Account ann)))
 compileAccountDeclarations ads = do
   tups <- traverse compileAccountDeclaration ads
   foldM go M.empty tups
   where
     go ::
-      Map AccountName (GenLocated ann AccountType) ->
-      (AccountName, GenLocated ann AccountType) ->
-      Validation (CompileError ann) (Map AccountName (GenLocated ann AccountType))
+      Map AccountName (GenLocated ann (Account ann)) ->
+      (AccountName, GenLocated ann (Account ann)) ->
+      Validation (CompileError ann) (Map AccountName (GenLocated ann (Account ann)))
     go m (an, lat@(Located l2 _)) = case M.lookup an m of
       Nothing -> pure $ M.insert an lat m
       Just (Located l1 _) -> validationFailure $ CompileErrorAccountDeclaredTwice l1 l2 an
 
 compileAccountDeclaration ::
   GenLocated ann (AccountDeclaration ann) ->
-  Validation (CompileError ann) (AccountName, GenLocated ann AccountType)
+  Validation (CompileError ann) (AccountName, GenLocated ann (Account ann))
 compileAccountDeclaration (Located dl AccountDeclaration {..}) = do
   let Located _ name = accountDeclarationName
-  typ <- case accountDeclarationType of
+  accountType <- case accountDeclarationType of
     Just (Located _ t) -> pure t
     Nothing -> case AccountType.fromAccountName name of
       Just t -> pure t
       Nothing -> validationFailure $ CompileErrorCouldNotInferAccountType dl accountDeclarationName
-  pure (name, Located dl typ)
+  pure (name, Located dl Account {..})
 
 compileTagDeclarations ::
   [GenLocated ann (TagDeclaration ann)] ->
@@ -498,7 +498,7 @@ compileRational l lre@(Located rel re) = case re of
 
 compileTransaction ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   Map Tag ann ->
   GenLocated ann (Module.Transaction ann) ->
   Validation
@@ -584,7 +584,7 @@ compileExtra currencies tags l (Located _ e) = case e of
 
 compilePosting ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   ann ->
   GenLocated ann (Module.Posting ann) ->
   Validation
@@ -614,13 +614,13 @@ compilePosting currencies accounts tl (Located l mp) = do
   pure (Located l Ledger.Posting {..})
 
 compileAccountName ::
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   ann ->
   GenLocated ann Module.AccountName ->
   Validation (CompileError ann) (GenLocated ann AccountType)
 compileAccountName accounts tl lan@(Located _ an) =
   case M.lookup an accounts of
-    Just at -> pure at
+    Just (Located l acc) -> pure (Located l (accountType acc))
     Nothing -> validationFailure $ CompileErrorMissingAccount tl lan
 
 compileAssertion ::

@@ -497,7 +497,7 @@ produceBalancedLedger showVirtual ledger = do
         Just new -> pure $ M.insert an new totals
 
 checkAccountTypeAssertions ::
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   ann ->
   AccountBalances ann ->
   Validation (BalanceError ann) ()
@@ -505,8 +505,9 @@ checkAccountTypeAssertions accounts tl =
   traverse_
     ( \(an, ab) -> case M.lookup an accounts of
         Nothing -> validationFailure $ BalanceErrorUndeclaredAccount tl an
-        Just (Located adl at) -> do
-          let predicate = AccountType.assertion at
+        Just (Located adl acc) -> do
+          let at = accountType acc
+              predicate = AccountType.assertion at
           if all predicate (MultiAccount.unMultiAccount ab)
             then pure ()
             else validationFailure $ BalanceErrorAccountTypeAssertion tl adl at ab

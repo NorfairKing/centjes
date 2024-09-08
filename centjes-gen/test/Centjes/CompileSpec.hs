@@ -5,6 +5,7 @@
 module Centjes.CompileSpec (spec) where
 
 import Centjes.Compile
+import Centjes.Ledger.Gen ()
 import Centjes.Load
 import Centjes.Location
 import qualified Centjes.Module as Module
