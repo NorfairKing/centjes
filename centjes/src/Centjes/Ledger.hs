@@ -5,6 +5,7 @@
 
 module Centjes.Ledger
   ( Ledger (..),
+    Account (..),
     Timestamp (..),
     CurrencySymbol (..),
     Price (..),
@@ -32,6 +33,7 @@ import Data.Function
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Ratio
+import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Map
@@ -50,7 +52,7 @@ data Ledger ann = Ledger
   { -- Note: This field will have the source location of the currency _declaration_ that defined it.
     ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
     -- Note: This field will have the source location of the account _ declaration_ that defined it.
-    ledgerAccounts :: !(Map AccountName (GenLocated ann AccountType)),
+    ledgerAccounts :: !(Map AccountName (GenLocated ann (Account ann))),
     -- Note: This field will have the source location of the tag _declaration_ that defined it
     ledgerTags :: !(Map Tag ann),
     ledgerPrices :: !(Vector (GenLocated ann (Price ann))),
@@ -122,6 +124,18 @@ partiallyOrderedBy f v =
   if V.null v
     then True
     else V.and (V.zipWith (\a1 a2 -> f a1 a2 /= Just GT) v (V.tail v))
+
+data Account ann = Account
+  { accountType :: AccountType,
+    -- | Which currencies are allowed in this account
+    --
+    -- Nothing means "any"
+    -- Just S.empty "none"
+    accountCurrencies :: Maybe (Set (Currency ann))
+  }
+  deriving stock (Show, Eq, Generic)
+
+instance (Validity ann, Ord ann) => Validity (Account ann)
 
 data Price ann = Price
   { priceTimestamp :: !(GenLocated ann Timestamp),

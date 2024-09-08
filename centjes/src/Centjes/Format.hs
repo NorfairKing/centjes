@@ -154,13 +154,27 @@ lAccountDeclarationDoc = accountDeclarationDoc . locatedValue
 
 accountDeclarationDoc :: AccountDeclaration l -> Doc ann
 accountDeclarationDoc AccountDeclaration {..} =
-  maybe
-    id
-    (\at -> (<+> lAccountTypeDoc at))
-    accountDeclarationType
-    ( "account"
-        <+> lAccountNameDoc accountDeclarationName
-    )
+  mconcat $
+    intersperse hardline $
+      concat
+        [ [ maybe
+              id
+              (\at -> (<+> lAccountTypeDoc at))
+              accountDeclarationType
+              ( "account"
+                  <+> lAccountNameDoc accountDeclarationName
+              )
+          ],
+          map (("  + assert" <+>) . lAccountAssertionDoc) accountDeclarationAssertions
+        ]
+
+lAccountAssertionDoc :: GenLocated l (AccountAssertion l) -> Doc ann
+lAccountAssertionDoc = accountAssertionDoc . locatedValue
+
+accountAssertionDoc :: AccountAssertion l -> Doc ann
+accountAssertionDoc = \case
+  AccountAssertionCurrency currencySymbol ->
+    "currency" <+> lCurrencySymbolDoc currencySymbol
 
 lAccountTypeDoc :: GenLocated l AccountType -> Doc ann
 lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at

@@ -1,0 +1,3 @@
+account assets
+  + assert currency CHF
+  + assert currency EUR

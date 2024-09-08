@@ -17,6 +17,8 @@ module Centjes.Module
     CurrencySymbol (..),
     LAccountDeclaration,
     AccountDeclaration (..),
+    LAccountAssertion,
+    AccountAssertion (..),
     AccountType (..),
     LTagDeclaration,
     TagDeclaration (..),
@@ -189,11 +191,20 @@ type LAccountDeclaration = LLocated AccountDeclaration
 -- @
 data AccountDeclaration ann = AccountDeclaration
   { accountDeclarationName :: !(GenLocated ann AccountName),
-    accountDeclarationType :: !(Maybe (GenLocated ann AccountType))
+    accountDeclarationType :: !(Maybe (GenLocated ann AccountType)),
+    accountDeclarationAssertions :: ![GenLocated ann (AccountAssertion ann)]
   }
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (AccountDeclaration ann)
+
+type LAccountAssertion = LLocated AccountAssertion
+
+data AccountAssertion ann
+  = AccountAssertionCurrency !(GenLocated ann CurrencySymbol)
+  deriving stock (Show, Generic)
+
+instance (Validity ann) => Validity (AccountAssertion ann)
 
 type LTagDeclaration = LLocated TagDeclaration
 

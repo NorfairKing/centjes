@@ -32,6 +32,8 @@ instance (GenValid ann) => GenValid (CurrencyDeclaration ann)
 
 instance (GenValid ann) => GenValid (AccountDeclaration ann)
 
+instance (GenValid ann) => GenValid (AccountAssertion ann)
+
 instance (GenValid ann) => GenValid (TagDeclaration ann)
 
 instance (GenValid ann) => GenValid (PriceDeclaration ann)

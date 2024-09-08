@@ -81,12 +81,14 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
         )
       $ shrinkValidStructurallyWithoutExtraFiltering l
 
+instance (Ord ann, GenValid ann) => GenValid (Account ann)
+
 instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
 
 -- Map must not be empty
 genTransactionWith ::
   (GenValid ann) =>
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map Tag ann ->
   Gen (Transaction ann)
@@ -113,7 +115,7 @@ instance (Eq ann, GenValid ann) => GenValid (Posting ann)
 -- Map must not be empty
 genPostingWith ::
   (GenValid ann) =>
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Posting ann)
 genPostingWith accounts currencies = do
@@ -134,7 +136,7 @@ instance (GenValid ann) => GenValid (Assertion ann)
 -- Map must not be empty
 genAssertionWith ::
   (GenValid ann) =>
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Assertion ann)
 genAssertionWith accounts currencies = do
@@ -178,7 +180,7 @@ instance (GenValid ann) => GenValid (Currency ann)
 
 -- Map must not be empty
 chooseAccountName ::
-  Map AccountName (GenLocated ann AccountType) ->
+  Map AccountName val ->
   Gen AccountName
 chooseAccountName =
   elements . S.toList . M.keysSet
