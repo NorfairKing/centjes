@@ -143,6 +143,7 @@ extra-source-files:
     test_resources/register/valid/as-is/example.txt
     test_resources/register/valid/to-chf/rates.cent
     test_resources/register/valid/to-chf/rates.txt
+    test_resources/syntax/declaration/formatted/account-with-assertions.cent
     test_resources/syntax/declaration/formatted/account-with-type.cent
     test_resources/syntax/declaration/formatted/account.cent
     test_resources/syntax/declaration/formatted/comment.cent

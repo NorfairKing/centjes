@@ -114,7 +114,11 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : tok_account account_name optional(account_type) { sBEM $1 $2 $3 $ AccountDeclaration $2 $3 [] }
+  : tok_account account_name optional(account_type) many(account_assertion) { sBEML $1 $2 $3 $4 $ AccountDeclaration $2 $3 $4 }
+
+account_assertion
+  :: { LAccountAssertion }
+  : tok_plus tok_assert tok_currency currency_symbol { sBE $1 $4 $ AccountAssertionCurrency $4 }
 
 account_type
   :: { Located AccountType }
@@ -276,6 +280,10 @@ sBE (Located begin _) (Located end _) c = Located (combineSpans begin end) c
 sBEM :: Located a -> Located b -> Maybe (Located c) -> d -> Located d
 sBEM l1 l2 Nothing   = sBE l1 l2
 sBEM l1 _  (Just l3) = sBE l1 l3
+
+sBEML :: Located a -> Located b -> Maybe (Located c) -> [Located d] -> e -> Located e
+sBEML l1 l2 mL3 []   = sBEM l1 l2 mL3
+sBEML l1 _  _   l4   = sBL l1 l4
 
 sBEMM :: Located a -> Located b -> Maybe (Located c) -> Maybe (Located d) -> e -> Located e
 sBEMM l1 l2 mL3 Nothing   = sBEM l1 l2 mL3

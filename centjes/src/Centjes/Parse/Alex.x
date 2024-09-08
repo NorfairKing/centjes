@@ -156,9 +156,18 @@ tokens :-
 <0> @plus  { lex' TokenPlus `andBegin` extra }
 
 <extra> @assert             { lex' TokenAssert `andBegin` assertion }
+
+-- Account assertions
+<assertion> @currency       { lex' TokenCurrency `andBegin` currency_assertion}
+
+<currency_assertion> @var     { lexVar }
+<currency_assertion> @newline { begin 0 }
+
+-- Transaction assertions
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
+
 <assertion> @newline         { begin 0 }
 
 <extra> @attach         { lex' TokenAttach `andBegin` attachment }

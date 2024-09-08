@@ -165,7 +165,7 @@ accountDeclarationDoc AccountDeclaration {..} =
                   <+> lAccountNameDoc accountDeclarationName
               )
           ],
-          map (("+ assert" <+>) . lAccountAssertionDoc) accountDeclarationAssertions
+          map (("  + assert" <+>) . lAccountAssertionDoc) accountDeclarationAssertions
         ]
 
 lAccountAssertionDoc :: GenLocated l (AccountAssertion l) -> Doc ann
