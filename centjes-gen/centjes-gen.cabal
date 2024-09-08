@@ -151,6 +151,7 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/signed.cent
     test_resources/syntax/declaration/formatted/tag.cent
     test_resources/syntax/declaration/formatted/transaction.cent
+    test_resources/syntax/declaration/valid/account-with-assertions.cent
     test_resources/syntax/declaration/valid/account-with-type.cent
     test_resources/syntax/declaration/valid/account.cent
     test_resources/syntax/declaration/valid/comment.cent

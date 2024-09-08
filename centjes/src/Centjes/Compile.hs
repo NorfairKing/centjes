@@ -143,7 +143,8 @@ instance ToReport (CompileError SourceSpan) where
                             { accountDeclarationName = noLoc an,
                               accountDeclarationType = case AccountType.fromAccountName an of
                                 Nothing -> Just $ noLoc AccountTypeAssets
-                                Just _ -> Nothing
+                                Just _ -> Nothing,
+                              accountDeclarationAssertions = []
                             }
               ]
         ]

@@ -114,7 +114,7 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : tok_account account_name optional(account_type) { sBEM $1 $2 $3 $ AccountDeclaration $2 $3 }
+  : tok_account account_name optional(account_type) { sBEM $1 $2 $3 $ AccountDeclaration $2 $3 [] }
 
 account_type
   :: { Located AccountType }
