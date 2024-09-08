@@ -216,9 +216,6 @@ lexTilde = lex $ \case
 lexPercent :: AlexAction Token
 lexPercent = lex' TokenPercent
 
-lexNl :: AlexAction Token
-lexNl = lex' TokenNewLine
-
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
 data AlexUserState = AlexUserState
@@ -260,7 +257,6 @@ data TokenClass
   | TokenCurrency
   | TokenAccount
   | TokenImport
-  | TokenNewLine
   | TokenEOF
   deriving ( Show, Eq )
 
