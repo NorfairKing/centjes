@@ -122,6 +122,8 @@ extra-source-files:
     test_resources/compile/CE_PRICE_SAME_CURRENCY.err
     test_resources/compile/CE_UNDECLARED_ACCOUNT.cent
     test_resources/compile/CE_UNDECLARED_ACCOUNT.err
+    test_resources/compile/CE_UNDECLARED_CURRENCY-account-assertion.cent
+    test_resources/compile/CE_UNDECLARED_CURRENCY-account-assertion.err
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
     test_resources/compile/CE_UNDECLARED_CURRENCY.err
     test_resources/compile/CE_UNDECLARED_TAG.cent

@@ -81,7 +81,7 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
         )
       $ shrinkValidStructurallyWithoutExtraFiltering l
 
-instance (Eq ann, GenValid ann) => GenValid (Account ann)
+instance (Ord ann, GenValid ann) => GenValid (Account ann)
 
 instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
 

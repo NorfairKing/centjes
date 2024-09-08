@@ -33,6 +33,7 @@ import Data.Function
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Ratio
+import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Map
@@ -125,11 +126,16 @@ partiallyOrderedBy f v =
     else V.and (V.zipWith (\a1 a2 -> f a1 a2 /= Just GT) v (V.tail v))
 
 data Account ann = Account
-  { accountType :: AccountType
+  { accountType :: AccountType,
+    -- | Which currencies are allowed in this account
+    --
+    -- Nothing means "any"
+    -- Just S.empty "none"
+    accountCurrencies :: Maybe (Set (GenLocated ann (Currency ann)))
   }
   deriving stock (Show, Eq, Generic)
 
-instance (Validity ann, Eq ann) => Validity (Account ann)
+instance (Validity ann, Ord ann) => Validity (Account ann)
 
 data Price ann = Price
   { priceTimestamp :: !(GenLocated ann Timestamp),
