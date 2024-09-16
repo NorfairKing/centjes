@@ -83,19 +83,18 @@
         ];
       };
       pkgsMusl = pkgs.pkgsMusl;
-      mkNixOSModule = import ./nix/nixos-module.nix {
-        inherit (pkgsMusl.centjesReleasePackages) centjes-docs-site;
-      };
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
       packages.${system} = {
-        default = pkgs.centjesRelease;
+        default = self.packages.${system}.dynamic;
+        dynamic = pkgs.centjesRelease;
         static = pkgsMusl.centjesRelease;
       };
       checks.${system} = {
         package = self.packages.${system}.default;
-        release = pkgs.haskellPackages.centjes;
+        dynamic = self.packages.${system}.dynamic;
+        static = self.packages.${system}.static;
         shell = self.devShells.${system}.default;
         e2e-test = import ./nix/e2e-test.nix {
           inherit (pkgs) nixosTest;
@@ -162,10 +161,18 @@
         CENTJES_DOCS_NIXOS_MODULE_DOCS = "${pkgs.centjesNixosModuleDocs}/share/doc/nixos/options.json";
       };
       nixosModules.${system} = {
-        default = mkNixOSModule { envname = "production"; };
+        default = self.nixosModules.${system}.dynamic;
+        static = self.nixosModuleFactories.${system}.static { envname = "production"; };
+        dynamic = self.nixosModuleFactories.${system}.dynamic { envname = "production"; };
       };
       nixosModuleFactories.${system} = {
-        default = mkNixOSModule;
+        default = self.nixosModuleFactories.${system}.dynamic;
+        static = import ./nix/nixos-module.nix {
+          inherit (pkgsMusl.centjesReleasePackages) centjes-docs-site;
+        };
+        dynamic = import ./nix/nixos-module.nix {
+          inherit (pkgs.centjesReleasePackages) centjes-docs-site;
+        };
       };
       nix-ci.cachix = {
         name = "centjes";
