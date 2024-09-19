@@ -41,6 +41,7 @@ import Centjes.Switzerland.Report.VAT.Typst
 import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
+import Control.Applicative
 import Control.Monad
 import Data.Foldable as Foldable
 import Data.List.NonEmpty (NonEmpty (..))
@@ -371,8 +372,10 @@ gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPri
           else do
             let mDeductibleTag = M.lookup vatInputTagDeductible transactionTags
             let mNotDeductibleTag = M.lookup vatInputTagNotDeductible transactionTags
+            let mVATDeductibleTag = M.lookup vatInputTagVATDeductible transactionTags
+            let mNotVATDeductibleTag = M.lookup vatInputTagNotVATDeductible transactionTags
 
-            case (mDeductibleTag, mNotDeductibleTag) of
+            case (mVATDeductibleTag <|> mDeductibleTag, mNotVATDeductibleTag <|> mNotDeductibleTag) of
               -- Can't tag as both deductible and not-deductible
               (Just tagl, Just tagnotl) -> validationTFailure $ VATErrorDeductibleAndNotDeductible tl tagl tagnotl
               -- Ignore the transaction if it's tagged as not-deductible

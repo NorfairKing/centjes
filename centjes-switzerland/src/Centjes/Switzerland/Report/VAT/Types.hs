@@ -59,6 +59,8 @@ data VATInput = VATInput
     vatInputQuarter :: !Quarter,
     vatInputTagDeductible :: !Tag,
     vatInputTagNotDeductible :: !Tag,
+    vatInputTagVATDeductible :: !Tag,
+    vatInputTagNotVATDeductible :: !Tag,
     vatInputDomesticIncomeAccountName :: !AccountName,
     vatInputExportsIncomeAccountName :: !AccountName,
     vatInputForeignIncomeAccountName :: !AccountName,
@@ -123,6 +125,20 @@ parseVATInput = do
         reader $ eitherReader Tag.fromString,
         conf "tag-not-deductible",
         value "not-deductible"
+      ]
+  vatInputTagVATDeductible <-
+    setting
+      [ help "tag to use for VAT-deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-vat-deductible",
+        value "vat-deductible"
+      ]
+  vatInputTagNotVATDeductible <-
+    setting
+      [ help "tag to use for non-VAT-deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-not-vat-deductible",
+        value "not-vat-deductible"
       ]
   vatInputDomesticIncomeAccountName <-
     setting

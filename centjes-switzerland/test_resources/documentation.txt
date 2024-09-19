@@ -101,6 +101,16 @@
       [37mtag-not-deductible[m: # [32mor null[m
         [33m<string>[m
     
+    [34mtag to use for VAT-deductible purchases[m
+    config:
+      [37mtag-vat-deductible[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mtag to use for non-VAT-deductible purchases[m
+    config:
+      [37mtag-not-vat-deductible[m: # [32mor null[m
+        [33m<string>[m
+    
     [34mAccount name of your domestic income[m
     config:
       [37mdomestic-income-account[m: # [32mor null[m
@@ -251,6 +261,14 @@
     [33m<string>[m
   [34mtag to use for non-deductible purchases[m
   [37mtag-not-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for VAT-deductible purchases[m
+  [37mtag-vat-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for non-VAT-deductible purchases[m
+  [37mtag-not-vat-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your domestic income[m

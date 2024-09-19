@@ -87,6 +87,16 @@
     description = "tag to use for non-deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
+  tag-not-vat-deductible = lib.mkOption {
+    default = null;
+    description = "tag to use for non-VAT-deductible purchases";
+    type = lib.types.nullOr lib.types.str;
+  };
+  tag-vat-deductible = lib.mkOption {
+    default = null;
+    description = "tag to use for VAT-deductible purchases";
+    type = lib.types.nullOr lib.types.str;
+  };
   taxes = lib.mkOption {
     default = { };
     type = lib.types.submodule {
