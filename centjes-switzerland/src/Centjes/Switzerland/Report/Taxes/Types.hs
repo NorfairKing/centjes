@@ -16,6 +16,7 @@ where
 
 import Centjes.Ledger
 import Centjes.Location
+import qualified Centjes.Tag as Tag
 import Centjes.Validation
 import Data.Text (Text)
 import Data.Time
@@ -31,6 +32,10 @@ data TaxesInput = TaxesInput
   { taxesInputLastName :: !Text,
     taxesInputFirstName :: !Text,
     taxesInputYear :: !Year,
+    taxesInputTagDeductible :: !Tag,
+    taxesInputTagNotDeductible :: !Tag,
+    taxesInputTagTaxDeductible :: !Tag,
+    taxesInputTagNotTaxDeductible :: !Tag,
     taxesInputInsuredPersonNumber :: !Text
   }
   deriving (Show, Generic)
@@ -60,6 +65,34 @@ parseTaxesInput = do
             conf "year"
           ],
         runIO $ (\d -> let (y, _, _) = toGregorian d in y) . utctDay <$> getCurrentTime
+      ]
+  taxesInputTagDeductible <-
+    setting
+      [ help "tag to use for deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-deductible",
+        value "deductible"
+      ]
+  taxesInputTagNotDeductible <-
+    setting
+      [ help "tag to use for non-deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-not-deductible",
+        value "not-deductible"
+      ]
+  taxesInputTagTaxDeductible <-
+    setting
+      [ help "tag to use for tax-deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-tax-deductible",
+        value "tax-deductible"
+      ]
+  taxesInputTagNotTaxDeductible <-
+    setting
+      [ help "tag to use for non-tax-deductible purchases",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-not-tax-deductible",
+        value "not-tax-deductible"
       ]
   taxesInputInsuredPersonNumber <-
     setting

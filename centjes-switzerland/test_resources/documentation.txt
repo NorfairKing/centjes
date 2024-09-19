@@ -38,6 +38,26 @@
       [37myear[m: # [32mor null[m
         [33m<integer>[m
     
+    [34mtag to use for deductible purchases[m
+    config:
+      [37mtag-deductible[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mtag to use for non-deductible purchases[m
+    config:
+      [37mtag-not-deductible[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mtag to use for tax-deductible purchases[m
+    config:
+      [37mtag-tax-deductible[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mtag to use for non-tax-deductible purchases[m
+    config:
+      [37mtag-not-tax-deductible[m: # [32mor null[m
+        [33m<string>[m
+    
     [34mThe AHV identifier. e.g. 746.1111.2222.33[m
     config:
       [37mahv-id[m: # [32mor null[m
@@ -218,6 +238,22 @@
   [37myear[m:
     # [32mor null[m
     [33m<integer>[m
+  [34mtag to use for deductible purchases[m
+  [37mtag-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for non-deductible purchases[m
+  [37mtag-not-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for tax-deductible purchases[m
+  [37mtag-tax-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for non-tax-deductible purchases[m
+  [37mtag-not-tax-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mThe AHV identifier. e.g. 746.1111.2222.33[m
   [37mahv-id[m:
     # [32mor null[m
