@@ -52,28 +52,8 @@ with final.haskell.lib;
   };
 
   centjesReleasePackages =
-    let
-      enableStatic = pkg:
-        if final.stdenv.hostPlatform.isMusl
-        then
-          overrideCabal pkg
-            (old: {
-              configureFlags = (old.configureFlags or [ ]) ++ [
-                "--ghc-option=-optl=-static"
-                # Static                                               
-                "--extra-lib-dirs=${final.gmp6.override { withStatic = true; }}/lib"
-                "--extra-lib-dirs=${final.libffi.overrideAttrs (_: { dontDisableStatic = true; })}/lib"
-                "--extra-lib-dirs=${final.zlib.static}/lib"
-                # tinfo                                           
-                "--extra-lib-dirs=${final.ncurses.override { enableStatic = true; }}/lib"
-              ];
-              enableSharedExecutables = false;
-              enableSharedLibraries = false;
-            })
-        else pkg;
-    in
     builtins.mapAttrs
-      (_: pkg: justStaticExecutables (enableStatic pkg))
+      (_: pkg: justStaticExecutables pkg)
       final.haskellPackages.centjesPackages;
 
   centjesNixosModuleDocs =
@@ -208,25 +188,8 @@ with final.haskell.lib;
             name = "centjes-release";
             paths = attrValues self.centjesPackages;
           };
-          fixGHC = pkg:
-            if final.stdenv.hostPlatform.isMusl
-            then
-              pkg.override
-                {
-                  # To make sure that executables that need template
-                  # haskell can be linked statically.
-                  enableRelocatedStaticLibs = true;
-                  enableShared = false;
-                  enableDwarf = false;
-                }
-            else pkg;
         in
         {
-          ghc = fixGHC super.ghc;
-          buildHaskellPackages = old.buildHaskellPackages.override (oldBuildHaskellPackages: {
-            ghc = fixGHC oldBuildHaskellPackages.ghc;
-          });
-
           diagnose = doJailbreak (self.callCabal2nix "diagnose"
             (builtins.fetchGit {
               url = "https://github.com/Mesabloo/diagnose";

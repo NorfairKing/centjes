@@ -82,28 +82,21 @@
           self.overlays.${system}
         ];
       };
-      pkgsMusl = pkgs.pkgsMusl;
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
-      packages.${system} = {
-        default = self.packages.${system}.dynamic;
-        dynamic = pkgs.centjesRelease;
-        static = pkgsMusl.centjesRelease;
-      };
+      packages.${system}.default = pkgs.centjesRelease;
       checks.${system} = {
         package = self.packages.${system}.default;
-        dynamic = self.packages.${system}.dynamic;
-        static = self.packages.${system}.static;
         shell = self.devShells.${system}.default;
         e2e-test = import ./nix/e2e-test.nix {
           inherit (pkgs) nixosTest;
           centjes-nixos-module = self.nixosModules.${system}.default;
           inherit system;
         };
-        example-switzerland-taxes = pkgsMusl.centjesRelease.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/example;
-        example-switzerland-vat = pkgsMusl.centjesRelease.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/example;
-        vim-plugin = pkgsMusl.vimPlugins.centjes-vim;
+        example-switzerland-taxes = pkgs.centjesRelease.makeSwitzerlandTaxesPacket ./centjes-switzerland/test_resources/example;
+        example-switzerland-vat = pkgs.centjesRelease.makeSwitzerlandVATPacket ./centjes-switzerland/test_resources/example;
+        vim-plugin = pkgs.vimPlugins.centjes-vim;
         coverage-report = pkgs.dekking.makeCoverageReport {
           name = "test-coverage-report";
           packages = [
@@ -160,19 +153,9 @@
         CENTJES_DOCS_DEPENDENCY_GRAPH = "${pkgs.centjesDependencyGraph}/centjes-dependency-graph.svg";
         CENTJES_DOCS_NIXOS_MODULE_DOCS = "${pkgs.centjesNixosModuleDocs}/share/doc/nixos/options.json";
       };
-      nixosModules.${system} = {
-        default = self.nixosModules.${system}.dynamic;
-        static = self.nixosModuleFactories.${system}.static { envname = "production"; };
-        dynamic = self.nixosModuleFactories.${system}.dynamic { envname = "production"; };
-      };
-      nixosModuleFactories.${system} = {
-        default = self.nixosModuleFactories.${system}.dynamic;
-        static = import ./nix/nixos-module.nix {
-          inherit (pkgsMusl.centjesReleasePackages) centjes-docs-site;
-        };
-        dynamic = import ./nix/nixos-module.nix {
-          inherit (pkgs.centjesReleasePackages) centjes-docs-site;
-        };
+      nixosModules.${system}.default = self.nixosModuleFactories.${system}.default { envname = "production"; };
+      nixosModuleFactories.${system}.default = import ./nix/nixos-module.nix {
+        inherit (pkgs.centjesReleasePackages) centjes-docs-site;
       };
       nix-ci.cachix = {
         name = "centjes";
