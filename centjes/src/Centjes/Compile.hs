@@ -82,7 +82,7 @@ instance ToReport (CompileError SourceSpan) where
         (Just "CE_INVALID_QUANTISATION_FACTOR")
         ( unwords
             [ "Could not parse decimal literal as quantisation factor:",
-              DecimalLiteral.format dl,
+              DecimalLiteral.toString dl,
               "for currency with symbol",
               show (currencySymbolText sym)
             ]
@@ -284,7 +284,7 @@ instance ToReport (CompileError SourceSpan) where
         (Just "CE_INVALID_AMOUNT")
         ( unwords
             [ "Could not parse decimal literal as amount:",
-              DecimalLiteral.format dl,
+              DecimalLiteral.toString dl,
               "with quantisation factor",
               show (unQuantisationFactor qf)
             ]

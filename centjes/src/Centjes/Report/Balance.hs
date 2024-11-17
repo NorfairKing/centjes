@@ -160,7 +160,7 @@ instance ToReport (BalanceError SourceSpan) where
         [ (toDiagnosePosition cl, Where "Using this cost"),
           (toDiagnosePosition al, This "Could not convert this amount")
         ]
-        [ Hint $ "The closest valid rate is " <> DecimalLiteral.format dl
+        [ Hint $ "The closest valid rate is " <> DecimalLiteral.toString dl
           | cr <- maybeToList mConversionRate,
             dl <- maybeToList $ ConversionRate.toDecimalLiteral cr
         ]
@@ -235,7 +235,7 @@ instance ToReport (BalanceError SourceSpan) where
                       Maybe $
                         unlines
                           [ "Perhaps this percentage needs to be",
-                            DecimalLiteral.format dl <> "%"
+                            DecimalLiteral.toString dl <> "%"
                           ]
                     )
                     | Located rl expectedRatio <- maybeToList mComputedRatio,
@@ -360,7 +360,7 @@ makePostingSuggestion total (Located cl currency) (Located al account) =
               Maybe $
                 unwords
                   [ "Perhaps you meant",
-                    DecimalLiteral.format suggestedLiteral,
+                    DecimalLiteral.toString suggestedLiteral,
                     T.unpack (currencySymbolText symbol)
                   ]
             )

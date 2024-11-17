@@ -82,7 +82,7 @@ decimalLiteralNode :: DecimalLiteral -> XML.Node
 decimalLiteralNode =
   XML.NodeContent
     . T.pack
-    . DecimalLiteral.format
+    . DecimalLiteral.toString
     . DecimalLiteral.setSignOptional
 
 -- | Render with the four relevant namespaces and an XML declaration.

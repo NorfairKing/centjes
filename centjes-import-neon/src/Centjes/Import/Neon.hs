@@ -91,7 +91,7 @@ instance ToReport ImportError where
             ImportErrorInvalidAccount qf dl ->
               Err
                 (Just "IE_REVOLUT_INVALID_AMOUNT")
-                (unwords ["Invalid amount:", show (DecimalLiteral.format dl), "with quantisation factor", show (unQuantisationFactor qf)])
+                (unwords ["Invalid amount:", show (DecimalLiteral.toString dl), "with quantisation factor", show (unQuantisationFactor qf)])
             ImportErrorInvalidLiteral qf a ->
               Err
                 (Just "IE_REVOLUT_INVALID_LITERAL")

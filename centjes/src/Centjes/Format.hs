@@ -346,7 +346,7 @@ charactersBeforeDot (DecimalLiteral _ m e) =
   1 + max 1 (length (show m) - fromIntegral e)
 
 decimalLiteralDoc :: DecimalLiteral -> Doc ann
-decimalLiteralDoc = pretty . DecimalLiteral.format
+decimalLiteralDoc = pretty . DecimalLiteral.toString
 
 lCurrencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
 lCurrencySymbolDoc = currencySymbolDoc . locatedValue
