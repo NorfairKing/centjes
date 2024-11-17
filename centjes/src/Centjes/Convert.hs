@@ -11,6 +11,7 @@ module Centjes.Convert
     lookupConversionCurrency,
     convertMultiAccount,
     lookupConversionRate,
+    LatestPriceGraph,
     pricesToPriceGraph,
     pricesToDailyPriceGraphs,
   )
@@ -18,6 +19,7 @@ where
 
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
+import Centjes.Convert.PriceGraph (PriceGraph)
 import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Ledger
@@ -125,6 +127,8 @@ lookupConversionRate al graph currencyTo currencyFrom = do
     Nothing -> validationFailure $ ConvertErrorMissingPrice al currencyTo currencyFrom
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
 
+type LatestPriceGraph = PriceGraph Day
+
 pricesToPriceGraph ::
   (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
@@ -136,7 +140,9 @@ pricesToPriceGraph = MemoisedPriceGraph.fromPriceGraph . V.foldl go PriceGraph.e
           Located _ Cost {..} = priceCost
           Located _ rate = costConversionRate
           Located _ currencyTo = costCurrency
-       in PriceGraph.insert currencyFrom currencyTo rate g
+          Located _ timestamp = priceTimestamp
+          priority = Timestamp.toDay timestamp
+       in PriceGraph.insert currencyFrom currencyTo rate priority g
 
 pricesToDailyPriceGraphs ::
   (Ord ann) =>
@@ -149,7 +155,8 @@ pricesToDailyPriceGraphs = fst . V.foldl go (M.empty, PriceGraph.empty)
           Located _ Cost {..} = priceCost
           Located _ rate = costConversionRate
           Located _ currencyTo = costCurrency
-          pg' = PriceGraph.insert currencyFrom currencyTo rate pg
           Located _ timestamp = priceTimestamp
+          priority = Timestamp.toDay timestamp
+          pg' = PriceGraph.insert currencyFrom currencyTo rate priority pg
           m' = M.insert (Timestamp.toDay timestamp) (MemoisedPriceGraph.fromPriceGraph pg') m
        in (m', pg')

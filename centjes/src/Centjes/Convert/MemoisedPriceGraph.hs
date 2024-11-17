@@ -36,7 +36,7 @@ instance (Validity cur, Show cur, Ord cur) => Validity (MemoisedPriceGraph cur)
 -- TODO: this could be even faster by using the already-computed memoised price
 -- graph when looking up paths, but that would give up laziness in constructing
 -- this graph.
-fromPriceGraph :: (Ord cur) => PriceGraph cur -> MemoisedPriceGraph cur
+fromPriceGraph :: (Ord cur, Ord priority) => PriceGraph priority cur -> MemoisedPriceGraph cur
 fromPriceGraph pg@(PriceGraph m) =
   let allCurrencies = S.fromList $ do
         (from, m') <- M.toList m

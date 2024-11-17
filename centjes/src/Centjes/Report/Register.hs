@@ -14,7 +14,6 @@ where
 
 import Centjes.Convert
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
-import Centjes.Convert.PriceGraph (PriceGraph)
 import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.Filter (Filter)
 import qualified Centjes.Filter as Filter
@@ -89,7 +88,7 @@ produceRegister f mCurrencySymbolTo ledger = do
   let goTransaction ::
         ( Int,
           Money.MultiAccount (Currency ann),
-          PriceGraph (Currency ann),
+          LatestPriceGraph (Currency ann),
           [GenLocated ann (Price ann)]
         ) ->
         Validation
@@ -103,7 +102,7 @@ produceRegister f mCurrencySymbolTo ledger = do
             ),
             ( Int,
               Money.MultiAccount (Currency ann),
-              PriceGraph (Currency ann),
+              LatestPriceGraph (Currency ann),
               [GenLocated ann (Price ann)]
             )
           )
@@ -117,7 +116,7 @@ produceRegister f mCurrencySymbolTo ledger = do
         let goPosting ::
               ( Int,
                 Money.MultiAccount (Currency ann),
-                PriceGraph (Currency ann)
+                LatestPriceGraph (Currency ann)
               ) ->
               Validation
                 (RegisterError ann)
@@ -126,7 +125,7 @@ produceRegister f mCurrencySymbolTo ledger = do
                   ),
                   ( Int,
                     Money.MultiAccount (Currency ann),
-                    PriceGraph (Currency ann)
+                    LatestPriceGraph (Currency ann)
                   )
                 )
             goPosting (jx, runningSubTotal, pg) = do
@@ -140,7 +139,8 @@ produceRegister f mCurrencySymbolTo ledger = do
                     Just (Located _ Cost {..}) ->
                       let Located _ rate = costConversionRate
                           Located _ to = costCurrency
-                       in PriceGraph.insert currency to rate pg
+                          priority = Timestamp.toDay $ locatedValue lts
+                       in PriceGraph.insert currency to rate priority pg
 
               newRunningSubTotal <-
                 case MultiAccount.addAccount runningSubTotal currency account of
@@ -202,10 +202,10 @@ incorporatePricesUntil ::
   (Ord ann) =>
   GenLocated ann Timestamp ->
   [GenLocated ann (Price ann)] ->
-  PriceGraph (Currency ann) ->
+  LatestPriceGraph (Currency ann) ->
   Validation
     (RegisterError ann)
-    ( PriceGraph (Currency ann),
+    ( LatestPriceGraph (Currency ann),
       [GenLocated ann (Price ann)]
     )
 incorporatePricesUntil (Located _ timestamp) prices priceGraph =
@@ -213,11 +213,11 @@ incorporatePricesUntil (Located _ timestamp) prices priceGraph =
   where
     go ::
       (Ord ann) =>
-      PriceGraph (Currency ann) ->
+      LatestPriceGraph (Currency ann) ->
       [GenLocated ann (Price ann)] ->
       Validation
         (RegisterError ann)
-        ( PriceGraph (Currency ann),
+        ( LatestPriceGraph (Currency ann),
           [GenLocated ann (Price ann)]
         )
     go pg = \case
@@ -230,7 +230,8 @@ incorporatePricesUntil (Located _ timestamp) prices priceGraph =
             let Located _ Cost {..} = priceCost
             let Located _ rate = costConversionRate
             let Located _ to = costCurrency
-            let pg' = PriceGraph.insert from to rate pg
+            let priority = Timestamp.toDay ts
+            let pg' = PriceGraph.insert from to rate priority pg
             go pg' restPrices
           _ -> pure (pg, ps)
 

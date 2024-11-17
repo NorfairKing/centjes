@@ -1,0 +1,30 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account investments assets
+account other-investments assets
+account assets
+
+2024-11-16
+  | Opening
+  * equity      -100 CHF
+  * investments +100 CHF
+
+2024-11-17
+  | Convert USD to CHF
+  * investments +100 USD @ 0.5 CHF
+  * investments  -50 CHF
+  + assert investments = +50 CHF
+  + assert investments = +100 USD
+
+2024-11-17
+  | Move USD
+  * investments       -100 USD
+  * other-investments +100 USD
+  + assert investments = +50 CHF
+  + assert investments = +0 USD
+  + assert other-investments = +100 USD
+
+price 2024-11-18 CHF 1 USD
+price 2024-11-19 USD 2 CHF

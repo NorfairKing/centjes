@@ -7,4 +7,4 @@ import Data.GenValidity
 import Data.GenValidity.Containers ()
 import Money.ConversionRate.Gen ()
 
-instance (Show cur, Ord cur, GenValid cur) => GenValid (PriceGraph cur)
+instance (Show priority, Ord priority, GenValid priority, Show cur, Ord cur, GenValid cur) => GenValid (PriceGraph priority cur)

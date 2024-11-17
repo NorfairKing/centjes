@@ -1,0 +1,14 @@
+currency USD 0.01
+currency CHF 0.05
+currency EUR 0.01
+
+account equity
+account investments assets
+
+2023-12-16
+  | Opening
+  * equity      -100 EUR
+  * investments +100 EUR
+
+price 2024-11-17 EUR 2 USD
+price 2024-11-17 USD 2 CHF

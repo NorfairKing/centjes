@@ -71,6 +71,7 @@ library
     , path-io
     , prettyprinter
     , prettyprinter-ansi-terminal
+    , psqueues
     , really-safe-money
     , safe-coloured-text
     , safe-coloured-text-layout

@@ -1,0 +1,4 @@
+[37mequity[m            [31m-100.00[m [31mCHF[m
+[37minvestments[m       [32m 50.00[m  [32mCHF[m
+[37mother-investments[m [32m200.00[m  [32mCHF[m
+[34mTotal[m             [32m150.00[m  [32mCHF[m

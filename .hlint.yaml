@@ -117,3 +117,6 @@
       - Centjes.Import.Cornercard
       - Centjes.Import.Neon
       - Centjes.Timestamp
+
+- modules:
+  - { name: Debug.Trace, within: [] }
