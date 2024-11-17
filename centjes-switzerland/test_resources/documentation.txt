@@ -1,24 +1,30 @@
-[36mUsage: [m[33mcentjes-switzerland[m [37m--config-file[m [33mFILE_PATH[m COMMAND [37m--base-dir[m [33mDIRECTORY_PATH[m [37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m
+[36mUsage: [m[33mcentjes-switzerland[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m COMMAND [36m[[m[37m--base-dir[m [33mDIRECTORY_PATH[m[36m][m [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m
 
 [36mAll settings[m:
+  [34mShow this help text[m
+  switch: [37m-h[m[36m|[m[37m--help[m
+
+  [34mOutput version information[m
+  switch: [37m--version[m
+
   [34mPath to the configuration file[m
   option: [37m--config-file[m [33mFILE_PATH[m
   env: [37mCENTJES_SWITZERLAND_CONFIG_FILE[m [33mFILE_PATH[m
-  
+
   [34mbase directory[m
   option: [37m--base-dir[m [33mDIRECTORY_PATH[m
   env: [37mCENTJES_SWITZERLAND_BASE_DIR[m [33mDIRECTORY_PATH[m
   config:
     [37mbase-dir[m: # [32mor null[m
       [33m<string>[m
-  
+
   [34mledger file[m
   option: [37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m
   env: [37mCENTJES_SWITZERLAND_LEDGER[m [33mFILE_PATH[m
   config:
     [37mledger[m: # [32mor null[m
       [33m<string>[m
-  
+  default: [33m"ledger.cent"[m
 
 [36mAll commands[m:
   [34mproduce a tax report[m
@@ -42,26 +48,31 @@
     config:
       [37mtag-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"deductible"[m
     
     [34mtag to use for non-deductible purchases[m
     config:
       [37mtag-not-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"not-deductible"[m
     
     [34mtag to use for tax-deductible purchases[m
     config:
       [37mtag-tax-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"tax-deductible"[m
     
     [34mtag to use for non-tax-deductible purchases[m
     config:
       [37mtag-not-tax-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"not-tax-deductible"[m
     
     [34mThe AHV identifier. e.g. 746.1111.2222.33[m
     config:
       [37mahv-id[m: # [32mor null[m
         [33m<string>[m
+    example: [33m746.1111.2222.33[m
     
     [34mPath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
@@ -69,6 +80,7 @@
     config:
       [37mtaxes.zip-file[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"tax-packet.zip"[m
     
     [34mPath to the readme file to create[m
     option: [37m--readme-file[m [33mFILE_PATH[m
@@ -76,6 +88,7 @@
     config:
       [37mtaxes.readme-file[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"README.pdf"[m
     
   
   [34mproduce a VAT report[m
@@ -104,6 +117,7 @@
     config:
       [37mvat-id[m: # [32mor null[m
         [33m<string>[m
+    example: [33m111.222.333[m
     
     [34mthe quarter to produce the report for[m
     config:
@@ -115,46 +129,55 @@
     config:
       [37mtag-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"deductible"[m
     
     [34mtag to use for non-deductible purchases[m
     config:
       [37mtag-not-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"not-deductible"[m
     
     [34mtag to use for VAT-deductible purchases[m
     config:
       [37mtag-vat-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"vat-deductible"[m
     
     [34mtag to use for non-VAT-deductible purchases[m
     config:
       [37mtag-not-vat-deductible[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"not-vat-deductible"[m
     
     [34mAccount name of your domestic income[m
     config:
       [37mdomestic-income-account[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"income:domestic"[m
     
     [34mAccount name of your exports' income[m
     config:
       [37mexports-income-account[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"income:exports"[m
     
     [34mAccount name of your foreign income[m
     config:
       [37mforeign-income-account[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"income:foreign"[m
     
     [34mAccount name of your the VAT you've charged[m
     config:
       [37mvat-income-account[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"income:vat"[m
     
     [34mAccount name of your the VAT you've paid[m
     config:
       [37mvat-expenses-account[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"expenses:vat"[m
     
     [34mpath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
@@ -162,6 +185,7 @@
     config:
       [37mvat.zip-file[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"vat-packet.zip"[m
     
     [34mpath to the readme file to create[m
     option: [37m--readme-file[m [33mFILE_PATH[m
@@ -169,6 +193,7 @@
     config:
       [37mvat.readme-file[m: # [32mor null[m
         [33m<string>[m
+    default: [33m"README.pdf"[m
     
   
   [34mDownload exchange rates[m
@@ -199,7 +224,9 @@
   
 
 [36mOptions[m:
-  [37m--config-file[m [34mPath to the configuration file[m 
+  [37m-h[m[36m|[m[37m--help[m [34mShow this help text[m
+  [37m--version[m [34mOutput version information[m
+  [37m--config-file[m [34mPath to the configuration file[m
   [35mtaxes[m [34mproduce a tax report[m
       [37m--zip-file[m    [34mPath to the zip file to create[m    default: [33m"tax-packet.zip"[m
       [37m--readme-file[m [34mPath to the readme file to create[m default: [33m"README.pdf"[m    
@@ -207,23 +234,23 @@
       [37m--zip-file[m    [34mpath to the zip file to create[m    default: [33m"vat-packet.zip"[m
       [37m--readme-file[m [34mpath to the readme file to create[m default: [33m"README.pdf"[m    
   [35mdownload-rates[m [34mDownload exchange rates[m
-      [37m--begin[m     [34mThe begin date (inclusive), default: Start of the year[m 
-      [37m--end[m       [34mThe final date (inclusive), default: Yesterday[m         
-      [37m--output[m[36m|[m[37m-o[m [34mWhere to put the resulting file[m                        
-  [37m--base-dir[m [34mbase directory[m 
+      [37m--begin[m     [34mThe begin date (inclusive), default: Start of the year[m
+      [37m--end[m       [34mThe final date (inclusive), default: Yesterday[m        
+      [37m--output[m[36m|[m[37m-o[m [34mWhere to put the resulting file[m                       
+  [37m--base-dir[m [34mbase directory[m
   [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
 
 [36mEnvironment Variables[m:
-  [37mCENTJES_SWITZERLAND_CONFIG_FILE[m [33mFILE_PATH[m     [34mPath to the configuration file[m                        
-  [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m        [34mPath to the zip file to create[m                        
-  [37mCENTJES_SWITZERLAND_README_FILE[m [33mFILE_PATH[m     [34mPath to the readme file to create[m                     
-  [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m        [34mpath to the zip file to create[m                        
-  [37mCENTJES_SWITZERLAND_README_FILE[m [33mFILE_PATH[m     [34mpath to the readme file to create[m                     
-  [37mCENTJES_SWITZERLAND_BEGIN[m [33mYYYY-MM-DD[m          [34mThe begin date (inclusive), default: Start of the year[m
-  [37mCENTJES_SWITZERLAND_END[m [33mYYYY-MM-DD[m            [34mThe final date (inclusive), default: Yesterday[m        
-  [37mCENTJES_SWITZERLAND_OUTPUT[m [33mFILE_PATH[m          [34mWhere to put the resulting file[m                       
-  [37mCENTJES_SWITZERLAND_BASE_DIR[m [33mDIRECTORY_PATH[m   [34mbase directory[m                                        
-  [37mCENTJES_SWITZERLAND_LEDGER[m [33mFILE_PATH[m          [34mledger file[m                                           
+  [37mCENTJES_SWITZERLAND_CONFIG_FILE[m [33mFILE_PATH[m     [34mPath to the configuration file[m                                                    
+  [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m        [34mPath to the zip file to create[m                           default: [33m"tax-packet.zip"[m
+  [37mCENTJES_SWITZERLAND_README_FILE[m [33mFILE_PATH[m     [34mPath to the readme file to create[m                        default: [33m"README.pdf"[m    
+  [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m        [34mpath to the zip file to create[m                           default: [33m"vat-packet.zip"[m
+  [37mCENTJES_SWITZERLAND_README_FILE[m [33mFILE_PATH[m     [34mpath to the readme file to create[m                        default: [33m"README.pdf"[m    
+  [37mCENTJES_SWITZERLAND_BEGIN[m [33mYYYY-MM-DD[m          [34mThe begin date (inclusive), default: Start of the year[m                            
+  [37mCENTJES_SWITZERLAND_END[m [33mYYYY-MM-DD[m            [34mThe final date (inclusive), default: Yesterday[m                                    
+  [37mCENTJES_SWITZERLAND_OUTPUT[m [33mFILE_PATH[m          [34mWhere to put the resulting file[m                                                   
+  [37mCENTJES_SWITZERLAND_BASE_DIR[m [33mDIRECTORY_PATH[m   [34mbase directory[m                                                                    
+  [37mCENTJES_SWITZERLAND_LEDGER[m [33mFILE_PATH[m          [34mledger file[m                                              default: [33m"ledger.cent"[m   
 
 [36mConfiguration Values[m:
   [34myour first name[m
@@ -239,30 +266,37 @@
     # [32mor null[m
     [33m<integer>[m
   [34mtag to use for deductible purchases[m
+  default: [33m"deductible"[m
   [37mtag-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mtag to use for non-deductible purchases[m
+  default: [33m"not-deductible"[m
   [37mtag-not-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mtag to use for tax-deductible purchases[m
+  default: [33m"tax-deductible"[m
   [37mtag-tax-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mtag to use for non-tax-deductible purchases[m
+  default: [33m"not-tax-deductible"[m
   [37mtag-not-tax-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mThe AHV identifier. e.g. 746.1111.2222.33[m
+  example: [33m746.1111.2222.33[m
   [37mahv-id[m:
     # [32mor null[m
     [33m<string>[m
   [34mPath to the zip file to create[m
+  default: [33m"tax-packet.zip"[m
   [37mtaxes.zip-file[m:
     # [32mor null[m
     [33m<string>[m
   [34mPath to the readme file to create[m
+  default: [33m"README.pdf"[m
   [37mtaxes.readme-file[m:
     # [32mor null[m
     [33m<string>[m
@@ -283,6 +317,7 @@
     # [32mor null[m
     [33m<string>[m
   [34mthe VAT identifier[m
+  example: [33m111.222.333[m
   [37mvat-id[m:
     # [32mor null[m
     [33m<string>[m
@@ -292,46 +327,57 @@
     # Quarter
     [33m<any>[m
   [34mtag to use for deductible purchases[m
+  default: [33m"deductible"[m
   [37mtag-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mtag to use for non-deductible purchases[m
+  default: [33m"not-deductible"[m
   [37mtag-not-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mtag to use for VAT-deductible purchases[m
+  default: [33m"vat-deductible"[m
   [37mtag-vat-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mtag to use for non-VAT-deductible purchases[m
+  default: [33m"not-vat-deductible"[m
   [37mtag-not-vat-deductible[m:
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your domestic income[m
+  default: [33m"income:domestic"[m
   [37mdomestic-income-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your exports' income[m
+  default: [33m"income:exports"[m
   [37mexports-income-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your foreign income[m
+  default: [33m"income:foreign"[m
   [37mforeign-income-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your the VAT you've charged[m
+  default: [33m"income:vat"[m
   [37mvat-income-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your the VAT you've paid[m
+  default: [33m"expenses:vat"[m
   [37mvat-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mpath to the zip file to create[m
+  default: [33m"vat-packet.zip"[m
   [37mvat.zip-file[m:
     # [32mor null[m
     [33m<string>[m
   [34mpath to the readme file to create[m
+  default: [33m"README.pdf"[m
   [37mvat.readme-file[m:
     # [32mor null[m
     [33m<string>[m
@@ -354,6 +400,7 @@
     # [32mor null[m
     [33m<string>[m
   [34mledger file[m
+  default: [33m"ledger.cent"[m
   [37mledger[m:
     # [32mor null[m
     [33m<string>[m

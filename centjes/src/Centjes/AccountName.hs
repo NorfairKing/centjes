@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.AccountName
@@ -29,7 +30,10 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
 newtype AccountName = AccountName {unAccountName :: NonEmpty Text}
-  deriving (Show, Eq, Generic)
+  deriving stock (Eq, Generic)
+
+instance Show AccountName where
+  show = show . toString
 
 instance Validity AccountName where
   validate an@(AccountName ts) =

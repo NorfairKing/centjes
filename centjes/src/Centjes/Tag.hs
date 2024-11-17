@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.Tag
@@ -22,7 +24,8 @@ import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
 newtype Tag = Tag {tagText :: Text}
-  deriving (Show, Eq, Ord, Generic)
+  deriving stock (Eq, Ord, Generic)
+  deriving newtype (Show)
 
 instance Validity Tag where
   validate an@(Tag t) =

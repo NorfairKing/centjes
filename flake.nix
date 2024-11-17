@@ -21,6 +21,8 @@
     safe-coloured-text.flake = false;
     sydtest.url = "github:NorfairKing/sydtest";
     sydtest.flake = false;
+    fast-myers-diff.url = "github:NorfairKing/fast-myers-diff";
+    fast-myers-diff.flake = false;
     opt-env-conf.url = "github:NorfairKing/opt-env-conf";
     opt-env-conf.flake = false;
     really-safe-money.url = "github:NorfairKing/really-safe-money";
@@ -48,6 +50,7 @@
     , validity
     , safe-coloured-text
     , sydtest
+    , fast-myers-diff
     , opt-env-conf
     , autodocodec
     , really-safe-money
@@ -67,6 +70,7 @@
           (import (validity + "/nix/overlay.nix"))
           (import (safe-coloured-text + "/nix/overlay.nix"))
           (import (sydtest + "/nix/overlay.nix"))
+          (import (fast-myers-diff + "/nix/overlay.nix"))
           (import (opt-env-conf + "/nix/overlay.nix"))
           (import (autodocodec + "/nix/overlay.nix"))
           (import (really-safe-money + "/nix/overlay.nix"))

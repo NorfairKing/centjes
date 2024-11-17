@@ -231,29 +231,29 @@ packages:
 - completed:
     name: opt-env-conf
     pantry-tree:
-      sha256: 1a17f15ca159c9a463a708eef69773330e7d93697365801c4cfa409ad6bab49d
-      size: 1298
-    sha256: 871fc929ce68c039eeff43e9634ab61ef1490d82a7695c5cef75f19e01865451
-    size: 84621
+      sha256: 0b892cfb449461399e55dd2c1ab9b1c05eafa04949e02ce21b41a814e85e007f
+      size: 1299
+    sha256: a342b70d192f02b1436dc54ebdd5fdd709616a8e758fea0812c408f6326d4626
+    size: 99037
     subdir: opt-env-conf
-    url: https://github.com/NorfairKing/opt-env-conf/archive/ecfcf2a41edad94fd2b7c1d0bdd8654fbcb1545c.tar.gz
-    version: 0.4.0.4
+    url: https://github.com/NorfairKing/opt-env-conf/archive/fdf861f7bdd7f6aff777e2780beb7a400bd97625.tar.gz
+    version: 0.8.0.0
   original:
     subdir: opt-env-conf
-    url: https://github.com/NorfairKing/opt-env-conf/archive/ecfcf2a41edad94fd2b7c1d0bdd8654fbcb1545c.tar.gz
+    url: https://github.com/NorfairKing/opt-env-conf/archive/fdf861f7bdd7f6aff777e2780beb7a400bd97625.tar.gz
 - completed:
     name: opt-env-conf-test
     pantry-tree:
-      sha256: a50724a1a02a9727578058d41ccfd1dfcda0ab99b15afa744413a2f8d3726090
-      size: 21064
-    sha256: 871fc929ce68c039eeff43e9634ab61ef1490d82a7695c5cef75f19e01865451
-    size: 84621
+      sha256: 56f1b38a32d13ca24cce0d29e76fbea85240a2fed6c37ac0977817b0b9fc5319
+      size: 28097
+    sha256: a342b70d192f02b1436dc54ebdd5fdd709616a8e758fea0812c408f6326d4626
+    size: 99037
     subdir: opt-env-conf-test
-    url: https://github.com/NorfairKing/opt-env-conf/archive/ecfcf2a41edad94fd2b7c1d0bdd8654fbcb1545c.tar.gz
+    url: https://github.com/NorfairKing/opt-env-conf/archive/fdf861f7bdd7f6aff777e2780beb7a400bd97625.tar.gz
     version: 0.0.0.0
   original:
     subdir: opt-env-conf-test
-    url: https://github.com/NorfairKing/opt-env-conf/archive/ecfcf2a41edad94fd2b7c1d0bdd8654fbcb1545c.tar.gz
+    url: https://github.com/NorfairKing/opt-env-conf/archive/fdf861f7bdd7f6aff777e2780beb7a400bd97625.tar.gz
 snapshots:
 - completed:
     sha256: 4be1ca5d31689b524a7f0f17a439bbe9136465213edc498e9a395899a670f2aa
