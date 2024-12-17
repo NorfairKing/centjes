@@ -48,6 +48,7 @@ tests:
     - genvalidity-sydtest
     - monad-logger
     - mtl
+    - opt-env-conf
     - opt-env-conf-test
     - path
     - path-io
@@ -56,3 +57,4 @@ tests:
     - sydtest
     - text
     - vector
+    - yaml

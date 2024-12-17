@@ -1,9 +1,11 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.OptParse where
 
+import Autodocodec
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Filter (Filter)
 import Control.Applicative
@@ -113,7 +115,7 @@ instance HasParser BalanceSettings where
 
 {-# ANN parseBalanceSettings ("NOCOVER" :: String) #-}
 parseBalanceSettings :: Parser BalanceSettings
-parseBalanceSettings = do
+parseBalanceSettings = subConfig_ "balance" $ do
   balanceSettingFilter <- settingsParser
   balanceSettingCurrency <-
     optional $
@@ -122,6 +124,7 @@ parseBalanceSettings = do
           help "Currency to convert to",
           option,
           long "convert",
+          conf "convert",
           metavar "CURRENCY"
         ]
   balanceSettingShowEmpty <-
@@ -129,6 +132,7 @@ parseBalanceSettings = do
       [ help "Show empty balances instead of hiding them",
         switch ShowEmpty,
         long "show-empty",
+        conf "show-empty",
         value DoNotShowEmpty
       ]
   balanceSettingShowVirtual <-
@@ -136,6 +140,7 @@ parseBalanceSettings = do
       [ help "Show virtual postings too",
         switch True,
         long "virtual",
+        conf "virtual",
         value False
       ]
   pure BalanceSettings {..}
@@ -144,6 +149,16 @@ data ShowEmpty
   = ShowEmpty
   | DoNotShowEmpty
   deriving (Show)
+
+instance HasCodec ShowEmpty where
+  codec = dimapCodec f g codec
+    where
+      f = \case
+        True -> ShowEmpty
+        False -> DoNotShowEmpty
+      g = \case
+        ShowEmpty -> True
+        DoNotShowEmpty -> False
 
 data FormatSettings = FormatSettings
   { formatSettingFileOrDir :: !(Maybe (Either (Path Abs File) (Path Abs Dir)))
