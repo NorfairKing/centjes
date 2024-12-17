@@ -34,6 +34,13 @@
     [34mCurrency to convert to[m
     option: [37m--convert[m [33mCURRENCY[m
     
+    [34mShow virtual postings too[m
+    switch: [37m--virtual[m
+    config:
+      [37mvirtual[m: # [32mor null[m
+        [33m<boolean>[m
+    default: [33mFalse[m
+    
   
   [34mbalance report[m
   command: [35mbalance[m
@@ -80,9 +87,10 @@
   [37m--config-file[m [34mPath to the configuration file[m
   [35mcheck[m [34mperform an internal consistency check[m
   [35mregister[m [34mregister report[m
-      [33mFILTER[m    [34mfilter[m                
-      [33mFILTER[m    [34mfilter[m                
-      [37m--convert[m [34mCurrency to convert to[m
+      [33mFILTER[m    [34mfilter[m                                  
+      [33mFILTER[m    [34mfilter[m                                  
+      [37m--convert[m [34mCurrency to convert to[m                  
+      [37m--virtual[m [34mShow virtual postings too[m default: [33mFalse[m
   [35mbalance[m [34mbalance report[m
       [33mFILTER[m       [34mfilter[m                                                            
       [33mFILTER[m       [34mfilter[m                                                            
@@ -99,6 +107,11 @@
   [37mCENTJES_LEDGER[m [33mFILE_PATH[m        [34mledger file[m                      default: [33m"ledger.cent"[m
 
 [36mConfiguration Values[m:
+  [34mShow virtual postings too[m
+  default: [33mFalse[m
+  [37mvirtual[m:
+    # [32mor null[m
+    [33m<boolean>[m
   [34mCurrency to convert to[m
   [37mbalance.convert[m:
     # [32mor null[m

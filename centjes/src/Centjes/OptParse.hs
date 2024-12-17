@@ -82,7 +82,8 @@ parseCheckSettings = pure CheckSettings
 
 data RegisterSettings = RegisterSettings
   { registerSettingFilter :: !Filter,
-    registerSettingCurrency :: !(Maybe CurrencySymbol)
+    registerSettingCurrency :: !(Maybe CurrencySymbol),
+    registerSettingShowVirtual :: !Bool
   }
 
 instance HasParser RegisterSettings where
@@ -101,6 +102,14 @@ parseRegisterSettings = do
           long "convert",
           metavar "CURRENCY"
         ]
+  registerSettingShowVirtual <-
+    setting
+      [ help "Show virtual postings too",
+        switch True,
+        long "virtual",
+        conf "virtual",
+        value False
+      ]
   pure RegisterSettings {..}
 
 data BalanceSettings = BalanceSettings

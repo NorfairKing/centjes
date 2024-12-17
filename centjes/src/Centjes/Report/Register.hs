@@ -77,14 +77,15 @@ produceRegister ::
   (Ord ann) =>
   Filter ->
   Maybe CurrencySymbol ->
+  Bool ->
   Ledger ann ->
   Validation (RegisterError ann) (Register ann)
-produceRegister f mCurrencySymbolTo ledger = do
+produceRegister f mCurrencySymbolTo showVirtual ledger = do
   mCurrencyTo <-
     mapValidationFailure RegisterErrorConvertError $
       traverse (lookupConversionCurrency (ledgerCurrencies ledger)) mCurrencySymbolTo
 
-  ts <- V.catMaybes <$> traverse (registerTransaction f) (ledgerTransactions ledger)
+  ts <- V.catMaybes <$> traverse (registerTransaction f showVirtual) (ledgerTransactions ledger)
   let goTransaction ::
         ( Int,
           Money.MultiAccount (Currency ann),
@@ -237,6 +238,7 @@ incorporatePricesUntil (Located _ timestamp) prices priceGraph =
 
 registerTransaction ::
   Filter ->
+  Bool ->
   GenLocated ann (Transaction ann) ->
   Validation
     (RegisterError ann)
@@ -246,11 +248,11 @@ registerTransaction ::
           Vector (GenLocated ann (Posting ann))
         )
     )
-registerTransaction f (Located _ t) = do
+registerTransaction f showVirtual (Located _ t) = do
   postings <-
     V.catMaybes
       <$> traverse
-        (registerPosting f)
+        (registerPosting f showVirtual)
         (transactionPostings t)
   pure $
     if null postings
@@ -264,13 +266,14 @@ registerTransaction f (Located _ t) = do
 
 registerPosting ::
   Filter ->
+  Bool ->
   GenLocated ann (Posting ann) ->
   Validation (RegisterError ann) (Maybe (GenLocated ann (Posting ann)))
-registerPosting f lp@(Located _ Posting {..}) = do
+registerPosting f showVirtual lp@(Located _ Posting {..}) = do
   let Located _ an = postingAccountName
       included = Filter.predicate f an
   pure $
     -- Don't show virtual postings by default
-    if postingReal && included
+    if (postingReal || not postingReal && showVirtual) && included
       then Just lp
       else Nothing

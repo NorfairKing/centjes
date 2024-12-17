@@ -28,8 +28,11 @@ spec :: Spec
 spec = do
   describe "produceBalanceReport" $ do
     it "produces valid reports" $
-      producesValid3
-        (produceRegister @())
+      forAllValid $ \f ->
+        forAllValid $ \mCurrencySymbolTo ->
+          forAllValid $ \showVirtual ->
+            forAllValid $ \ledger ->
+              shouldBeValid $ produceRegister @() f mCurrencySymbolTo showVirtual ledger
 
     scenarioDir "test_resources/register/valid/as-is" $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -42,7 +45,13 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            br <- shouldValidate diag $ produceRegister FilterAny Nothing ledger
+            br <-
+              shouldValidate diag $
+                produceRegister
+                  FilterAny
+                  Nothing
+                  False
+                  ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderRegisterTable br
 
@@ -52,7 +61,13 @@ spec = do
           -- Compile to a ledger
           ledger <- shouldValidate diag $ compileDeclarations ds
 
-          Register transactions <- shouldValidate diag $ produceRegister FilterAny Nothing ledger
+          Register transactions <-
+            shouldValidate diag $
+              produceRegister
+                FilterAny
+                Nothing
+                False
+                ledger
 
           if null transactions
             then pure ()
@@ -75,7 +90,13 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            br <- shouldValidate diag $ produceRegister FilterAny (Just (CurrencySymbol "CHF")) ledger
+            br <-
+              shouldValidate diag $
+                produceRegister
+                  FilterAny
+                  (Just (CurrencySymbol "CHF"))
+                  False
+                  ledger
             shouldBeValid br
             pure $ renderChunksText With24BitColours $ renderRegisterTable br
 
@@ -90,7 +111,13 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            errs <- shouldFailToValidate $ produceRegister FilterAny Nothing ledger
+            errs <-
+              shouldFailToValidate $
+                produceRegister
+                  FilterAny
+                  Nothing
+                  False
+                  ledger
             pure $ renderValidationErrors diag errs
 
     scenarioDir "test_resources/register/error/to-chf" $ \fp -> do
@@ -104,5 +131,11 @@ spec = do
             -- Compile to a ledger
             ledger <- shouldValidate diag $ compileDeclarations ds
 
-            errs <- shouldFailToValidate $ produceRegister FilterAny (Just (CurrencySymbol "CHF")) ledger
+            errs <-
+              shouldFailToValidate $
+                produceRegister
+                  FilterAny
+                  (Just (CurrencySymbol "CHF"))
+                  False
+                  ledger
             pure $ renderValidationErrors diag errs

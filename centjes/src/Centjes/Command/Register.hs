@@ -35,7 +35,14 @@ runCentjesRegister :: Settings -> RegisterSettings -> IO ()
 runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
   (declarations, diag) <- loadModules settingLedgerFile
   ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
-  register <- liftIO $ checkValidation diag $ produceRegister registerSettingFilter registerSettingCurrency ledger
+  register <-
+    liftIO $
+      checkValidation diag $
+        produceRegister
+          registerSettingFilter
+          registerSettingCurrency
+          registerSettingShowVirtual
+          ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderRegisterTable register
 

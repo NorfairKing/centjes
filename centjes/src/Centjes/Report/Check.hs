@@ -268,5 +268,7 @@ checkLedger l = do
         Nothing
         False
         l
-  register <- mapValidationFailure CheckErrorRegisterError $ produceRegister FilterAny Nothing l
+  register <-
+    mapValidationFailure CheckErrorRegisterError $
+      produceRegister FilterAny Nothing False l
   pure (balanceReport, register)

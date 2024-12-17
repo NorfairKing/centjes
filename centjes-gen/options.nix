@@ -27,4 +27,9 @@
     description = "ledger file";
     type = lib.types.nullOr lib.types.str;
   };
+  virtual = lib.mkOption {
+    default = null;
+    description = "Show virtual postings too";
+    type = lib.types.nullOr lib.types.bool;
+  };
 }
