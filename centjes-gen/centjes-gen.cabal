@@ -48,6 +48,9 @@ extra-source-files:
     test_resources/balance/balanced/total-bigger.txt
     test_resources/balance/balanced/vat.cent
     test_resources/balance/balanced/vat.txt
+    test_resources/balance/balanced/virtual-assertion.cent
+    test_resources/balance/balanced/virtual-assertion.config
+    test_resources/balance/balanced/virtual-assertion.txt
     test_resources/balance/error/BE_ACCOUNT_TOTAL.cent
     test_resources/balance/error/BE_ACCOUNT_TOTAL.err
     test_resources/balance/error/BE_ACCOUNT_TYPE_ASSERTION.cent

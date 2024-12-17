@@ -458,22 +458,23 @@ produceBalancedLedger showVirtual ledger = do
     (,) t <$> balanceTransaction showVirtual t
 
   let constructBalancedVector ::
-        (Int, AccountBalances ann) ->
+        (Int, AccountBalances ann, AccountBalances ann) ->
         Validation
           (BalanceError ann)
           ( (GenLocated ann (Transaction ann), AccountBalances ann),
-            (Int, AccountBalances ann)
+            (Int, AccountBalances ann, AccountBalances ann)
           )
-      constructBalancedVector (ix, runningTotal) = do
-        let (lt@(Located tl t), ab) = V.unsafeIndex tups ix
-        newTotal <- incorporateAccounts runningTotal ab
+      constructBalancedVector (ix, runningTotalForAssertions, runningTotalForResult) = do
+        let (lt@(Located tl t), (sumForAssertions, sumForResult)) = V.unsafeIndex tups ix
+        newTotalForAssertions <- incorporateAccounts runningTotalForAssertions sumForAssertions
+        newTotalForResult <- incorporateAccounts runningTotalForResult sumForResult
 
-        checkAccountTypeAssertions (ledgerAccounts ledger) tl newTotal
-        traverse_ (checkAssertion tl newTotal) (transactionAssertions t)
+        checkAccountTypeAssertions (ledgerAccounts ledger) tl newTotalForAssertions
+        traverse_ (checkAssertion tl newTotalForAssertions) (transactionAssertions t)
 
-        pure ((lt, newTotal), (succ ix, newTotal))
+        pure ((lt, newTotalForResult), (succ ix, newTotalForAssertions, newTotalForResult))
 
-  BalancedLedger <$> V.unfoldrExactNM (V.length tups) constructBalancedVector (0, M.empty)
+  BalancedLedger <$> V.unfoldrExactNM (V.length tups) constructBalancedVector (0, M.empty, M.empty)
   where
     incorporateAccounts ::
       AccountBalances ann ->
@@ -535,33 +536,27 @@ balanceTransaction ::
   (Ord ann) =>
   Bool ->
   GenLocated ann (Transaction ann) ->
-  Validation (BalanceError ann) (GenLocated ann (AccountBalances ann))
+  Validation
+    (BalanceError ann)
+    ( GenLocated ann (AccountBalances ann),
+      GenLocated ann (AccountBalances ann)
+    )
 balanceTransaction showVirtual (Located tl Transaction {..}) = do
   let incorporatePosting ::
         -- (Balances for transaction balance checking, balances of acounts)
-        (AccountBalances ann, AccountBalances ann) ->
+        (AccountBalances ann, AccountBalances ann, AccountBalances ann) ->
         Int ->
         GenLocated ann (Posting ann) ->
-        Validation (BalanceError ann) (AccountBalances ann, AccountBalances ann)
+        Validation
+          (BalanceError ann)
+          ( AccountBalances ann,
+            AccountBalances ann,
+            AccountBalances ann
+          )
       incorporatePosting
-        (convertedBalances, actualBalances)
+        (balancesForBalancing, balancesForAssertions, balancesForUser)
         ix
         (Located pl (Posting real (Located _ an) lc@(Located _ currency) la@(Located _ account) mCost mPercentage)) = do
-          (convertedCurrency, convertedAccount) <- case mCost of
-            Nothing -> pure (currency, account)
-            Just lcost@(Located _ Cost {..}) -> do
-              let Located _ qf = currencyQuantisationFactor currency
-              let Located _ newCurrency = costCurrency
-              let Located _ rate = costConversionRate
-              let Located _ qfNew = currencyQuantisationFactor newCurrency
-              -- Separate the amount for balancing from the amount for adding to balance
-              let (mNewAccount, mActualRate) = Account.convert Account.RoundNearest qf account rate qfNew
-              if mActualRate == Just rate
-                then case mNewAccount of
-                  Nothing -> validationFailure $ BalanceErrorConversionTooBig la lcost
-                  Just newAccount -> pure (newCurrency, newAccount)
-                else validationFailure $ BalanceErrorConversionImpossibleRate la lcost mActualRate
-
           let addAccountToBalances ::
                 Currency ann ->
                 Money.Account ->
@@ -586,22 +581,59 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
             lp <- go ix
             checkPercentage tl pl lp lc la lpct
 
-          convertedBalances' <-
-            if real -- Don't count virtual postings for balancing
-              then addAccountToBalances convertedCurrency convertedAccount convertedBalances
-              else pure convertedBalances
-          actualBalances' <-
-            if real || showVirtual -- Don't count virtual posting for this report
-              then addAccountToBalances currency account actualBalances
-              else pure actualBalances
-          pure (convertedBalances', actualBalances')
+          balancesForBalancing' <-
+            if real
+              then do
+                (convertedCurrency, convertedAccount) <- case mCost of
+                  Nothing -> pure (currency, account)
+                  Just lcost@(Located _ Cost {..}) -> do
+                    let Located _ qf = currencyQuantisationFactor currency
+                    let Located _ newCurrency = costCurrency
+                    let Located _ rate = costConversionRate
+                    let Located _ qfNew = currencyQuantisationFactor newCurrency
+                    -- Separate the amount for balancing from the amount for adding to balance
+                    let (mNewAccount, mActualRate) = Account.convert Account.RoundNearest qf account rate qfNew
+                    if mActualRate == Just rate
+                      then case mNewAccount of
+                        Nothing -> validationFailure $ BalanceErrorConversionTooBig la lcost
+                        Just newAccount -> pure (newCurrency, newAccount)
+                      else validationFailure $ BalanceErrorConversionImpossibleRate la lcost mActualRate
 
-  (mForBalancing, mActual) <- V.ifoldM incorporatePosting (M.empty, M.empty) transactionPostings
+                addAccountToBalances convertedCurrency convertedAccount balancesForBalancing
+              else pure balancesForAssertions
+
+          balancesForAssertions' <-
+            if real
+              then addAccountToBalances currency account balancesForAssertions
+              else pure balancesForAssertions
+
+          balancesForUser' <-
+            if real || (not real && showVirtual)
+              then addAccountToBalances currency account balancesForUser
+              else pure balancesForUser
+
+          pure (balancesForBalancing', balancesForAssertions', balancesForUser')
+
+  -- We keep three sets of balances:
+  -- 1. For balancing the transaction, and assertions.
+  --    These are
+  --    - Only real postings
+  --    - Amounts converted only according to costs listed in the transaction
+  -- 2. For inter-transaction account assertions
+  --    These are
+  --    - Only real postings
+  --    - Unconverted amounts
+  -- 3. For showing to the user.
+  --    These may include
+  --    - Virtual postings (if showVirtual is True)
+  --    - Unconverted amounts (according to their costs)
+  --    - Converted accounts (according to whether a currency should be converted for the user.)
+  (mForBalancing, mForAssertions, mForUser) <- V.ifoldM incorporatePosting (M.empty, M.empty, M.empty) transactionPostings
   let as = M.elems mForBalancing
   case MultiAccount.sum as of
     Nothing -> validationFailure $ BalanceErrorCouldNotSumPostings tl as
     Just d
-      | d == MultiAccount.zero -> pure (Located tl mActual)
+      | d == MultiAccount.zero -> pure (Located tl mForAssertions, Located tl mForUser)
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
 
 checkPercentage ::

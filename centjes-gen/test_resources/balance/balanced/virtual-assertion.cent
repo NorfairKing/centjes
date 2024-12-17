@@ -1,0 +1,19 @@
+currency CHF 0.01
+
+account assets
+account expenses
+account equity
+
+2024-12-16
+  | Opening balances
+  * assets +100 CHF
+  * equity -100 CHF
+
+-- Here we have an assertion on the balance of the 'expenses' account.
+-- This assertion should succeed, even with --virtual turned on.
+2024-12-17
+  | Coffee
+  * expenses +5 CHF
+  ! expenses +1 CHF
+  * assets   -5 CHF
+  + assert expenses = +5 CHF
