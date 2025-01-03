@@ -100,10 +100,13 @@ extra-source-files:
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.cent
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.config
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.err
+    test_resources/check/2025-01-02.txt
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.cent
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.err
     test_resources/check/CE_MISSING_ATTACHMENT.cent
     test_resources/check/CE_MISSING_ATTACHMENT.err
+    test_resources/check/CE_MISSING_ATTACHMENT_SIMILAR.cent
+    test_resources/check/CE_MISSING_ATTACHMENT_SIMILAR.err
     test_resources/check/CE_UNUSED_ACCOUNT.cent
     test_resources/check/CE_UNUSED_ACCOUNT.err
     test_resources/check/CE_UNUSED_CURRENCY-price.cent

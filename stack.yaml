@@ -37,6 +37,10 @@ extra-deps:
                 
 
 
+- github: NorfairKing/fast-myers-diff
+  commit: 5191e044b018224566494465e5f0bea5739a2525
+  subdirs:
+  - fast-myers-diff
 - github: NorfairKing/really-safe-money
   commit: 11ae98bc0bfd590f3802d2bb6d94fc77ffb34515
   subdirs:

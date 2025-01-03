@@ -18,6 +18,7 @@ library:
   - containers
   - diagnose
   - dlist
+  - fast-myers-diff
   - monad-logger
   - mtl
   - opt-env-conf

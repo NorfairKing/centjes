@@ -25,12 +25,14 @@ import Centjes.Validation
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Foldable
+import Data.List (intercalate, sortOn)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Error.Diagnose
+import Myers.Diff as Diff
 import Path
 import Path.IO
 
@@ -54,7 +56,7 @@ doCompleteCheck declarations = do
 
 data CheckError ann
   = CheckErrorDeclarationOutOfOrder !(GenLocated ann Timestamp) !(GenLocated ann Timestamp)
-  | CheckErrorMissingAttachment !ann !(Attachment ann)
+  | CheckErrorMissingAttachment !ann !(Attachment ann) ![Path Rel File]
   | CheckErrorUnusedCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | CheckErrorUnusedAccount !(GenLocated ann (AccountDeclaration ann))
   | CheckErrorUnusedTag !(GenLocated ann (TagDeclaration ann))
@@ -72,14 +74,16 @@ instance ToReport (CheckError SourceSpan) where
           (toDiagnosePosition ts2l, Where "... this, but its timestamp indicates it needs to be declared after.")
         ]
         []
-    CheckErrorMissingAttachment tl (Attachment (Located fl fp)) ->
+    CheckErrorMissingAttachment tl (Attachment (Located fl fp)) fs ->
       Err
         (Just "CE_MISSING_ATTACHMENT")
         (unwords ["Attachment does not exist:", show fp])
         [ (toDiagnosePosition tl, Where "While trying to check this transaction"),
           (toDiagnosePosition fl, This "This file is missing")
         ]
-        []
+        [ Hint $ intercalate "\n" $ "Perhaps it was a typo and you meant one of these files in the same directory:" : map fromRelFile fs
+          | not (null fs)
+        ]
     CheckErrorUnusedCurrency (Located dl _) ->
       Err
         (Just "CE_UNUSED_CURRENCY")
@@ -253,8 +257,26 @@ checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located
   let base = sourceSpanBase l
   let af = base </> fp
   exists <- liftIO $ doesFileExist af
+
+  -- Show the (up to 10) most similar looking files in the same directory
+  let patt = fromRelFile (filename af)
+  let similarity p = do
+        let diff = Diff.getStringDiff patt (fromRelFile (filename p))
+        let penalty =
+              length $
+                filter
+                  ( \case
+                      First _ -> True
+                      Second _ -> True
+                      Both {} -> False
+                  )
+                  diff
+        guard $ penalty < length patt
+        pure (p, penalty)
+  fs <- take 10 . map fst . sortOn snd . mapMaybe similarity . snd <$> listDirRel (parent af)
+
   -- TODO error when attachment exists but is not readable.
-  when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a
+  when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a fs
 
 checkLedger ::
   (Ord ann) =>

@@ -47,6 +47,19 @@ packages:
     subdir: template-haskell-reload
     url: https://github.com/NorfairKing/template-haskell-reload/archive/c416550db3f353bad65980a8ecd9b3b81fa504bd.tar.gz
 - completed:
+    name: fast-myers-diff
+    pantry-tree:
+      sha256: d509aa8d05d7252850aebda1d60cfcd694fc0981344cf30eb26c74eaeb60b18f
+      size: 430
+    sha256: e7f3241f5f3a33542851456048104d94f47d9b9e0efa7e17bf08787c38109eb4
+    size: 13478
+    subdir: fast-myers-diff
+    url: https://github.com/NorfairKing/fast-myers-diff/archive/5191e044b018224566494465e5f0bea5739a2525.tar.gz
+    version: 0.0.1
+  original:
+    subdir: fast-myers-diff
+    url: https://github.com/NorfairKing/fast-myers-diff/archive/5191e044b018224566494465e5f0bea5739a2525.tar.gz
+- completed:
     name: really-safe-money
     pantry-tree:
       sha256: 6cc0dc67fd5ff7f2a8bf3f87942597a072bef15bdf1232315c7644c4ec6cb6b1
