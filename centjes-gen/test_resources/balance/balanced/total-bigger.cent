@@ -2,12 +2,12 @@ currency USD 0.01
 
 account assets
 account equity
-account vat1 expenses
-account vat2 expenses
+account vat-one expenses
+account vat-two expenses
 
 2024-01-10
   | Opening
-  * assets +5 USD
-  * equity -5 USD
-  ! vat1   +5 USD
-  ! vat2   +5 USD
+  * assets  +5 USD
+  * equity  -5 USD
+  ! vat-one +5 USD
+  ! vat-two +5 USD

@@ -30,6 +30,7 @@ import Centjes.Validation
 import Control.Monad
 import Data.DList (DList (..))
 import qualified Data.DList as DList
+import Data.Foldable
 import Data.Function
 import Data.List (intercalate, sortBy)
 import Data.Map.Strict (Map)
@@ -38,9 +39,11 @@ import Data.Maybe
 import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
+import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
@@ -51,6 +54,7 @@ import qualified Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor
 import qualified Money.QuantisationFactor as QuantisationFactor
+import Myers.Diff as Diff
 import Numeric.DecimalLiteral as DecimalLiteral
 import Numeric.Natural
 
@@ -60,6 +64,7 @@ data CompileError ann
   | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingAccount !ann !(GenLocated ann AccountName)
   | CompileErrorAccountDeclaredTwice !ann !ann !AccountName
+  | CompileErrorAccountNameTooSimilar !ann !ann
   | CompileErrorAccountCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingTag !ann !(GenLocated ann Tag)
   | CompileErrorTagDeclaredTwice !ann !ann !Tag
@@ -162,6 +167,15 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition al2, This "This account has been declared twice")
         ]
         []
+    CompileErrorAccountNameTooSimilar al1 al2 ->
+      Err
+        (Just "CE_ACCOUNT_NAME_TOO_SIMILAR")
+        "Account names are too similar:"
+        [ (toDiagnosePosition al1, Where "The first has been declared here"),
+          (toDiagnosePosition al2, This "The second has been declared here")
+        ]
+        [ Note "Account names need to be more than one character different.\nThis way typos definitely triggers an error."
+        ]
     CompileErrorAccountCurrencyDeclaredTwice cl1 cl2 symbol ->
       Err
         (Just "CE_DUPLICATE_ACCOUNT_CURRENCY")
@@ -403,8 +417,28 @@ compileAccountDeclarations currencies ads = do
       (AccountName, GenLocated ann (Account ann)) ->
       Validation (CompileError ann) (Map AccountName (GenLocated ann (Account ann)))
     go m (an, lat@(Located l2 _)) = case M.lookup an m of
-      Nothing -> pure $ M.insert an lat m
       Just (Located l1 _) -> validationFailure $ CompileErrorAccountDeclaredTwice l1 l2 an
+      Nothing -> do
+        for_ (M.toList m) $ \(an', Located l1 _) -> do
+          let d = accountNameEditDistance an an'
+           in -- A typo would be one of these:
+              -- - One digit more: One insert
+              -- - One digit less: One deletion
+              -- - One digit different: One insert and one deletion.
+              when (d < 3) $
+                validationFailure $
+                  CompileErrorAccountNameTooSimilar l1 l2
+
+        pure $ M.insert an lat m
+
+accountNameEditDistance :: AccountName -> AccountName -> Int
+accountNameEditDistance = textEditDistance `on` AccountName.toText
+
+textEditDistance :: Text -> Text -> Int
+textEditDistance t1 t2 = V.length (Diff.getEditScript (unpackToVector t1) (unpackToVector t2))
+  where
+    unpackToVector :: Text -> Vector Char
+    unpackToVector = V.fromList . T.unpack
 
 compileAccountDeclaration ::
   forall ann.
