@@ -164,12 +164,13 @@ extra-source-files:
     test_resources/load/LE_IMPORT.err
     test_resources/load/LE_IMPORT_DIR.cent
     test_resources/load/LE_IMPORT_DIR.err
-    test_resources/register/valid/as-is/empty.cent
-    test_resources/register/valid/as-is/empty.txt
-    test_resources/register/valid/as-is/example.cent
-    test_resources/register/valid/as-is/example.txt
-    test_resources/register/valid/to-chf/rates.cent
-    test_resources/register/valid/to-chf/rates.txt
+    test_resources/register/valid/empty.cent
+    test_resources/register/valid/empty.txt
+    test_resources/register/valid/example.cent
+    test_resources/register/valid/example.txt
+    test_resources/register/valid/rates.cent
+    test_resources/register/valid/rates.config
+    test_resources/register/valid/rates.txt
     test_resources/syntax/declaration/formatted/account-with-assertions.cent
     test_resources/syntax/declaration/formatted/account-with-type.cent
     test_resources/syntax/declaration/formatted/account.cent
@@ -334,6 +335,5 @@ test-suite centjes-test
     , safe-coloured-text
     , sydtest
     , text
-    , vector
     , yaml
   default-language: Haskell2010

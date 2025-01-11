@@ -56,5 +56,4 @@ tests:
     - safe-coloured-text
     - sydtest
     - text
-    - vector
     - yaml

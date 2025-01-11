@@ -20,7 +20,7 @@ mkDerivation {
     base bytestring centjes containers genvalidity-containers
     genvalidity-sydtest monad-logger mtl opt-env-conf opt-env-conf-test
     path path-io QuickCheck really-safe-money safe-coloured-text
-    sydtest text vector yaml
+    sydtest text yaml
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

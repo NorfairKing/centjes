@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -6,18 +7,20 @@ module Centjes.Report.RegisterSpec (spec) where
 
 import Centjes.Command.Register (renderRegisterTable)
 import Centjes.Compile
-import Centjes.CurrencySymbol (CurrencySymbol (..))
-import Centjes.Filter (Filter (..))
 import Centjes.Filter.Gen ()
 import Centjes.Ledger.Gen ()
 import Centjes.Load
+import Centjes.OptParse
 import Centjes.Report.Register
-import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
 import Control.Monad.Logger
-import qualified Data.Vector as V
-import qualified Money.MultiAccount as MultiAccount
+import qualified Data.Text as T
+import qualified Data.Yaml as Yaml
+import qualified OptEnvConf
+import qualified OptEnvConf.Args as Args
+import qualified OptEnvConf.EnvMap as EnvMap
+import qualified OptEnvConf.Error as OptEnvConf
 import Path
 import Path.IO
 import Test.Syd
@@ -34,108 +37,45 @@ spec = do
             forAllValid $ \ledger ->
               shouldBeValid $ produceRegister @() f mCurrencySymbolTo showVirtual ledger
 
-    scenarioDir "test_resources/register/valid/as-is" $ \fp -> do
+    scenarioDir "test_resources/register/valid" $ \fp -> do
       af <- liftIO $ resolveFile' fp
       when (fileExtension af == Just ".cent") $ do
         reportFile <- liftIO $ replaceExtension ".txt" af
+        configFile <- liftIO $ replaceExtension ".config" af
+
         it "renders a register for this module the same way" $ do
           goldenTextFile (fromAbsFile reportFile) $ do
-            -- Load the module
-            (ds, diag) <- runNoLoggingT $ loadModules af
-            -- Compile to a ledger
-            ledger <- shouldValidate diag $ compileDeclarations ds
-
-            br <-
-              shouldValidate diag $
-                produceRegister
-                  FilterAny
-                  Nothing
-                  False
-                  ledger
-            shouldBeValid br
-            pure $ renderChunksText With24BitColours $ renderRegisterTable br
-
-        it "produces reports that balance to empty amounts" $ do
-          -- Load the module
-          (ds, diag) <- runNoLoggingT $ loadModules af
-          -- Compile to a ledger
-          ledger <- shouldValidate diag $ compileDeclarations ds
-
-          Register transactions <-
-            shouldValidate diag $
-              produceRegister
-                FilterAny
+            mConfig <- do
+              exists <- doesFileExist configFile
+              if exists
+                then Just <$> Yaml.decodeFileThrow (fromAbsFile configFile)
+                else pure Nothing
+            errOrSettings <-
+              OptEnvConf.runParserOn
                 Nothing
-                False
-                ledger
+                OptEnvConf.settingsParser
+                Args.emptyArgs
+                EnvMap.empty
+                mConfig
+            let termCaps = With24BitColours
+            case errOrSettings of
+              Left errs -> expectationFailure $ T.unpack $ renderChunksText termCaps $ OptEnvConf.renderErrors errs
+              Right RegisterSettings {..} -> do
+                -- Load the module
+                (ds, diag) <- runNoLoggingT $ loadModules af
+                -- Compile to a ledger
+                ledger <- shouldValidate diag $ compileDeclarations ds
 
-          if null transactions
-            then pure ()
-            else do
-              let (_, _, postings) = V.last transactions
-              if null postings
-                then pure ()
-                else do
-                  let (_, acc) = V.last postings
-                  acc `shouldBe` MultiAccount.zero
+                rr <-
+                  shouldValidate diag $
+                    produceRegister
+                      registerSettingFilter
+                      registerSettingCurrency
+                      registerSettingShowVirtual
+                      ledger
 
-    scenarioDir "test_resources/register/valid/to-chf" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
-      when (fileExtension af == Just ".cent") $ do
-        reportFile <- liftIO $ replaceExtension ".txt" af
-        it "renders a register for this module the same way" $ do
-          goldenTextFile (fromAbsFile reportFile) $ do
-            -- Load the module
-            (ds, diag) <- runNoLoggingT $ loadModules af
-            -- Compile to a ledger
-            ledger <- shouldValidate diag $ compileDeclarations ds
+                shouldBeValid rr
 
-            br <-
-              shouldValidate diag $
-                produceRegister
-                  FilterAny
-                  (Just (CurrencySymbol "CHF"))
-                  False
-                  ledger
-            shouldBeValid br
-            pure $ renderChunksText With24BitColours $ renderRegisterTable br
+                pure $ renderChunksText termCaps $ renderRegisterTable rr
 
-    scenarioDir "test_resources/register/error/as-is" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
-      when (fileExtension af == Just ".cent") $ do
-        resultFile <- liftIO $ replaceExtension ".err" af
-        it "shows the same error when trying to balance this module" $ do
-          goldenTextFile (fromAbsFile resultFile) $ do
-            -- Load the module
-            (ds, diag) <- runNoLoggingT $ loadModules af
-            -- Compile to a ledger
-            ledger <- shouldValidate diag $ compileDeclarations ds
-
-            errs <-
-              shouldFailToValidate $
-                produceRegister
-                  FilterAny
-                  Nothing
-                  False
-                  ledger
-            pure $ renderValidationErrors diag errs
-
-    scenarioDir "test_resources/register/error/to-chf" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
-      when (fileExtension af == Just ".cent") $ do
-        resultFile <- liftIO $ replaceExtension ".err" af
-        it "shows the same error when trying to balance this module" $ do
-          goldenTextFile (fromAbsFile resultFile) $ do
-            -- Load the module
-            (ds, diag) <- runNoLoggingT $ loadModules af
-            -- Compile to a ledger
-            ledger <- shouldValidate diag $ compileDeclarations ds
-
-            errs <-
-              shouldFailToValidate $
-                produceRegister
-                  FilterAny
-                  (Just (CurrencySymbol "CHF"))
-                  False
-                  ledger
-            pure $ renderValidationErrors diag errs
+-- TODO error tests too.

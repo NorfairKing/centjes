@@ -33,11 +33,14 @@
     
     [34mCurrency to convert to[m
     option: [37m--convert[m [33mCURRENCY[m
+    config:
+      [37mregister.convert[m: # [32mor null[m
+        [33m<string>[m
     
     [34mShow virtual postings too[m
     switch: [37m--virtual[m
     config:
-      [37mvirtual[m: # [32mor null[m
+      [37mregister.virtual[m: # [32mor null[m
         [33m<boolean>[m
     default: [33mFalse[m
     
@@ -107,9 +110,13 @@
   [37mCENTJES_LEDGER[m [33mFILE_PATH[m        [34mledger file[m                      default: [33m"ledger.cent"[m
 
 [36mConfiguration Values[m:
+  [34mCurrency to convert to[m
+  [37mregister.convert[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mShow virtual postings too[m
   default: [33mFalse[m
-  [37mvirtual[m:
+  [37mregister.virtual[m:
     # [32mor null[m
     [33m<boolean>[m
   [34mCurrency to convert to[m

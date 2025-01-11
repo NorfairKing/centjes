@@ -27,9 +27,21 @@
     description = "ledger file";
     type = lib.types.nullOr lib.types.str;
   };
-  virtual = lib.mkOption {
-    default = null;
-    description = "Show virtual postings too";
-    type = lib.types.nullOr lib.types.bool;
+  register = lib.mkOption {
+    default = { };
+    type = lib.types.submodule {
+      options = {
+        convert = lib.mkOption {
+          default = null;
+          description = "Currency to convert to";
+          type = lib.types.nullOr lib.types.str;
+        };
+        virtual = lib.mkOption {
+          default = null;
+          description = "Show virtual postings too";
+          type = lib.types.nullOr lib.types.bool;
+        };
+      };
+    };
   };
 }

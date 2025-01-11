@@ -91,7 +91,7 @@ instance HasParser RegisterSettings where
 
 {-# ANN parseRegisterSettings ("NOCOVER" :: String) #-}
 parseRegisterSettings :: Parser RegisterSettings
-parseRegisterSettings = do
+parseRegisterSettings = subConfig_ "register" $ do
   registerSettingFilter <- settingsParser
   registerSettingCurrency <-
     optional $
@@ -100,6 +100,7 @@ parseRegisterSettings = do
           help "Currency to convert to",
           option,
           long "convert",
+          conf "convert",
           metavar "CURRENCY"
         ]
   registerSettingShowVirtual <-
