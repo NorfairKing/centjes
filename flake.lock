@@ -35,11 +35,11 @@
     "fast-myers-diff": {
       "flake": false,
       "locked": {
-        "lastModified": 1728774163,
-        "narHash": "sha256-Ge5nXrQeZ94lgKlcojUt306ZmGjOqj2eZZXPd+cT/Jk=",
+        "lastModified": 1736948652,
+        "narHash": "sha256-0iARqmAefoyDk+z1A5D2pyG9JEbdTCkI1zBrTwDviiU=",
         "owner": "NorfairKing",
         "repo": "fast-myers-diff",
-        "rev": "5191e044b018224566494465e5f0bea5739a2525",
+        "rev": "4a5c31884b8fc399085bffacd15d6cb5624b3177",
         "type": "github"
       },
       "original": {

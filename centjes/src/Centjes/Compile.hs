@@ -39,11 +39,9 @@ import Data.Maybe
 import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Traversable
 import Data.Validity (Validity)
-import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
@@ -424,8 +422,8 @@ compileCurrencyDeclarations cds = do
 
         pure $ M.insert symbol lqf m
 
-currencySymbolEditDistance :: CurrencySymbol -> CurrencySymbol -> Int
-currencySymbolEditDistance = textEditDistance `on` CurrencySymbol.toText
+currencySymbolEditDistance :: CurrencySymbol -> CurrencySymbol -> Word
+currencySymbolEditDistance = getTextEditDistance `on` CurrencySymbol.toText
 
 -- Prefer compileCurrencyDeclarations
 compileCurrencyDeclaration :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
@@ -465,8 +463,8 @@ compileAccountDeclarations currencies ads = do
 
         pure $ M.insert an lat m
 
-accountNameEditDistance :: AccountName -> AccountName -> Int
-accountNameEditDistance = textEditDistance `on` AccountName.toText
+accountNameEditDistance :: AccountName -> AccountName -> Word
+accountNameEditDistance = getTextEditDistance `on` AccountName.toText
 
 compileAccountDeclaration ::
   forall ann.
@@ -531,14 +529,8 @@ compileTagDeclarations tds = do
 
         pure $ M.insert t l2 m
 
-tagEditDistance :: Tag -> Tag -> Int
-tagEditDistance = textEditDistance `on` Tag.toText
-
-textEditDistance :: Text -> Text -> Int
-textEditDistance t1 t2 = V.length (Diff.getEditScript (unpackToVector t1) (unpackToVector t2))
-  where
-    unpackToVector :: Text -> Vector Char
-    unpackToVector = V.fromList . T.unpack
+tagEditDistance :: Tag -> Tag -> Word
+tagEditDistance = getTextEditDistance `on` Tag.toText
 
 compileTagDeclaration ::
   GenLocated ann (TagDeclaration ann) ->

@@ -49,16 +49,16 @@ packages:
 - completed:
     name: fast-myers-diff
     pantry-tree:
-      sha256: d509aa8d05d7252850aebda1d60cfcd694fc0981344cf30eb26c74eaeb60b18f
+      sha256: db8ab250fbc9f1c47bf861083806297c898f677e3e6ed517e67b94aafff87e82
       size: 430
-    sha256: e7f3241f5f3a33542851456048104d94f47d9b9e0efa7e17bf08787c38109eb4
-    size: 13478
+    sha256: 369e93b88b491fc6e4176a5af90351dab33b5ec516e361220ee000e3ffd13914
+    size: 13855
     subdir: fast-myers-diff
-    url: https://github.com/NorfairKing/fast-myers-diff/archive/5191e044b018224566494465e5f0bea5739a2525.tar.gz
-    version: 0.0.1
+    url: https://github.com/NorfairKing/fast-myers-diff/archive/4a5c31884b8fc399085bffacd15d6cb5624b3177.tar.gz
+    version: 0.0.2
   original:
     subdir: fast-myers-diff
-    url: https://github.com/NorfairKing/fast-myers-diff/archive/5191e044b018224566494465e5f0bea5739a2525.tar.gz
+    url: https://github.com/NorfairKing/fast-myers-diff/archive/4a5c31884b8fc399085bffacd15d6cb5624b3177.tar.gz
 - completed:
     name: really-safe-money
     pantry-tree:
