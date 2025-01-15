@@ -145,6 +145,8 @@ extra-source-files:
     test_resources/compile/CE_INVALID_RATIONAL-zero.err
     test_resources/compile/CE_PRICE_SAME_CURRENCY.cent
     test_resources/compile/CE_PRICE_SAME_CURRENCY.err
+    test_resources/compile/CE_TAG_TOO_SIMILAR.cent
+    test_resources/compile/CE_TAG_TOO_SIMILAR.err
     test_resources/compile/CE_UNDECLARED_ACCOUNT.cent
     test_resources/compile/CE_UNDECLARED_ACCOUNT.err
     test_resources/compile/CE_UNDECLARED_CURRENCY-account-assertion.cent

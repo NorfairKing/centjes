@@ -68,6 +68,7 @@ data CompileError ann
   | CompileErrorAccountCurrencyDeclaredTwice !ann !ann !CurrencySymbol
   | CompileErrorMissingTag !ann !(GenLocated ann Tag)
   | CompileErrorTagDeclaredTwice !ann !ann !Tag
+  | CompileErrorTagTooSimilar !ann !ann
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
   | CompileErrorInvalidAccountCurrency !ann !ann !ann !ann !(GenLocated ann (Currency ann)) !(Set (Currency ann))
   | CompileErrorCostSameCurrency !ann !ann !ann
@@ -268,6 +269,15 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition tl2, This "This tag has been declared twice")
         ]
         []
+    CompileErrorTagTooSimilar al1 al2 ->
+      Err
+        (Just "CE_TAG_TOO_SIMILAR")
+        "Tags are too similar:"
+        [ (toDiagnosePosition al1, Where "The first has been declared here"),
+          (toDiagnosePosition al2, This "The second has been declared here")
+        ]
+        [ Note "Tags need to be more than one character different.\nThis way typos definitely triggers an error."
+        ]
     CompileErrorInvalidPrice dl (Located ll _) ->
       Err
         (Just "CE_INVALID_PRICE")
@@ -434,12 +444,6 @@ compileAccountDeclarations currencies ads = do
 accountNameEditDistance :: AccountName -> AccountName -> Int
 accountNameEditDistance = textEditDistance `on` AccountName.toText
 
-textEditDistance :: Text -> Text -> Int
-textEditDistance t1 t2 = V.length (Diff.getEditScript (unpackToVector t1) (unpackToVector t2))
-  where
-    unpackToVector :: Text -> Vector Char
-    unpackToVector = V.fromList . T.unpack
-
 compileAccountDeclaration ::
   forall ann.
   (Ord ann) =>
@@ -488,9 +492,29 @@ compileTagDeclarations tds = do
       Map Tag ann ->
       (Tag, ann) ->
       Validation (CompileError ann) (Map Tag ann)
-    go m (an, l2) = case M.lookup an m of
-      Nothing -> pure $ M.insert an l2 m
-      Just l1 -> validationFailure $ CompileErrorTagDeclaredTwice l1 l2 an
+    go m (t, l2) = case M.lookup t m of
+      Just l1 -> validationFailure $ CompileErrorTagDeclaredTwice l1 l2 t
+      Nothing -> do
+        for_ (M.toList m) $ \(t', l1) -> do
+          let d = tagEditDistance t t'
+           in -- A typo would be one of these:
+              -- - One digit more: One insert
+              -- - One digit less: One deletion
+              -- - One digit different: One insert and one deletion.
+              when (d < 3) $
+                validationFailure $
+                  CompileErrorTagTooSimilar l1 l2
+
+        pure $ M.insert t l2 m
+
+tagEditDistance :: Tag -> Tag -> Int
+tagEditDistance = textEditDistance `on` Tag.toText
+
+textEditDistance :: Text -> Text -> Int
+textEditDistance t1 t2 = V.length (Diff.getEditScript (unpackToVector t1) (unpackToVector t2))
+  where
+    unpackToVector :: Text -> Vector Char
+    unpackToVector = V.fromList . T.unpack
 
 compileTagDeclaration ::
   GenLocated ann (TagDeclaration ann) ->
