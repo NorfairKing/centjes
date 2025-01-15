@@ -119,6 +119,8 @@ extra-source-files:
     test_resources/compile/CE_ACCOUNT_NAME_TOO_SIMILAR.err
     test_resources/compile/CE_COST_SAME_CURRENCY.cent
     test_resources/compile/CE_COST_SAME_CURRENCY.err
+    test_resources/compile/CE_CURRENCIES_TOO_SIMILAR.cent
+    test_resources/compile/CE_CURRENCIES_TOO_SIMILAR.err
     test_resources/compile/CE_DUPLICATE_ACCOUNT.cent
     test_resources/compile/CE_DUPLICATE_ACCOUNT.err
     test_resources/compile/CE_DUPLICATE_ACCOUNT_CURRENCY.cent

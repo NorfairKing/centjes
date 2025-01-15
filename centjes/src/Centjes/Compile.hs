@@ -62,6 +62,7 @@ data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
   | CompileErrorMissingCurrency !ann !(GenLocated ann CurrencySymbol)
   | CompileErrorCurrencyDeclaredTwice !ann !ann !CurrencySymbol
+  | CompileErrorCurrencyTooSimilar !ann !ann
   | CompileErrorMissingAccount !ann !(GenLocated ann AccountName)
   | CompileErrorAccountDeclaredTwice !ann !ann !AccountName
   | CompileErrorAccountNameTooSimilar !ann !ann
@@ -132,6 +133,15 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition cl2, This "This currency has been declared twice")
         ]
         []
+    CompileErrorCurrencyTooSimilar al1 al2 ->
+      Err
+        (Just "CE_CURRENCY_TOO_SIMILAR")
+        "Currencies are too similar:"
+        [ (toDiagnosePosition al1, Where "The first has been declared here"),
+          (toDiagnosePosition al2, This "The second has been declared here")
+        ]
+        [ Note "Currencies need to be more than one character different.\nThis way typos definitely triggers an error."
+        ]
     CompileErrorMissingAccount dl (Located anl an) ->
       Err
         (Just "CE_UNDECLARED_ACCOUNT")
@@ -400,8 +410,22 @@ compileCurrencyDeclarations cds = do
       (CurrencySymbol, GenLocated ann QuantisationFactor) ->
       Validation (CompileError ann) (Map CurrencySymbol (GenLocated ann QuantisationFactor))
     go m (symbol, lqf@(Located l2 _)) = case M.lookup symbol m of
-      Nothing -> pure $ M.insert symbol lqf m
       Just (Located l1 _) -> validationFailure $ CompileErrorCurrencyDeclaredTwice l1 l2 symbol
+      Nothing -> do
+        for_ (M.toList m) $ \(symbol', Located l1 _) -> do
+          let d = currencySymbolEditDistance symbol symbol'
+           in -- A typo would be one of these:
+              -- - One digit more: One insert
+              -- - One digit less: One deletion
+              -- - One digit different: One insert and one deletion.
+              when (d < 3) $
+                validationFailure $
+                  CompileErrorCurrencyTooSimilar l1 l2
+
+        pure $ M.insert symbol lqf m
+
+currencySymbolEditDistance :: CurrencySymbol -> CurrencySymbol -> Int
+currencySymbolEditDistance = textEditDistance `on` CurrencySymbol.toText
 
 -- Prefer compileCurrencyDeclarations
 compileCurrencyDeclaration :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
