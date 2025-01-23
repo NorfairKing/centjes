@@ -36,6 +36,7 @@ extra-source-files:
     templates/nixos-module.hamlet
     templates/option-docs.hamlet
     templates/page.hamlet
+    templates/syntax.hamlet
     test_resources/documentation.txt
     options.nix
 
@@ -63,6 +64,7 @@ library
       Centjes.Docs.Site.Handler.Page
       Centjes.Docs.Site.Handler.Reload
       Centjes.Docs.Site.Handler.Sitemap
+      Centjes.Docs.Site.Handler.Syntax
       Centjes.Docs.Site.ModuleDocs
       Centjes.Docs.Site.ModuleDocs.TH
       Centjes.Docs.Site.OptParse

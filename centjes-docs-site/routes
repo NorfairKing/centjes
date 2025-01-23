@@ -1,5 +1,6 @@
 / HomeR GET
 
+/syntax SyntaxR GET
 
 /centjes CentjesR GET
 /centjes/#Text CentjesCommandR GET
