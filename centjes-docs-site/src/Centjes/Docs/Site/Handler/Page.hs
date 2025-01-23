@@ -14,6 +14,7 @@ getPageR :: [Text] -> Handler Html
 getPageR ts = do
   DocPage {..} <- lookupPage' ts
   defaultLayout $ do
+    addStylesheet SkylightingCssR
     setCentjesTitle $ toHtml docPageTitle
     setDescriptionIdemp docPageDescription
     $(widgetFile "page")

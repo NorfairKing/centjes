@@ -156,8 +156,8 @@ with final.haskell.lib;
             withStaticResources centjes-docs-site-pkg (
               {
                 "static/bulma.css" = builtins.fetchurl {
-                  url = "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css";
-                  sha256 = "sha256:1vyg9drv44nn3awqymkrkn1yjqq7mpp741z0mmlj616p84xmsfmd";
+                  url = "https://cdn.jsdelivr.net/npm/bulma@1.0.3/css/bulma.min.css";
+                  sha256 = "sha256:0cswysl7zbphj1gxmxg0w5g4fns0fcslf1bzcbr3hcg4hb4hs1j7";
                 };
                 "static/favicon.ico" = builtins.fetchurl {
                   url = "https://cs-syd.eu/logo/res/favicon.ico";

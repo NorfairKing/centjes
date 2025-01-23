@@ -6,7 +6,10 @@
   <ul .menu-list>
     <li>
       <a href=@{CentjesR}>
-        Centjes
+        CLI
+    <li>
+      <a href=@{PageR ["syntax"]}>
+        Syntax
     <li>
       <a href=@{CentjesCommandR "balance"}>
         Balance

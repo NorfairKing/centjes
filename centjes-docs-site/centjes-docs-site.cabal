@@ -27,8 +27,8 @@ extra-source-files:
     content/pages/centjes/format.markdown
     content/pages/centjes/register.markdown
     content/pages/development.markdown
+    content/pages/syntax.markdown
     content/unreleased.markdown
-    templates/args.hamlet
     templates/default-body.hamlet
     templates/default-page.hamlet
     templates/home.hamlet
@@ -36,6 +36,7 @@ extra-source-files:
     templates/nixos-module.hamlet
     templates/option-docs.hamlet
     templates/page.hamlet
+    templates/settings.hamlet
     test_resources/documentation.txt
     options.nix
 
@@ -63,6 +64,7 @@ library
       Centjes.Docs.Site.Handler.Page
       Centjes.Docs.Site.Handler.Reload
       Centjes.Docs.Site.Handler.Sitemap
+      Centjes.Docs.Site.Handler.Skylighting
       Centjes.Docs.Site.ModuleDocs
       Centjes.Docs.Site.ModuleDocs.TH
       Centjes.Docs.Site.OptParse
@@ -78,13 +80,14 @@ library
   build-depends:
       aeson
     , base >=4.7
+    , blaze-html
     , bytestring
     , centjes
     , centjes-import-cornercard
     , centjes-import-neon
     , centjes-import-revolut
     , centjes-switzerland
-    , cmark-gfm
+    , cmark
     , containers
     , data-default
     , file-embed
@@ -93,8 +96,10 @@ library
     , opt-env-conf
     , path
     , path-io
+    , prettyprinter
     , safe-coloured-text
     , shakespeare
+    , skylighting
     , template-haskell
     , template-haskell-reload
     , text

@@ -1,6 +1,5 @@
 / HomeR GET
 
-
 /centjes CentjesR GET
 /centjes/#Text CentjesCommandR GET
 
@@ -18,6 +17,8 @@
 /robots.txt RobotsR GET
 
 /dependency-graph DependencyGraphR GET
+
+/skylighting.css SkylightingCssR GET
 
 /assets/*Texts AssetsR GET
 /assets-static AssetsStaticR EmbeddedStatic appAssets

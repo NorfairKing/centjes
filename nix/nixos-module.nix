@@ -85,7 +85,7 @@ in
               enableACME = true;
               forceSSL = true;
               locations."/".proxyPass =
-                "http://localhost:${builtins.toString port}";
+                "http://localhost:${builtins.toString cfg.docs-site.config.port}";
               serverAliases = tail hosts;
             };
         };
