@@ -17,11 +17,8 @@ import Centjes.Docs.Site.Handler.Import hiding (Header)
 import Centjes.Format
 import Centjes.Location
 import Centjes.Module
-import Centjes.OptParse as CLI
 import Data.Text (Text)
-import OptEnvConf
 import Path
-import Text.Colour
 
 getSyntaxR :: Handler Html
 getSyntaxR = do
