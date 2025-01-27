@@ -16,14 +16,4 @@ import OptEnvConf
 import Text.Colour
 
 getCentjesImportRevolutR :: Handler Html
-getCentjesImportRevolutR = do
-  DocPage {..} <- lookupPage "centjes-import-revolut"
-  let optionsReferenceDocs =
-        renderChunksText WithoutColours $
-          renderReferenceDocumentation "centjes-import-revolut" $
-            parserDocs $
-              settingsParser @CLI.Settings
-  defaultLayout $ do
-    setCentjesTitle "centjes-import-revolut"
-    setDescriptionIdemp "Documentation for the Centjes Importer for Revolut"
-    $(widgetFile "args")
+getCentjesImportRevolutR = makeSettingsPage @CLI.Settings "centjes-import-revolut"

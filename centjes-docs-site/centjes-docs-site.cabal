@@ -29,7 +29,6 @@ extra-source-files:
     content/pages/development.markdown
     content/pages/syntax.markdown
     content/unreleased.markdown
-    templates/args.hamlet
     templates/default-body.hamlet
     templates/default-page.hamlet
     templates/home.hamlet
@@ -37,6 +36,7 @@ extra-source-files:
     templates/nixos-module.hamlet
     templates/option-docs.hamlet
     templates/page.hamlet
+    templates/settings.hamlet
     test_resources/documentation.txt
     options.nix
 
