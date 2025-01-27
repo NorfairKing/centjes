@@ -4,7 +4,6 @@
 
 module Centjes.Format
   ( formatModule,
-    formatImport,
     formatDeclaration,
     formatCurrencyDeclaration,
     formatAccountDeclaration,
@@ -35,9 +34,6 @@ import Prettyprinter.Render.Text
 
 formatModule :: Module l -> Text
 formatModule = renderDocText . moduleDoc
-
-formatImport :: Import l -> Text
-formatImport = renderDocText . importDoc
 
 formatDeclaration :: Declaration l -> Text
 formatDeclaration = renderDocText . declarationDoc

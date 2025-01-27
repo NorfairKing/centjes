@@ -13,7 +13,7 @@ mkEmbeddedStatic
      in [ -- embedDir "content/assets",
           remoteStatic "asciinema-player.js" "https://github.com/asciinema/asciinema-player/releases/download/v2.6.1/asciinema-player.js",
           remoteStatic "asciinema-player.css" "https://github.com/asciinema/asciinema-player/releases/download/v2.6.1/asciinema-player.css",
-          remoteStatic "bulma.css" "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css",
+          remoteStatic "bulma.css" "https://cdn.jsdelivr.net/npm/bulma@1.0.3/css/bulma.min.css",
           remoteStatic "favicon.ico" "https://cs-syd.eu/logo/res/favicon.ico"
         ]
   )
