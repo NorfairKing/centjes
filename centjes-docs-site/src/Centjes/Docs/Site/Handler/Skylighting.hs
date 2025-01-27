@@ -8,4 +8,4 @@ import qualified Skylighting
 getSkylightingCssR :: Handler TypedContent
 getSkylightingCssR = do
   neverExpires
-  respond "text/css" $ Skylighting.styleToCss Skylighting.haddock
+  respond "text/css" $ Skylighting.styleToCss Skylighting.pygments

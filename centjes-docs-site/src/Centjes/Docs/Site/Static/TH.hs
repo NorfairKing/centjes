@@ -160,31 +160,32 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
 
 renderHtmlDoc :: Doc SyntaxElement -> Html
 renderHtmlDoc doc =
-  Html.div ! HtmlA.style (B.textValue $ T.pack $ styleToCss espresso) $
-    Html.div ! HtmlA.class_ "sourceCode" $
-      Html.pre ! HtmlA.class_ "sourceCode" $
-        Html.code ! HtmlA.class_ "sourceCode" $
-          foldMap go $
-            treeUp . Prettyprinter.treeForm $
-              layoutPretty layoutOptions doc
+  Html.div ! HtmlA.class_ "sourceCode" $
+    Html.pre ! HtmlA.class_ "sourceCode" ! HtmlA.style "color: #774f38;" $
+      Html.code ! HtmlA.class_ "sourceCode" $
+        foldMap go $
+          treeUp . Prettyprinter.treeForm $
+            layoutPretty layoutOptions doc
   where
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
     go :: DocTree SyntaxElement -> Html
     go = \case
       DTText t -> Html.span $ Html.text t
       DTAnnotated ann ts ->
-        Html.span ! HtmlA.class_ (syntaxElementClass ann) $
+        Html.span ! HtmlA.style (syntaxElementStyle ann) $
           foldMap go ts
-    syntaxElementClass :: SyntaxElement -> Html.AttributeValue
-    syntaxElementClass = \case
-      SyntaxImport -> "im"
-      SyntaxKeyword -> "kw"
-      SyntaxComment -> "co"
-      SyntaxDecimalLiteral -> "dv"
-      SyntaxTimestamp -> "dt"
-      SyntaxDescription -> "vs"
-      SyntaxCurrencySymbol -> "st"
-      SyntaxAccountName -> "va"
+    -- These are based on
+    -- https://github.com/zefei/cake16/blob/7367a7caa750e6379c0e8a56229347b9a0a24048/colors/cake16.vim#L27
+    syntaxElementStyle :: SyntaxElement -> Html.AttributeValue
+    syntaxElementStyle = \case
+      SyntaxImport -> "color: #308090;"
+      SyntaxKeyword -> "color: #b95942;"
+      SyntaxComment -> "color: #878787;"
+      SyntaxDecimalLiteral -> "color: #b95942;"
+      SyntaxTimestamp -> "color: #308444;"
+      SyntaxDescription -> "color: #50707e;"
+      SyntaxCurrencySymbol -> "color: #b95942;"
+      SyntaxAccountName -> "color: #50707e;"
 
 data DocTree ann
   = DTText !Text
