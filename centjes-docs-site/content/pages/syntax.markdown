@@ -3,7 +3,6 @@ title: Syntax
 description: The Centjes DSL Syntax
 ---
 
-# Introduction
 
 The centjes DSL is used to describe transactions of money accross accounts.
 
@@ -20,8 +19,6 @@ The main centjes file is called `ledger.cent` and is considered the entry-point 
 # Imports
 
 Imports look like this:
-
-TODO remove the above
 
 ``` centjes
 import banks/ubs
@@ -118,7 +115,7 @@ We add postings to it by describing a change to an account for each account:
 
 ``` centjes
 2025-01-27
-    | I bought a coffee
+    | I bought a coffee.
     * assets:cash -5.00 USD
     * expenses:coffee 5.00 USD
 ```
@@ -127,40 +124,126 @@ This example describes that I bought coffee with cash on `2025-01-27`.
 
 ## Virtual postings
 
-TODO
+Postings starting with `*` are considered "real" postings.
+Transactions can also contain virtual postings, which start with `!`.
+
+``` centjes
+2025-01-27
+    | I bought a coffee.
+    * assets:cash -5.00 USD
+    * expenses:coffee 5.00 USD
+    ! expenses:vat 0.50 USD
+```
+
+Virtual postings are ignored when checking if the transaction balances.
 
 ## Currency exchange
 
-TODO
+When accounting for transactions involving multiple currencies, postings need a conversion factor to balance.
+You can add those with an `@` sign.
+
+``` centjes
+2025-01-27
+    | Exchange USD for CHF
+    * assets:bank -5.00 USD @ 1.25 CHF
+    * assets:bank  6.25 CHF
+```
+
+You can also describe these conversion factors with a rational fraction in case it cannot be expressed as a finite decimal number:
+
+``` centjes
+2025-01-27
+    | Exchange USD for CHF
+    * assets:bank -7.00 USD @ 1 / 7 CHF
+    * assets:bank  1.00 CHF
+```
 
 ## Percentage
 
-TODO
+Postings can have an annotated percentage to express that they represent a given fraction of the previous percentage.
+
+``` centjes
+2025-01-27
+    | I bought a coffee.
+    * assets:cash -5.50 USD
+    * expenses:coffee 5.50 USD
+    ! expenses:vat 0.50 USD ~ 10%
+```
+
+These percentages can be calculated in different ways:
+
+* `~` or `~i`:
+  The amount is an inclusive percentage of the above posting. 
+  For example: `0.50` is `10%` of an amount (`5.00`) that, together with the `0.50` sum to `5.50`
+* `~e`: The amount is an exclusive percentage of the above posting.
+  For example: `0.50` is `10%` of `5.00`.
+
+``` centjes
+2025-01-27
+    | I bought a coffee.
+    * assets:cash -5.00 USD
+    * expenses:coffee 5.00 USD
+    ! expenses:vat 0.50 USD ~e 10%
+```
+
 
 ## Transaction extras
 
-TODO
+Transactions can be annotated with extra metadata.
 
 ### Attachments
 
-TODO
+You can attach files to a transactions.
+
+``` centjes
+2025-01-27
+    | I bought a coffee.
+    * assets:cash -5.00 USD
+    * expenses:coffee 5.00 USD
+    + attach receipt.pdf
+```
+
+These attachments are checked with `centjes check` and can be used for automation, such as in `centjes-switzterland`.
 
 ### Assertions
 
-TODO
+You can attach assertions to transactions.
+These assertions are checked after balancing the transaction.
+
+``` centjes
+2025-01-27
+    | I bought a coffee, now I'm broke.
+    * assets:cash -5.00 USD
+    * expenses:coffee 5.00 USD
+    + assert assets:cash = 0.00 USD
+```
 
 ### Tags
 
-TODO
+Transactions can be tagged:
+
+``` centjes
+2025-01-27
+    | I bought a coffee, now I'm broke.
+    * assets:cash -5.00 USD
+    * expenses:coffee 5.00 USD
+    + tag not-tax-deductable
+```
+
+However, tags must be declared first, too.
 
 # Tag
 
-Transactions can have associated tags.
+Tags can be declared like so:
 
-TODO
+``` centjes
+tag tax-deductable
+```
 
 # Price
 
 We can declare the price of a currency expressed in another currency on a given day.
 
-TODO
+``` centjes
+price 2023-12-30 USD 0.85133 CHF
+```
