@@ -8,7 +8,7 @@
       <a href=@{CentjesR}>
         CLI
     <li>
-      <a href=@{SyntaxR}>
+      <a href=@{PageR ["syntax"]}>
         Syntax
     <li>
       <a href=@{CentjesCommandR "balance"}>

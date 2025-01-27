@@ -6,15 +6,23 @@
 
 module Centjes.Docs.Site.Static.TH where
 
-import CMarkGFM as MD
+import CMark as MD
 import Data.Data
 import Data.Maybe
+import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
 import Instances.TH.Lift ()
 import Language.Haskell.TH.Syntax
 import Path
+import Skylighting
 import qualified System.FilePath as FP
+import Text.Blaze.Html (Html, preEscapedToHtml, (!))
+import qualified Text.Blaze.Html as B
+import Text.Blaze.Html.Renderer.Text (renderHtml)
+import qualified Text.Blaze.Html5 as Html
+import qualified Text.Blaze.Html5.Attributes as HtmlA
 
 data DocPage = DocPage
   { docPageTitle :: !Text,
@@ -44,7 +52,7 @@ docPageValFunc urlPieces rawContents =
           Just a -> a
       title = maybeAtt "title"
       description = maybeAtt "description"
-      rendered = MD.commonmarkToHtml [optUnsafe] [] contents
+      rendered = renderMarkdown contents
    in DocPage
         { docPageTitle = title,
           docPageDescription = description,
@@ -52,6 +60,107 @@ docPageValFunc urlPieces rawContents =
           docPageContents = contents,
           docPageRendered = rendered
         }
+
+renderMarkdown :: Text -> Text
+renderMarkdown contents =
+  let opts = [optUnsafe]
+      n = commonmarkToNode opts contents :: Node
+   in renderNode n
+
+smallestHeadingLevel :: Node -> Int
+smallestHeadingLevel = getMin . go
+  where
+    go :: Node -> Min Int
+    go (Node _ nt subs) =
+      ( case nt of
+          HEADING level -> Min level
+          _ -> mempty
+      )
+        <> foldMap go subs
+
+renderNode :: Node -> Text
+renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
+  where
+    minHeadingLevel = smallestHeadingLevel topLevel
+    go :: Node -> Html
+    go n@(Node _ nt subs) = case nt of
+      DOCUMENT -> foldMap go subs
+      PARAGRAPH -> Html.p (foldMap go subs)
+      TEXT t -> B.text t <> foldMap go subs
+      HEADING level ->
+        let wrappingTag =
+              -- We normalise the html heading levels here
+              -- We need h1 for the heading, so we want to start at h), which
+              -- is where the + 2 comes from.
+              let pretendLevel = level - minHeadingLevel + 2
+               in case pretendLevel of
+                    1 -> Html.h1
+                    2 -> Html.h2
+                    3 -> Html.h3
+                    4 -> Html.h4
+                    5 -> Html.h5
+                    _ -> Html.b
+         in wrappingTag $ foldMap go subs
+      HTML_INLINE code -> preEscapedToHtml code <> foldMap go subs
+      HTML_BLOCK code -> preEscapedToHtml code <> foldMap go subs
+      SOFTBREAK -> " "
+      LINEBREAK -> Html.br
+      CODE code -> Html.code $ B.text code
+      BLOCK_QUOTE -> Html.blockquote $ foldMap go subs
+      STRONG -> Html.b $ foldMap go subs
+      EMPH -> Html.em $ foldMap go subs
+      -- Here's the custom image handling
+      IMAGE url title ->
+        if not (T.null title)
+          then error $ show title
+          else
+            Html.div ! HtmlA.class_ "columns is-centered" $
+              Html.div ! HtmlA.class_ "column has-text-centered" $
+                Html.img ! HtmlA.src (B.textValue url) ! HtmlA.alt (B.textValue (foldMap scrubNode subs))
+      LINK url title ->
+        if not (T.null title)
+          then error $ show title
+          else Html.a ! HtmlA.href (B.textValue url) $ foldMap go subs
+      LIST attrs ->
+        let node = case listType attrs of
+              BULLET_LIST -> Html.ul
+              ORDERED_LIST -> Html.ol
+         in node $ foldMap go subs
+      ITEM -> Html.li $ foldMap go subs
+      -- Here's the custom server-side syntax highlighting.
+      CODE_BLOCK language code ->
+        -- Supported languages here: https://github.com/jgm/skylighting/tree/master/skylighting-core/xml
+        case language of
+          "plain" -> Html.pre $ B.text code
+          "console" -> Html.pre $ B.text code
+          "centjes" -> Html.pre $ B.text code -- TODO syntax highlighting and parsing
+          "" -> error $ unlines ["Code block must be annotated with a programming language:", T.unpack code]
+          _ ->
+            let tokenizerConfig = TokenizerConfig {syntaxMap = defaultSyntaxMap, traceOutput = False}
+                syntax = case syntaxByName (syntaxMap tokenizerConfig) language of
+                  Nothing -> error $ "Unknown programming language for highlighting: " <> show language
+                  Just s -> s
+                sourceLines = case tokenize tokenizerConfig syntax code of
+                  Left err -> error $ "Failed to parse source code: " <> err
+                  Right sls -> sls
+             in Html.div ! HtmlA.style (B.textValue $ T.pack $ styleToCss espresso) $
+                  Skylighting.formatHtmlBlock Skylighting.defaultFormatOpts sourceLines
+      _ -> error $ "Unsupported node: " <> show n
+
+scrubNode :: Node -> Text
+scrubNode = go
+  where
+    go :: Node -> Text
+    go (Node _ typ nodes) =
+      ( case typ of
+          TEXT t -> t
+          CODE t -> t
+          LINK _ t -> t
+          IMAGE _ t -> t
+          SOFTBREAK -> " "
+          _ -> ""
+      )
+        <> foldMap go nodes
 
 splitContents :: Text -> ([(Text, Text)], Text)
 splitContents cs =
