@@ -98,7 +98,7 @@ It is declared as follows:
 
 ``` centjes
 account assets:bank
-    + currency USD
+  + assert currency USD
 ```
 
 # Transaction

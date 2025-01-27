@@ -2,11 +2,14 @@
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Docs.Site.Static.TH where
 
 import CMark as MD
+import Centjes.Format
+import Centjes.Parse
 import Data.Data
 import Data.Maybe
 import Data.Semigroup
@@ -133,7 +136,14 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
         case language of
           "plain" -> Html.pre $ B.text code
           "console" -> Html.pre $ B.text code
-          "centjes" -> Html.pre $ B.text code -- TODO syntax highlighting and parsing
+          "centjes" ->
+            let fakeBaseDir = [absdir|/home/user/finances|]
+                fakeFile = [relfile|ledger.cent|]
+             in case parseModule fakeBaseDir fakeFile code of
+                  Left err -> error $ unlines ["Could not parse module:", err, T.unpack code]
+                  Right lmodule ->
+                    let rendered = formatModule lmodule
+                     in Html.pre $ B.text rendered -- TODO syntax highlighting and parsing
           "" -> error $ unlines ["Code block must be annotated with a programming language:", T.unpack code]
           _ ->
             let tokenizerConfig = TokenizerConfig {syntaxMap = defaultSyntaxMap, traceOutput = False}
