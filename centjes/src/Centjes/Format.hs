@@ -11,6 +11,8 @@ module Centjes.Format
     formatTagDeclaration,
     formatPriceDeclaration,
     formatTransaction,
+    moduleDoc,
+    SyntaxElement (..),
   )
 where
 
@@ -55,12 +57,12 @@ formatPriceDeclaration = renderDocText . priceDeclarationDoc
 formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
 
-renderDocText :: Doc ann -> Text
+renderDocText :: Doc SyntaxElement -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions
   where
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
 
-moduleDoc :: Module l -> Doc ann
+moduleDoc :: Module l -> Doc SyntaxElement
 moduleDoc Module {..} =
   mconcat $
     concat
@@ -69,7 +71,7 @@ moduleDoc Module {..} =
         go Nothing moduleDeclarations
       ]
   where
-    go :: Maybe DecType -> [GenLocated l (Declaration l)] -> [Doc ann]
+    go :: Maybe DecType -> [GenLocated l (Declaration l)] -> [Doc SyntaxElement]
     go _ [] = []
     go Nothing (Located _ d : ds) =
       -- No newline up front, but remember the declaration type
@@ -116,17 +118,17 @@ decType = \case
   DeclarationPrice {} -> DecPrice
   DeclarationTransaction {} -> DecTransaction
 
-lImportDoc :: GenLocated l (Import l) -> Doc ann
+lImportDoc :: GenLocated l (Import l) -> Doc SyntaxElement
 lImportDoc = importDoc . locatedValue
 
-importDoc :: Import l -> Doc ann
+importDoc :: Import l -> Doc SyntaxElement
 importDoc (Import (Located _ fp)) =
   let pString = fromRelFile $ case splitExtension fp of
         Just (rest, ".cent") -> rest
         _ -> fp
    in "import" <+> pretty pString <> hardline
 
-declarationDoc :: Declaration l -> Doc ann
+declarationDoc :: Declaration l -> Doc SyntaxElement
 declarationDoc = \case
   DeclarationComment t -> commentDoc t
   DeclarationCurrency cd -> lCurrencyDeclarationDoc cd
@@ -135,28 +137,28 @@ declarationDoc = \case
   DeclarationPrice pd -> lPriceDeclarationDoc pd
   DeclarationTransaction t -> transactionDecDoc t
 
-commentDoc :: GenLocated l Text -> Doc ann
+commentDoc :: GenLocated l Text -> Doc SyntaxElement
 commentDoc (Located _ t) =
   let ls = if T.null t then [""] else T.lines t
       commentLine l = "--" <+> pretty l
    in mconcat $ map commentLine ls
 
-lCurrencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc ann
+lCurrencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc SyntaxElement
 lCurrencyDeclarationDoc = currencyDeclarationDoc . locatedValue
 
-currencyDeclarationDoc :: CurrencyDeclaration l -> Doc ann
+currencyDeclarationDoc :: CurrencyDeclaration l -> Doc SyntaxElement
 currencyDeclarationDoc CurrencyDeclaration {..} =
   "currency"
     <+> currencySymbolDoc (locatedValue currencyDeclarationSymbol)
     <+> quantisationFactorDoc currencyDeclarationQuantisationFactor
 
-quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc ann
+quantisationFactorDoc :: GenLocated l DecimalLiteral -> Doc SyntaxElement
 quantisationFactorDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
 
-lAccountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc ann
+lAccountDeclarationDoc :: GenLocated l (AccountDeclaration l) -> Doc SyntaxElement
 lAccountDeclarationDoc = accountDeclarationDoc . locatedValue
 
-accountDeclarationDoc :: AccountDeclaration l -> Doc ann
+accountDeclarationDoc :: AccountDeclaration l -> Doc SyntaxElement
 accountDeclarationDoc AccountDeclaration {..} =
   mconcat $
     intersperse hardline $
@@ -172,45 +174,45 @@ accountDeclarationDoc AccountDeclaration {..} =
           map (("  + assert" <+>) . lAccountAssertionDoc) accountDeclarationAssertions
         ]
 
-lAccountAssertionDoc :: GenLocated l (AccountAssertion l) -> Doc ann
+lAccountAssertionDoc :: GenLocated l (AccountAssertion l) -> Doc SyntaxElement
 lAccountAssertionDoc = accountAssertionDoc . locatedValue
 
-accountAssertionDoc :: AccountAssertion l -> Doc ann
+accountAssertionDoc :: AccountAssertion l -> Doc SyntaxElement
 accountAssertionDoc = \case
   AccountAssertionCurrency currencySymbol ->
     "currency" <+> lCurrencySymbolDoc currencySymbol
 
-lAccountTypeDoc :: GenLocated l AccountType -> Doc ann
+lAccountTypeDoc :: GenLocated l AccountType -> Doc SyntaxElement
 lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at
 
-lTagDeclarationDoc :: GenLocated l (TagDeclaration l) -> Doc ann
+lTagDeclarationDoc :: GenLocated l (TagDeclaration l) -> Doc SyntaxElement
 lTagDeclarationDoc = tagDeclarationDoc . locatedValue
 
-tagDeclarationDoc :: TagDeclaration l -> Doc ann
+tagDeclarationDoc :: TagDeclaration l -> Doc SyntaxElement
 tagDeclarationDoc TagDeclaration {..} =
   "tag"
     <+> tagDoc (locatedValue tagDeclarationTag)
 
-lPriceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc ann
+lPriceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc SyntaxElement
 lPriceDeclarationDoc = priceDeclarationDoc . locatedValue
 
-priceDeclarationDoc :: PriceDeclaration l -> Doc ann
+priceDeclarationDoc :: PriceDeclaration l -> Doc SyntaxElement
 priceDeclarationDoc PriceDeclaration {..} =
   "price"
     <+> lTimestampDoc priceDeclarationTimestamp
     <+> lCurrencySymbolDoc priceDeclarationCurrencySymbol
     <+> lCostExpressionDoc priceDeclarationCost
 
-lConversionRateDoc :: GenLocated l (RationalExpression l) -> Doc ann
+lConversionRateDoc :: GenLocated l (RationalExpression l) -> Doc SyntaxElement
 lConversionRateDoc = conversionRateDoc . locatedValue
 
-conversionRateDoc :: RationalExpression l -> Doc ann
+conversionRateDoc :: RationalExpression l -> Doc SyntaxElement
 conversionRateDoc = rationalExpressionDoc
 
-transactionDecDoc :: GenLocated l (Transaction l) -> Doc ann
+transactionDecDoc :: GenLocated l (Transaction l) -> Doc SyntaxElement
 transactionDecDoc = transactionDoc . locatedValue
 
-transactionDoc :: Transaction l -> Doc ann
+transactionDoc :: Transaction l -> Doc SyntaxElement
 transactionDoc Transaction {..} =
   mconcat $
     intersperse hardline $
@@ -236,16 +238,16 @@ transactionDoc Transaction {..} =
     maxAccountDecimals = foldMap (accountDecimals . postingAccount . locatedValue) transactionPostings
     accountDecimals = Max . DecimalLiteral.digits . locatedValue
 
-lTimestampDoc :: GenLocated l Timestamp -> Doc ann
+lTimestampDoc :: GenLocated l Timestamp -> Doc SyntaxElement
 lTimestampDoc = timestampDoc . locatedValue
 
-timestampDoc :: Timestamp -> Doc ann
+timestampDoc :: Timestamp -> Doc SyntaxElement
 timestampDoc = pretty . Timestamp.toString
 
-descriptionDocs :: GenLocated l Description -> [Doc ann]
+descriptionDocs :: GenLocated l Description -> [Doc SyntaxElement]
 descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
 
-postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc ann
+postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc SyntaxElement
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =
   maybe id (\pe -> (<+> lPercentageExpressionDoc pe)) postingPercentage $
     maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
@@ -254,12 +256,12 @@ postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posti
         <+> accountDocHelper mMaxAccountWidth mMaxAccountDecimals (locatedValue postingAccount)
         <+> lCurrencySymbolDoc postingCurrencySymbol
 
-lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc ann
+lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc SyntaxElement
 lCostExpressionDoc (Located _ CostExpression {..}) =
   lConversionRateDoc costExpressionConversionRate
     <+> lCurrencySymbolDoc costExpressionCurrencySymbol
 
-lPercentageExpressionDoc :: GenLocated l (PercentageExpression l) -> Doc ann
+lPercentageExpressionDoc :: GenLocated l (PercentageExpression l) -> Doc SyntaxElement
 lPercentageExpressionDoc (Located _ PercentageExpression {..}) =
   "~"
     <> ( case percentageExpressionInclusive of
@@ -276,10 +278,10 @@ lPercentageExpressionDoc (Located _ PercentageExpression {..}) =
     <+> lRationalExpressionDoc percentageExpressionRationalExpression
     <> "%"
 
-lRationalExpressionDoc :: GenLocated l (RationalExpression l) -> Doc ann
+lRationalExpressionDoc :: GenLocated l (RationalExpression l) -> Doc SyntaxElement
 lRationalExpressionDoc = rationalExpressionDoc . locatedValue
 
-rationalExpressionDoc :: RationalExpression l -> Doc ann
+rationalExpressionDoc :: RationalExpression l -> Doc SyntaxElement
 rationalExpressionDoc = \case
   RationalExpressionDecimal ldl -> lRationalDecimalLiteralDoc ldl
   RationalExpressionFraction ln ld ->
@@ -287,22 +289,22 @@ rationalExpressionDoc = \case
       <+> "/"
       <+> lRationalDecimalLiteralDoc ld
 
-lRationalDecimalLiteralDoc :: GenLocated l DecimalLiteral -> Doc ann
+lRationalDecimalLiteralDoc :: GenLocated l DecimalLiteral -> Doc SyntaxElement
 lRationalDecimalLiteralDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue
 
-transactionExtraDoc :: TransactionExtra l -> Doc ann
+transactionExtraDoc :: TransactionExtra l -> Doc SyntaxElement
 transactionExtraDoc =
   ("+" <+>) . \case
     TransactionAttachment a -> extraAttachmentDoc (locatedValue a)
     TransactionAssertion a -> extraAssertionDoc (locatedValue a)
     TransactionTag t -> extraTagDoc (locatedValue t)
 
-extraAttachmentDoc :: ExtraAttachment l -> Doc ann
+extraAttachmentDoc :: ExtraAttachment l -> Doc SyntaxElement
 extraAttachmentDoc (ExtraAttachment (Located _ (Attachment (Located _ fp)))) =
   "attach"
     <+> pretty (fromRelFile fp)
 
-extraAssertionDoc :: ExtraAssertion l -> Doc ann
+extraAssertionDoc :: ExtraAssertion l -> Doc SyntaxElement
 extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) cs))) =
   "assert"
     <+> lAccountNameDoc an
@@ -310,23 +312,23 @@ extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) 
     <+> accountDoc dl
     <+> lCurrencySymbolDoc cs
 
-extraTagDoc :: ExtraTag l -> Doc ann
+extraTagDoc :: ExtraTag l -> Doc SyntaxElement
 extraTagDoc (ExtraTag lt) =
   "tag" <+> tagDoc (locatedValue lt)
 
-tagDoc :: Tag -> Doc ann
+tagDoc :: Tag -> Doc SyntaxElement
 tagDoc = pretty . Tag.toText
 
-lAccountNameDoc :: GenLocated l AccountName -> Doc ann
+lAccountNameDoc :: GenLocated l AccountName -> Doc SyntaxElement
 lAccountNameDoc = accountNameDoc . locatedValue
 
-accountNameDoc :: AccountName -> Doc ann
+accountNameDoc :: AccountName -> Doc SyntaxElement
 accountNameDoc = pretty . AccountName.toText
 
-accountDoc :: DecimalLiteral -> Doc ann
+accountDoc :: DecimalLiteral -> Doc SyntaxElement
 accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
 
-accountDocHelper :: Maybe (Max Int) -> Maybe (Max Word8) -> DecimalLiteral -> Doc ann
+accountDocHelper :: Maybe (Max Int) -> Maybe (Max Word8) -> DecimalLiteral -> Doc SyntaxElement
 accountDocHelper mMaxDigitsBeforeDot mMaxAccountDecimals dl' =
   let dl = DecimalLiteral.setSignRequired dl'
       padFrontWithSpaces (Max maxChars) =
@@ -349,11 +351,13 @@ charactersBeforeDot (DecimalLiteral _ m e) =
   -- Assuming sign is required
   1 + max 1 (length (show m) - fromIntegral e)
 
-decimalLiteralDoc :: DecimalLiteral -> Doc ann
+decimalLiteralDoc :: DecimalLiteral -> Doc SyntaxElement
 decimalLiteralDoc = pretty . DecimalLiteral.toString
 
-lCurrencySymbolDoc :: GenLocated l CurrencySymbol -> Doc ann
+lCurrencySymbolDoc :: GenLocated l CurrencySymbol -> Doc SyntaxElement
 lCurrencySymbolDoc = currencySymbolDoc . locatedValue
 
-currencySymbolDoc :: CurrencySymbol -> Doc ann
+currencySymbolDoc :: CurrencySymbol -> Doc SyntaxElement
 currencySymbolDoc = pretty . currencySymbolText
+
+data SyntaxElement

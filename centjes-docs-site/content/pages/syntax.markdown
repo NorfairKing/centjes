@@ -21,6 +21,8 @@ The main centjes file is called `ledger.cent` and is considered the entry-point 
 
 Imports look like this:
 
+TODO remove the above
+
 ``` centjes
 import banks/ubs
 ```
@@ -95,6 +97,13 @@ An account can have associated assertions.
 
 An account currency assertion says that the money in the given account must be of a given currency.
 It is declared as follows:
+
+``` haskell
+main :: IO ()
+main = pure ()
+    where
+        foo = bar
+```
 
 ``` centjes
 account assets:bank

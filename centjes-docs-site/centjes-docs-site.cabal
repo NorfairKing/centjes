@@ -95,6 +95,7 @@ library
     , opt-env-conf
     , path
     , path-io
+    , prettyprinter
     , safe-coloured-text
     , shakespeare
     , skylighting
