@@ -168,31 +168,24 @@ renderHtmlDoc doc =
             treeUp . Prettyprinter.treeForm $
               layoutPretty layoutOptions doc
   where
+    layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
     go :: DocTree SyntaxElement -> Html
     go = \case
-      DTIndented i t ->
-        Html.span $
-          mconcat
-            [ Html.a
-                ! Html.customAttribute "aria-hidden" "true" -- see jgm/pandoc#6352
-                ! Html.customAttribute "tabindex" "-1"
-                $ mempty,
-              Html.text $ T.pack $ concat (replicate i "  ") ++ T.unpack t
-            ]
-    -- go :: SimpleDocTree SyntaxElement -> Html
-    -- go = \case
-    --   STEmpty -> mempty
-    --   STChar c -> Html.span $ Html.text $ T.pack [c]
-    --   STText _ t -> Html.span $ Html.text t
-    --   STLine i -> Html.span $ Html.text $ T.pack $ concat $ replicate i "  "
-    --   STAnn ann sdt -> case ann of
-    --     _ -> go sdt
-    --   STConcat sdts -> foldMap go sdts
-
-    layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
+      DTText t -> Html.span $ Html.text t
+      DTAnnotated ann ts ->
+        Html.span ! HtmlA.class_ (syntaxElementClass ann) $
+          foldMap go ts
+    syntaxElementClass :: SyntaxElement -> Html.AttributeValue
+    syntaxElementClass = \case
+      SyntaxImport -> "im"
+      SyntaxKeyword -> "kw"
+      SyntaxComment -> "co"
+      SyntaxDecimalLiteral -> "dv"
+      SyntaxCurrencySymbol -> "st"
+      SyntaxAccountName -> "va"
 
 data DocTree ann
-  = DTIndented !Int !Text
+  = DTText !Text
   | DTAnnotated !ann ![DocTree ann]
 
 treeUp :: SimpleDocTree ann -> [DocTree ann]
@@ -202,11 +195,9 @@ treeUp = go . pure
     go = \case
       [] -> []
       (STEmpty : rest) -> go rest -- Should not happen.
-      (STChar c : rest) -> DTIndented 0 (T.pack [c]) : go rest
-      (STText _ t : rest) -> DTIndented 0 t : go rest
-      [STLine _] -> [DTIndented 0 "\n"] -- Should not happen.
-      (STLine i : STChar c : rest) -> DTIndented i (T.pack ['\n', c]) : go rest
-      (STLine i : STText _ t : rest) -> DTIndented i ("\n" <> t) : go rest
+      (STChar c : rest) -> DTText (T.pack [c]) : go rest
+      (STText _ t : rest) -> DTText t : go rest
+      (STLine i : rest) -> DTText (T.pack $ concat $ "\n" : replicate i "  ") : go rest
       (STAnn ann sdt : rest) -> DTAnnotated ann (go [sdt]) : go rest
       (STConcat sdts : rest) -> go $ sdts ++ rest
 
@@ -234,11 +225,11 @@ splitContents cs =
           let attLines = T.lines ts
               tags =
                 flip mapMaybe attLines $ \l ->
-                  let column = ":"
-                   in case T.splitOn column l of
+                  let col = ":"
+                   in case T.splitOn col l of
                         [] -> Nothing
                         (key : valParts) ->
-                          Just (key, T.intercalate column valParts)
+                          Just (key, T.intercalate col valParts)
               contents = T.intercalate threeDashes rest
            in (tags, contents)
         [contents] -> ([], contents)

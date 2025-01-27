@@ -126,7 +126,7 @@ importDoc (Import (Located _ fp)) =
   let pString = fromRelFile $ case splitExtension fp of
         Just (rest, ".cent") -> rest
         _ -> fp
-   in "import" <+> pretty pString <> hardline
+   in annotate SyntaxKeyword "import" <+> annotate SyntaxImport (pretty pString) <> hardline
 
 declarationDoc :: Declaration l -> Doc SyntaxElement
 declarationDoc = \case
@@ -139,16 +139,17 @@ declarationDoc = \case
 
 commentDoc :: GenLocated l Text -> Doc SyntaxElement
 commentDoc (Located _ t) =
-  let ls = if T.null t then [""] else T.lines t
-      commentLine l = "--" <+> pretty l
-   in mconcat $ map commentLine ls
+  annotate SyntaxComment $
+    let ls = if T.null t then [""] else T.lines t
+        commentLine l = "--" <+> pretty l
+     in mconcat $ map commentLine ls
 
 lCurrencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc SyntaxElement
 lCurrencyDeclarationDoc = currencyDeclarationDoc . locatedValue
 
 currencyDeclarationDoc :: CurrencyDeclaration l -> Doc SyntaxElement
 currencyDeclarationDoc CurrencyDeclaration {..} =
-  "currency"
+  annotate SyntaxKeyword "currency"
     <+> currencySymbolDoc (locatedValue currencyDeclarationSymbol)
     <+> quantisationFactorDoc currencyDeclarationQuantisationFactor
 
@@ -167,11 +168,11 @@ accountDeclarationDoc AccountDeclaration {..} =
               id
               (\at -> (<+> lAccountTypeDoc at))
               accountDeclarationType
-              ( "account"
+              ( annotate SyntaxKeyword "account"
                   <+> lAccountNameDoc accountDeclarationName
               )
           ],
-          map (("  + assert" <+>) . lAccountAssertionDoc) accountDeclarationAssertions
+          map ((("  +" <+> annotate SyntaxKeyword "assert") <+>) . lAccountAssertionDoc) accountDeclarationAssertions
         ]
 
 lAccountAssertionDoc :: GenLocated l (AccountAssertion l) -> Doc SyntaxElement
@@ -190,7 +191,7 @@ lTagDeclarationDoc = tagDeclarationDoc . locatedValue
 
 tagDeclarationDoc :: TagDeclaration l -> Doc SyntaxElement
 tagDeclarationDoc TagDeclaration {..} =
-  "tag"
+  annotate SyntaxKeyword "tag"
     <+> tagDoc (locatedValue tagDeclarationTag)
 
 lPriceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc SyntaxElement
@@ -198,7 +199,7 @@ lPriceDeclarationDoc = priceDeclarationDoc . locatedValue
 
 priceDeclarationDoc :: PriceDeclaration l -> Doc SyntaxElement
 priceDeclarationDoc PriceDeclaration {..} =
-  "price"
+  annotate SyntaxKeyword "price"
     <+> lTimestampDoc priceDeclarationTimestamp
     <+> lCurrencySymbolDoc priceDeclarationCurrencySymbol
     <+> lCostExpressionDoc priceDeclarationCost
@@ -301,12 +302,12 @@ transactionExtraDoc =
 
 extraAttachmentDoc :: ExtraAttachment l -> Doc SyntaxElement
 extraAttachmentDoc (ExtraAttachment (Located _ (Attachment (Located _ fp)))) =
-  "attach"
+  annotate SyntaxKeyword "attach"
     <+> pretty (fromRelFile fp)
 
 extraAssertionDoc :: ExtraAssertion l -> Doc SyntaxElement
 extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) cs))) =
-  "assert"
+  annotate SyntaxKeyword "assert"
     <+> lAccountNameDoc an
     <+> "="
     <+> accountDoc dl
@@ -314,7 +315,7 @@ extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) 
 
 extraTagDoc :: ExtraTag l -> Doc SyntaxElement
 extraTagDoc (ExtraTag lt) =
-  "tag" <+> tagDoc (locatedValue lt)
+  annotate SyntaxKeyword "tag" <+> tagDoc (locatedValue lt)
 
 tagDoc :: Tag -> Doc SyntaxElement
 tagDoc = pretty . Tag.toText
@@ -323,7 +324,7 @@ lAccountNameDoc :: GenLocated l AccountName -> Doc SyntaxElement
 lAccountNameDoc = accountNameDoc . locatedValue
 
 accountNameDoc :: AccountName -> Doc SyntaxElement
-accountNameDoc = pretty . AccountName.toText
+accountNameDoc = annotate SyntaxAccountName . pretty . AccountName.toText
 
 accountDoc :: DecimalLiteral -> Doc SyntaxElement
 accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
@@ -352,12 +353,18 @@ charactersBeforeDot (DecimalLiteral _ m e) =
   1 + max 1 (length (show m) - fromIntegral e)
 
 decimalLiteralDoc :: DecimalLiteral -> Doc SyntaxElement
-decimalLiteralDoc = pretty . DecimalLiteral.toString
+decimalLiteralDoc = annotate SyntaxDecimalLiteral . pretty . DecimalLiteral.toString
 
 lCurrencySymbolDoc :: GenLocated l CurrencySymbol -> Doc SyntaxElement
 lCurrencySymbolDoc = currencySymbolDoc . locatedValue
 
 currencySymbolDoc :: CurrencySymbol -> Doc SyntaxElement
-currencySymbolDoc = pretty . currencySymbolText
+currencySymbolDoc = annotate SyntaxCurrencySymbol . pretty . currencySymbolText
 
 data SyntaxElement
+  = SyntaxImport
+  | SyntaxKeyword
+  | SyntaxComment
+  | SyntaxDecimalLiteral
+  | SyntaxCurrencySymbol
+  | SyntaxAccountName

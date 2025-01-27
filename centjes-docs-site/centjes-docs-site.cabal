@@ -64,6 +64,7 @@ library
       Centjes.Docs.Site.Handler.Page
       Centjes.Docs.Site.Handler.Reload
       Centjes.Docs.Site.Handler.Sitemap
+      Centjes.Docs.Site.Handler.Skylighting
       Centjes.Docs.Site.ModuleDocs
       Centjes.Docs.Site.ModuleDocs.TH
       Centjes.Docs.Site.OptParse
