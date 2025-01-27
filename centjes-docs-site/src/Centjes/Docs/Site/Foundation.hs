@@ -49,6 +49,7 @@ instance Yesod App where
       widgetToPageContent $ do
         addScript $ AssetsStaticR asciinema_player_js
         addStylesheet $ AssetsStaticR asciinema_player_css
+        toWidget [lucius|:root {--bulma-code: #353535 !important}|]
         let menu = $(widgetFile "menu")
         addReloadWidget $(widgetFile "default-body")
     withUrlRenderer $(hamletFile "templates/default-page.hamlet")
