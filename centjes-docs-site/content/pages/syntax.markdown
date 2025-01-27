@@ -89,11 +89,11 @@ To annotate an account with a type manually, you can add it like so:
 account foo:bar assets
 ```
 
-# Account assertions
+## Account assertions
 
 An account can have associated assertions.
 
-# Currency assertion
+### Currency assertion
 
 An account currency assertion says that the money in the given account must be of a given currency.
 It is declared as follows:
@@ -107,7 +107,51 @@ account assets:bank
 
 Transactions are declared as using a list of postings that have to balance to zero.
 
-TODO.
+A transaction starts with a timestamp and description:
+
+``` centjes
+2025-01-27
+    | This is an example timestamp with no postings.
+```
+
+We add postings to it by describing a change to an account for each account:
+
+``` centjes
+2025-01-27
+    | I bought a coffee
+    * assets:cash -5.00 USD
+    * expenses:coffee 5.00 USD
+```
+
+This example describes that I bought coffee with cash on `2025-01-27`.
+
+## Virtual postings
+
+TODO
+
+## Currency exchange
+
+TODO
+
+## Percentage
+
+TODO
+
+## Transaction extras
+
+TODO
+
+### Attachments
+
+TODO
+
+### Assertions
+
+TODO
+
+### Tags
+
+TODO
 
 # Tag
 

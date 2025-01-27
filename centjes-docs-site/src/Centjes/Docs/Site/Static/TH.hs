@@ -181,6 +181,8 @@ renderHtmlDoc doc =
       SyntaxKeyword -> "kw"
       SyntaxComment -> "co"
       SyntaxDecimalLiteral -> "dv"
+      SyntaxTimestamp -> "dt"
+      SyntaxDescription -> "vs"
       SyntaxCurrencySymbol -> "st"
       SyntaxAccountName -> "va"
 

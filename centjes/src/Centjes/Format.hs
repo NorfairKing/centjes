@@ -243,10 +243,10 @@ lTimestampDoc :: GenLocated l Timestamp -> Doc SyntaxElement
 lTimestampDoc = timestampDoc . locatedValue
 
 timestampDoc :: Timestamp -> Doc SyntaxElement
-timestampDoc = pretty . Timestamp.toString
+timestampDoc = annotate SyntaxTimestamp . pretty . Timestamp.toString
 
 descriptionDocs :: GenLocated l Description -> [Doc SyntaxElement]
-descriptionDocs = map (pretty . ("| " <>)) . T.lines . unDescription . locatedValue
+descriptionDocs = map (annotate SyntaxDescription . pretty . ("| " <>)) . T.lines . unDescription . locatedValue
 
 postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc SyntaxElement
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =
@@ -366,5 +366,7 @@ data SyntaxElement
   | SyntaxKeyword
   | SyntaxComment
   | SyntaxDecimalLiteral
+  | SyntaxTimestamp
+  | SyntaxDescription
   | SyntaxCurrencySymbol
   | SyntaxAccountName
