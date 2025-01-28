@@ -6,7 +6,7 @@
 
 module Centjes.Command.Register
   ( runCentjesRegister,
-    renderRegisterTable,
+    renderRegister,
   )
 where
 
@@ -44,15 +44,15 @@ runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
           registerSettingShowVirtual
           ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-  liftIO $ putChunksLocaleWith terminalCapabilities $ renderRegisterTable register
+  liftIO $ putChunksLocaleWith terminalCapabilities $ renderRegister register
 
-renderRegisterTable :: Register ann -> [Chunk]
-renderRegisterTable register =
-  let t = table (map (map pure) (renderRegister register))
+renderRegister :: Register ann -> [Chunk]
+renderRegister register =
+  let t = table (map (map pure) (renderRegisterTable register))
    in renderTable t
 
-renderRegister :: Register ann -> [[Chunk]]
-renderRegister r@(Register v) =
+renderRegisterTable :: Register ann -> [[Chunk]]
+renderRegisterTable r@(Register v) =
   let maxAccountWidth = registerMaxAccountWidth r
    in concatMap
         ( \(ix, (Located _ ts, mDescription, postings)) ->

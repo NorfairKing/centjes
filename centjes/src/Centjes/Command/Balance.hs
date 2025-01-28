@@ -5,7 +5,7 @@
 
 module Centjes.Command.Balance
   ( runCentjesBalance,
-    renderBalanceReportTable,
+    renderBalanceReport,
   )
 where
 
@@ -41,15 +41,15 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
           balanceSettingShowVirtual
           ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReportTable balanceSettingShowEmpty br
+  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
 
-renderBalanceReportTable :: ShowEmpty -> BalanceReport ann -> [Chunk]
-renderBalanceReportTable se br =
-  let t = table (map (map pure) (renderBalanceReport se br))
+renderBalanceReport :: ShowEmpty -> BalanceReport ann -> [Chunk]
+renderBalanceReport se br =
+  let t = table (map (map pure) (renderBalanceReportTable se br))
    in renderTable t
 
-renderBalanceReport :: ShowEmpty -> BalanceReport ann -> [[Chunk]]
-renderBalanceReport se br@BalanceReport {..} =
+renderBalanceReportTable :: ShowEmpty -> BalanceReport ann -> [[Chunk]]
+renderBalanceReportTable se br@BalanceReport {..} =
   let width = balanceReportMaxWidth br
    in renderBalances se width balanceReportFilledBalances
         ++ amountLines (fore blue (accountNameChunk "Total")) (multiAccountChunksWithWidth (Just width) balanceReportTotal)

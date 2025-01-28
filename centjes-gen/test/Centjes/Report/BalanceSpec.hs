@@ -5,7 +5,7 @@
 
 module Centjes.Report.BalanceSpec (spec) where
 
-import Centjes.Command.Balance (renderBalanceReportTable)
+import Centjes.Command.Balance (renderBalanceReport)
 import Centjes.Compile
 import Centjes.Filter.Gen ()
 import Centjes.Ledger.Gen ()
@@ -80,7 +80,7 @@ spec = do
                       ledger
 
                 shouldBeValid br
-                pure $ renderChunksText termCaps $ renderBalanceReportTable ShowEmpty br
+                pure $ renderChunksText termCaps $ renderBalanceReport ShowEmpty br
 
     scenarioDir "test_resources/balance/error" $ \fp -> do
       af <- liftIO $ resolveFile' fp
