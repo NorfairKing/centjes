@@ -260,25 +260,25 @@ checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located
   let af = base </> fp
   exists <- liftIO $ doesFileExist af
 
-  -- Show the (up to 10) most similar looking files in the same directory
-  let patt = fromRelFile (filename af)
-  let similarity p = do
-        let diff = Diff.getStringDiff patt (fromRelFile (filename p))
-        let penalty =
-              length $
-                filter
-                  ( \case
-                      First _ -> True
-                      Second _ -> True
-                      Both {} -> False
-                  )
-                  diff
-        guard $ penalty < length patt
-        pure (p, penalty)
-  fs <- take 10 . map fst . sortOn snd . mapMaybe similarity . snd <$> listDirRel (parent af)
-
-  -- TODO error when attachment exists but is not readable.
-  when (not exists) $ validationTFailure $ CheckErrorMissingAttachment tl a fs
+  -- TODO also error when attachment exists but is not readable.
+  when (not exists) $ do
+    -- Show the (up to 10) most similar looking files in the same directory
+    let patt = fromRelFile (filename af)
+    let similarity p = do
+          let diff = Diff.getStringDiff patt (fromRelFile (filename p))
+          let penalty =
+                length $
+                  filter
+                    ( \case
+                        First _ -> True
+                        Second _ -> True
+                        Both {} -> False
+                    )
+                    diff
+          guard $ penalty < length patt
+          pure (p, penalty)
+    fs <- take 10 . map fst . sortOn snd . mapMaybe similarity . snd <$> listDirRel (parent af)
+    validationTFailure $ CheckErrorMissingAttachment tl a fs
 
 checkLedger ::
   (Ord ann) =>
