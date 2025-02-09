@@ -46,6 +46,7 @@ tests:
     - containers
     - genvalidity-containers
     - genvalidity-sydtest
+    - genvalidity-text
     - monad-logger
     - mtl
     - opt-env-conf

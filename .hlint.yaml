@@ -1,6 +1,8 @@
 - ignore:
     name: "Use ++"
 - ignore:
+    name: "Use &&"
+- ignore:
     name: "Redundant lambda"
 - ignore:
     name: "Redundant if"

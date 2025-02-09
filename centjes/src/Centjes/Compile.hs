@@ -52,7 +52,6 @@ import qualified Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor
 import qualified Money.QuantisationFactor as QuantisationFactor
-import Myers.Diff as Diff
 import Numeric.DecimalLiteral as DecimalLiteral
 import Numeric.Natural
 
@@ -410,20 +409,11 @@ compileCurrencyDeclarations cds = do
     go m (symbol, lqf@(Located l2 _)) = case M.lookup symbol m of
       Just (Located l1 _) -> validationFailure $ CompileErrorCurrencyDeclaredTwice l1 l2 symbol
       Nothing -> do
-        for_ (M.toList m) $ \(symbol', Located l1 _) -> do
-          let d = currencySymbolEditDistance symbol symbol'
-           in -- A typo would be one of these:
-              -- - One digit more: One insert
-              -- - One digit less: One deletion
-              -- - One digit different: One insert and one deletion.
-              when (d < 3) $
-                validationFailure $
-                  CompileErrorCurrencyTooSimilar l1 l2
-
-        pure $ M.insert symbol lqf m
-
-currencySymbolEditDistance :: CurrencySymbol -> CurrencySymbol -> Word
-currencySymbolEditDistance = getTextEditDistance `on` CurrencySymbol.toText
+        for_ (M.toList m) $ \(symbol', Located l1 _) ->
+          when (symbol `CurrencySymbol.isTypoOf` symbol') $
+            validationFailure $
+              CompileErrorCurrencyTooSimilar l1 l2
+        pure (M.insert symbol lqf m)
 
 -- Prefer compileCurrencyDeclarations
 compileCurrencyDeclaration :: GenLocated ann (CurrencyDeclaration ann) -> Validation (CompileError ann) (CurrencySymbol, GenLocated ann QuantisationFactor)
@@ -451,20 +441,11 @@ compileAccountDeclarations currencies ads = do
     go m (an, lat@(Located l2 _)) = case M.lookup an m of
       Just (Located l1 _) -> validationFailure $ CompileErrorAccountDeclaredTwice l1 l2 an
       Nothing -> do
-        for_ (M.toList m) $ \(an', Located l1 _) -> do
-          let d = accountNameEditDistance an an'
-           in -- A typo would be one of these:
-              -- - One digit more: One insert
-              -- - One digit less: One deletion
-              -- - One digit different: One insert and one deletion.
-              when (d < 3) $
-                validationFailure $
-                  CompileErrorAccountNameTooSimilar l1 l2
-
+        for_ (M.toList m) $ \(an', Located l1 _) ->
+          when (an `AccountName.isTypoOf` an') $
+            validationFailure $
+              CompileErrorAccountNameTooSimilar l1 l2
         pure $ M.insert an lat m
-
-accountNameEditDistance :: AccountName -> AccountName -> Word
-accountNameEditDistance = getTextEditDistance `on` AccountName.toText
 
 compileAccountDeclaration ::
   forall ann.
@@ -517,20 +498,12 @@ compileTagDeclarations tds = do
     go m (t, l2) = case M.lookup t m of
       Just l1 -> validationFailure $ CompileErrorTagDeclaredTwice l1 l2 t
       Nothing -> do
-        for_ (M.toList m) $ \(t', l1) -> do
-          let d = tagEditDistance t t'
-           in -- A typo would be one of these:
-              -- - One digit more: One insert
-              -- - One digit less: One deletion
-              -- - One digit different: One insert and one deletion.
-              when (d < 3) $
-                validationFailure $
-                  CompileErrorTagTooSimilar l1 l2
+        for_ (M.toList m) $ \(t', l1) ->
+          when (t `Tag.isTypoOf` t') $
+            validationFailure $
+              CompileErrorTagTooSimilar l1 l2
 
         pure $ M.insert t l2 m
-
-tagEditDistance :: Tag -> Tag -> Word
-tagEditDistance = getTextEditDistance `on` Tag.toText
 
 compileTagDeclaration ::
   GenLocated ann (TagDeclaration ann) ->

@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.CurrencySymbol
@@ -8,10 +9,12 @@ module Centjes.CurrencySymbol
     fromText,
     toText,
     toString,
+    isTypoOf,
   )
 where
 
 import Autodocodec
+import qualified Centjes.Typo as Text
 import qualified Data.Char as Char
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -29,15 +32,19 @@ instance Validity CurrencySymbol where
     mconcat
       [ genericValidate an,
         declare "The currency symbol is not empty" $ not (T.null t),
-        decorateText t $ \c -> declare "The character is a latin1 alphanumeric character, or _, or -, or :" $
-          case c of
-            ':' -> True
-            '-' -> True
-            '_' -> True
-            _
-              | Char.isLatin1 c && Char.isAlphaNum c -> True
-              | otherwise -> False
+        decorateText t $ \c ->
+          declare "The character is a latin1 alphanumeric character, or _, or -, or :" $
+            validCurrencySymbolChar c
       ]
+
+validCurrencySymbolChar :: Char -> Bool
+validCurrencySymbolChar = \case
+  ':' -> True
+  '-' -> True
+  '_' -> True
+  c
+    | Char.isLatin1 c && Char.isAlphaNum c -> True
+    | otherwise -> False
 
 instance HasCodec CurrencySymbol where
   codec = bimapCodec fromText currencySymbolText codec
@@ -55,3 +62,6 @@ toText = currencySymbolText
 
 toString :: CurrencySymbol -> String
 toString = T.unpack . toText
+
+isTypoOf :: CurrencySymbol -> CurrencySymbol -> Bool
+isTypoOf cs1 cs2 = Text.isTypoOf (toText cs1) (toText cs2)

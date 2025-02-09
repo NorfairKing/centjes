@@ -9,10 +9,12 @@ module Centjes.Tag
     fromText,
     toText,
     toString,
+    isTypoOf,
   )
 where
 
 import Autodocodec
+import qualified Centjes.Typo as Text
 import qualified Data.Char as Char
 import Data.String
 import Data.Text (Text)
@@ -61,3 +63,6 @@ toText = tagText
 
 toString :: Tag -> String
 toString = T.unpack . toText
+
+isTypoOf :: Tag -> Tag -> Bool
+isTypoOf t1 t2 = Text.isTypoOf (toText t1) (toText t2)

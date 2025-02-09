@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.AccountName
@@ -12,10 +13,12 @@ module Centjes.AccountName
     toText,
     parent,
     ancestors,
+    isTypoOf,
   )
 where
 
 import Autodocodec
+import qualified Centjes.Typo as Text
 import qualified Data.Char as Char
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -44,16 +47,20 @@ instance Validity AccountName where
             [ declare "The account name starts with an alphabetic character" $ case T.uncons t of
                 Nothing -> False
                 Just (h, _) -> Char.isAlpha h,
-              decorateText t $ \c -> declare "The character is a latin1 alphanumeric character or _, -" $
-                case c of
-                  ':' -> False -- Separator character
-                  '-' -> True
-                  '_' -> True
-                  _
-                    | Char.isLatin1 c && Char.isAlphaNum c -> True
-                    | otherwise -> False
+              decorateText t $ \c ->
+                declare "The character is a latin1 alphanumeric character or _, -" $
+                  validAccountNameChar c
             ]
       ]
+
+validAccountNameChar :: Char -> Bool
+validAccountNameChar = \case
+  ':' -> False -- Separator character
+  '-' -> True
+  '_' -> True
+  c
+    | Char.isLatin1 c && Char.isAlphaNum c -> True
+    | otherwise -> False
 
 instance Ord AccountName where
   compare = comparing toText
@@ -97,3 +104,6 @@ ancestors :: AccountName -> [AccountName]
 ancestors an = case parent an of
   Nothing -> []
   Just an' -> an' : ancestors an'
+
+isTypoOf :: AccountName -> AccountName -> Bool
+isTypoOf an1 an2 = Text.isTypoOf (toText an1) (toText an2)

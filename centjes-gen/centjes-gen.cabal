@@ -314,6 +314,7 @@ test-suite centjes-test
       Centjes.Report.RegisterSpec
       Centjes.TagSpec
       Centjes.TimestampSpec
+      Centjes.TypoSpec
       Paths_centjes_gen
   hs-source-dirs:
       test
@@ -329,6 +330,7 @@ test-suite centjes-test
     , containers
     , genvalidity-containers
     , genvalidity-sydtest
+    , genvalidity-text
     , monad-logger
     , mtl
     , opt-env-conf
