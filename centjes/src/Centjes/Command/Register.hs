@@ -17,6 +17,7 @@ import Centjes.Load
 import Centjes.Location
 import Centjes.OptParse
 import Centjes.Report.Register
+import Centjes.Timing
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
@@ -34,15 +35,16 @@ import Text.Colour.Layout
 runCentjesRegister :: Settings -> RegisterSettings -> IO ()
 runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
   (declarations, diag) <- loadModules settingLedgerFile
-  ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
+  ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diag $ compileDeclarations declarations
   register <-
-    liftIO $
-      checkValidation diag $
-        produceRegister
-          registerSettingFilter
-          registerSettingCurrency
-          registerSettingShowVirtual
-          ledger
+    withLoggedDuration "Produce register" $
+      liftIO $
+        checkValidation diag $
+          produceRegister
+            registerSettingFilter
+            registerSettingCurrency
+            registerSettingShowVirtual
+            ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderRegister register
 

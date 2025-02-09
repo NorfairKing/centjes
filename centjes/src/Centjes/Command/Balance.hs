@@ -15,6 +15,7 @@ import Centjes.Ledger
 import Centjes.Load
 import Centjes.OptParse
 import Centjes.Report.Balance
+import Centjes.Timing
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
@@ -31,15 +32,16 @@ import Text.Colour.Layout
 runCentjesBalance :: Settings -> BalanceSettings -> IO ()
 runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
   (declarations, diagnostic) <- loadModules settingLedgerFile
-  ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
+  ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
   br <-
-    liftIO $
-      checkValidation diagnostic $
-        produceBalanceReport
-          balanceSettingFilter
-          balanceSettingCurrency
-          balanceSettingShowVirtual
-          ledger
+    withLoggedDuration "Balance report" $
+      liftIO $
+        checkValidation diagnostic $
+          produceBalanceReport
+            balanceSettingFilter
+            balanceSettingCurrency
+            balanceSettingShowVirtual
+            ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
 

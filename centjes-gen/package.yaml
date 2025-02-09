@@ -22,6 +22,7 @@ library:
   - genvalidity-text
   - genvalidity-time
   - genvalidity-vector
+  - monad-logger
   - path
   - really-safe-money
   - really-safe-money-gen

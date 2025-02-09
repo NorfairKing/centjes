@@ -50,7 +50,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
       ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
 
       -- Check ahead of time, so we don't generate reports of invalid ledgers
-      val <- liftIO $ runValidationT $ doCompleteCheck declarations
+      val <- runValidationT $ doCompleteCheck declarations
       void $ liftIO $ checkValidation diag val
 
       validation <- liftIO $ runValidationT $ runReporter $ produceTaxesReport taxesSettingInput ledger

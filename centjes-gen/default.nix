@@ -13,7 +13,7 @@ mkDerivation {
   libraryHaskellDepends = [
     base centjes containers diagnose genvalidity genvalidity-containers
     genvalidity-path genvalidity-text genvalidity-time
-    genvalidity-vector path QuickCheck really-safe-money
+    genvalidity-vector monad-logger path QuickCheck really-safe-money
     really-safe-money-gen sydtest text vector
   ];
   testHaskellDepends = [

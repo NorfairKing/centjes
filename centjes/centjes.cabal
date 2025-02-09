@@ -46,6 +46,7 @@ library
       Centjes.Report.Register
       Centjes.Tag
       Centjes.Timestamp
+      Centjes.Timing
       Centjes.Typo
       Centjes.Validation
   other-modules:

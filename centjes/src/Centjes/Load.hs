@@ -17,6 +17,7 @@ where
 import Centjes.Location
 import Centjes.Module
 import Centjes.Parse
+import Centjes.Timing
 import Centjes.Validation
 import Control.Monad
 import Control.Monad.Except
@@ -39,7 +40,7 @@ import Text.Read (readMaybe)
 
 loadModules :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Diagnostic String)
 loadModules firstPath = do
-  (declarations, fileMap) <- loadModules' firstPath
+  (declarations, fileMap) <- withLoggedDuration "Load" $ loadModules' firstPath
   pure (declarations, diagFromFileMap fileMap)
 
 loadModules' :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))

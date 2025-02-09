@@ -261,6 +261,7 @@ library
       Centjes.Filter.Gen
       Centjes.Ledger.Gen
       Centjes.Location.Gen
+      Centjes.Logging.TestUtils
       Centjes.Module.Gen
       Centjes.Parse.TestUtils
       Centjes.Tag.Gen
@@ -282,6 +283,7 @@ library
     , genvalidity-text
     , genvalidity-time
     , genvalidity-vector
+    , monad-logger
     , path
     , really-safe-money
     , really-safe-money-gen

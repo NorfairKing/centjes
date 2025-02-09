@@ -4,12 +4,12 @@
 module Centjes.Report.CheckSpec (spec) where
 
 import Centjes.Load
+import Centjes.Logging.TestUtils
 import Centjes.Module.Gen ()
 import Centjes.Report.Check
 import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
-import Control.Monad.Logger
 import Path
 import Path.IO
 import Test.Syd
@@ -23,7 +23,7 @@ spec =
         resultFile <- liftIO $ replaceExtension ".err" af
         it "shows the same error when checking this module" $ do
           goldenTextFile (fromAbsFile resultFile) $ do
-            (ds, diag) <- runNoLoggingT $ loadModules af
+            (ds, diag) <- runTestLoggingT $ loadModules af
             -- Try to check
-            errs <- shouldFailToValidateT $ doCompleteCheck ds
+            errs <- runTestLoggingT $ shouldFailToValidateT $ doCompleteCheck ds
             pure $ renderValidationErrors diag errs

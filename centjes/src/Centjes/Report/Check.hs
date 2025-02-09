@@ -21,9 +21,11 @@ import Centjes.Module as Module
 import Centjes.Report.Balance
 import Centjes.Report.Register
 import qualified Centjes.Timestamp as Timestamp
+import Centjes.Timing
 import Centjes.Validation
 import Control.Monad
 import Control.Monad.IO.Class
+import Control.Monad.Logger
 import Data.Foldable
 import Data.List (intercalate, sortOn)
 import Data.Map (Map)
@@ -36,7 +38,7 @@ import Myers.Diff as Diff
 import Path
 import Path.IO
 
-type CheckerT ann a = ValidationT (CheckError ann) IO a
+type CheckerT ann a = ValidationT (CheckError ann) (LoggingT IO) a
 
 type Checker ann a = Validation (CheckError ann) a
 
@@ -49,9 +51,9 @@ doCompleteCheck ::
       Register SourceSpan
     )
 doCompleteCheck declarations = do
-  () <- checkLDeclarations declarations
-  ledger <- liftValidation $ mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
-  (balanceReport, register) <- liftValidation $ checkLedger ledger
+  () <- withLoggedDuration "Check declarations" $ checkLDeclarations declarations
+  ledger <- withLoggedDuration "Compile" $ liftValidation $ mapValidationFailure CheckErrorCompileError $ compileDeclarations declarations
+  (balanceReport, register) <- withLoggedDuration "Check ledger" $ liftValidation $ checkLedger ledger
   pure (ledger, balanceReport, register)
 
 data CheckError ann
@@ -111,10 +113,10 @@ checkLDeclarations = checkDeclarations . map locatedValue
 
 checkDeclarations :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 checkDeclarations declarations = do
-  checkDeclarationOrdering declarations
-  checkCurrencyUsage declarations
-  checkAccountUsage declarations
-  checkTagUsage declarations
+  withLoggedDuration "Check declaration ordering" $ checkDeclarationOrdering declarations
+  withLoggedDuration "Check currency usage" $ checkCurrencyUsage declarations
+  withLoggedDuration "Check account usage" $ checkAccountUsage declarations
+  withLoggedDuration "Check tag usage" $ checkTagUsage declarations
   -- Check declarations individually
   traverse_ checkDeclaration declarations
 

@@ -5,6 +5,7 @@
 module Centjes.Validation where
 
 import Control.Monad.IO.Class
+import Control.Monad.Logger
 import Control.Monad.Trans
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty (..))
@@ -39,6 +40,11 @@ instance MonadTrans (ValidationT e) where
 
 instance (MonadIO m) => MonadIO (ValidationT e m) where
   liftIO io = ValidationT $ Success <$> liftIO io
+
+instance (MonadLogger m) => MonadLogger (ValidationT e m) where
+  monadLoggerLog loc src lvl msg = ValidationT $ do
+    monadLoggerLog loc src lvl msg
+    pure $ Success ()
 
 runValidationT :: ValidationT e m a -> m (Validation e a)
 runValidationT = unValidationT
