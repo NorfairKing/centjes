@@ -93,7 +93,6 @@ instance HasParser RegisterSettings where
 {-# ANN parseRegisterSettings ("NOCOVER" :: String) #-}
 parseRegisterSettings :: Parser RegisterSettings
 parseRegisterSettings = subConfig_ "register" $ do
-  registerSettingFilter <- settingsParser
   registerSettingCurrency <-
     optional $
       setting
@@ -112,6 +111,7 @@ parseRegisterSettings = subConfig_ "register" $ do
         conf "virtual",
         value False
       ]
+  registerSettingFilter <- settingsParser
   pure RegisterSettings {..}
 
 data BalanceSettings = BalanceSettings
@@ -128,7 +128,6 @@ instance HasParser BalanceSettings where
 {-# ANN parseBalanceSettings ("NOCOVER" :: String) #-}
 parseBalanceSettings :: Parser BalanceSettings
 parseBalanceSettings = subConfig_ "balance" $ do
-  balanceSettingFilter <- settingsParser
   balanceSettingCurrency <-
     optional $
       setting
@@ -180,6 +179,7 @@ parseBalanceSettings = subConfig_ "balance" $ do
                     long "last-year"
                   ]
             ]
+  balanceSettingFilter <- settingsParser
   pure BalanceSettings {..}
 
 data ShowEmpty

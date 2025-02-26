@@ -25,12 +25,6 @@
   
   [34mregister report[m
   command: [35mregister[m
-    [34mfilter[m
-    argument: [33mFILTER[m
-    
-    [34mfilter[m
-    argument: [33mFILTER[m
-    
     [34mCurrency to convert to[m
     option: [37m--convert[m [33mCURRENCY[m
     config:
@@ -44,15 +38,15 @@
         [33m<boolean>[m
     default: [33mFalse[m
     
+    [34mfilter[m
+    argument: [33mFILTER[m
+    
+    [34mfilter[m
+    argument: [33mFILTER[m
+    
   
   [34mbalance report[m
   command: [35mbalance[m
-    [34mfilter[m
-    argument: [33mFILTER[m
-    
-    [34mfilter[m
-    argument: [33mFILTER[m
-    
     [34mCurrency to convert to[m
     option: [37m--convert[m [33mCURRENCY[m
     config:
@@ -86,6 +80,12 @@
     [34mOnly count transactions in last year[m
     switch: [37m--last-year[m
     
+    [34mfilter[m
+    argument: [33mFILTER[m
+    
+    [34mfilter[m
+    argument: [33mFILTER[m
+    
   
   [34mformat files[m
   command: [35mformat[m
@@ -103,19 +103,19 @@
   [37m--config-file[m [34mPath to the configuration file[m
   [35mcheck[m [34mperform an internal consistency check[m
   [35mregister[m [34mregister report[m
-      [33mFILTER[m    [34mfilter[m                                  
-      [33mFILTER[m    [34mfilter[m                                  
       [37m--convert[m [34mCurrency to convert to[m                  
       [37m--virtual[m [34mShow virtual postings too[m default: [33mFalse[m
+      [33mFILTER[m    [34mfilter[m                                  
+      [33mFILTER[m    [34mfilter[m                                  
   [35mbalance[m [34mbalance report[m
-      [33mFILTER[m       [34mfilter[m                                                             
-      [33mFILTER[m       [34mfilter[m                                                             
       [37m--convert[m    [34mCurrency to convert to[m                                             
       [37m--show-empty[m [34mShow empty balances instead of hiding them[m  default: [33mDoNotShowEmpty[m
       [37m--virtual[m    [34mShow virtual postings too[m                   default: [33mFalse[m         
       [37m--year[m       [34mOnly count transactions in the given year[m                          
       [37m--this-year[m  [34mOnly count transactions in the current year[m                        
       [37m--last-year[m  [34mOnly count transactions in last year[m                               
+      [33mFILTER[m       [34mfilter[m                                                             
+      [33mFILTER[m       [34mfilter[m                                                             
   [35mformat[m [34mformat files[m
       [37m-f[m[36m|[m[37m--file[m      [34mFile to format[m     
       [37m-d[m[36m|[m[37m--directory[m [34mDirectory to format[m
