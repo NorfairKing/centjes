@@ -42,7 +42,7 @@ extra-deps:
   subdirs:
   - fast-myers-diff
 - github: NorfairKing/really-safe-money
-  commit: 11ae98bc0bfd590f3802d2bb6d94fc77ffb34515
+  commit: 1cc08efc4c60171fad43731c8e57c3908150d4b3
   subdirs:
   - really-safe-money
   - really-safe-money-autodocodec

@@ -1,0 +1,22 @@
+currency USD 0.01
+
+account equity
+account assets
+account expenses
+
+2024-12-31
+  | Opening
+  * equity -100 USD
+  * assets +100 USD
+
+2025-02-26
+  | Coffee
+  * assets   -5 USD
+  * expenses +5 USD
+  + assert assets = +95 USD
+
+2026-02-26
+  | Coffee
+  * assets   -5 USD
+  * expenses +5 USD
+  + assert assets = +90 USD

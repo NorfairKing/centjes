@@ -10,6 +10,7 @@ import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Filter (Filter)
 import Control.Applicative
 import qualified Data.Text as T
+import Data.Time
 import OptEnvConf
 import Path
 import Path.IO
@@ -117,7 +118,8 @@ data BalanceSettings = BalanceSettings
   { balanceSettingFilter :: !Filter,
     balanceSettingCurrency :: !(Maybe CurrencySymbol),
     balanceSettingShowEmpty :: !ShowEmpty,
-    balanceSettingShowVirtual :: !Bool
+    balanceSettingShowVirtual :: !Bool,
+    balanceSettingYear :: !(Maybe Integer)
   }
 
 instance HasParser BalanceSettings where
@@ -153,6 +155,31 @@ parseBalanceSettings = subConfig_ "balance" $ do
         conf "virtual",
         value False
       ]
+  balanceSettingYear <-
+    optional $
+      let getCurrentYear = do
+            (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
+            pure y
+       in choice
+            [ setting
+                [ help "Only count transactions in the given year",
+                  name "year",
+                  reader auto,
+                  metavar "YEAR"
+                ],
+              mapIO (\() -> getCurrentYear) $
+                setting
+                  [ help "Only count transactions in the current year",
+                    switch (),
+                    long "this-year"
+                  ],
+              mapIO (\() -> (\y -> y - 1) <$> getCurrentYear) $
+                setting
+                  [ help "Only count transactions in last year",
+                    switch (),
+                    long "last-year"
+                  ]
+            ]
   pure BalanceSettings {..}
 
 data ShowEmpty

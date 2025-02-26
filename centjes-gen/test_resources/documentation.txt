@@ -73,6 +73,19 @@
         [33m<boolean>[m
     default: [33mFalse[m
     
+    [34mOnly count transactions in the given year[m
+    option: [37m--year[m [33mYEAR[m
+    env: [37mCENTJES_YEAR[m [33mYEAR[m
+    config:
+      [37mbalance.year[m: # [32mor null[m
+        [33m<integer>[m
+  
+    [34mOnly count transactions in the current year[m
+    switch: [37m--this-year[m
+  
+    [34mOnly count transactions in last year[m
+    switch: [37m--last-year[m
+    
   
   [34mformat files[m
   command: [35mformat[m
@@ -95,19 +108,23 @@
       [37m--convert[m [34mCurrency to convert to[m                  
       [37m--virtual[m [34mShow virtual postings too[m default: [33mFalse[m
   [35mbalance[m [34mbalance report[m
-      [33mFILTER[m       [34mfilter[m                                                            
-      [33mFILTER[m       [34mfilter[m                                                            
-      [37m--convert[m    [34mCurrency to convert to[m                                            
-      [37m--show-empty[m [34mShow empty balances instead of hiding them[m default: [33mDoNotShowEmpty[m
-      [37m--virtual[m    [34mShow virtual postings too[m                  default: [33mFalse[m         
+      [33mFILTER[m       [34mfilter[m                                                             
+      [33mFILTER[m       [34mfilter[m                                                             
+      [37m--convert[m    [34mCurrency to convert to[m                                             
+      [37m--show-empty[m [34mShow empty balances instead of hiding them[m  default: [33mDoNotShowEmpty[m
+      [37m--virtual[m    [34mShow virtual postings too[m                   default: [33mFalse[m         
+      [37m--year[m       [34mOnly count transactions in the given year[m                          
+      [37m--this-year[m  [34mOnly count transactions in the current year[m                        
+      [37m--last-year[m  [34mOnly count transactions in last year[m                               
   [35mformat[m [34mformat files[m
       [37m-f[m[36m|[m[37m--file[m      [34mFile to format[m     
       [37m-d[m[36m|[m[37m--directory[m [34mDirectory to format[m
   [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
 
 [36mEnvironment Variables[m:
-  [37mCENTJES_CONFIG_FILE[m [33mFILE_PATH[m   [34mPath to the configuration file[m                         
-  [37mCENTJES_LEDGER[m [33mFILE_PATH[m        [34mledger file[m                      default: [33m"ledger.cent"[m
+  [37mCENTJES_CONFIG_FILE[m [33mFILE_PATH[m   [34mPath to the configuration file[m                                    
+  [37mCENTJES_YEAR[m [33mYEAR[m               [34mOnly count transactions in the given year[m                         
+  [37mCENTJES_LEDGER[m [33mFILE_PATH[m        [34mledger file[m                                 default: [33m"ledger.cent"[m
 
 [36mConfiguration Values[m:
   [34mCurrency to convert to[m
@@ -133,6 +150,10 @@
   [37mbalance.virtual[m:
     # [32mor null[m
     [33m<boolean>[m
+  [34mOnly count transactions in the given year[m
+  [37mbalance.year[m:
+    # [32mor null[m
+    [33m<integer>[m
   [34mledger file[m
   default: [33m"ledger.cent"[m
   [37mledger[m:

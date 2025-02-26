@@ -38,10 +38,11 @@ spec = do
   describe "produceBalanceReport" $ do
     it "produces valid reports" $
       forAllValid $ \f ->
-        forAllValid $ \mCur ->
-          forAllValid $ \showVirtual ->
-            forAllValid $ \ledger ->
-              shouldBeValid $ produceBalanceReport @() f mCur showVirtual ledger
+        forAllValid $ \mY ->
+          forAllValid $ \mCur ->
+            forAllValid $ \showVirtual ->
+              forAllValid $ \ledger ->
+                shouldBeValid $ produceBalanceReport @() f mY mCur showVirtual ledger
 
     scenarioDirRecur "test_resources/balance/balanced" $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -75,12 +76,13 @@ spec = do
                   shouldValidate diag $
                     produceBalanceReport
                       balanceSettingFilter
+                      balanceSettingYear
                       balanceSettingCurrency
                       balanceSettingShowVirtual
                       ledger
 
                 shouldBeValid br
-                pure $ renderChunksText termCaps $ renderBalanceReport ShowEmpty br
+                pure $ renderChunksText termCaps $ renderBalanceReport balanceSettingShowEmpty br
 
     scenarioDir "test_resources/balance/error" $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -113,6 +115,7 @@ spec = do
                   shouldFailToValidate $
                     produceBalanceReport
                       balanceSettingFilter
+                      balanceSettingYear
                       balanceSettingCurrency
                       balanceSettingShowVirtual
                       ledger

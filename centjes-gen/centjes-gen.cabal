@@ -51,6 +51,9 @@ extra-source-files:
     test_resources/balance/balanced/virtual-assertion.cent
     test_resources/balance/balanced/virtual-assertion.config
     test_resources/balance/balanced/virtual-assertion.txt
+    test_resources/balance/balanced/year-filter.cent
+    test_resources/balance/balanced/year-filter.config
+    test_resources/balance/balanced/year-filter.txt
     test_resources/balance/error/BE_ACCOUNT_TOTAL.cent
     test_resources/balance/error/BE_ACCOUNT_TOTAL.err
     test_resources/balance/error/BE_ACCOUNT_TYPE_ASSERTION.cent

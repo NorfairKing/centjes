@@ -177,7 +177,7 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                      in case T.unwords rest of
                           "" -> renderHtmlDoc $ moduleDoc lmodule
                           "balance" ->
-                            let balanceReport = assertValidates $ produceBalanceReport FilterAny Nothing False ledger
+                            let balanceReport = assertValidates $ produceBalanceReport FilterAny Nothing Nothing False ledger
                              in mconcat
                                   [ renderHtmlDoc $ moduleDoc lmodule,
                                     renderChunksHtml $ renderBalanceReport DoNotShowEmpty balanceReport

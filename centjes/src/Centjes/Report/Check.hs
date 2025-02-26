@@ -290,6 +290,7 @@ checkLedger l = do
       produceBalanceReport
         FilterAny
         Nothing
+        Nothing
         False
         l
   register <-

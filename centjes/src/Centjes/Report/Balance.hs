@@ -24,6 +24,7 @@ import Centjes.Filter (Filter)
 import qualified Centjes.Filter as Filter
 import Centjes.Ledger
 import Centjes.Location
+import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad
 import Data.Foldable
@@ -35,6 +36,7 @@ import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
+import Data.Time
 import Data.Traversable
 import Data.Validity hiding (Validation (..))
 import Data.Vector (Vector)
@@ -380,12 +382,14 @@ produceBalanceReport ::
   forall ann.
   (Ord ann) =>
   Filter ->
+  Maybe Year ->
   Maybe CurrencySymbol ->
   Bool ->
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
-produceBalanceReport f mCurrencySymbolTo showVirtual l = do
-  bl <- produceBalancedLedger showVirtual l
+produceBalanceReport f mYear mCurrencySymbolTo showVirtual l = do
+  let filterByYear = maybe pure filterBalancedLedgerByYear mYear
+  bl <- produceBalancedLedger showVirtual l >>= filterByYear
   let v = balancedLedgerTransactions bl
   let balances =
         filterAccountBalances f $
@@ -409,6 +413,56 @@ produceBalanceReport f mCurrencySymbolTo showVirtual l = do
     Just total -> pure total
 
   pure BalanceReport {..}
+
+-- A balanced ledger has all account balances right after any transaction ready.
+-- We have to:
+--
+-- 1. throw away transactions until we find one that is included,
+-- 2. subtract the latest thrown-away balances from all the leftover balances
+-- 3. throw away the rest of the balances after the given year.
+filterBalancedLedgerByYear :: (Ord ann) => Year -> BalancedLedger ann -> Validation (BalanceError ann) (BalancedLedger ann)
+filterBalancedLedgerByYear y (BalancedLedger v) = BalancedLedger . V.fromList <$> goBefore M.empty (V.toList v)
+  where
+    goBefore ::
+      (Ord ann) =>
+      AccountBalances ann ->
+      [(GenLocated ann (Transaction ann), AccountBalances ann)] ->
+      Validation (BalanceError ann) [(GenLocated ann (Transaction ann), AccountBalances ann)]
+    goBefore toSubtract = \case
+      [] -> pure []
+      ts@((lTrans, balances) : rest) ->
+        if timestampMatchesYear lTrans
+          then goAfter toSubtract ts
+          else goBefore balances rest
+
+    goAfter ::
+      (Ord ann) =>
+      AccountBalances ann ->
+      [(GenLocated ann (Transaction ann), AccountBalances ann)] ->
+      Validation (BalanceError ann) [(GenLocated ann (Transaction ann), AccountBalances ann)]
+    goAfter toSubtract tups = mapM goSubtract $ takeWhile (timestampMatchesYear . fst) tups
+      where
+        goSubtract (lt, balances) = (,) lt <$> subtractAccountBalances balances toSubtract
+
+    timestampMatchesYear (Located _ Transaction {..}) =
+      let Located _ ts = transactionTimestamp
+          d = Timestamp.toDay ts
+          (y', _, _) = toGregorian d
+       in y' == y
+
+subtractAccountBalances ::
+  (Ord ann) =>
+  AccountBalances ann ->
+  AccountBalances ann ->
+  Validation (BalanceError ann) (AccountBalances ann)
+subtractAccountBalances total toSubtract = sequence $ M.unionWith go (M.map pure total) (M.map pure toSubtract)
+  where
+    go mTot mSub = do
+      tot <- mTot
+      sub <- mSub
+      case MultiAccount.subtract tot sub of
+        Nothing -> undefined
+        Just res -> pure res
 
 filterAccountBalances :: Filter -> AccountBalances ann -> AccountBalances ann
 filterAccountBalances f =
@@ -557,18 +611,6 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
         (balancesForBalancing, balancesForAssertions, balancesForUser)
         ix
         (Located pl (Posting real (Located _ an) lc@(Located _ currency) la@(Located _ account) mCost mPercentage)) = do
-          let addAccountToBalances ::
-                Currency ann ->
-                Money.Account ->
-                AccountBalances ann ->
-                Validation (BalanceError ann) (AccountBalances ann)
-              addAccountToBalances c a bs = case M.lookup an bs of
-                Nothing -> pure $ M.insert an (MultiAccount.fromAccount c a) bs
-                Just a' ->
-                  case MultiAccount.addAccount a' c a of
-                    Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl a' c a
-                    Just a'' -> pure $ M.insert an a'' bs
-
           for_ mPercentage $ \lpct@(Located pctl _) -> do
             let go i =
                   case transactionPostings V.!? pred i of
@@ -599,17 +641,17 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
                         Just newAccount -> pure (newCurrency, newAccount)
                       else validationFailure $ BalanceErrorConversionImpossibleRate la lcost mActualRate
 
-                addAccountToBalances convertedCurrency convertedAccount balancesForBalancing
+                addAccountToBalances tl an pl convertedCurrency convertedAccount balancesForBalancing
               else pure balancesForAssertions
 
           balancesForAssertions' <-
             if real
-              then addAccountToBalances currency account balancesForAssertions
+              then addAccountToBalances tl an pl currency account balancesForAssertions
               else pure balancesForAssertions
 
           balancesForUser' <-
             if real || (not real && showVirtual)
-              then addAccountToBalances currency account balancesForUser
+              then addAccountToBalances tl an pl currency account balancesForUser
               else pure balancesForUser
 
           pure (balancesForBalancing', balancesForAssertions', balancesForUser')
@@ -635,6 +677,22 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
     Just d
       | d == MultiAccount.zero -> pure (Located tl mForAssertions, Located tl mForUser)
       | otherwise -> validationFailure $ BalanceErrorTransactionOffBalance tl d $ V.toList transactionPostings
+
+addAccountToBalances ::
+  (Ord ann) =>
+  ann ->
+  AccountName ->
+  ann ->
+  Currency ann ->
+  Money.Account ->
+  AccountBalances ann ->
+  Validation (BalanceError ann) (AccountBalances ann)
+addAccountToBalances tl an pl c a bs = case M.lookup an bs of
+  Nothing -> pure $ M.insert an (MultiAccount.fromAccount c a) bs
+  Just a' ->
+    case MultiAccount.addAccount a' c a of
+      Nothing -> validationFailure $ BalanceErrorCouldNotAddPostings tl an pl a' c a
+      Just a'' -> pure $ M.insert an a'' bs
 
 checkPercentage ::
   (Eq ann) =>
