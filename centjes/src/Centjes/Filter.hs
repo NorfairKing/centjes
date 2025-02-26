@@ -9,6 +9,7 @@ where
 
 import Centjes.AccountName (AccountName (..))
 import qualified Centjes.AccountName as AccountName
+import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -18,8 +19,8 @@ import OptEnvConf
 
 data Filter
   = FilterAny
-  | FilterOr [Filter]
-  | FilterSubstring Text
+  | FilterOr !(NonEmpty Filter)
+  | FilterSubstring !Text
   deriving (Show, Generic)
 
 instance Validity Filter
@@ -28,7 +29,7 @@ instance HasParser Filter where
   settingsParser =
     choice
       [ FilterOr
-          <$> some
+          <$> someNonEmpty
             ( FilterSubstring
                 <$> setting
                   [ help "filter",
