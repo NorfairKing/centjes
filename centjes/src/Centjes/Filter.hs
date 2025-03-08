@@ -33,7 +33,9 @@ instance HasParser Filter where
             ( FilterSubstring
                 <$> setting
                   [ help "filter",
-                    reader str,
+                    reader $ eitherReader $ \s -> case s of
+                      '-' : _ -> Left "Filters must not start with a dash"
+                      _ -> Right (T.pack s),
                     argument,
                     metavar "FILTER"
                   ]
