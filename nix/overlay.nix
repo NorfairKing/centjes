@@ -6,11 +6,22 @@ with final.haskell.lib;
     name = "centjes";
     paths = attrValues final.centjesReleasePackages;
     passthru = {
+      inherit (final) makeCheck;
       inherit (final) makeSwitzerlandVATPacket;
       inherit (final) makeSwitzerlandTaxesPacket;
       inherit (final.vimPlugins) centjes-vim;
     } // final.centjesReleasePackages;
   };
+
+  makeCheck = src:
+    final.stdenv.mkDerivation {
+      name = "centjes-check";
+      inherit src;
+      buildCommand = ''
+        set -ex
+        ${final.centjesReleasePackages.centjes}/bin/centjes --ledger $src/ledger.cent check > $out
+      '';
+    };
 
   makeSwitzerlandTaxesPacket = src: final.stdenv.mkDerivation {
     name = "taxes";
