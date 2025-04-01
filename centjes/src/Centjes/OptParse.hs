@@ -119,7 +119,7 @@ data BalanceSettings = BalanceSettings
     balanceSettingCurrency :: !(Maybe CurrencySymbol),
     balanceSettingShowEmpty :: !ShowEmpty,
     balanceSettingShowVirtual :: !Bool,
-    balanceSettingYear :: !(Maybe Integer)
+    balanceSettingEnd :: !(Maybe Day)
   }
 
 instance HasParser BalanceSettings where
@@ -154,27 +154,28 @@ parseBalanceSettings = subConfig_ "balance" $ do
         conf "virtual",
         value False
       ]
-  balanceSettingYear <-
+  balanceSettingEnd <-
     optional $
       let getCurrentYear = do
             (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
             pure y
        in choice
-            [ setting
-                [ help "Only count transactions in the given year",
-                  name "year",
-                  reader auto,
-                  metavar "YEAR"
-                ],
-              mapIO (\() -> getCurrentYear) $
+            [ (periodLastDay :: Year -> Day)
+                <$> setting
+                  [ help "Balance at the end of the given year",
+                    name "year",
+                    reader auto,
+                    metavar "YEAR"
+                  ],
+              mapIO (\() -> periodLastDay <$> getCurrentYear) $
                 setting
-                  [ help "Only count transactions in the current year",
+                  [ help "Balance at the end of the current year",
                     switch (),
                     long "this-year"
                   ],
-              mapIO (\() -> (\y -> y - 1) <$> getCurrentYear) $
+              mapIO (\() -> periodLastDay . (\y -> y - 1) <$> getCurrentYear) $
                 setting
-                  [ help "Only count transactions in last year",
+                  [ help "Balance at the end of last year",
                     switch (),
                     long "last-year"
                   ]

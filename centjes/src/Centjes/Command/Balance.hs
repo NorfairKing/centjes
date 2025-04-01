@@ -39,7 +39,7 @@ runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
         checkValidation diagnostic $
           produceBalanceReport
             balanceSettingFilter
-            balanceSettingYear
+            balanceSettingEnd
             balanceSettingCurrency
             balanceSettingShowVirtual
             ledger

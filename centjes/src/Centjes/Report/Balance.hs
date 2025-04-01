@@ -382,14 +382,14 @@ produceBalanceReport ::
   forall ann.
   (Ord ann) =>
   Filter ->
-  Maybe Year ->
+  Maybe Day ->
   Maybe CurrencySymbol ->
   Bool ->
   Ledger ann ->
   Validation (BalanceError ann) (BalanceReport ann)
-produceBalanceReport f mYear mCurrencySymbolTo showVirtual l = do
-  let filterByYear = maybe pure filterBalancedLedgerByYear mYear
-  bl <- produceBalancedLedger showVirtual l >>= filterByYear
+produceBalanceReport f mEnd mCurrencySymbolTo showVirtual l = do
+  let truncateToEnd = maybe id truncateBalancedLedgerToEnd mEnd
+  bl <- truncateToEnd <$> produceBalancedLedger showVirtual l
   let v = balancedLedgerTransactions bl
   let balances =
         filterAccountBalances f $
@@ -414,55 +414,13 @@ produceBalanceReport f mYear mCurrencySymbolTo showVirtual l = do
 
   pure BalanceReport {..}
 
--- A balanced ledger has all account balances right after any transaction ready.
--- We have to:
---
--- 1. throw away transactions until we find one that is included,
--- 2. subtract the latest thrown-away balances from all the leftover balances
--- 3. throw away the rest of the balances after the given year.
-filterBalancedLedgerByYear :: (Ord ann) => Year -> BalancedLedger ann -> Validation (BalanceError ann) (BalancedLedger ann)
-filterBalancedLedgerByYear y (BalancedLedger v) = BalancedLedger . V.fromList <$> goBefore M.empty (V.toList v)
+truncateBalancedLedgerToEnd :: Day -> BalancedLedger ann -> BalancedLedger ann
+truncateBalancedLedgerToEnd end (BalancedLedger v) = BalancedLedger $ V.takeWhile go v
   where
-    goBefore ::
-      (Ord ann) =>
-      AccountBalances ann ->
-      [(GenLocated ann (Transaction ann), AccountBalances ann)] ->
-      Validation (BalanceError ann) [(GenLocated ann (Transaction ann), AccountBalances ann)]
-    goBefore toSubtract = \case
-      [] -> pure []
-      ts@((lTrans, balances) : rest) ->
-        if timestampMatchesYear lTrans
-          then goAfter toSubtract ts
-          else goBefore balances rest
-
-    goAfter ::
-      (Ord ann) =>
-      AccountBalances ann ->
-      [(GenLocated ann (Transaction ann), AccountBalances ann)] ->
-      Validation (BalanceError ann) [(GenLocated ann (Transaction ann), AccountBalances ann)]
-    goAfter toSubtract tups = mapM goSubtract $ takeWhile (timestampMatchesYear . fst) tups
-      where
-        goSubtract (lt, balances) = (,) lt <$> subtractAccountBalances balances toSubtract
-
-    timestampMatchesYear (Located _ Transaction {..}) =
-      let Located _ ts = transactionTimestamp
+    go (Located _ t, _) =
+      let Located _ ts = transactionTimestamp t
           d = Timestamp.toDay ts
-          (y', _, _) = toGregorian d
-       in y' == y
-
-subtractAccountBalances ::
-  (Ord ann) =>
-  AccountBalances ann ->
-  AccountBalances ann ->
-  Validation (BalanceError ann) (AccountBalances ann)
-subtractAccountBalances total toSubtract = sequence $ M.unionWith go (M.map pure total) (M.map pure toSubtract)
-  where
-    go mTot mSub = do
-      tot <- mTot
-      sub <- mSub
-      case MultiAccount.subtract tot sub of
-        Nothing -> undefined
-        Just res -> pure res
+       in d <= end
 
 filterAccountBalances :: Filter -> AccountBalances ann -> AccountBalances ann
 filterAccountBalances f =

@@ -21,7 +21,7 @@
         };
         year = lib.mkOption {
           default = null;
-          description = "Only count transactions in the given year";
+          description = "Balance at the end of the given year";
           type = lib.types.nullOr lib.types.int;
         };
       };

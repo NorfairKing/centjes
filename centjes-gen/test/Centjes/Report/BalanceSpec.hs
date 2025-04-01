@@ -76,7 +76,7 @@ spec = do
                   shouldValidate diag $
                     produceBalanceReport
                       balanceSettingFilter
-                      balanceSettingYear
+                      balanceSettingEnd
                       balanceSettingCurrency
                       balanceSettingShowVirtual
                       ledger
@@ -115,7 +115,7 @@ spec = do
                   shouldFailToValidate $
                     produceBalanceReport
                       balanceSettingFilter
-                      balanceSettingYear
+                      balanceSettingEnd
                       balanceSettingCurrency
                       balanceSettingShowVirtual
                       ledger
