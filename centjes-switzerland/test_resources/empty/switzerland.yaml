@@ -2,7 +2,7 @@ first-name: John
 last-name: Doe
 organisation-name: Doe Inc.
 vat-id: 111.222.333
-ahv-id: 756.1111.2222.33
+ahv-id: '7561111222233'
 
 income:
   "income:consulting":

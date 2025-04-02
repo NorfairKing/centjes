@@ -124,6 +124,7 @@ account_extra
   :: { LAccountExtra }
   : tok_plus extra_attachment { sBE $1 $2 $ AccountExtraAttachment $2 }
   | tok_plus extra_account_assertion { sBE $1 $2 $ AccountExtraAssertion $2 }
+  | tok_plus extra_tag { sBE $1 $2 $ AccountExtraTag $2 }
 
 extra_account_assertion
   :: { LAccountAssertion }

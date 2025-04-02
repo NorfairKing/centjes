@@ -10,6 +10,7 @@ module Centjes.Convert
   ( ConvertError (..),
     lookupConversionCurrency,
     convertMultiAccount,
+    convertMultiAccountToAccount,
     lookupConversionRate,
     LatestPriceGraph,
     pricesToPriceGraph,
@@ -35,6 +36,7 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import GHC.Generics (Generic)
+import qualified Money.Account as Money (Account)
 import qualified Money.ConversionRate as Money (ConversionRate)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
@@ -101,7 +103,17 @@ convertMultiAccount ::
   Currency ann ->
   Money.MultiAccount (Currency ann) ->
   Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
-convertMultiAccount al graph currencyTo ma = do
+convertMultiAccount al graph currencyTo ma =
+  MultiAccount.fromAccount currencyTo <$> convertMultiAccountToAccount al graph currencyTo ma
+
+convertMultiAccountToAccount ::
+  (Ord ann) =>
+  Maybe ann ->
+  MemoisedPriceGraph (Currency ann) ->
+  Currency ann ->
+  Money.MultiAccount (Currency ann) ->
+  Validation (ConvertError ann) Money.Account
+convertMultiAccountToAccount al graph currencyTo ma = do
   let quantisationFactorTo :: Money.QuantisationFactor
       quantisationFactorTo = locatedValue (currencyQuantisationFactor currencyTo)
   (mResult, _) <-
@@ -112,7 +124,7 @@ convertMultiAccount al graph currencyTo ma = do
       ma
   case mResult of
     Nothing -> validationFailure $ ConvertErrorInvalidSum currencyTo
-    Just result -> pure $ MultiAccount.fromAccount currencyTo result
+    Just result -> pure result
 
 lookupConversionRate ::
   forall ann.

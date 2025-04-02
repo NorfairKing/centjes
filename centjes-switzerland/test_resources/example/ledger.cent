@@ -3,7 +3,7 @@ currency CHF 0.01
 
 account equity:starting
 account assets:bank
-account assets:bank:usd
+  + attach bank-statement.txt
 account expenses:bank
 account expenses:coffee
 account expenses:hardware
@@ -63,7 +63,7 @@ price 2024-01-07 USD 0.8589 CHF
 
 2024-01-07
   | Quux Dec
-  * assets:bank:usd 1000 USD
+  * assets:bank 1000 USD
   * income:foreign -1000 USD
   + attach quux-dec.txt
 
@@ -77,7 +77,7 @@ price 2024-01-07 USD 0.8589 CHF
 
 2024-02-07
   | Quux Jan
-  * assets:bank:usd 1000 USD
+  * assets:bank 1000 USD
   * income:foreign -1000 USD
   + attach quux-jan.txt
 
@@ -91,12 +91,12 @@ price 2024-01-07 USD 0.8589 CHF
 
 2024-03-07
   | Quux Feb
-  * assets:bank:usd 1000 USD
+  * assets:bank 1000 USD
   * income:foreign -1000 USD
   + attach quux-feb.txt
 
 2024-03-07
   | Joe Feb
-  * assets:bank:usd 1000 USD
+  * assets:bank 1000 USD
   * income:exports -1000 USD
   + attach joe-feb.txt

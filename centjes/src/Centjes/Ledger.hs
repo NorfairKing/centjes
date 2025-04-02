@@ -126,13 +126,14 @@ partiallyOrderedBy f v =
     else V.and (V.zipWith (\a1 a2 -> f a1 a2 /= Just GT) v (V.tail v))
 
 data Account ann = Account
-  { accountType :: AccountType,
+  { accountType :: !AccountType,
     accountAttachments :: !(Vector (GenLocated ann (Attachment ann))),
     -- | Which currencies are allowed in this account
     --
     -- Nothing means "any"
     -- Just S.empty "none"
-    accountCurrencies :: Maybe (Set (Currency ann))
+    accountCurrencies :: !(Maybe (Set (Currency ann))),
+    accountTags :: !(Map Tag ann)
   }
   deriving stock (Show, Eq, Generic)
 

@@ -207,7 +207,20 @@ checkTagUsage declarations =
       go t@(ds, us) = \case
         DeclarationComment _ -> t
         DeclarationCurrency _ -> t
-        DeclarationAccount _ -> t
+        DeclarationAccount (Located _ Module.AccountDeclaration {..}) ->
+          let tags =
+                S.unions $
+                  map
+                    ( \case
+                        Located _ (AccountExtraAttachment _) ->
+                          S.empty
+                        Located _ (AccountExtraAssertion _) ->
+                          S.empty
+                        Located _ (AccountExtraTag (Located _ (ExtraTag (Located _ tag)))) ->
+                          S.singleton tag
+                    )
+                    accountDeclarationExtras
+           in (ds, S.union tags us)
         DeclarationTag ltd@(Located _ td) ->
           let Located _ tn = tagDeclarationTag td
            in (M.insert tn ltd ds, us)
@@ -252,6 +265,7 @@ checkAccountExtra ::
 checkAccountExtra tl = \case
   AccountExtraAttachment a -> checkAttachment tl a
   AccountExtraAssertion _ -> pure ()
+  AccountExtraTag _ -> pure ()
 
 checkTransaction :: Located (Module.Transaction SourceSpan) -> CheckerT SourceSpan ()
 checkTransaction (Located tl Module.Transaction {..}) = do

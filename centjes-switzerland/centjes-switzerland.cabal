@@ -10,8 +10,25 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
-    assets/emwst-schema.xsd
-    assets/etax-schema.xsd
+    assets/schemas/catalog.xml
+    assets/schemas/eCH-0006-2-0.xsd
+    assets/schemas/eCH-0007-5-0.xsd
+    assets/schemas/eCH-0007-5-0f.xsd
+    assets/schemas/eCH-0007-6-0f.xsd
+    assets/schemas/eCH-0008-3-0f.xsd
+    assets/schemas/eCH-0010-5-1f.xsd
+    assets/schemas/eCH-0010-7-0f.xsd
+    assets/schemas/eCH-0011-8-0f.xsd
+    assets/schemas/eCH-0044-4-0f.xsd
+    assets/schemas/eCH-0044-4-1.xsd
+    assets/schemas/eCH-0046-5-0f.xsd
+    assets/schemas/eCH-0058-5-0.xsd
+    assets/schemas/eCH-0097-3-0.xsd
+    assets/schemas/eCH-0097-5-0.xsd
+    assets/schemas/eCH-0119-4-0-0.xsd
+    assets/schemas/eCH-0135-1-0.xsd
+    assets/schemas/eCH-0217-1-0.xsd
+    assets/schemas/README.md
     assets/taxes.typ
     assets/vat.typ
     test_resources/documentation.txt
@@ -38,6 +55,28 @@ extra-source-files:
     test_resources/example/test_resources/documentation.txt
     test_resources/example/vat.xml
     options.nix
+data-files:
+    assets/schemas/catalog.xml
+    assets/schemas/eCH-0006-2-0.xsd
+    assets/schemas/eCH-0007-5-0.xsd
+    assets/schemas/eCH-0007-5-0f.xsd
+    assets/schemas/eCH-0007-6-0f.xsd
+    assets/schemas/eCH-0008-3-0f.xsd
+    assets/schemas/eCH-0010-5-1f.xsd
+    assets/schemas/eCH-0010-7-0f.xsd
+    assets/schemas/eCH-0011-8-0f.xsd
+    assets/schemas/eCH-0044-4-0f.xsd
+    assets/schemas/eCH-0044-4-1.xsd
+    assets/schemas/eCH-0046-5-0f.xsd
+    assets/schemas/eCH-0058-5-0.xsd
+    assets/schemas/eCH-0097-3-0.xsd
+    assets/schemas/eCH-0097-5-0.xsd
+    assets/schemas/eCH-0119-4-0-0.xsd
+    assets/schemas/eCH-0135-1-0.xsd
+    assets/schemas/eCH-0217-1-0.xsd
+    assets/schemas/README.md
+    assets/taxes.typ
+    assets/vat.typ
 
 source-repository head
   type: git
@@ -46,12 +85,10 @@ source-repository head
 library
   exposed-modules:
       Centjes.Switzerland
-      Centjes.Switzerland.Assets
       Centjes.Switzerland.Command
       Centjes.Switzerland.Command.DownloadRates
       Centjes.Switzerland.Command.Taxes
       Centjes.Switzerland.Command.VAT
-      Centjes.Switzerland.Constants
       Centjes.Switzerland.OptParse
       Centjes.Switzerland.Report.Taxes
       Centjes.Switzerland.Report.Taxes.ETax
@@ -91,8 +128,6 @@ library
     , path-io
     , pretty-show
     , really-safe-money
-    , template-haskell
-    , template-haskell-reload
     , text
     , time
     , typed-process

@@ -548,3 +548,16 @@ xmlReportDocument xmlReport =
       documentRoot = toElement xmlReport,
       documentEpilogue = []
     }
+
+xmlRenderSettings :: XML.RenderSettings
+xmlRenderSettings =
+  def
+    { rsXMLDeclaration = True,
+      rsNamespaces =
+        [ (ech0058Abbreviation, ech0058Url),
+          (ech0097Abbreviation, ech0097Url),
+          (ech0119Abbreviation, ech0119Url),
+          (ech0217Abbreviation, ech0217Url),
+          (xsiAbbreviation, xsiUrl)
+        ]
+    }

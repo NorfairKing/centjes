@@ -397,12 +397,25 @@ produceBalanceReport f mEnd mCurrencySymbolTo showVirtual l = do
             then M.empty
             else snd (V.last v)
 
+  let memoisedPriceGraph =
+        maybe
+          id
+          ( \end ->
+              V.filter
+                ( \(Located _ Price {..}) ->
+                    let Located _ ts = priceTimestamp
+                     in Timestamp.toDay ts <= end
+                )
+          )
+          mEnd
+          $ ledgerPrices l
+
   balanceReportBalances <- mapValidationFailure BalanceErrorConvertError $ case mCurrencySymbolTo of
     Nothing -> pure balances
     Just currencySymbolTo -> do
       currencyTo <- lookupConversionCurrency (ledgerCurrencies l) currencySymbolTo
       convertAccountBalances
-        (pricesToPriceGraph (ledgerPrices l))
+        (pricesToPriceGraph memoisedPriceGraph)
         currencyTo
         balances
 

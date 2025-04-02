@@ -216,6 +216,12 @@ data AccountExtra ann
     -- + assert assets = 5 USD
     -- @
     AccountExtraAssertion (GenLocated ann (AccountAssertion ann))
+  | -- | Tag
+    --
+    -- @
+    -- + tag deductible
+    -- @
+    AccountExtraTag (GenLocated ann (ExtraTag ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (AccountExtra ann)
