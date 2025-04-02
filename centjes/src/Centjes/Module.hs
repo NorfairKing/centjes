@@ -17,6 +17,8 @@ module Centjes.Module
     CurrencySymbol (..),
     LAccountDeclaration,
     AccountDeclaration (..),
+    LAccountExtra,
+    AccountExtra (..),
     LAccountAssertion,
     AccountAssertion (..),
     AccountType (..),
@@ -192,11 +194,31 @@ type LAccountDeclaration = LLocated AccountDeclaration
 data AccountDeclaration ann = AccountDeclaration
   { accountDeclarationName :: !(GenLocated ann AccountName),
     accountDeclarationType :: !(Maybe (GenLocated ann AccountType)),
-    accountDeclarationAssertions :: ![GenLocated ann (AccountAssertion ann)]
+    accountDeclarationExtras :: ![GenLocated ann (AccountExtra ann)]
   }
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (AccountDeclaration ann)
+
+type LAccountExtra = LLocated AccountExtra
+
+-- | Account extra
+data AccountExtra ann
+  = -- | Attachment
+    --
+    -- @
+    -- + attach receipt.pdf
+    -- @
+    AccountExtraAttachment (GenLocated ann (ExtraAttachment ann))
+  | -- | Assertion
+    --
+    -- @
+    -- + assert assets = 5 USD
+    -- @
+    AccountExtraAssertion (GenLocated ann (AccountAssertion ann))
+  deriving stock (Show, Generic)
+
+instance (Validity ann) => Validity (AccountExtra ann)
 
 type LAccountAssertion = LLocated AccountAssertion
 

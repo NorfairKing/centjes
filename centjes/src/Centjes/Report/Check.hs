@@ -236,10 +236,22 @@ checkDeclaration :: Declaration SourceSpan -> CheckerT SourceSpan ()
 checkDeclaration = \case
   DeclarationComment _ -> pure ()
   DeclarationCurrency _ -> pure ()
-  DeclarationAccount _ -> pure ()
+  DeclarationAccount a -> checkAccount a
   DeclarationTag _ -> pure ()
   DeclarationPrice _ -> pure ()
   DeclarationTransaction t -> checkTransaction t
+
+checkAccount :: Located (Module.AccountDeclaration SourceSpan) -> CheckerT SourceSpan ()
+checkAccount (Located al Module.AccountDeclaration {..}) = do
+  traverse_ (checkAccountExtra al . locatedValue) accountDeclarationExtras
+
+checkAccountExtra ::
+  SourceSpan ->
+  AccountExtra SourceSpan ->
+  CheckerT SourceSpan ()
+checkAccountExtra tl = \case
+  AccountExtraAttachment a -> checkAttachment tl a
+  AccountExtraAssertion _ -> pure ()
 
 checkTransaction :: Located (Module.Transaction SourceSpan) -> CheckerT SourceSpan ()
 checkTransaction (Located tl Module.Transaction {..}) = do

@@ -168,8 +168,14 @@ accountDeclarationDoc AccountDeclaration {..} =
                   <+> lAccountNameDoc accountDeclarationName
               )
           ],
-          map ((("  +" <+> annotate SyntaxKeyword "assert") <+>) . lAccountAssertionDoc) accountDeclarationAssertions
+          map (("  " <>) . accountExtraDoc . locatedValue) accountDeclarationExtras
         ]
+
+accountExtraDoc :: AccountExtra l -> Doc SyntaxElement
+accountExtraDoc =
+  ("+" <+>) . \case
+    AccountExtraAttachment a -> extraAttachmentDoc (locatedValue a)
+    AccountExtraAssertion la -> lAccountAssertionDoc la
 
 lAccountAssertionDoc :: GenLocated l (AccountAssertion l) -> Doc SyntaxElement
 lAccountAssertionDoc = accountAssertionDoc . locatedValue
@@ -177,7 +183,9 @@ lAccountAssertionDoc = accountAssertionDoc . locatedValue
 accountAssertionDoc :: AccountAssertion l -> Doc SyntaxElement
 accountAssertionDoc = \case
   AccountAssertionCurrency currencySymbol ->
-    "currency" <+> lCurrencySymbolDoc currencySymbol
+    annotate SyntaxKeyword "assert"
+      <+> annotate SyntaxKeyword "currency"
+      <+> lCurrencySymbolDoc currencySymbol
 
 lAccountTypeDoc :: GenLocated l AccountType -> Doc SyntaxElement
 lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at

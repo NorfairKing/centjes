@@ -1,0 +1,3 @@
+account assets
+  + attach foo.txt
+  + attach foo/bar.txt

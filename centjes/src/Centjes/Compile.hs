@@ -163,7 +163,7 @@ instance ToReport (CompileError SourceSpan) where
                               accountDeclarationType = case AccountType.fromAccountName an of
                                 Nothing -> Just $ noLoc AccountTypeAssets
                                 Just _ -> Nothing,
-                              accountDeclarationAssertions = []
+                              accountDeclarationExtras = []
                             }
               ]
         ]
@@ -460,7 +460,9 @@ compileAccountDeclaration currencies (Located dl AccountDeclaration {..}) = do
     Nothing -> case AccountType.fromAccountName name of
       Just t -> pure t
       Nothing -> validationFailure $ CompileErrorCouldNotInferAccountType dl accountDeclarationName
-  currencyAssertions <- traverse (compileAccountAssertionCurrency currencies) accountDeclarationAssertions
+  AccountExtras {..} <- compileAccountExtras currencies accountDeclarationExtras
+  let accountAttachments = V.fromList $ DList.toList accountExtraAttachments
+  let currencyAssertions = DList.toList accountExtraCurrencies
   accountCurrencies <-
     if null currencyAssertions
       then pure Nothing
@@ -475,6 +477,44 @@ compileAccountDeclaration currencies (Located dl AccountDeclaration {..}) = do
       case M.lookup cur assertedCurrencies of
         Just l1 -> validationFailure $ CompileErrorAccountCurrencyDeclaredTwice l1 l2 (currencySymbol cur)
         Nothing -> pure $ M.insert cur l2 assertedCurrencies
+
+compileAccountExtras ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  [GenLocated ann (AccountExtra ann)] ->
+  Validation (CompileError ann) (AccountExtras ann)
+compileAccountExtras currencies = foldMap (compileAccountExtra currencies)
+
+compileAccountExtra ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  GenLocated ann (AccountExtra ann) ->
+  Validation (CompileError ann) (AccountExtras ann)
+compileAccountExtra currencies (Located _ e) = case e of
+  AccountExtraAttachment (Located _ (ExtraAttachment a)) ->
+    pure $ mempty {accountExtraAttachments = DList.singleton a}
+  AccountExtraAssertion aas ->
+    (\lc -> mempty {accountExtraCurrencies = DList.singleton lc})
+      <$> compileAccountAssertionCurrency currencies aas
+
+data AccountExtras ann = AccountExtras
+  { accountExtraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
+    accountExtraCurrencies :: !(DList (GenLocated ann (Currency ann)))
+  }
+
+-- We need this semigroup instance to show as many errors as possible.
+instance Semigroup (AccountExtras ann) where
+  (<>) e1 e2 =
+    AccountExtras
+      { accountExtraAttachments = accountExtraAttachments e1 <> accountExtraAttachments e2,
+        accountExtraCurrencies = accountExtraCurrencies e1 <> accountExtraCurrencies e2
+      }
+
+instance Monoid (AccountExtras ann) where
+  mempty =
+    AccountExtras
+      { accountExtraAttachments = mempty,
+        accountExtraCurrencies = mempty
+      }
+  mappend = (<>)
 
 compileAccountAssertionCurrency ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
@@ -630,65 +670,65 @@ compileTransaction currencies accounts tags (Located l mt) = do
               pure $ Located pl $ Ledger.Price transactionTimestamp (postingCurrency p) lc
           )
           postings
-  Extras {..} <- compileExtras currencies tags l (Module.transactionExtras mt)
-  let transactionAttachments = V.fromList $ DList.toList extraAttachments
-  let transactionAssertions = V.fromList $ DList.toList extraAssertions
-  let transactionTags = extraTags
+  TransactionExtras {..} <- compileTransactionExtras currencies tags l (Module.transactionExtras mt)
+  let transactionAttachments = V.fromList $ DList.toList transactionExtraAttachments
+  let transactionAssertions = V.fromList $ DList.toList transactionExtraAssertions
+  let transactionTags = transactionExtraTags
   pure
     ( Located l Ledger.Transaction {..},
       prices
     )
 
-data Extras ann = Extras
-  { extraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
-    extraAssertions :: !(DList (GenLocated ann (Ledger.Assertion ann))),
-    extraTags :: !(Map Tag ann)
+data TransactionExtras ann = TransactionExtras
+  { transactionExtraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
+    transactionExtraAssertions :: !(DList (GenLocated ann (Ledger.Assertion ann))),
+    transactionExtraTags :: !(Map Tag ann)
   }
 
 -- We need this semigroup instance to show as many errors as possible.
-instance Semigroup (Extras ann) where
+instance Semigroup (TransactionExtras ann) where
   (<>) e1 e2 =
-    Extras
-      { extraAttachments = extraAttachments e1 <> extraAttachments e2,
-        extraAssertions = extraAssertions e1 <> extraAssertions e2,
-        extraTags = M.union (extraTags e1) (extraTags e2)
+    TransactionExtras
+      { transactionExtraAttachments = transactionExtraAttachments e1 <> transactionExtraAttachments e2,
+        transactionExtraAssertions = transactionExtraAssertions e1 <> transactionExtraAssertions e2,
+        transactionExtraTags = M.union (transactionExtraTags e1) (transactionExtraTags e2)
       }
 
-instance Monoid (Extras ann) where
+instance Monoid (TransactionExtras ann) where
   mempty =
-    Extras
-      { extraAttachments = mempty,
-        extraAssertions = mempty,
-        extraTags = M.empty
+    TransactionExtras
+      { transactionExtraAttachments = mempty,
+        transactionExtraAssertions = mempty,
+        transactionExtraTags = M.empty
       }
   mappend = (<>)
 
-compileExtras ::
+compileTransactionExtras ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map Tag ann ->
   ann ->
   [GenLocated ann (TransactionExtra ann)] ->
   Validation
     (CompileError ann)
-    (Extras ann)
-compileExtras currencies tags l = foldMap $ compileExtra currencies tags l
+    (TransactionExtras ann)
+compileTransactionExtras currencies tags l = foldMap $ compileTransactionExtra currencies tags l
 
-compileExtra ::
+compileTransactionExtra ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map Tag ann ->
   ann ->
   GenLocated ann (TransactionExtra ann) ->
   Validation
     (CompileError ann)
-    (Extras ann)
-compileExtra currencies tags l (Located _ e) = case e of
+    (TransactionExtras ann)
+compileTransactionExtra currencies tags l (Located _ e) = case e of
   TransactionAssertion a ->
-    (\ca -> mempty {extraAssertions = DList.singleton ca})
-      <$> compileAssertion currencies l a
+    (\ca -> mempty {transactionExtraAssertions = DList.singleton ca})
+      <$> compileTransactionAssertion currencies l a
   TransactionAttachment (Located _ (ExtraAttachment a)) ->
-    pure $ mempty {extraAttachments = DList.singleton a}
+    pure $ mempty {transactionExtraAttachments = DList.singleton a}
   TransactionTag et ->
-    (\ct -> mempty {extraTags = uncurry M.singleton ct})
+    (\ct -> mempty {transactionExtraTags = uncurry M.singleton ct})
       <$> compileTag tags l et
 
 compilePosting ::
@@ -751,12 +791,12 @@ checkAccountCurrencyAssertion tl pl al (Located adl Account {..}) lcur@(Located 
         then pure ()
         else validationFailure $ CompileErrorInvalidAccountCurrency tl pl al adl lcur allowedCurrencies
 
-compileAssertion ::
+compileTransactionAssertion ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   ann ->
   GenLocated ann (Module.ExtraAssertion ann) ->
   Validation (CompileError ann) (GenLocated ann (Ledger.Assertion ann))
-compileAssertion currencies tl (Located l (ExtraAssertion (Located _ (Module.AssertionEquals lan ldl lqs)))) = do
+compileTransactionAssertion currencies tl (Located l (ExtraAssertion (Located _ (Module.AssertionEquals lan ldl lqs)))) = do
   lc <- compileCurrencySymbol currencies tl lqs
   let lqf = currencyQuantisationFactor (locatedValue lc)
   la <- compileDecimalLiteral tl lqf ldl

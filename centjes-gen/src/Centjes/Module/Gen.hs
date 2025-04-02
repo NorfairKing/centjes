@@ -20,42 +20,82 @@ import Numeric.DecimalLiteral.Gen ()
 import Path
 import Test.QuickCheck
 
-instance (GenValid ann) => GenValid (Module ann)
+instance (GenValid ann) => GenValid (Module ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (Declaration ann)
+instance (GenValid ann) => GenValid (Declaration ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (GenValid ann) => GenValid (Import ann) where
   genValid = Import <$> genLocatedWith (genValid `suchThatMap` replaceExtension ".cent")
   shrinkValid _ = []
 
-instance (GenValid ann) => GenValid (CurrencyDeclaration ann)
+instance (GenValid ann) => GenValid (CurrencyDeclaration ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (AccountDeclaration ann)
+instance (GenValid ann) => GenValid (AccountDeclaration ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (AccountAssertion ann)
+instance (GenValid ann) => GenValid (AccountExtra ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (TagDeclaration ann)
+instance (GenValid ann) => GenValid (AccountAssertion ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (PriceDeclaration ann)
+instance (GenValid ann) => GenValid (TagDeclaration ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (CostExpression ann)
+instance (GenValid ann) => GenValid (PriceDeclaration ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (PercentageExpression ann)
+instance (GenValid ann) => GenValid (CostExpression ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (RationalExpression ann)
+instance (GenValid ann) => GenValid (PercentageExpression ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (Transaction ann)
+instance (GenValid ann) => GenValid (RationalExpression ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (TransactionExtra ann)
+instance (GenValid ann) => GenValid (Transaction ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (Posting ann)
+instance (GenValid ann) => GenValid (TransactionExtra ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (ExtraAttachment ann)
+instance (GenValid ann) => GenValid (Posting ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (Attachment ann)
+instance (GenValid ann) => GenValid (ExtraAttachment ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (ExtraAssertion ann)
+instance (GenValid ann) => GenValid (Attachment ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (Assertion ann)
+instance (GenValid ann) => GenValid (ExtraAssertion ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (ExtraTag ann)
+instance (GenValid ann) => GenValid (Assertion ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance (GenValid ann) => GenValid (ExtraTag ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

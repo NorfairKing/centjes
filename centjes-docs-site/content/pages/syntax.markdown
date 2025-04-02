@@ -63,7 +63,7 @@ account assets:bank
 
 This declaration says "There is an account called `assets:bank`.".
 
-# Account types
+## Account types
 
 An account must be one of the following types.
 
@@ -86,11 +86,26 @@ To annotate an account with a type manually, you can add it like so:
 account foo:bar assets
 ```
 
-## Account assertions
+## Account extras
+
+### Account attachments
+
+An account can have attachments.
+You can use this to attach bank statements during the given tax period, for example.
+
+``` centjes
+account assets:bank
+    + attach statement.pdf
+```
+
+These attachments are checked with `centjes check` and can be used for automation, such as in `centjes-switzterland`.
+
+
+### Account assertions
 
 An account can have associated assertions.
 
-### Currency assertion
+#### Currency assertion
 
 An account currency assertion says that the money in the given account must be of a given currency.
 It is declared as follows:
