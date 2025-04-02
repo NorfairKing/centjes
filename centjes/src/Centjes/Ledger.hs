@@ -127,6 +127,7 @@ partiallyOrderedBy f v =
 
 data Account ann = Account
   { accountType :: AccountType,
+    accountAttachments :: !(Vector (GenLocated ann (Attachment ann))),
     -- | Which currencies are allowed in this account
     --
     -- Nothing means "any"

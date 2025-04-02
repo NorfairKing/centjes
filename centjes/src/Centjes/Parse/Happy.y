@@ -114,11 +114,20 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : tok_account account_name optional(account_type) many(account_assertion) { sBEML $1 $2 $3 $4 $ AccountDeclaration $2 $3 $4 }
+  : tok_account account_name optional(account_type) account_extras { sBEML $1 $2 $3 $4 $ AccountDeclaration $2 $3 $4 }
 
-account_assertion
+account_extras
+  :: { [LAccountExtra] }
+  : many(account_extra) { $1 }
+
+account_extra
+  :: { LAccountExtra }
+  : tok_plus extra_attachment { sBE $1 $2 $ AccountExtraAttachment $2 }
+  | tok_plus extra_account_assertion { sBE $1 $2 $ AccountExtraAssertion $2 }
+
+extra_account_assertion
   :: { LAccountAssertion }
-  : tok_plus tok_assert tok_currency currency_symbol { sBE $1 $4 $ AccountAssertionCurrency $4 }
+  : tok_assert tok_currency currency_symbol { sBE $1 $3 $ AccountAssertionCurrency $3 }
 
 account_type
   :: { Located AccountType }

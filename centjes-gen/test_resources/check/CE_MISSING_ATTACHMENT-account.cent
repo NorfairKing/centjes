@@ -1,0 +1,9 @@
+currency CHF 0.01
+
+account assets:bank
+  + attach example.pdf
+
+2025-04-02
+  * assets:bank +0 CHF
+  * assets:bank +0 CHF
+  + assert assets:bank = +0 CHF

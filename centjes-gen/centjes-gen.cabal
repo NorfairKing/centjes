@@ -106,6 +106,8 @@ extra-source-files:
     test_resources/check/2025-01-02.txt
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.cent
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.err
+    test_resources/check/CE_MISSING_ATTACHMENT-account.cent
+    test_resources/check/CE_MISSING_ATTACHMENT-account.err
     test_resources/check/CE_MISSING_ATTACHMENT.cent
     test_resources/check/CE_MISSING_ATTACHMENT.err
     test_resources/check/CE_MISSING_ATTACHMENT_SIMILAR.cent
@@ -179,6 +181,7 @@ extra-source-files:
     test_resources/register/valid/rates.config
     test_resources/register/valid/rates.txt
     test_resources/syntax/declaration/formatted/account-with-assertions.cent
+    test_resources/syntax/declaration/formatted/account-with-attachment.cent
     test_resources/syntax/declaration/formatted/account-with-type.cent
     test_resources/syntax/declaration/formatted/account.cent
     test_resources/syntax/declaration/formatted/comment.cent
@@ -188,6 +191,7 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/tag.cent
     test_resources/syntax/declaration/formatted/transaction.cent
     test_resources/syntax/declaration/valid/account-with-assertions.cent
+    test_resources/syntax/declaration/valid/account-with-attachment.cent
     test_resources/syntax/declaration/valid/account-with-type.cent
     test_resources/syntax/declaration/valid/account.cent
     test_resources/syntax/declaration/valid/comment.cent
