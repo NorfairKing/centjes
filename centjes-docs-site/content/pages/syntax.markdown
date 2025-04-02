@@ -115,6 +115,17 @@ account assets:bank
   + assert currency USD
 ```
 
+### Tags
+
+Accounts can be tagged:
+
+``` centjes
+account assets
+    + tag legal
+```
+
+However, tags must be declared first, too.
+
 # Transaction
 
 Transactions are declared as using a list of postings that have to balance to zero.

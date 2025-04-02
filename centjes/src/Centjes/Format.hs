@@ -176,6 +176,7 @@ accountExtraDoc =
   ("+" <+>) . \case
     AccountExtraAttachment a -> extraAttachmentDoc (locatedValue a)
     AccountExtraAssertion la -> lAccountAssertionDoc la
+    AccountExtraTag lt -> lExtraTagDoc lt
 
 lAccountAssertionDoc :: GenLocated l (AccountAssertion l) -> Doc SyntaxElement
 lAccountAssertionDoc = accountAssertionDoc . locatedValue
@@ -302,7 +303,7 @@ transactionExtraDoc =
   ("+" <+>) . \case
     TransactionAttachment a -> extraAttachmentDoc (locatedValue a)
     TransactionAssertion a -> extraAssertionDoc (locatedValue a)
-    TransactionTag t -> extraTagDoc (locatedValue t)
+    TransactionTag t -> lExtraTagDoc t
 
 extraAttachmentDoc :: ExtraAttachment l -> Doc SyntaxElement
 extraAttachmentDoc (ExtraAttachment (Located _ (Attachment (Located _ fp)))) =
@@ -317,9 +318,13 @@ extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) 
     <+> accountDoc dl
     <+> lCurrencySymbolDoc cs
 
+lExtraTagDoc :: GenLocated l (ExtraTag l) -> Doc SyntaxElement
+lExtraTagDoc = extraTagDoc . locatedValue
+
 extraTagDoc :: ExtraTag l -> Doc SyntaxElement
 extraTagDoc (ExtraTag lt) =
-  annotate SyntaxKeyword "tag" <+> tagDoc (locatedValue lt)
+  annotate SyntaxKeyword "tag"
+    <+> tagDoc (locatedValue lt)
 
 tagDoc :: Tag -> Doc SyntaxElement
 tagDoc = pretty . Tag.toText

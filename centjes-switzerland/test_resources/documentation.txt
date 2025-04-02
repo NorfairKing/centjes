@@ -44,6 +44,12 @@
       [37myear[m: # [32mor null[m
         [33m<integer>[m
     
+    [34mtag to use for undeclared asset accounts[m
+    config:
+      [37mtag-undeclared[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"undeclared"[m
+    
     [34mtag to use for deductible purchases[m
     config:
       [37mtag-deductible[m: # [32mor null[m
@@ -265,6 +271,11 @@
   [37myear[m:
     # [32mor null[m
     [33m<integer>[m
+  [34mtag to use for undeclared asset accounts[m
+  default: [33m"undeclared"[m
+  [37mtag-undeclared[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mtag to use for deductible purchases[m
   default: [33m"deductible"[m
   [37mtag-deductible[m:

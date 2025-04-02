@@ -16,6 +16,9 @@ extra-source-files:
     test_resources/balance/balanced/conversion-hop.cent
     test_resources/balance/balanced/conversion-hop.config
     test_resources/balance/balanced/conversion-hop.txt
+    test_resources/balance/balanced/conversion-old-price.cent
+    test_resources/balance/balanced/conversion-old-price.config
+    test_resources/balance/balanced/conversion-old-price.txt
     test_resources/balance/balanced/conversion-price-after.cent
     test_resources/balance/balanced/conversion-price-after.config
     test_resources/balance/balanced/conversion-price-after.txt
@@ -160,6 +163,8 @@ extra-source-files:
     test_resources/compile/CE_UNDECLARED_CURRENCY-account-assertion.err
     test_resources/compile/CE_UNDECLARED_CURRENCY.cent
     test_resources/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/compile/CE_UNDECLARED_TAG-account.cent
+    test_resources/compile/CE_UNDECLARED_TAG-account.err
     test_resources/compile/CE_UNDECLARED_TAG.cent
     test_resources/compile/CE_UNDECLARED_TAG.err
     test_resources/documentation.txt
@@ -182,6 +187,7 @@ extra-source-files:
     test_resources/register/valid/rates.txt
     test_resources/syntax/declaration/formatted/account-with-assertions.cent
     test_resources/syntax/declaration/formatted/account-with-attachment.cent
+    test_resources/syntax/declaration/formatted/account-with-tag.cent
     test_resources/syntax/declaration/formatted/account-with-type.cent
     test_resources/syntax/declaration/formatted/account.cent
     test_resources/syntax/declaration/formatted/comment.cent
@@ -192,6 +198,7 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/transaction.cent
     test_resources/syntax/declaration/valid/account-with-assertions.cent
     test_resources/syntax/declaration/valid/account-with-attachment.cent
+    test_resources/syntax/declaration/valid/account-with-tag.cent
     test_resources/syntax/declaration/valid/account-with-type.cent
     test_resources/syntax/declaration/valid/account.cent
     test_resources/syntax/declaration/valid/comment.cent

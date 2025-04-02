@@ -102,6 +102,11 @@
     description = "tag to use for tax-deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
+  tag-undeclared = lib.mkOption {
+    default = null;
+    description = "tag to use for undeclared asset accounts";
+    type = lib.types.nullOr lib.types.str;
+  };
   tag-vat-deductible = lib.mkOption {
     default = null;
     description = "tag to use for VAT-deductible purchases";
