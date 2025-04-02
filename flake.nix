@@ -146,8 +146,8 @@
         doBenchmark = true;
         buildInputs = with pkgs; [
           cabal-install
-          pkg-config
           libxml2
+          pkg-config
           typst
           zlib
         ] ++ self.checks.${system}.pre-commit.enabledPackages;

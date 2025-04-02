@@ -336,8 +336,8 @@ compileDeclarations ::
 compileDeclarations declarations = do
   let Declarations {..} = splitDeclarations declarations
   ledgerCurrencies <- compileCurrencyDeclarations declarationsCurrencies
-  ledgerAccounts <- compileAccountDeclarations ledgerCurrencies declarationsAccounts
   ledgerTags <- compileTagDeclarations declarationsTags
+  ledgerAccounts <- compileAccountDeclarations ledgerCurrencies ledgerTags declarationsAccounts
   declarationPrices <- compilePriceDeclarations ledgerCurrencies declarationsPrices
   transactionTups <-
     traverse
@@ -428,10 +428,11 @@ compileCurrencyDeclaration (Located l CurrencyDeclaration {..}) = do
 compileAccountDeclarations ::
   (Ord ann) =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map Tag ann ->
   [GenLocated ann (AccountDeclaration ann)] ->
   Validation (CompileError ann) (Map AccountName (GenLocated ann (Account ann)))
-compileAccountDeclarations currencies ads = do
-  tups <- traverse (compileAccountDeclaration currencies) ads
+compileAccountDeclarations currencies tags ads = do
+  tups <- traverse (compileAccountDeclaration currencies tags) ads
   foldM go M.empty tups
   where
     go ::
@@ -451,18 +452,20 @@ compileAccountDeclaration ::
   forall ann.
   (Ord ann) =>
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map Tag ann ->
   GenLocated ann (AccountDeclaration ann) ->
   Validation (CompileError ann) (AccountName, GenLocated ann (Account ann))
-compileAccountDeclaration currencies (Located dl AccountDeclaration {..}) = do
+compileAccountDeclaration currencies tags (Located dl AccountDeclaration {..}) = do
   let Located _ name = accountDeclarationName
   accountType <- case accountDeclarationType of
     Just (Located _ t) -> pure t
     Nothing -> case AccountType.fromAccountName name of
       Just t -> pure t
       Nothing -> validationFailure $ CompileErrorCouldNotInferAccountType dl accountDeclarationName
-  AccountExtras {..} <- compileAccountExtras currencies accountDeclarationExtras
+  AccountExtras {..} <- compileAccountExtras currencies tags accountDeclarationExtras
   let accountAttachments = V.fromList $ DList.toList accountExtraAttachments
   let currencyAssertions = DList.toList accountExtraCurrencies
+  let accountTags = accountExtraTags
   accountCurrencies <-
     if null currencyAssertions
       then pure Nothing
@@ -480,24 +483,30 @@ compileAccountDeclaration currencies (Located dl AccountDeclaration {..}) = do
 
 compileAccountExtras ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map Tag ann ->
   [GenLocated ann (AccountExtra ann)] ->
   Validation (CompileError ann) (AccountExtras ann)
-compileAccountExtras currencies = foldMap (compileAccountExtra currencies)
+compileAccountExtras currencies tags = foldMap (compileAccountExtra currencies tags)
 
 compileAccountExtra ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map Tag ann ->
   GenLocated ann (AccountExtra ann) ->
   Validation (CompileError ann) (AccountExtras ann)
-compileAccountExtra currencies (Located _ e) = case e of
+compileAccountExtra currencies tags (Located l e) = case e of
   AccountExtraAttachment (Located _ (ExtraAttachment a)) ->
     pure $ mempty {accountExtraAttachments = DList.singleton a}
   AccountExtraAssertion aas ->
     (\lc -> mempty {accountExtraCurrencies = DList.singleton lc})
       <$> compileAccountAssertionCurrency currencies aas
+  AccountExtraTag et ->
+    (\ct -> mempty {accountExtraTags = uncurry M.singleton ct})
+      <$> compileTag tags l et
 
 data AccountExtras ann = AccountExtras
   { accountExtraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
-    accountExtraCurrencies :: !(DList (GenLocated ann (Currency ann)))
+    accountExtraCurrencies :: !(DList (GenLocated ann (Currency ann))),
+    accountExtraTags :: !(Map Tag ann)
   }
 
 -- We need this semigroup instance to show as many errors as possible.
@@ -505,14 +514,16 @@ instance Semigroup (AccountExtras ann) where
   (<>) e1 e2 =
     AccountExtras
       { accountExtraAttachments = accountExtraAttachments e1 <> accountExtraAttachments e2,
-        accountExtraCurrencies = accountExtraCurrencies e1 <> accountExtraCurrencies e2
+        accountExtraCurrencies = accountExtraCurrencies e1 <> accountExtraCurrencies e2,
+        accountExtraTags = M.union (accountExtraTags e1) (accountExtraTags e2)
       }
 
 instance Monoid (AccountExtras ann) where
   mempty =
     AccountExtras
       { accountExtraAttachments = mempty,
-        accountExtraCurrencies = mempty
+        accountExtraCurrencies = mempty,
+        accountExtraTags = mempty
       }
   mappend = (<>)
 

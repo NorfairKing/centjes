@@ -44,6 +44,12 @@
       [37myear[m: # [32mor null[m
         [33m<integer>[m
     
+    [34mtag to use for undeclared asset accounts[m
+    config:
+      [37mtag-undeclared[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"undeclared"[m
+    
     [34mtag to use for deductible purchases[m
     config:
       [37mtag-deductible[m: # [32mor null[m
@@ -68,11 +74,11 @@
         [33m<string>[m
     default: [33m"not-tax-deductible"[m
     
-    [34mThe AHV identifier. e.g. 746.1111.2222.33[m
+    [34mThe AHV identifier.[m
     config:
       [37mahv-id[m: # [32mor null[m
         [33m<string>[m
-    example: [33m746.1111.2222.33[m
+    example: [33m7461111222233[m
     
     [34mPath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
@@ -265,6 +271,11 @@
   [37myear[m:
     # [32mor null[m
     [33m<integer>[m
+  [34mtag to use for undeclared asset accounts[m
+  default: [33m"undeclared"[m
+  [37mtag-undeclared[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mtag to use for deductible purchases[m
   default: [33m"deductible"[m
   [37mtag-deductible[m:
@@ -285,8 +296,8 @@
   [37mtag-not-tax-deductible[m:
     # [32mor null[m
     [33m<string>[m
-  [34mThe AHV identifier. e.g. 746.1111.2222.33[m
-  example: [33m746.1111.2222.33[m
+  [34mThe AHV identifier.[m
+  example: [33m7461111222233[m
   [37mahv-id[m:
     # [32mor null[m
     [33m<string>[m

@@ -2,18 +2,7 @@ first-name: John
 last-name: Doe
 organisation-name: Doe Inc.
 vat-id: 111.222.333
-ahv-id: 756.1111.2222.33
-
-income:
-  "income:consulting:foobar": 
-    foreign: false
-  "income:consulting:quux": 
-    foreign: true
-
-assets:
-  bank: 
-    name: assets:bank
-    evidence: bank-statement.txt
+ahv-id: '7561111222233'
 
 expenses: []
 

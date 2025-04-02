@@ -107,6 +107,7 @@
     within:
       - Centjes.Report.Balance # TODO get rid of this by putting  positiveFraction in Money.Account
       - Centjes.Switzerland.Report.VAT.Typst
+      - Centjes.Switzerland.Report.Taxes.Typst
 
   # Does silent truncation:
   # > fromIntegral (300 :: Word) :: Word8

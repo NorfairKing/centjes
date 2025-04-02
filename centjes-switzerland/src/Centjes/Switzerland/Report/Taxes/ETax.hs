@@ -306,3 +306,18 @@ xmlReportDocument xmlReport =
       documentRoot = toElement xmlReport,
       documentEpilogue = []
     }
+
+xmlRenderSettings :: XML.RenderSettings
+xmlRenderSettings =
+  def
+    { rsXMLDeclaration = True,
+      rsNamespaces =
+        [ ("eCH-0007f", "http://www.ech.ch/xmlns/eCH-0007-f/6"),
+          ("eCH-0011f", "http://www.ech.ch/xmlns/eCH-0011-f/8"),
+          ("eCH-0044f", "http://www.ech.ch/xmlns/eCH-0044-f/4"),
+          ("eCH-0046f", "http://www.ech.ch/xmlns/eCH-0046-f/5"),
+          ("eCH-0097", "http://www.ech.ch/xmlns/eCH-0097/5"),
+          ("eCH-0119", "http://www.ech.ch/xmlns/eCH-0119/4"),
+          (xsiAbbreviation, xsiUrl)
+        ]
+    }

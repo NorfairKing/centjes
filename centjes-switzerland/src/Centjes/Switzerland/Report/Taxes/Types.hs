@@ -10,28 +10,42 @@
 module Centjes.Switzerland.Report.Taxes.Types
   ( TaxesInput (..),
     TaxesReport (..),
+    AssetAccount (..),
     TaxesError (..),
   )
 where
 
+import Centjes.Convert
+import Centjes.Format
 import Centjes.Ledger
 import Centjes.Location
+import Centjes.Module
+import Centjes.Report.Balance
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
+import Data.List
+import Data.List.NonEmpty
+import Data.Map (Map)
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time
 import Data.Validity
 import Data.Validity.Time ()
 import Error.Diagnose
 import GHC.Generics (Generic (..))
+import qualified Money.Account as Money (Account)
+import qualified Money.ConversionRate as Money (ConversionRate)
+import qualified Money.MultiAccount as Money (MultiAccount)
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import OptEnvConf
+import Path
 
 -- | The settings we need to produce a 'TaxesReport'
 data TaxesInput = TaxesInput
   { taxesInputLastName :: !Text,
     taxesInputFirstName :: !Text,
     taxesInputYear :: !Year,
+    taxesInputTagUndeclared :: !Tag,
     taxesInputTagDeductible :: !Tag,
     taxesInputTagNotDeductible :: !Tag,
     taxesInputTagTaxDeductible :: !Tag,
@@ -66,6 +80,13 @@ parseTaxesInput = do
           ],
         runIO $ (\d -> let (y, _, _) = toGregorian d in y) . utctDay <$> getCurrentTime
       ]
+  taxesInputTagUndeclared <-
+    setting
+      [ help "tag to use for undeclared asset accounts",
+        reader $ eitherReader Tag.fromString,
+        conf "tag-undeclared",
+        value "undeclared"
+      ]
   taxesInputTagDeductible <-
     setting
       [ help "tag to use for deductible purchases",
@@ -96,9 +117,9 @@ parseTaxesInput = do
       ]
   taxesInputInsuredPersonNumber <-
     setting
-      [ help "The AHV identifier. e.g. 746.1111.2222.33",
+      [ help "The AHV identifier.",
         conf "ahv-id",
-        example "746.1111.2222.33"
+        example "7461111222233"
       ]
   pure TaxesInput {..}
 
@@ -109,22 +130,37 @@ data TaxesReport ann = TaxesReport
     taxesReportFirstName :: !Text,
     taxesReportYear :: !Year,
     taxesReportInsuredPersonNumber :: !Text,
-    taxesReportCHF :: !(Currency ann)
+    taxesReportCHF :: !(Currency ann),
+    taxesReportConversionRates :: !(Map (Currency ann) Money.ConversionRate),
+    taxesReportAssetAccounts :: ![AssetAccount ann]
   }
   deriving (Show, Generic)
 
-instance (Validity ann) => Validity (TaxesReport ann) where
+instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
   validate vr@TaxesReport {} =
     mconcat
       [ genericValidate vr
       ]
 
+data AssetAccount ann = AssetAccount
+  { assetAccountName :: !AccountName,
+    assetAccountBalance :: !(Money.MultiAccount (Currency ann)),
+    assetAccountConvertedBalance :: !Money.Account,
+    assetAccountAttachments :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (AssetAccount ann)
+
 data TaxesError ann
   = TaxesErrorNoCHF
   | TaxesErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
+  | TaxesErrorConvertError !(ConvertError ann)
+  | TaxesErrorBalanceError !(BalanceError ann)
+  | TaxesErrorAssetAccountWithoutEvidence !(GenLocated ann AccountName)
   deriving (Show, Generic)
 
-instance (Validity ann) => Validity (TaxesError ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (TaxesError ann)
 
 instance ToReport (TaxesError SourceSpan) where
   toReport = \case
@@ -135,3 +171,29 @@ instance ToReport (TaxesError SourceSpan) where
         "Incompatible CHF defined"
         [(toDiagnosePosition cdl, This "This currency declaration must use 0.01")]
         []
+    TaxesErrorConvertError ce -> toReport ce
+    TaxesErrorBalanceError be -> toReport be
+    TaxesErrorAssetAccountWithoutEvidence (Located anl an) ->
+      Err
+        Nothing
+        "Asset account without evidence"
+        [ (toDiagnosePosition anl, This "This account declaration has neither evidence nor is tagged as undeclared")
+        ]
+        [ Hint $
+            unlines'
+              [ "You can tag this account as undeclared:",
+                T.unpack $
+                  T.strip $
+                    formatDeclaration $
+                      DeclarationAccount $
+                        noLoc $
+                          AccountDeclaration
+                            { accountDeclarationName = noLoc an,
+                              accountDeclarationType = Nothing,
+                              accountDeclarationExtras = [noLoc $ AccountExtraTag $ noLoc $ ExtraTag $ noLoc "undeclared"]
+                            }
+              ]
+        ]
+
+unlines' :: [String] -> String
+unlines' = intercalate "\n"

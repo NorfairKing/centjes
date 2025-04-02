@@ -11,5 +11,9 @@ import Money.Amount.Gen ()
 instance GenValid TaxesInput
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
-  genValid =
-    genValidStructurallyWithoutExtraChecking
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (AssetAccount ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

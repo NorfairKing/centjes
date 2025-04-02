@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Centjes.Validation where
 
@@ -17,6 +18,7 @@ import GHC.Generics
 import Prettyprinter
 import Prettyprinter.Render.Terminal (AnsiStyle, renderStrict)
 import System.Exit
+import System.IO
 
 -- TODO define Validation in terms of ValidationT so we can use polymorphic functions?
 newtype ValidationT e m a = ValidationT {unValidationT :: m (Validation e a)}
@@ -120,6 +122,8 @@ renderValidationErrors diag errs =
 dieWithDiag :: Diagnostic String -> IO a
 dieWithDiag diag = do
   printDiagnostic stderr WithUnicode (TabSize 2) defaultStyle diag
+  hPutStrLn stderr ""
+  hPutStrLn stderr $ unwords [show @Int (length (reportsOf diag)), "errors remaining"]
   exitFailure
 
 renderDiagnostic :: (ToReport e) => Diagnostic String -> NonEmpty e -> Diagnostic String
