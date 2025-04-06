@@ -7,5 +7,6 @@
   <uri name="http://www.ech.ch/xmlns/eCH-0011-f/8" uri="eCH-0011-8-0f.xsd"/>
   <uri name="http://www.ech.ch/xmlns/eCH-0044-f/4" uri="eCH-0044-4-1.xsd"/>
   <uri name="http://www.ech.ch/xmlns/eCH-0046-f/5" uri="eCH-0046-5-0f.xsd"/>
-  <uri name="http://www.ech.ch/xmlns/eCH-0097/5"   uri="eCH-0097-5-0.xs"/>
+  <uri name="http://www.ech.ch/xmlns/eCH-0097/5" uri="eCH-0097-5-0.xs"/>
+  <uri name="http://www.ech.ch/xmlns/eCH-0119/4" uri="eCH-0119-4-0-0.xsd"/>
 </catalog>

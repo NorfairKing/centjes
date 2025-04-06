@@ -85,24 +85,6 @@ decimalLiteralNode =
     . DecimalLiteral.toString
     . DecimalLiteral.setSignOptional
 
--- | Render with the four relevant namespaces and an XML declaration.
-xmlRenderSettings :: XML.RenderSettings
-xmlRenderSettings =
-  def
-    { rsXMLDeclaration = True,
-      rsNamespaces =
-        [ (ech0058Abbreviation, ech0058Url),
-          (ech0097Abbreviation, ech0097Url),
-          (ech0119Abbreviation, ech0119Url),
-          (ech0217Abbreviation, ech0217Url),
-          -- ("ech0007f", "http://www.ech.ch/xmlns/eCH-0007-f/6"),
-          -- ("ech0011f", "http://www.ech.ch/xmlns/eCH-0011-f/8"),
-          -- ("ech0044f", "http://www.ech.ch/xmlns/eCH-0044-f/4"),
-          -- ("ech0046f", "http://www.ech.ch/xmlns/eCH-0046-f/5"),
-          (xsiAbbreviation, xsiUrl)
-        ]
-    }
-
 xmlName :: Text -> Text -> Text -> XML.Name
 xmlName namespace prefix nameLocalName =
   let nameNamespace = Just namespace

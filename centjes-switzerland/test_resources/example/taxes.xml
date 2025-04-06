@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <message
-  xmlns:eCH-0058="http://www.ech.ch/xmlns/eCH-0058/5"
-  xmlns:eCH-0097="http://www.ech.ch/xmlns/eCH-0097/3"
+  xmlns:eCH-0007f="http://www.ech.ch/xmlns/eCH-0007-f/6"
+  xmlns:eCH-0011f="http://www.ech.ch/xmlns/eCH-0011-f/8"
+  xmlns:eCH-0044f="http://www.ech.ch/xmlns/eCH-0044-f/4"
+  xmlns:eCH-0046f="http://www.ech.ch/xmlns/eCH-0046-f/5"
+  xmlns:eCH-0097="http://www.ech.ch/xmlns/eCH-0097/5"
   xmlns:eCH-0119="http://www.ech.ch/xmlns/eCH-0119/4"
-  xmlns:eCH-0217="http://www.ech.ch/xmlns/eCH-0217/1"
   minorVersion="0"
   xmlns="http://www.ech.ch/xmlns/eCH-0119/4"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

@@ -11,8 +11,6 @@ module Centjes.Switzerland.Command.VAT (runCentjesSwitzerlandVAT) where
 import Centjes.Compile
 import Centjes.Load
 import Centjes.Report.Check
-import Centjes.Switzerland.Assets
-import Centjes.Switzerland.Constants (development)
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.Reporter
@@ -48,10 +46,8 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   schemaDir <- resolveDir assetsDir "schemas"
   catalogFile <- resolveFile schemaDir "catalog.xml"
   schemaFile <- resolveFile schemaDir "eCH-0217-1-0.xsd"
-  -- withSystemTempDir "centjes-switzerland" $ \tdir -> do
-  tdir <- resolveDir' "/tmp/centjes-switzerland-testing"
-  ensureDir tdir
-  do
+
+  withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
       (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile

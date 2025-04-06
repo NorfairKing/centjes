@@ -11,8 +11,6 @@ module Centjes.Switzerland.Command.Taxes (runCentjesSwitzerlandTaxes) where
 import Centjes.Compile
 import Centjes.Load
 import Centjes.Report.Check
-import Centjes.Switzerland.Assets
-import Centjes.Switzerland.Constants (development)
 import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Taxes
 import Centjes.Switzerland.Reporter
@@ -33,6 +31,8 @@ import qualified Data.Text.Lazy as LT
 import Data.Time
 import Path
 import Path.IO
+import Paths_centjes_switzerland
+import System.Environment (getEnvironment)
 import System.Exit
 import System.Process.Typed
 import Text.Show.Pretty
@@ -40,8 +40,12 @@ import Text.XML as XML
 
 runCentjesSwitzerlandTaxes :: Settings -> TaxesSettings -> IO ()
 runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
-  typContents <- requireAsset [relfile|taxes.typ|]
-  xmlSchemaContents <- requireAsset [relfile|etax-schema.xsd|]
+  dataDir <- Paths_centjes_switzerland.getDataDir >>= resolveDir'
+  assetsDir <- resolveDir dataDir "assets"
+  typstTemplateFile <- resolveFile assetsDir "taxes.typ"
+  schemaDir <- resolveDir assetsDir "schemas"
+  catalogFile <- resolveFile schemaDir "catalog.xml"
+  schemaFile <- resolveFile schemaDir "eCH-0119-4-0-0.xsd"
 
   withSystemTempDir "centjes-switzerland" $ \tdir -> do
     runStderrLoggingT $ do
@@ -65,6 +69,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
             logDebugN $ T.pack $ ppShow xmlReport
             xf <- resolveFile tdir "taxes.xml"
             let xmlDoc = xmlReportDocument xmlReport
+
             liftIO $
               XML.writeFile
                 xmlRenderSettings
@@ -82,24 +87,19 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
                   (xmlRenderSettings {rsPretty = True})
                   xmlDoc
 
-            -- Turned off outside of development because it does network lookups.
-            -- Turned off because we don't pass the schema yet.
-            when development $ do
-              schemaFile <- resolveFile tdir "etax-schema.xsd"
-              liftIO $
-                SB.writeFile
-                  (fromAbsFile schemaFile)
-                  (TE.encodeUtf8 xmlSchemaContents)
-              logInfoN $
-                T.pack $
-                  unwords
-                    [ "Validating XML output at",
-                      fromAbsFile xf,
-                      "against schema",
-                      fromAbsFile schemaFile
-                    ]
-              runProcess_ $
-                setWorkingDir (fromAbsDir tdir) $
+            logInfoN $
+              T.pack $
+                unwords
+                  [ "Validating XML output at",
+                    fromAbsFile xf,
+                    "against schema",
+                    fromAbsFile schemaFile
+                  ]
+            environment <- liftIO getEnvironment
+            let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
+            runProcess_ $
+              setWorkingDir (fromAbsDir tdir) $
+                setEnv newEnvironment $
                   setStdout inherit $
                     setStderr inherit $
                       proc
@@ -107,7 +107,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
                         [ "--schema",
                           fromAbsFile schemaFile,
                           fromAbsFile xf,
-                          "--noout"
+                          "--catalogs"
                         ]
             pure xf
 
@@ -129,7 +129,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
       -- Write the template to a file
       mainTypFile <- liftIO $ do
         mtf <- resolveFile tdir "main.typ"
-        SB.writeFile (fromAbsFile mtf) $ TE.encodeUtf8 typContents
+        copyFile typstTemplateFile mtf
         pure mtf
 
       -- Compile the README.pdf using typst

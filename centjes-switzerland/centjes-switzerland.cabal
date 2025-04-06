@@ -10,8 +10,6 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
-    assets/emwst-schema.xsd
-    assets/etax-schema.xsd
     assets/schemas/catalog.xml
     assets/schemas/eCH-0007-6-0f.xsd
     assets/schemas/eCH-0011-8-0f.xsd
@@ -50,8 +48,6 @@ extra-source-files:
     test_resources/example/vat.xml
     options.nix
 data-files:
-    assets/emwst-schema.xsd
-    assets/etax-schema.xsd
     assets/schemas/catalog.xml
     assets/schemas/eCH-0007-6-0f.xsd
     assets/schemas/eCH-0011-8-0f.xsd

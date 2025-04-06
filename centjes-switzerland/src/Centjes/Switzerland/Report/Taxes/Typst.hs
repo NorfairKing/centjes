@@ -23,7 +23,6 @@ import Data.Text (Text)
 import Data.Time
 import qualified Money.Account as Account
 import qualified Money.ConversionRate as ConversionRate
-import qualified Money.MultiAccount as Money (MultiAccount (..))
 import qualified Money.MultiAccount as MultiAccount
 import Numeric.Natural
 import Path
