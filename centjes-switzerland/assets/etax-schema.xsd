@@ -4,11 +4,11 @@
 		<xs:documentation xml:lang="de">SSK Steuererklärung natürliche Personen</xs:documentation>
 		<xs:documentation xml:lang="de">Ausgabedatum: 31.08.2020</xs:documentation>
 	</xs:annotation>
-	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0007-f/6"/>
-	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0011-f/8"/>
-	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0044-f/4"/>
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0007-f/6" schemaLocation="https://share-ech.ch/xmlns/eCH-0007-f/6/eCH-0007-6-0f.xsd"/>
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0011-f/8" schemaLocation="http://www.ech.ch/de/xmlns/eCH-0011/8/eCH-0011-8-0.xsd"/>
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0044-f/4"/>
 	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0046-f/5"/>
-	<xs:import namespace="http://www.ech.ch/xmlns/eCH-0097/5"/>
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0097/5"/>
 	<xs:complexType name="headerType">
 		<xs:sequence>
 			<xs:element name="attachment" type="eCH-0119:attachmentType" minOccurs="0" maxOccurs="unbounded"/>

@@ -97,16 +97,24 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
                       "against schema",
                       fromAbsFile schemaFile
                     ]
+              -- runProcess_ $
+              --   setWorkingDir (fromAbsDir tdir) $
+              --     setStdout inherit $
+              --       setStderr inherit $
+              --         proc
+              --           "xmllint"
+              --           [ "--valid",
+              --             fromAbsFile xf, "--noout"
+              --           ]
               runProcess_ $
                 setWorkingDir (fromAbsDir tdir) $
                   setStdout inherit $
                     setStderr inherit $
                       proc
-                        "xmllint"
-                        [ "--schema",
-                          fromAbsFile schemaFile,
-                          fromAbsFile xf,
-                          "--noout"
+                        "saxon-he"
+                        [ "net.sf.saxon.Validate",
+                          "-xsd:" <> fromAbsFile schemaFile,
+                          "-s:" <> fromAbsFile xf
                         ]
             pure xf
 

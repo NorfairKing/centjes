@@ -84,7 +84,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
 
             -- Turned off outside of development because it does network lookups.
             -- Turned off because we don't pass the schema yet.
-            when (development && False) $ do
+            when development $ do
               schemaFile <- resolveFile tdir "etax-schema.xsd"
               liftIO $
                 SB.writeFile

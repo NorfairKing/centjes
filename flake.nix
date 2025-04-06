@@ -147,7 +147,6 @@
         buildInputs = with pkgs; [
           cabal-install
           pkg-config
-          libxml2
           typst
           zlib
         ] ++ self.checks.${system}.pre-commit.enabledPackages;
