@@ -7,6 +7,9 @@ extra-source-files:
 - test_resources/**/*
 - options.nix
 
+data-files:
+- assets/**/*
+
 dependencies:
 - base >= 4.7 && < 5
 

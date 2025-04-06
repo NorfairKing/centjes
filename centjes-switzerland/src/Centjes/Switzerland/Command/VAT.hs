@@ -33,6 +33,8 @@ import qualified Data.Text.Lazy as LT
 import Data.Time
 import Path
 import Path.IO
+import Paths_centjes_switzerland
+import System.Environment (getEnvironment)
 import System.Exit
 import System.Process.Typed
 import Text.Show.Pretty
@@ -40,9 +42,16 @@ import Text.XML as XML
 
 runCentjesSwitzerlandVAT :: Settings -> VATSettings -> IO ()
 runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
-  typContents <- requireAsset [relfile|vat.typ|]
-  xmlSchemaContents <- requireAsset [relfile|emwst-schema.xsd|]
-  withSystemTempDir "centjes-switzerland" $ \tdir -> do
+  dataDir <- Paths_centjes_switzerland.getDataDir >>= resolveDir'
+  assetsDir <- resolveDir dataDir "assets"
+  typstTemplateFile <- resolveFile assetsDir "vat.typ"
+  schemaDir <- resolveDir assetsDir "schemas"
+  catalogFile <- resolveFile schemaDir "catalog.xml"
+  schemaFile <- resolveFile schemaDir "eCH-0217-1-0.xsd"
+  -- withSystemTempDir "centjes-switzerland" $ \tdir -> do
+  tdir <- resolveDir' "/tmp/centjes-switzerland-testing"
+  ensureDir tdir
+  do
     runStderrLoggingT $ do
       -- Produce the input.json structure
       (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
@@ -82,39 +91,27 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
                   (xmlRenderSettings {rsPretty = True})
                   xmlDoc
 
-            -- Turned off outside of development because it does network lookups.
-            when development $ do
-              schemaFile <- resolveFile tdir "mwst-schema.xsd"
-              liftIO $
-                SB.writeFile
-                  (fromAbsFile schemaFile)
-                  (TE.encodeUtf8 xmlSchemaContents)
-              logInfoN $
-                T.pack $
-                  unwords
-                    [ "Validating XML output at",
-                      fromAbsFile xf,
-                      "against schema",
-                      fromAbsFile schemaFile
-                    ]
-              -- runProcess_ $
-              --   setWorkingDir (fromAbsDir tdir) $
-              --     setStdout inherit $
-              --       setStderr inherit $
-              --         proc
-              --           "xmllint"
-              --           [ "--valid",
-              --             fromAbsFile xf, "--noout"
-              --           ]
-              runProcess_ $
-                setWorkingDir (fromAbsDir tdir) $
+            logInfoN $
+              T.pack $
+                unwords
+                  [ "Validating XML output at",
+                    fromAbsFile xf,
+                    "against schema",
+                    fromAbsFile schemaFile
+                  ]
+            environment <- liftIO getEnvironment
+            let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
+            runProcess_ $
+              setWorkingDir (fromAbsDir tdir) $
+                setEnv newEnvironment $
                   setStdout inherit $
                     setStderr inherit $
                       proc
-                        "saxon-he"
-                        [ "net.sf.saxon.Validate",
-                          "-xsd:" <> fromAbsFile schemaFile,
-                          "-s:" <> fromAbsFile xf
+                        "xmllint"
+                        [ "--schema",
+                          fromAbsFile schemaFile,
+                          fromAbsFile xf,
+                          "--catalogs"
                         ]
             pure xf
 
@@ -134,7 +131,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       -- Write the template to a file
       mainTypFile <- liftIO $ do
         mtf <- resolveFile tdir "main.typ"
-        SB.writeFile (fromAbsFile mtf) (TE.encodeUtf8 typContents)
+        copyFile typstTemplateFile mtf
         pure mtf
 
       liftIO $ compileTypst mainTypFile vatSettingReadmeFile

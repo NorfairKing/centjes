@@ -146,6 +146,7 @@
         doBenchmark = true;
         buildInputs = with pkgs; [
           cabal-install
+          libxml2
           pkg-config
           typst
           zlib

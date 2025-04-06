@@ -14,6 +14,7 @@ mkDerivation {
   src = ./.;
   isLibrary = true;
   isExecutable = true;
+  enableSeparateDataOutput = true;
   libraryHaskellDepends = [
     aeson aeson-pretty autodocodec base bytestring centjes conduit
     containers diagnose http-client http-client-tls http-types
