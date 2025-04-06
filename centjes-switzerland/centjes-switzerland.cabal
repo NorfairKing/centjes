@@ -85,12 +85,10 @@ source-repository head
 library
   exposed-modules:
       Centjes.Switzerland
-      Centjes.Switzerland.Assets
       Centjes.Switzerland.Command
       Centjes.Switzerland.Command.DownloadRates
       Centjes.Switzerland.Command.Taxes
       Centjes.Switzerland.Command.VAT
-      Centjes.Switzerland.Constants
       Centjes.Switzerland.OptParse
       Centjes.Switzerland.Report.Taxes
       Centjes.Switzerland.Report.Taxes.ETax

@@ -28,6 +28,7 @@ with final.haskell.lib;
     inherit src;
     buildInputs = [
       final.typst
+      final.libxml2
     ];
     buildCommand = ''
       mkdir -p $out
@@ -44,6 +45,7 @@ with final.haskell.lib;
     inherit src;
     buildInputs = [
       final.typst
+      final.libxml2
     ];
     buildCommand = ''
       mkdir -p $out
