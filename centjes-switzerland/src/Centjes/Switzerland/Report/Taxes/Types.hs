@@ -117,9 +117,9 @@ parseTaxesInput = do
       ]
   taxesInputInsuredPersonNumber <-
     setting
-      [ help "The AHV identifier. e.g. 746.1111.2222.33",
+      [ help "The AHV identifier.",
         conf "ahv-id",
-        example "746.1111.2222.33"
+        example "7461111222233"
       ]
   pure TaxesInput {..}
 

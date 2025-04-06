@@ -104,7 +104,9 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
                     setStderr inherit $
                       proc
                         "xmllint"
-                        [ "--schema",
+                        [ "--debugent",
+                          "--noout",
+                          "--schema",
                           fromAbsFile schemaFile,
                           fromAbsFile xf,
                           "--catalogs"
