@@ -3,7 +3,7 @@ currency CHF 0.01
 
 account equity:starting
 account assets:bank
-  + attach bank-statement
+  + attach bank-statement.txt
 account expenses:bank
 account expenses:coffee
 account expenses:hardware

@@ -2,7 +2,7 @@
 {
   ahv-id = lib.mkOption {
     default = null;
-    description = "The AHV identifier. e.g. 746.1111.2222.33";
+    description = "The AHV identifier.";
     type = lib.types.nullOr lib.types.str;
   };
   base-dir = lib.mkOption {
