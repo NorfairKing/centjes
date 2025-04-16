@@ -29,8 +29,8 @@ import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
 
-runCentjesBalance :: Settings -> BalanceSettings -> IO ()
-runCentjesBalance Settings {..} BalanceSettings {..} = runStderrLoggingT $ do
+runCentjesBalance :: Settings -> BalanceSettings -> LoggingT IO ()
+runCentjesBalance Settings {..} BalanceSettings {..} = do
   (declarations, diagnostic) <- loadModules settingLedgerFile
   ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
   br <-

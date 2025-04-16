@@ -31,13 +31,12 @@ import Path.IO
 import System.Exit
 import UnliftIO
 
-runCentjesFormat :: Settings -> FormatSettings -> IO ()
-runCentjesFormat Settings {..} FormatSettings {..} = do
-  runStderrLoggingT $ do
-    case formatSettingFileOrDir of
-      Nothing -> formatFromLedger settingLedgerFile
-      Just (Right dir) -> formatDir M.empty dir
-      Just (Left file) -> formatSingleFile file
+runCentjesFormat :: Settings -> FormatSettings -> LoggingT IO ()
+runCentjesFormat Settings {..} FormatSettings {..} =
+  case formatSettingFileOrDir of
+    Nothing -> formatFromLedger settingLedgerFile
+    Just (Right dir) -> formatDir M.empty dir
+    Just (Left file) -> formatSingleFile file
 
 formatFromLedger :: Path Abs File -> LoggingT IO ()
 formatFromLedger l = do

@@ -34,8 +34,10 @@ spec = do
       forAllValid $ \f ->
         forAllValid $ \mCurrencySymbolTo ->
           forAllValid $ \showVirtual ->
-            forAllValid $ \ledger ->
-              shouldBeValid $ produceRegister @() f mCurrencySymbolTo showVirtual ledger
+            forAllValid $ \mBegin ->
+              forAllValid $ \mEnd ->
+                forAllValid $ \ledger ->
+                  shouldBeValid $ produceRegister @() f mCurrencySymbolTo showVirtual mBegin mEnd ledger
 
     scenarioDir "test_resources/register/valid" $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -72,6 +74,8 @@ spec = do
                       registerSettingFilter
                       registerSettingCurrency
                       registerSettingShowVirtual
+                      registerSettingBegin
+                      registerSettingEnd
                       ledger
 
                 shouldBeValid rr

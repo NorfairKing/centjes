@@ -22,6 +22,7 @@ import Centjes.Location
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad.State
+import Data.Time
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -78,14 +79,23 @@ produceRegister ::
   Filter ->
   Maybe CurrencySymbol ->
   Bool ->
+  Maybe Day ->
+  Maybe Day ->
   Ledger ann ->
   Validation (RegisterError ann) (Register ann)
-produceRegister f mCurrencySymbolTo showVirtual ledger = do
+produceRegister f mCurrencySymbolTo showVirtual mBegin mEnd ledger = do
   mCurrencyTo <-
     mapValidationFailure RegisterErrorConvertError $
       traverse (lookupConversionCurrency (ledgerCurrencies ledger)) mCurrencySymbolTo
 
-  ts <- V.catMaybes <$> traverse (registerTransaction f showVirtual) (ledgerTransactions ledger)
+  ts <-
+    V.catMaybes
+      <$> traverse
+        (registerTransaction f showVirtual)
+        ( V.filter
+            (transactionPassesDayFilter mBegin mEnd . locatedValue)
+            (ledgerTransactions ledger)
+        )
   let goTransaction ::
         ( Int,
           Money.MultiAccount (Currency ann),
@@ -263,6 +273,18 @@ registerTransaction f showVirtual (Located _ t) = do
             transactionDescription t,
             postings
           )
+
+transactionPassesDayFilter :: Maybe Day -> Maybe Day -> Transaction ann -> Bool
+transactionPassesDayFilter mBegin mEnd t =
+  let Located _ ts = transactionTimestamp t
+   in and
+        [ case mBegin of
+            Nothing -> True
+            Just begin -> Timestamp.toDay ts >= begin,
+          case mEnd of
+            Nothing -> True
+            Just end -> Timestamp.toDay ts <= end
+        ]
 
 registerPosting ::
   Filter ->

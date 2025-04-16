@@ -32,8 +32,8 @@ import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
 
-runCentjesRegister :: Settings -> RegisterSettings -> IO ()
-runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
+runCentjesRegister :: Settings -> RegisterSettings -> LoggingT IO ()
+runCentjesRegister Settings {..} RegisterSettings {..} = do
   (declarations, diag) <- loadModules settingLedgerFile
   ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diag $ compileDeclarations declarations
   register <-
@@ -44,6 +44,8 @@ runCentjesRegister Settings {..} RegisterSettings {..} = runStderrLoggingT $ do
             registerSettingFilter
             registerSettingCurrency
             registerSettingShowVirtual
+            registerSettingBegin
+            registerSettingEnd
             ledger
   terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
   liftIO $ putChunksLocaleWith terminalCapabilities $ renderRegister register

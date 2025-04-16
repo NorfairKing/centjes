@@ -21,6 +21,7 @@ getInstructions = runSettingsParser version "really safe double-entry accounting
 
 data Instructions
   = Instructions !Dispatch !Settings
+  deriving (Show)
 
 instance HasParser Instructions where
   settingsParser = parseInstructions
@@ -37,6 +38,7 @@ parseInstructions =
 data Settings = Settings
   { settingLedgerFile :: !(Path Abs File)
   }
+  deriving (Show)
 
 instance HasParser Settings where
   settingsParser = parseSettings
@@ -58,6 +60,7 @@ data Dispatch
   | DispatchRegister !RegisterSettings
   | DispatchBalance !BalanceSettings
   | DispatchFormat !FormatSettings
+  deriving (Show)
 
 instance HasParser Dispatch where
   settingsParser = parseDispatch
@@ -73,6 +76,7 @@ parseDispatch =
     ]
 
 data CheckSettings = CheckSettings
+  deriving (Show)
 
 instance HasParser CheckSettings where
   settingsParser = parseCheckSettings
@@ -88,6 +92,7 @@ data RegisterSettings = RegisterSettings
     registerSettingBegin :: !(Maybe Day),
     registerSettingEnd :: !(Maybe Day)
   }
+  deriving (Show)
 
 instance HasParser RegisterSettings where
   settingsParser = parseRegisterSettings
@@ -124,6 +129,7 @@ data BalanceSettings = BalanceSettings
     balanceSettingShowVirtual :: !Bool,
     balanceSettingEnd :: !(Maybe Day)
   }
+  deriving (Show)
 
 instance HasParser BalanceSettings where
   settingsParser = parseBalanceSettings
@@ -173,33 +179,29 @@ timeFilterParser =
               Nothing -> (Nothing, Nothing)
               Just (b, e) -> (Just b, Just e)
           )
-   in choice
-        [ distributeMaybe $
-            optional $
-              yearTuple
+   in distributeMaybe $
+        optional $
+          choice
+            [ yearTuple
                 <$> setting
                   [ help "Balance at the end of the given year",
                     name "year",
                     reader auto,
                     metavar "YEAR"
                   ],
-          distributeMaybe $
-            optional $
               mapIO (\() -> yearTuple <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of the current year",
                     switch (),
                     long "this-year"
                   ],
-          distributeMaybe $
-            optional $
               mapIO (\() -> yearTuple . (\y -> y - 1) <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of last year",
                     switch (),
                     long "last-year"
                   ]
-        ]
+            ]
 
 data ShowEmpty
   = ShowEmpty
@@ -219,6 +221,7 @@ instance HasCodec ShowEmpty where
 data FormatSettings = FormatSettings
   { formatSettingFileOrDir :: !(Maybe (Either (Path Abs File) (Path Abs Dir)))
   }
+  deriving (Show)
 
 instance HasParser FormatSettings where
   settingsParser = parseFormatSettings

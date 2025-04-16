@@ -24,6 +24,7 @@ library:
   - opt-env-conf
   - path
   - path-io
+  - pretty-show
   - prettyprinter
   - prettyprinter-ansi-terminal
   - psqueues
