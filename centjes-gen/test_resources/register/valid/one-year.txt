@@ -1,0 +1,8 @@
+[37m0[m [34m2023-12-31[m [33mOpening balances[m [37mequity[m   [31m-100.00[m [31mUSD[m [31m-100.00[m [31mUSD[m
+                              [37massets[m   [32m 100.00[m [32mUSD[m            
+[37m1[m [34m2024-01-01[m [33mTransaction 1[m    [37massets[m   [31m  -1.00[m [31mUSD[m [31m  -1.00[m [31mUSD[m
+                              [37mexpenses[m [32m   1.00[m [32mUSD[m            
+[37m2[m [34m2024-12-31[m [33mTransaction 2[m    [37massets[m   [31m  -1.00[m [31mUSD[m [31m  -1.00[m [31mUSD[m
+                              [37mexpenses[m [32m   1.00[m [32mUSD[m            
+[37m3[m [34m2025-01-01[m [33mTransaction 3[m    [37massets[m   [31m  -1.00[m [31mUSD[m [31m  -1.00[m [31mUSD[m
+                              [37mexpenses[m [32m   1.00[m [32mUSD[m            

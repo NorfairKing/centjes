@@ -84,7 +84,9 @@ parseCheckSettings = pure CheckSettings
 data RegisterSettings = RegisterSettings
   { registerSettingFilter :: !Filter,
     registerSettingCurrency :: !(Maybe CurrencySymbol),
-    registerSettingShowVirtual :: !Bool
+    registerSettingShowVirtual :: !Bool,
+    registerSettingBegin :: !(Maybe Day),
+    registerSettingEnd :: !(Maybe Day)
   }
 
 instance HasParser RegisterSettings where
@@ -111,6 +113,7 @@ parseRegisterSettings = subConfig_ "register" $ do
         conf "virtual",
         value False
       ]
+  ~(registerSettingBegin, registerSettingEnd) <- timeFilterParser
   registerSettingFilter <- settingsParser
   pure RegisterSettings {..}
 
@@ -154,34 +157,49 @@ parseBalanceSettings = subConfig_ "balance" $ do
         conf "virtual",
         value False
       ]
-  balanceSettingEnd <-
-    optional $
-      let getCurrentYear = do
-            (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
-            pure y
-       in choice
-            [ (periodLastDay :: Year -> Day)
+  balanceSettingEnd <- snd <$> timeFilterParser
+  balanceSettingFilter <- settingsParser
+  pure BalanceSettings {..}
+
+timeFilterParser :: Parser (Maybe Day, Maybe Day)
+timeFilterParser =
+  let getCurrentYear = do
+        (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
+        pure y
+      yearTuple y = ((periodFirstDay :: Year -> Day) y, (periodLastDay :: Year -> Day) y)
+      distributeMaybe =
+        fmap
+          ( \case
+              Nothing -> (Nothing, Nothing)
+              Just (b, e) -> (Just b, Just e)
+          )
+   in choice
+        [ distributeMaybe $
+            optional $
+              yearTuple
                 <$> setting
                   [ help "Balance at the end of the given year",
                     name "year",
                     reader auto,
                     metavar "YEAR"
                   ],
-              mapIO (\() -> periodLastDay <$> getCurrentYear) $
+          distributeMaybe $
+            optional $
+              mapIO (\() -> yearTuple <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of the current year",
                     switch (),
                     long "this-year"
                   ],
-              mapIO (\() -> periodLastDay . (\y -> y - 1) <$> getCurrentYear) $
+          distributeMaybe $
+            optional $
+              mapIO (\() -> yearTuple . (\y -> y - 1) <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of last year",
                     switch (),
                     long "last-year"
                   ]
-            ]
-  balanceSettingFilter <- settingsParser
-  pure BalanceSettings {..}
+        ]
 
 data ShowEmpty
   = ShowEmpty

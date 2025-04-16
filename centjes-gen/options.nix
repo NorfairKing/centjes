@@ -46,6 +46,11 @@
           description = "Show virtual postings too";
           type = lib.types.nullOr lib.types.bool;
         };
+        year = lib.mkOption {
+          default = null;
+          description = "Balance at the end of the given year";
+          type = lib.types.nullOr lib.types.int;
+        };
       };
     };
   };

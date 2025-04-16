@@ -182,6 +182,9 @@ extra-source-files:
     test_resources/register/valid/empty.txt
     test_resources/register/valid/example.cent
     test_resources/register/valid/example.txt
+    test_resources/register/valid/one-year.cent
+    test_resources/register/valid/one-year.config
+    test_resources/register/valid/one-year.txt
     test_resources/register/valid/rates.cent
     test_resources/register/valid/rates.config
     test_resources/register/valid/rates.txt
