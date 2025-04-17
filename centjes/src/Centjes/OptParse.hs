@@ -1,7 +1,9 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Centjes.OptParse where
 
@@ -9,6 +11,7 @@ import Autodocodec
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Filter (Filter)
 import Control.Applicative
+import Control.Monad.Logger
 import qualified Data.Text as T
 import Data.Time
 import OptEnvConf
@@ -36,7 +39,8 @@ parseInstructions =
         <*> settingsParser
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File)
+  { settingLedgerFile :: !(Path Abs File),
+    settingLogLevel :: !LogLevel
   }
   deriving (Show)
 
@@ -53,7 +57,35 @@ parseSettings = do
         name "ledger",
         value "ledger.cent"
       ]
+  settingLogLevel <- settingsParser
   pure Settings {..}
+
+instance HasParser LogLevel where
+  settingsParser =
+    setting
+      [ help "Minimal severity of log messages",
+        reader logLevelReader,
+        value LevelInfo,
+        name "log-level",
+        metavar "LOG_LEVEL",
+        example "Info"
+      ]
+    where
+      logLevelReader = eitherReader $ \case
+        "Debug" -> Right LevelDebug
+        "Info" -> Right LevelInfo
+        "Warn" -> Right LevelWarn
+        "Error" -> Right LevelError
+        s -> Left $ "Unknown LogLevel: " <> show s
+
+instance HasCodec LogLevel where
+  codec =
+    stringConstCodec
+      [ (LevelDebug, "Debug"),
+        (LevelInfo, "Info"),
+        (LevelWarn, "Warn"),
+        (LevelError, "Error")
+      ]
 
 data Dispatch
   = DispatchCheck !CheckSettings

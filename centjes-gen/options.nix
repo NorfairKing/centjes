@@ -32,6 +32,16 @@
     description = "ledger file";
     type = lib.types.nullOr lib.types.str;
   };
+  log-level = lib.mkOption {
+    default = null;
+    description = "Minimal severity of log messages";
+    type = lib.types.nullOr (lib.types.enum [
+      "Debug"
+      "Info"
+      "Warn"
+      "Error"
+    ]);
+  };
   register = lib.mkOption {
     default = { };
     type = lib.types.submodule {

@@ -10,6 +10,7 @@ import Centjes.Format
 import Centjes.Module.Gen ()
 import Centjes.OptParse
 import Centjes.Parse
+import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as T
@@ -27,9 +28,9 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
       let rf = [relfile|test.foobar|]
       let af = tdir </> rf
       T.writeFile (fromAbsFile af) (formatModule @() m)
-      let settings = Settings {settingLedgerFile = af}
+      let settings = Settings {settingLedgerFile = af, settingLogLevel = LevelError}
       let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Left af)}
-      runCentjesFormat settings formatSettings
+      runStderrLoggingT $ runCentjesFormat settings formatSettings
       assertFormatted tdir rf
 
   it "can format an entire directory" $ \tdir ->
@@ -41,9 +42,9 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
         let af2 = tdir </> rf2
         T.writeFile (fromAbsFile af1) (formatModule @() m1)
         T.writeFile (fromAbsFile af2) (formatModule @() m2)
-        let settings = Settings {settingLedgerFile = af1}
+        let settings = Settings {settingLedgerFile = af1, settingLogLevel = LevelError}
         let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
-        runCentjesFormat settings formatSettings
+        runStderrLoggingT $ runCentjesFormat settings formatSettings
         assertFormatted tdir rf1
         assertFormatted tdir rf2
 
@@ -53,9 +54,9 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
     T.writeFile (fromAbsFile testFile1) "#invalid file"
     let unformatted = "import   foo.cent\n" -- Valid but unformatted
     T.writeFile (fromAbsFile testFile2) unformatted
-    let settings = Settings {settingLedgerFile = testFile1}
+    let settings = Settings {settingLedgerFile = testFile1, settingLogLevel = LevelError}
     let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
-    runCentjesFormat settings formatSettings `shouldThrow` (\(_ :: ExitCode) -> True)
+    runStderrLoggingT (runCentjesFormat settings formatSettings) `shouldThrow` (\(_ :: ExitCode) -> True)
     T.readFile (fromAbsFile testFile2) `shouldReturn` unformatted
 
 assertFormatted :: Path Abs Dir -> Path Rel File -> IO ()

@@ -61,14 +61,14 @@ extra-deps:
     - genvalidity
     - genvalidity-dlist
 - github: NorfairKing/autodocodec
-  commit: b435803c3367b06c0d38acd90a54ba63e63fb6be
+  commit: 7439601de128dadf562430f4216cbdb28580ed20
   subdirs:
     - autodocodec
     - autodocodec-nix
     - autodocodec-schema
     - autodocodec-yaml
 - github: NorfairKing/opt-env-conf
-  commit: fdf861f7bdd7f6aff777e2780beb7a400bd97625
+  commit: f1a744f9497e0c0e017262dfa24b7aefe5250dd0
   subdirs:
     - opt-env-conf
     - opt-env-conf-test

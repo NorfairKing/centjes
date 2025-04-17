@@ -9,10 +9,11 @@ import Text.Show.Pretty
 runCentjes :: IO ()
 runCentjes = do
   instructions@(Instructions d settings) <- getInstructions
-  runStderrLoggingT $ do
-    logDebugN $ T.pack $ ppShow instructions
-    case d of
-      DispatchCheck cs -> runCentjesCheck settings cs
-      DispatchRegister cs -> runCentjesRegister settings cs
-      DispatchBalance cs -> runCentjesBalance settings cs
-      DispatchFormat cs -> runCentjesFormat settings cs
+  runStderrLoggingT $
+    filterLogger (\_ ll -> ll >= settingLogLevel settings) $ do
+      logDebugN $ T.pack $ ppShow instructions
+      case d of
+        DispatchCheck cs -> runCentjesCheck settings cs
+        DispatchRegister cs -> runCentjesRegister settings cs
+        DispatchBalance cs -> runCentjesBalance settings cs
+        DispatchFormat cs -> runCentjesFormat settings cs
