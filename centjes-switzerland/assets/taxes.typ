@@ -1,39 +1,70 @@
+#show raw: set text(font: "DejaVu Sans Mono", size: 8pt)
+#set text(font: "DejaVu Sans Mono", size: 8pt)
+
 #let input = json("input.json")
 
 = Taxes #{ input.year }
 
 Name: #{ input.first_name } #{ input.last_name }
 
-== Exchange rates
+== Income
 
-These exchange rates are used for valuations on #{ input.year }-12-31:
-
-#for (currency, rate) in input.rates [
-  - #raw(currency): #{ rate } #raw("CHF") / #raw(currency)
-]
+#table(
+  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.revenues.map(
+    revenue =>
+    (
+      revenue.day, [ #{ revenue.description }
+        #linebreak()
+        #if revenue.evidence.len() == 1 [
+          #for evidence in revenue.evidence [
+            #link(evidence, evidence)
+          ]
+        ] else [
+          #for evidence in revenue.evidence [
+            - #link(evidence, evidence)
+          ]
+        ] ], [#{ revenue.amount.formatted } #{ revenue.amount.symbol }], [#{ revenue.amount_chf } CHF],
+    ),
+  ).flatten(), [], text(weight: "bold", [Total]), [], [#text(weight: "bold", input.total_revenues) CHF],
+)
 
 == Assets
 
+#table(
+  stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..input.assets.map(asset =>
+  (asset.name, [ #{ asset.balance } CHF ])).flatten(), text(weight: "bold", [Total]), [#text(weight: "bold", input.total_assets) CHF],
+)
+
 #for asset in input.assets [
-  === #raw(asset.name)
+  === #{ asset.name }
 
   #if asset.balances.len() == 1 and "CHF" in asset.balances [
 
-    Balance: #{ asset.balance } #raw("CHF")
+    Balance: #{ asset.balance } CHF
 
   ] else [
 
-    Balance:
+    Balances:
 
-    #for (currency, balance) in asset.balances [
-      - #{ balance.original } #raw(currency): #{ balance.converted } #raw("CHF")
-    ]
-
-    Converted: #{ asset.balance } #raw("CHF")
+    #table(
+      stroke: 0.5pt, columns: (auto, auto, auto), align: (left, right, right), ..(
+        asset.balances.pairs().map(((currency, balance)) =>
+        (currency, balance.original, [ #{ balance.converted } CHF ],)).flatten()
+      ), ..([], [Total: ], [#{ asset.balance } CHF]),
+    )
 
   ]
 
   #for evidence in asset.evidence [
-    - #link(evidence, raw(evidence))
+    - #link(evidence, evidence)
   ]
 ]
+
+== Exchange rates
+
+These exchange rates are used for valuations on #datetime(year: input.year, month: 12, day: 31).display()
+
+#table(
+  stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..(input.rates.pairs().map(((currency, rate)) =>
+  (currency, [#{ rate } CHF])).flatten()),
+)

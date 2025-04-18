@@ -90,7 +90,7 @@ parseDispatch =
 
 data TaxesSettings = TaxesSettings
   { taxesSettingZipFile :: !(Path Abs File),
-    taxesSettingReadmeFile :: !(Path Abs File),
+    taxesSettingPacketDir :: !(Maybe (Path Abs Dir)),
     taxesSettingInput :: !TaxesInput
   }
 
@@ -101,25 +101,25 @@ instance HasParser TaxesSettings where
 parseTaxesSettings :: Parser TaxesSettings
 parseTaxesSettings = do
   taxesSettingInput <- settingsParser
-  (taxesSettingZipFile, taxesSettingReadmeFile) <- subConfig_ "taxes" $ do
+  (taxesSettingZipFile, taxesSettingPacketDir) <- subConfig_ "taxes" $ do
     zf <-
       filePathSetting
         [ help "Path to the zip file to create",
           name "zip-file",
           value "tax-packet.zip"
         ]
-    rf <-
-      filePathSetting
-        [ help "Path to the readme file to create",
-          name "readme-file",
-          value "README.pdf"
-        ]
-    pure (zf, rf)
+    pd <-
+      optional $
+        directoryPathSetting
+          [ help "Path to the packet directory to create",
+            name "packet-dir"
+          ]
+    pure (zf, pd)
   pure TaxesSettings {..}
 
 data VATSettings = VATSettings
   { vatSettingZipFile :: !(Path Abs File),
-    vatSettingReadmeFile :: !(Path Abs File),
+    vatSettingPacketDir :: !(Maybe (Path Abs Dir)),
     vatSettingInput :: !VATInput
   }
 
@@ -130,20 +130,20 @@ instance HasParser VATSettings where
 parseVATSettings :: Parser VATSettings
 parseVATSettings = do
   vatSettingInput <- settingsParser
-  (vatSettingZipFile, vatSettingReadmeFile) <- subConfig_ "vat" $ do
+  (vatSettingZipFile, vatSettingPacketDir) <- subConfig_ "vat" $ do
     zf <-
       filePathSetting
         [ help "path to the zip file to create",
           name "zip-file",
           value "vat-packet.zip"
         ]
-    rf <-
-      filePathSetting
-        [ help "path to the readme file to create",
-          name "readme-file",
-          value "README.pdf"
-        ]
-    pure (zf, rf)
+    pd <-
+      optional $
+        directoryPathSetting
+          [ help "Path to the packet directory to create",
+            name "packet-dir"
+          ]
+    pure (zf, pd)
   pure VATSettings {..}
 
 data DownloadRatesSettings = DownloadRatesSettings

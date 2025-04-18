@@ -15,7 +15,7 @@ module Centjes.Switzerland.Report.Taxes.ETax
   )
 where
 
-import Centjes.Switzerland.Report.Taxes.Types
+import Centjes.Switzerland.Report.Taxes.Types as Taxes hiding (Revenue)
 import Centjes.Switzerland.XML
 import qualified Data.Map as M
 import Data.Maybe

@@ -21,8 +21,9 @@ createZipFile ::
   Map (Path Rel File) (Path Abs File) ->
   m ()
 createZipFile zipFile fileMap = do
+  logInfoN $ T.pack $ unwords ["Creating zip file at", fromAbsFile zipFile]
   forM_ (M.toList fileMap) $ \(filePathTo, filePathFrom) ->
-    logInfoN $ T.pack $ unwords ["Including", fromAbsFile filePathFrom, "at", fromRelFile filePathTo]
+    logInfoN $ T.pack $ unwords ["Including", fromAbsFile filePathFrom, "in the zip file at", fromRelFile filePathTo]
 
   Zip.createArchive (fromAbsFile zipFile) $
     forM_ (M.toList fileMap) $ \(filePathTo, filePathFrom) -> do

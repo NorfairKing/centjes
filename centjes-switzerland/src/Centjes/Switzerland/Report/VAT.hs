@@ -245,7 +245,7 @@ requireEvidence tl subdir attachments =
     Nothing -> validationTFailure $ VATErrorNoEvidence tl
     Just ne ->
       forM ne $ \(Located _ (Attachment (Located _ rf))) -> do
-        let pathInTarball = subdir </> rf
+        let pathInTarball = subdir </> simplifyDir rf
         includeFile pathInTarball rf
         pure pathInTarball
 
@@ -468,3 +468,10 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
 consequtiveTups :: [a] -> [(a, Maybe a)]
 consequtiveTups l =
   zip l (map Just (drop 1 l) ++ [Nothing])
+
+simplifyDir :: Path Rel File -> Path Rel File
+simplifyDir f =
+  let pn = parent f
+      dn = dirname pn
+      fn = filename f
+   in dn </> fn

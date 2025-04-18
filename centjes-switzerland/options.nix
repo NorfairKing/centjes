@@ -116,9 +116,9 @@
     default = { };
     type = lib.types.submodule {
       options = {
-        readme-file = lib.mkOption {
+        packet-dir = lib.mkOption {
           default = null;
-          description = "Path to the readme file to create";
+          description = "Path to the packet directory to create";
           type = lib.types.nullOr lib.types.str;
         };
         zip-file = lib.mkOption {
@@ -133,9 +133,9 @@
     default = { };
     type = lib.types.submodule {
       options = {
-        readme-file = lib.mkOption {
+        packet-dir = lib.mkOption {
           default = null;
-          description = "path to the readme file to create";
+          description = "Path to the packet directory to create";
           type = lib.types.nullOr lib.types.str;
         };
         zip-file = lib.mkOption {

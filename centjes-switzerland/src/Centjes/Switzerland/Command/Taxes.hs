@@ -47,10 +47,21 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   catalogFile <- resolveFile schemaDir "catalog.xml"
   schemaFile <- resolveFile schemaDir "eCH-0119-4-0-0.xsd"
 
-  withSystemTempDir "centjes-switzerland" $ \tdir -> do
+  let withPacketDir func = case taxesSettingPacketDir of
+        Nothing -> withSystemTempDir "centjes-switzerland-taxes" func
+        Just dir -> do
+          ignoringAbsence $ removeDirRecur dir
+          ensureDir dir
+          func dir
+
+  withPacketDir $ \packetDir ->
     runStderrLoggingT $ do
       -- Produce the input.json structure
-      (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
+      let firstPath = settingBaseDir </> settingLedgerFile
+      (declarations, fileMap) <- loadModules' firstPath
+      let diag = diagFromFileMap fileMap
+      let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
+
       ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
 
       -- Check ahead of time, so we don't generate reports of invalid ledgers
@@ -58,7 +69,9 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
       void $ liftIO $ checkValidation diag val
 
       validation <- liftIO $ runValidationT $ runReporter $ produceTaxesReport taxesSettingInput ledger
-      (taxesReport, files) <- liftIO $ checkValidation diag validation
+      (taxesReport, reportFiles) <- liftIO $ checkValidation diag validation
+
+      let includedFiles = M.union reportFiles centjesFiles
 
       -- Write the xml to a file
       xmlFile <- do
@@ -67,7 +80,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
           Nothing -> liftIO $ die "Failed to produce XML report. This should not happen"
           Just xmlReport -> do
             logDebugN $ T.pack $ ppShow xmlReport
-            xf <- resolveFile tdir "taxes.xml"
+            xf <- resolveFile packetDir "taxes.xml"
             let xmlDoc = xmlReportDocument xmlReport
 
             liftIO $
@@ -98,7 +111,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
             environment <- liftIO getEnvironment
             let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
             runProcess_ $
-              setWorkingDir (fromAbsDir tdir) $
+              setWorkingDir (fromAbsDir packetDir) $
                 setEnv newEnvironment $
                   setStdout inherit $
                     setStderr inherit $
@@ -117,7 +130,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
 
       -- Write the input to a file
       jsonInputFile <- liftIO $ do
-        jif <- resolveFile tdir "input.json"
+        jif <- resolveFile packetDir "input.json"
         SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
         pure jif
       logInfoN $
@@ -128,28 +141,49 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
             ]
       logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
 
-      -- Write the template to a file
-      mainTypFile <- liftIO $ do
-        mtf <- resolveFile tdir "main.typ"
-        copyFile typstTemplateFile mtf
-        pure mtf
+      readmeFile <- do
+        -- Write the template to a file
+        mainTypFile <- liftIO $ do
+          mtf <- resolveFile packetDir "main.typ"
+          copyFile typstTemplateFile mtf
+          pure mtf
 
-      -- Compile the README.pdf using typst
-      liftIO $ compileTypst mainTypFile taxesSettingReadmeFile
+        rf <- resolveFile packetDir "README.pdf"
 
-      logInfoN $
-        T.pack $
-          unwords
-            [ "Typst compilation succesfully created",
-              fromAbsFile taxesSettingReadmeFile
-            ]
+        -- Compile the README.pdf using typst
+        liftIO $ compileTypst mainTypFile rf
+        logInfoN $
+          T.pack $
+            unwords
+              [ "Typst compilation succesfully created",
+                fromAbsFile rf
+              ]
+
+        pure rf
+
+      absFiles <- fmap M.fromList $ forM (M.toList includedFiles) $ \(to, from) -> do
+        logInfoN $
+          T.pack $
+            unwords
+              [ "Putting",
+                fromRelFile from,
+                "in the packet at",
+                fromRelFile to
+              ]
+        let fromFile = settingBaseDir </> from
+        let packetFile = packetDir </> to
+        ensureDir (parent packetFile)
+        copyFile fromFile packetFile
+        pure (to, packetFile)
 
       -- Create a nice zip file
       createZipFile taxesSettingZipFile $
-        M.insert [relfile|README.pdf|] taxesSettingReadmeFile $
+        M.insert [relfile|README.pdf|] readmeFile $
           M.insert [relfile|raw-input.json|] jsonInputFile $
-            M.insert [relfile|taxes.xml|] xmlFile $
-              M.map (settingBaseDir </>) files
+            M.insert
+              [relfile|taxes.xml|]
+              xmlFile
+              absFiles
 
       logInfoN $
         T.pack $
