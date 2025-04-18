@@ -4,15 +4,12 @@
 
 Name: #{ input.first_name } #{ input.last_name }
 
-== Exchange rates
-
-These exchange rates are used for valuations on #{ input.year }-12-31:
-
-#for (currency, rate) in input.rates [
-  - #raw(currency): #{ rate } #raw("CHF") / #raw(currency)
-]
-
 == Assets
+
+#table(
+  columns: (auto, auto), align: (left, right), ..input.assets.map(asset =>
+  (raw(asset.name), [ #{ asset.balance } CHF ])).flatten(),
+)
 
 #for asset in input.assets [
   === #raw(asset.name)
@@ -23,13 +20,14 @@ These exchange rates are used for valuations on #{ input.year }-12-31:
 
   ] else [
 
-    Balance:
+    Balances:
 
-    #for (currency, balance) in asset.balances [
-      - #{ balance.original } #raw(currency): #{ balance.converted } #raw("CHF")
-    ]
-
-    Converted: #{ asset.balance } #raw("CHF")
+    #table(
+      columns: (auto, auto, auto), align: (left, right, right), ..(
+        asset.balances.pairs().map(((currency, balance)) =>
+        (raw(currency), balance.original, [ #{ balance.converted } CHF ],)).flatten()
+      ), ..([], [Total: ], [#{ asset.balance } CHF]),
+    )
 
   ]
 
@@ -37,3 +35,12 @@ These exchange rates are used for valuations on #{ input.year }-12-31:
     - #link(evidence, raw(evidence))
   ]
 ]
+
+== Exchange rates
+
+These exchange rates are used for valuations on #datetime(year: input.year, month: 12, day: 31).display()
+
+#table(
+  columns: (auto, auto), align: (left, right), ..(input.rates.pairs().map(((currency, rate)) =>
+  (raw(currency), [#{ rate } CHF])).flatten()),
+)
