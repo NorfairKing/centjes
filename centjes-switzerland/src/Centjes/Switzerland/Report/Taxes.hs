@@ -41,6 +41,8 @@ import Data.Maybe
 import Data.Time
 import Data.Traversable
 import qualified Data.Vector as V
+import qualified Money.Account as Account
+import Money.MultiAccount (MultiAccount (..))
 import qualified Money.MultiAccount as MultiAccount
 import qualified Money.QuantisationFactor as QuantisationFactor
 import Path
@@ -95,12 +97,19 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
     case accountType of
       AccountTypeAssets -> do
         let assetAccountName = an
-        let assetAccountBalance = fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport
-        assetAccountConvertedBalance <-
-          liftValidation $
-            mapValidationFailure TaxesErrorConvertError $
-              convertMultiAccountToAccount (Just al) memoisedPriceGraph taxesReportCHF assetAccountBalance
+        assetAccountBalances <- flip M.traverseWithKey (MultiAccount.unMultiAccount $ fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport) $ \c b -> do
+          converted <-
+            liftValidation $
+              mapValidationFailure TaxesErrorConvertError $
+                convertMultiAccountToAccount (Just al) memoisedPriceGraph taxesReportCHF $
+                  MultiAccount $
+                    M.singleton c b
+          pure (b, converted)
 
+        assetAccountConvertedBalance <-
+          case Account.sum $ M.map snd assetAccountBalances of
+            Nothing -> validationTFailure TaxesErrorSum
+            Just s -> pure s
         -- TODO assert that the balance is positive?
         -- this is checked anyway, we may use this in the type
 

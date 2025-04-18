@@ -35,7 +35,6 @@ import Error.Diagnose
 import GHC.Generics (Generic (..))
 import qualified Money.Account as Money (Account)
 import qualified Money.ConversionRate as Money (ConversionRate)
-import qualified Money.MultiAccount as Money (MultiAccount)
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import OptEnvConf
 import Path
@@ -144,7 +143,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
 
 data AssetAccount ann = AssetAccount
   { assetAccountName :: !AccountName,
-    assetAccountBalance :: !(Money.MultiAccount (Currency ann)),
+    assetAccountBalances :: !(Map (Currency ann) (Money.Account, Money.Account)),
     assetAccountConvertedBalance :: !Money.Account,
     assetAccountAttachments :: !(NonEmpty (Path Rel File))
   }
@@ -154,6 +153,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (AssetAccount ann)
 
 data TaxesError ann
   = TaxesErrorNoCHF
+  | TaxesErrorSum
   | TaxesErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
   | TaxesErrorConvertError !(ConvertError ann)
   | TaxesErrorBalanceError !(BalanceError ann)
@@ -165,6 +165,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesError ann)
 instance ToReport (TaxesError SourceSpan) where
   toReport = \case
     TaxesErrorNoCHF -> Err Nothing "no CHF currency defined" [] []
+    TaxesErrorSum -> Err Nothing "amounts being summed became too big" [] []
     TaxesErrorWrongCHF (Located cdl _) ->
       Err
         Nothing

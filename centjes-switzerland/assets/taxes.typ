@@ -26,7 +26,7 @@ These exchange rates are used for valuations on #{ input.year }-12-31:
     Balance:
 
     #for (currency, balance) in asset.balances [
-      - #{ balance } #raw(currency)
+      - #{ balance.original } #raw(currency): #{ balance.converted } #raw("CHF")
     ]
 
     Converted: #{ asset.balance } #raw("CHF")
@@ -34,6 +34,6 @@ These exchange rates are used for valuations on #{ input.year }-12-31:
   ]
 
   #for evidence in asset.evidence [
-    - #raw(evidence)
+    - #link(evidence, raw(evidence))
   ]
 ]

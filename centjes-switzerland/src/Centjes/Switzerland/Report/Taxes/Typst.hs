@@ -23,7 +23,6 @@ import Data.Text (Text)
 import Data.Time
 import qualified Money.Account as Account
 import qualified Money.ConversionRate as ConversionRate
-import qualified Money.MultiAccount as MultiAccount
 import Numeric.Natural
 import Path
 import Text.Printf
@@ -49,15 +48,15 @@ taxesReportInput TaxesReport {..} =
         map
           ( \AssetAccount {..} ->
               let assetInputAccountName = assetAccountName
-                  assetInputBalance =
+                  assetInputBalances =
                     M.fromList $
                       map
-                        ( \(cur@Currency {..}, account) ->
+                        ( \(cur@Currency {..}, (account, chfAccount)) ->
                             ( CurrencySymbol.toText currencySymbol,
-                              formatAccount cur account
+                              Balance {balanceOriginal = formatAccount cur account, balanceConverted = formatChfAccount chfAccount}
                             )
                         )
-                        (M.toList (MultiAccount.unMultiAccount assetAccountBalance))
+                        (M.toList assetAccountBalances)
                   assetInputConvertedBalance = formatChfAccount assetAccountConvertedBalance
                   assetInputEvidence = assetAccountAttachments
                in AssetInput {..}
@@ -93,7 +92,7 @@ instance HasCodec Input where
 
 data AssetInput = AssetInput
   { assetInputAccountName :: !AccountName,
-    assetInputBalance :: !(Map Text String),
+    assetInputBalances :: !(Map Text Balance),
     assetInputConvertedBalance :: !String,
     assetInputEvidence :: !(NonEmpty (Path Rel File))
   }
@@ -105,8 +104,20 @@ instance HasCodec AssetInput where
         <$> requiredField "name" "name"
           .= assetInputAccountName
         <*> requiredField "balances" "balances"
-          .= assetInputBalance
+          .= assetInputBalances
         <*> requiredField "balance" "balance"
           .= assetInputConvertedBalance
         <*> requiredField "evidence" "evidence"
           .= assetInputEvidence
+
+data Balance = Balance
+  { balanceOriginal :: String,
+    balanceConverted :: String
+  }
+
+instance HasCodec Balance where
+  codec =
+    object "Balance" $
+      Balance
+        <$> requiredField "original" "balance in original currency" .= balanceOriginal
+        <*> requiredField "converted" "balance in CHF" .= balanceConverted
