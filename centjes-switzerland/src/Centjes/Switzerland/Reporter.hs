@@ -13,8 +13,8 @@ type Reporter e a =
     a
 
 includeFile :: Path Rel File -> Path Rel File -> Reporter e ()
-includeFile locationOnDisk locationInTarball =
-  lift $ tell $ M.singleton locationOnDisk locationInTarball
+includeFile locationInTarball locationOnDisk =
+  lift $ tell $ M.singleton locationInTarball locationOnDisk
 
 runReporter ::
   Reporter e a ->

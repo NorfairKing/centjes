@@ -1,6 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.Taxes
@@ -33,6 +34,7 @@ import Centjes.Switzerland.Report.Taxes.Typst
 import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
+import Control.Monad
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Maybe
@@ -41,6 +43,7 @@ import Data.Traversable
 import qualified Data.Vector as V
 import qualified Money.MultiAccount as MultiAccount
 import qualified Money.QuantisationFactor as QuantisationFactor
+import Path
 
 produceTaxesReport ::
   (Ord ann) =>
@@ -108,7 +111,19 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
           Nothing -> case mUndeclaredTag of
             Nothing -> validationTFailure $ TaxesErrorAssetAccountWithoutEvidence (Located al an)
             Just _ -> pure Nothing
-          Just assetAccountAttachments -> pure $ Just AssetAccount {..}
+          Just ne -> do
+            assetAccountAttachments <- forM ne $ \rf -> do
+              let fileInTarball = [reldir|assets|] </> simplifyDir rf
+              includeFile fileInTarball rf
+              pure fileInTarball
+            pure $ Just AssetAccount {..}
       _ -> pure Nothing
 
   pure TaxesReport {..}
+
+simplifyDir :: Path Rel File -> Path Rel File
+simplifyDir f =
+  let pn = parent f
+      dn = dirname pn
+      fn = filename f
+   in dn </> fn
