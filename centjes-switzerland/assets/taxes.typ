@@ -4,11 +4,32 @@
 
 Name: #{ input.first_name } #{ input.last_name }
 
+== Income
+
+#table(
+  columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.revenues.map(
+    revenue =>
+    (
+      revenue.day, [ #{ revenue.description }
+        #linebreak()
+        #if revenue.evidence.len() == 1 [
+          #for evidence in revenue.evidence [
+            #link(evidence, raw(evidence))
+          ]
+        ] else [
+          #for evidence in revenue.evidence [
+            - #link(evidence, raw(evidence))
+          ]
+        ] ], [#{ revenue.amount.formatted } #{ revenue.amount.symbol }], [#{ revenue.amount_chf } CHF],
+    ),
+  ).flatten(), [], text(weight: "bold", [Total]), [], [#text(weight: "bold", input.total_revenues) CHF],
+)
+
 == Assets
 
 #table(
   columns: (auto, auto), align: (left, right), ..input.assets.map(asset =>
-  (raw(asset.name), [ #{ asset.balance } CHF ])).flatten(),
+  (raw(asset.name), [ #{ asset.balance } CHF ])).flatten(), text(weight: "bold", [Total]), [#text(weight: "bold", input.total_assets) CHF],
 )
 
 #for asset in input.assets [

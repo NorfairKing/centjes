@@ -11,11 +11,13 @@ module Centjes.Switzerland.Report.Taxes.Types
   ( TaxesInput (..),
     TaxesReport (..),
     AssetAccount (..),
+    Revenue (..),
     TaxesError (..),
   )
 where
 
 import Centjes.Convert
+import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Format
 import Centjes.Ledger
 import Centjes.Location
@@ -24,7 +26,7 @@ import Centjes.Report.Balance
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
 import Data.List
-import Data.List.NonEmpty
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map (Map)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -33,7 +35,10 @@ import Data.Validity
 import Data.Validity.Time ()
 import Error.Diagnose
 import GHC.Generics (Generic (..))
-import qualified Money.Account as Money (Account)
+import Money.Account as Money (Account (..))
+import qualified Money.Account as Account
+import Money.Amount as Money (Amount (..))
+import qualified Money.Amount as Amount
 import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import OptEnvConf
@@ -131,14 +136,21 @@ data TaxesReport ann = TaxesReport
     taxesReportInsuredPersonNumber :: !Text,
     taxesReportCHF :: !(Currency ann),
     taxesReportConversionRates :: !(Map (Currency ann) Money.ConversionRate),
-    taxesReportAssetAccounts :: ![AssetAccount ann]
+    taxesReportAssetAccounts :: ![AssetAccount ann],
+    taxesReportTotalAssets :: !Money.Account,
+    taxesReportRevenues :: ![Revenue ann],
+    taxesReportTotalRevenues :: !Money.Amount
   }
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
-  validate vr@TaxesReport {} =
+  validate tr@TaxesReport {..} =
     mconcat
-      [ genericValidate vr
+      [ genericValidate tr,
+        declare "the assets sum to the total assets" $
+          Account.sum (map assetAccountConvertedBalance taxesReportAssetAccounts) == Just taxesReportTotalAssets,
+        declare "the revenues sum to the total revenues" $
+          Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues
       ]
 
 data AssetAccount ann = AssetAccount
@@ -157,7 +169,11 @@ data TaxesError ann
   | TaxesErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
   | TaxesErrorConvertError !(ConvertError ann)
   | TaxesErrorBalanceError !(BalanceError ann)
+  | TaxesErrorNoDescription
+  | TaxesErrorPositiveIncome !ann !ann !Money.Account
+  | TaxesErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
   | TaxesErrorAssetAccountWithoutEvidence !(GenLocated ann AccountName)
+  | TaxesErrorRevenueWithoutEvidence !ann !ann !(GenLocated ann AccountName)
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (TaxesError ann)
@@ -174,6 +190,29 @@ instance ToReport (TaxesError SourceSpan) where
         []
     TaxesErrorConvertError ce -> toReport ce
     TaxesErrorBalanceError be -> toReport be
+    TaxesErrorNoDescription -> Err Nothing "no description" [] []
+    TaxesErrorPositiveIncome tl pl _ ->
+      Err
+        Nothing
+        "Positive income amount"
+        [ (toDiagnosePosition pl, Where "in this posting"),
+          (toDiagnosePosition tl, Blank)
+        ]
+        []
+    TaxesErrorCouldNotConvert al currencyFrom currencyTo _ ->
+      let symbolFrom = currencySymbol currencyFrom
+          symbolTo = currencySymbol currencyTo
+       in Err
+            Nothing
+            ( unwords
+                [ "could not convert from",
+                  CurrencySymbol.toString symbolFrom,
+                  "to",
+                  CurrencySymbol.toString symbolTo
+                ]
+            )
+            [(toDiagnosePosition al, This "this amount")]
+            []
     TaxesErrorAssetAccountWithoutEvidence (Located anl an) ->
       Err
         Nothing
@@ -195,6 +234,42 @@ instance ToReport (TaxesError SourceSpan) where
                             }
               ]
         ]
+    TaxesErrorRevenueWithoutEvidence tl pl (Located anl an) ->
+      Err
+        Nothing
+        "Revenue without evidence"
+        [ (toDiagnosePosition pl, This "This revenue posting has no evidence eventhough its account is not tagged as undeclared"),
+          (toDiagnosePosition tl, Where "in this transaction"),
+          (toDiagnosePosition anl, Where "The account is defined here")
+        ]
+        [ Hint $
+            unlines'
+              [ "You can tag this account as undeclared:",
+                T.unpack $
+                  T.strip $
+                    formatDeclaration $
+                      DeclarationAccount $
+                        noLoc $
+                          AccountDeclaration
+                            { accountDeclarationName = noLoc an,
+                              accountDeclarationType = Nothing,
+                              accountDeclarationExtras = [noLoc $ AccountExtraTag $ noLoc $ ExtraTag $ noLoc "undeclared"]
+                            }
+              ]
+        ]
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
+
+data Revenue ann = Revenue
+  { revenueTimestamp :: !Timestamp,
+    revenueDescription :: !Description,
+    revenueAmount :: !Money.Amount,
+    revenueCurrency :: !(Currency ann),
+    revenueCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    revenueEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (Revenue ann)
