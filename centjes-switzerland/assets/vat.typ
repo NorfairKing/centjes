@@ -1,3 +1,6 @@
+#show raw: set text(font: "DejaVu Sans Mono", size: 8pt)
+#set text(font: "DejaVu Sans Mono", size: 8pt)
+
 #let input = json("input.json")
 
 = VAT #{ upper(input.quarter) }
@@ -19,13 +22,13 @@ Alle Umsatzangaben sind netto
 ==== Entgelte
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")), "200", "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)", "", input.total_revenue,
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")), "200", "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)", "", input.total_revenue,
 )
 
 ==== Abzüge
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "220", "Leistungen ins Ausland", input.total_exports_revenue, "", "221", "Leistungen im Ausland (Ort der Leistung im Ausland)", input.total_foreign_revenue, "", "225", "Übertragung im Meldeverfahren", "", // TODO
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "220", "Leistungen ins Ausland", input.total_exports_revenue, "", "221", "Leistungen im Ausland (Ort der Leistung im Ausland)", input.total_foreign_revenue, "", "225", "Übertragung im Meldeverfahren", "", // TODO
   "", "230", "Von der Steuer ausgenommene Inlandleistungen, für die nicht optiert wird", "", // TODO
   "", "235", "Entgeltsminderungen wie Skonti, Rabatte usw.", "", // TODO
   "", "280", "Diverses (z.B. Wert des Bodens, Ankaufspreise Margenbesteuerung)", "", // TODO
@@ -35,14 +38,14 @@ Alle Umsatzangaben sind netto
 ==== Steuerbarer Gesamtumsatz
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "299", "Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)", "", input.total_domestic_revenue,
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "299", "Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)", "", input.total_domestic_revenue,
 )
 
 === Steuerberechnung
 ==== Leistungen ab 01.01.2018
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")), "302", "Leistungen zum Normalsatz 7.7%", input.domestic_revenue_2023, input.vat_revenue_standard_2023, "303", "Leistungen zum Normalsatz 8.1%", input.domestic_revenue_2024, input.vat_revenue_standard_2024, "312", "Leistungen zum reduzierten Satz 2.5%", "", // TODO
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")), "302", "Leistungen zum Normalsatz 7.7%", input.domestic_revenue_2023, input.vat_revenue_standard_2023, "303", "Leistungen zum Normalsatz 8.1%", input.domestic_revenue_2024, input.vat_revenue_standard_2024, "312", "Leistungen zum reduzierten Satz 2.5%", "", // TODO
   "", // TODO
   "313", "Leistungen zum reduzierten Satz 2.6%", "", // TODO
   "", // TODO
@@ -57,13 +60,13 @@ Alle Umsatzangaben sind netto
 ==== Total geschuldete Steuer
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "399", "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)", "", input.total_vat_revenue,
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "399", "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)", "", input.total_vat_revenue,
 )
 
 ==== Steueranrechnung
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Steuer CHF", "Steuer CHF").map(h => text(h, weight: "bold")), "400", "Vorsteuer auf Material- und Dienstleistungsaufwand", "", // TODO
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Steuer CHF", "Steuer CHF").map(h => text(h, weight: "bold")), "400", "Vorsteuer auf Material- und Dienstleistungsaufwand", "", // TODO
   "", // TODO
   "405", "Vorsteuer auf Investitionen und übrigem Betriebsaufwand", input.vat_paid, "", "410", "Einlageentsteuerung (Art. 32, bitte detaillierte Aufstellung einreichen)", "", // TODO
   "", // TODO
@@ -77,13 +80,13 @@ Alle Umsatzangaben sind netto
 ==== Zu bezahlender Betrag / Guthaben
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "500", "Zu bezahlender Betrag", "", input.payable, "510", "Guthaben der steuerpflichtigen Person", "", input.receivable,
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "500", "Zu bezahlender Betrag", "", input.payable, "510", "Guthaben der steuerpflichtigen Person", "", input.receivable,
 )
 
 === Andere Mittelflüsse (Art. 18 Abs. 2)
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Betrag CHF", "").map(h => text(h, weight: "bold")), "900", "Subventionen, durch Kurvereine eingenommene Tourismusabgaben, Entsorgungs- und Wasserwerkbeiträge (Bst. a-c)", "", // TODO
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Betrag CHF", "").map(h => text(h, weight: "bold")), "900", "Subventionen, durch Kurvereine eingenommene Tourismusabgaben, Entsorgungs- und Wasserwerkbeiträge (Bst. a-c)", "", // TODO
   "", // TODO
   "910", "Spenden, Dividenden, Schadenersatz usw. (Bst. d-l)", "", // TODO
   "", // TODO
@@ -111,8 +114,14 @@ Alle Umsatzangaben sind netto
     ]
   ]
 
-  #for evidence in revenue.evidence [
-    - #{ raw(evidence) }
+  #if revenue.evidence.len() == 1 [
+    #for evidence in revenue.evidence [
+      #link(evidence, raw(evidence))
+    ]
+  ] else [
+    #for evidence in revenue.evidence [
+      - #link(evidence, raw(evidence))
+    ]
   ]
 ]
 

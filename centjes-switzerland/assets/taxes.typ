@@ -1,3 +1,6 @@
+#show raw: set text(font: "DejaVu Sans Mono", size: 8pt)
+#set text(font: "DejaVu Sans Mono", size: 8pt)
+
 #let input = json("input.json")
 
 = Taxes #{ input.year }
@@ -7,7 +10,7 @@ Name: #{ input.first_name } #{ input.last_name }
 == Income
 
 #table(
-  columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.revenues.map(
+  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.revenues.map(
     revenue =>
     (
       revenue.day, [ #{ revenue.description }
@@ -28,7 +31,7 @@ Name: #{ input.first_name } #{ input.last_name }
 == Assets
 
 #table(
-  columns: (auto, auto), align: (left, right), ..input.assets.map(asset =>
+  stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..input.assets.map(asset =>
   (raw(asset.name), [ #{ asset.balance } CHF ])).flatten(), text(weight: "bold", [Total]), [#text(weight: "bold", input.total_assets) CHF],
 )
 
@@ -44,7 +47,7 @@ Name: #{ input.first_name } #{ input.last_name }
     Balances:
 
     #table(
-      columns: (auto, auto, auto), align: (left, right, right), ..(
+      stroke: 0.5pt, columns: (auto, auto, auto), align: (left, right, right), ..(
         asset.balances.pairs().map(((currency, balance)) =>
         (raw(currency), balance.original, [ #{ balance.converted } CHF ],)).flatten()
       ), ..([], [Total: ], [#{ asset.balance } CHF]),
@@ -62,6 +65,6 @@ Name: #{ input.first_name } #{ input.last_name }
 These exchange rates are used for valuations on #datetime(year: input.year, month: 12, day: 31).display()
 
 #table(
-  columns: (auto, auto), align: (left, right), ..(input.rates.pairs().map(((currency, rate)) =>
+  stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..(input.rates.pairs().map(((currency, rate)) =>
   (raw(currency), [#{ rate } CHF])).flatten()),
 )
