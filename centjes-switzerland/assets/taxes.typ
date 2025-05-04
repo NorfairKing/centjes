@@ -17,11 +17,11 @@ Name: #{ input.first_name } #{ input.last_name }
         #linebreak()
         #if revenue.evidence.len() == 1 [
           #for evidence in revenue.evidence [
-            #link(evidence, raw(evidence))
+            #link(evidence, evidence)
           ]
         ] else [
           #for evidence in revenue.evidence [
-            - #link(evidence, raw(evidence))
+            - #link(evidence, evidence)
           ]
         ] ], [#{ revenue.amount.formatted } #{ revenue.amount.symbol }], [#{ revenue.amount_chf } CHF],
     ),
@@ -32,15 +32,15 @@ Name: #{ input.first_name } #{ input.last_name }
 
 #table(
   stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..input.assets.map(asset =>
-  (raw(asset.name), [ #{ asset.balance } CHF ])).flatten(), text(weight: "bold", [Total]), [#text(weight: "bold", input.total_assets) CHF],
+  (asset.name, [ #{ asset.balance } CHF ])).flatten(), text(weight: "bold", [Total]), [#text(weight: "bold", input.total_assets) CHF],
 )
 
 #for asset in input.assets [
-  === #raw(asset.name)
+  === #{ asset.name }
 
   #if asset.balances.len() == 1 and "CHF" in asset.balances [
 
-    Balance: #{ asset.balance } #raw("CHF")
+    Balance: #{ asset.balance } CHF
 
   ] else [
 
@@ -49,14 +49,14 @@ Name: #{ input.first_name } #{ input.last_name }
     #table(
       stroke: 0.5pt, columns: (auto, auto, auto), align: (left, right, right), ..(
         asset.balances.pairs().map(((currency, balance)) =>
-        (raw(currency), balance.original, [ #{ balance.converted } CHF ],)).flatten()
+        (currency, balance.original, [ #{ balance.converted } CHF ],)).flatten()
       ), ..([], [Total: ], [#{ asset.balance } CHF]),
     )
 
   ]
 
   #for evidence in asset.evidence [
-    - #link(evidence, raw(evidence))
+    - #link(evidence, evidence)
   ]
 ]
 
@@ -66,5 +66,5 @@ These exchange rates are used for valuations on #datetime(year: input.year, mont
 
 #table(
   stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..(input.rates.pairs().map(((currency, rate)) =>
-  (raw(currency), [#{ rate } CHF])).flatten()),
+  (currency, [#{ rate } CHF])).flatten()),
 )
