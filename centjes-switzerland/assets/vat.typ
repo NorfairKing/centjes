@@ -11,7 +11,7 @@ Name: #{ input.person_name }
 
 Organisation: #{ input.organisation_name }
 
-VAT-ID: #raw("CHF-")#raw(input.vat_id)#raw(" MWST")
+VAT-ID: CHF-#(input.vat_id) MWST
 
 #set text(size: 10pt)
 
@@ -116,11 +116,11 @@ Alle Umsatzangaben sind netto
 
   #if revenue.evidence.len() == 1 [
     #for evidence in revenue.evidence [
-      #link(evidence, raw(evidence))
+      #link(evidence, evidence)
     ]
   ] else [
     #for evidence in revenue.evidence [
-      - #link(evidence, raw(evidence))
+      - #link(evidence, evidence)
     ]
   ]
 ]
@@ -146,6 +146,6 @@ Alle Umsatzangaben sind netto
   ]
 
   #for evidence in expense.evidence [
-    - #{ raw(evidence) }
+    - #{ evidence }
   ]
 ]
