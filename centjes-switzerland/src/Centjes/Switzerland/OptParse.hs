@@ -119,7 +119,7 @@ parseTaxesSettings = do
 
 data VATSettings = VATSettings
   { vatSettingZipFile :: !(Path Abs File),
-    vatSettingReadmeFile :: !(Path Abs File),
+    vatSettingPacketDir :: !(Maybe (Path Abs Dir)),
     vatSettingInput :: !VATInput
   }
 
@@ -130,20 +130,20 @@ instance HasParser VATSettings where
 parseVATSettings :: Parser VATSettings
 parseVATSettings = do
   vatSettingInput <- settingsParser
-  (vatSettingZipFile, vatSettingReadmeFile) <- subConfig_ "vat" $ do
+  (vatSettingZipFile, vatSettingPacketDir) <- subConfig_ "vat" $ do
     zf <-
       filePathSetting
         [ help "path to the zip file to create",
           name "zip-file",
           value "vat-packet.zip"
         ]
-    rf <-
-      filePathSetting
-        [ help "path to the readme file to create",
-          name "readme-file",
-          value "README.pdf"
-        ]
-    pure (zf, rf)
+    pd <-
+      optional $
+        directoryPathSetting
+          [ help "Path to the packet directory to create",
+            name "packet-dir"
+          ]
+    pure (zf, pd)
   pure VATSettings {..}
 
 data DownloadRatesSettings = DownloadRatesSettings
