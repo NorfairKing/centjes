@@ -26,13 +26,10 @@ with final.haskell.lib;
   makeSwitzerlandTaxesPacket = src: final.stdenv.mkDerivation {
     name = "taxes";
     inherit src;
-    buildInputs = [
-      final.typst
-      final.libxml2
-    ];
+    buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
     buildCommand = ''
       mkdir -p $out
-      ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
+      centjes-switzerland \
         taxes \
         --config-file $src/switzerland.yaml \
         --base-dir $src \
@@ -43,13 +40,10 @@ with final.haskell.lib;
   makeSwitzerlandVATPacket = src: final.stdenv.mkDerivation {
     name = "vat";
     inherit src;
-    buildInputs = [
-      final.typst
-      final.libxml2
-    ];
+    buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
     buildCommand = ''
       mkdir -p $out
-      ${final.centjesReleasePackages.centjes-switzerland}/bin/centjes-switzerland \
+      centjes-switzerland \
         vat \
         --config-file $src/switzerland.yaml \
         --base-dir $src \
@@ -57,6 +51,7 @@ with final.haskell.lib;
         --readme-file $out/README.pdf
     '';
   };
+
   centjesDependencyGraph = final.makeDependencyGraph {
     name = "centjes-dependency-graph";
     packages = builtins.attrNames final.centjesReleasePackages;
@@ -190,7 +185,14 @@ with final.haskell.lib;
             centjes-import-cornercard = centjesPkg "centjes-import-cornercard";
             centjes-import-neon = centjesPkg "centjes-import-neon";
             centjes-import-revolut = centjesPkg "centjes-import-revolut";
-            centjes-switzerland = centjesPkg "centjes-switzerland";
+            centjes-switzerland = (centjesPkg "centjes-switzerland").overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+                final.makeWrapper
+              ];
+              installPhase = (old.installPhase or "") + ''
+                wrapProgram $out/bin/centjes-switzerland --prefix PATH : ${final.lib.makeBinPath [ final.typst final.libxml2 ]}
+              '';
+            });
             inherit centjes-docs-site;
           };
           centjesRelease = final.symlinkJoin {
