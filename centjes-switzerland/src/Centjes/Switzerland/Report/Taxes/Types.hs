@@ -36,7 +36,6 @@ import Data.Validity.Time ()
 import Error.Diagnose
 import GHC.Generics (Generic (..))
 import Money.Account as Money (Account (..))
-import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import qualified Money.ConversionRate as Money (ConversionRate)
@@ -137,7 +136,7 @@ data TaxesReport ann = TaxesReport
     taxesReportCHF :: !(Currency ann),
     taxesReportConversionRates :: !(Map (Currency ann) Money.ConversionRate),
     taxesReportAssetAccounts :: ![AssetAccount ann],
-    taxesReportTotalAssets :: !Money.Account,
+    taxesReportTotalAssets :: !Money.Amount,
     taxesReportRevenues :: ![Revenue ann],
     taxesReportTotalRevenues :: !Money.Amount
   }
@@ -148,15 +147,15 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
     mconcat
       [ genericValidate tr,
         declare "the assets sum to the total assets" $
-          Account.sum (map assetAccountConvertedBalance taxesReportAssetAccounts) == Just taxesReportTotalAssets,
+          Amount.sum (map assetAccountConvertedBalance taxesReportAssetAccounts) == Just taxesReportTotalAssets,
         declare "the revenues sum to the total revenues" $
           Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues
       ]
 
 data AssetAccount ann = AssetAccount
   { assetAccountName :: !AccountName,
-    assetAccountBalances :: !(Map (Currency ann) (Money.Account, Money.Account)),
-    assetAccountConvertedBalance :: !Money.Account,
+    assetAccountBalances :: !(Map (Currency ann) (Money.Amount, Money.Amount)),
+    assetAccountConvertedBalance :: !Money.Amount,
     assetAccountAttachments :: !(NonEmpty (Path Rel File))
   }
   deriving (Show, Generic)
@@ -170,6 +169,7 @@ data TaxesError ann
   | TaxesErrorConvertError !(ConvertError ann)
   | TaxesErrorBalanceError !(BalanceError ann)
   | TaxesErrorNoDescription
+  | TaxesErrorNegativeAsset !ann !Money.Account
   | TaxesErrorPositiveIncome !ann !ann !Money.Account
   | TaxesErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
   | TaxesErrorAssetAccountWithoutEvidence !(GenLocated ann AccountName)
@@ -191,6 +191,13 @@ instance ToReport (TaxesError SourceSpan) where
     TaxesErrorConvertError ce -> toReport ce
     TaxesErrorBalanceError be -> toReport be
     TaxesErrorNoDescription -> Err Nothing "no description" [] []
+    TaxesErrorNegativeAsset al _ ->
+      Err
+        Nothing
+        "Negative asset amount"
+        [ (toDiagnosePosition al, Where "in this account")
+        ]
+        []
     TaxesErrorPositiveIncome tl pl _ ->
       Err
         Nothing

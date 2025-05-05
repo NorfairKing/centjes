@@ -6,7 +6,6 @@ import Centjes.Ledger.Gen ()
 import Centjes.Switzerland.Report.Taxes.Types
 import Data.GenValidity
 import Data.GenValidity.Time ()
-import qualified Money.Account as Account
 import qualified Money.Amount as Amount
 import Money.Amount.Gen ()
 import Test.QuickCheck
@@ -18,7 +17,7 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
   genValid = do
     genValidStructurallyWithoutExtraChecking
       `suchThatMap` ( \tr -> do
-                        totalAssets <- Account.sum (map assetAccountConvertedBalance (taxesReportAssetAccounts tr))
+                        totalAssets <- Amount.sum (map assetAccountConvertedBalance (taxesReportAssetAccounts tr))
                         pure $ tr {taxesReportTotalAssets = totalAssets}
                     )
       `suchThatMap` ( \tr -> do
