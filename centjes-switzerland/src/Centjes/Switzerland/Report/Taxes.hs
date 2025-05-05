@@ -45,7 +45,6 @@ import Data.Time
 import Data.Traversable
 import qualified Data.Vector as V
 import Money.Account as Money (Account (..))
-import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import Money.MultiAccount (MultiAccount (..))
@@ -104,16 +103,18 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
       AccountTypeAssets -> do
         let assetAccountName = an
         assetAccountBalances <- flip M.traverseWithKey (MultiAccount.unMultiAccount $ fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport) $ \c b -> do
+          positive <- requirePositive al b
           converted <-
             liftValidation $
               mapValidationFailure TaxesErrorConvertError $
                 convertMultiAccountToAccount (Just al) memoisedPriceGraph taxesReportCHF $
                   MultiAccount $
                     M.singleton c b
-          pure (b, converted)
+          positiveConverted <- requirePositive al converted
+          pure (positive, positiveConverted)
 
         assetAccountConvertedBalance <-
-          case Account.sum $ M.map snd assetAccountBalances of
+          case Amount.sum $ M.map snd assetAccountBalances of
             Nothing -> validationTFailure TaxesErrorSum
             Just s -> pure s
         -- TODO assert that the balance is positive?
@@ -135,7 +136,7 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
       _ -> pure Nothing
 
   taxesReportTotalAssets <-
-    case Account.sum $ map assetAccountConvertedBalance taxesReportAssetAccounts of
+    case Amount.sum $ map assetAccountConvertedBalance taxesReportAssetAccounts of
       Nothing -> validationTFailure TaxesErrorSum
       Just s -> pure s
 
@@ -212,6 +213,15 @@ requireDescription ::
 requireDescription = \case
   Nothing -> validationTFailure TaxesErrorNoDescription
   Just (Located _ d) -> pure d
+
+requirePositive ::
+  ann ->
+  Money.Account ->
+  Reporter (TaxesError ann) Money.Amount
+requirePositive al account =
+  case account of
+    Money.Negative _ -> validationTFailure $ TaxesErrorNegativeAsset al account
+    Money.Positive a -> pure a
 
 requireNegative ::
   ann ->
