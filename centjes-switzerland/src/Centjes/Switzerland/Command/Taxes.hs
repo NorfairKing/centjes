@@ -57,7 +57,11 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   withPacketDir $ \packetDir ->
     runStderrLoggingT $ do
       -- Produce the input.json structure
-      (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
+      let firstPath = settingBaseDir </> settingLedgerFile
+      (declarations, fileMap) <- loadModules' firstPath
+      let diag = diagFromFileMap fileMap
+      let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
+
       ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
 
       -- Check ahead of time, so we don't generate reports of invalid ledgers
@@ -65,7 +69,9 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
       void $ liftIO $ checkValidation diag val
 
       validation <- liftIO $ runValidationT $ runReporter $ produceTaxesReport taxesSettingInput ledger
-      (taxesReport, files) <- liftIO $ checkValidation diag validation
+      (taxesReport, reportFiles) <- liftIO $ checkValidation diag validation
+
+      let includedFiles = M.union reportFiles centjesFiles
 
       -- Write the xml to a file
       xmlFile <- do
@@ -155,7 +161,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
 
         pure rf
 
-      absFiles <- fmap M.fromList $ forM (M.toList files) $ \(to, from) -> do
+      absFiles <- fmap M.fromList $ forM (M.toList includedFiles) $ \(to, from) -> do
         logInfoN $
           T.pack $
             unwords
