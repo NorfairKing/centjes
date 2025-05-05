@@ -23,8 +23,6 @@ import qualified Data.Map as M
 import Data.Ratio
 import Data.Text (Text)
 import Data.Time
-import qualified Money.Account as Account
-import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import qualified Money.ConversionRate as ConversionRate
 import Numeric.Natural
@@ -33,8 +31,8 @@ import Text.Printf
 
 taxesReportInput :: TaxesReport ann -> Input
 taxesReportInput TaxesReport {..} =
-  let formatAccount cur = Account.format (locatedValue (currencyQuantisationFactor cur))
-      formatChfAccount = formatAccount taxesReportCHF
+  let formatAmount cur = Amount.format (locatedValue (currencyQuantisationFactor cur))
+      formatChfAmount = formatAmount taxesReportCHF
 
       inputLastName = taxesReportLastName
       inputFirstName = taxesReportFirstName
@@ -55,18 +53,18 @@ taxesReportInput TaxesReport {..} =
                   assetInputBalances =
                     M.fromList $
                       map
-                        ( \(cur@Currency {..}, (account, chfAccount)) ->
+                        ( \(cur@Currency {..}, (amount, chfAmount)) ->
                             ( CurrencySymbol.toText currencySymbol,
-                              Balance {balanceOriginal = formatAccount cur account, balanceConverted = formatChfAccount chfAccount}
+                              Balance {balanceOriginal = formatAmount cur amount, balanceConverted = formatChfAmount chfAmount}
                             )
                         )
                         (M.toList assetAccountBalances)
-                  assetInputConvertedBalance = formatChfAccount assetAccountConvertedBalance
+                  assetInputConvertedBalance = formatChfAmount assetAccountConvertedBalance
                   assetInputEvidence = assetAccountAttachments
                in AssetInput {..}
           )
           taxesReportAssetAccounts
-      inputTotalRevenues = formatAmount taxesReportCHF taxesReportTotalRevenues
+      inputTotalRevenues = formatChfAmount taxesReportTotalRevenues
       inputRevenues = flip map taxesReportRevenues $ \Revenue {..} ->
         let inputRevenueDay = Timestamp.toDay revenueTimestamp
             inputRevenueDescription = Description.toText revenueDescription
@@ -75,11 +73,10 @@ taxesReportInput TaxesReport {..} =
                 { amountWithCurrencyAmount = formatAmount revenueCurrency revenueAmount,
                   amountWithCurrencyCurrency = currencySymbol revenueCurrency
                 }
-            inputRevenueCHFAmount =
-              Amount.format (locatedValue (currencyQuantisationFactor taxesReportCHF)) revenueCHFAmount
+            inputRevenueCHFAmount = formatChfAmount revenueCHFAmount
             inputRevenueEvidence = revenueEvidence
          in RevenueInput {..}
-      inputTotalAssets = formatAccount taxesReportCHF taxesReportTotalAssets
+      inputTotalAssets = formatChfAmount taxesReportTotalAssets
    in Input {..}
 
 -- Note that this is a separate type from the ETax 'XMLReport' because there
@@ -187,8 +184,3 @@ instance HasCodec AmountWithCurrency where
           .= amountWithCurrencyCurrency
 
 type FormattedAmount = String
-
-formatAmount :: Currency ann -> Money.Amount -> FormattedAmount
-formatAmount currency account =
-  let Located _ qf = currencyQuantisationFactor currency
-   in Amount.format qf account
