@@ -100,39 +100,39 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
   taxesReportAssetAccounts <- fmap catMaybes $ for (M.toList ledgerAccounts) $ \(an, Located al Account {..}) -> do
     let mUndeclaredTag = M.lookup taxesInputTagUndeclared accountTags
     case accountType of
-      AccountTypeAssets -> do
-        let assetAccountName = an
-        assetAccountBalances <- flip M.traverseWithKey (MultiAccount.unMultiAccount $ fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport) $ \c b -> do
-          positive <- requirePositive al b
-          converted <-
-            liftValidation $
-              mapValidationFailure TaxesErrorConvertError $
-                convertMultiAccountToAccount (Just al) memoisedPriceGraph taxesReportCHF $
-                  MultiAccount $
-                    M.singleton c b
-          positiveConverted <- requirePositive al converted
-          pure (positive, positiveConverted)
+      AccountTypeAssets -> case mUndeclaredTag of
+        Just _ -> pure Nothing
+        Nothing -> do
+          let assetAccountName = an
+          assetAccountBalances <- flip M.traverseWithKey (MultiAccount.unMultiAccount $ fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport) $ \c b -> do
+            positive <- requirePositive al b
+            converted <-
+              liftValidation $
+                mapValidationFailure TaxesErrorConvertError $
+                  convertMultiAccountToAccount (Just al) memoisedPriceGraph taxesReportCHF $
+                    MultiAccount $
+                      M.singleton c b
+            positiveConverted <- requirePositive al converted
+            pure (positive, positiveConverted)
 
-        assetAccountConvertedBalance <-
-          case Amount.sum $ M.map snd assetAccountBalances of
-            Nothing -> validationTFailure TaxesErrorSum
-            Just s -> pure s
-        -- TODO assert that the balance is positive?
-        -- this is checked anyway, we may use this in the type
+          assetAccountConvertedBalance <-
+            case Amount.sum $ M.map snd assetAccountBalances of
+              Nothing -> validationTFailure TaxesErrorSum
+              Just s -> pure s
+          -- TODO assert that the balance is positive?
+          -- this is checked anyway, we may use this in the type
 
-        let attachments = map (locatedValue . attachmentPath . locatedValue) $ V.toList accountAttachments
+          let attachments = map (locatedValue . attachmentPath . locatedValue) $ V.toList accountAttachments
 
-        -- TODO This allows undeclared accounts with evidence, do we want that?
-        case NE.nonEmpty attachments of
-          Nothing -> case mUndeclaredTag of
+          -- TODO This allows undeclared accounts with evidence, do we want that?
+          case NE.nonEmpty attachments of
             Nothing -> validationTFailure $ TaxesErrorAssetAccountWithoutEvidence (Located al an)
-            Just _ -> pure Nothing
-          Just ne -> do
-            assetAccountAttachments <- forM ne $ \rf -> do
-              let fileInTarball = [reldir|assets|] </> simplifyDir rf
-              includeFile fileInTarball rf
-              pure fileInTarball
-            pure $ Just AssetAccount {..}
+            Just ne -> do
+              assetAccountAttachments <- forM ne $ \rf -> do
+                let fileInTarball = [reldir|assets|] </> simplifyDir rf
+                includeFile fileInTarball rf
+                pure fileInTarball
+              pure $ Just AssetAccount {..}
       _ -> pure Nothing
 
   taxesReportTotalAssets <-
