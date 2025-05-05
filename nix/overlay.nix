@@ -34,7 +34,7 @@ with final.haskell.lib;
         --config-file $src/switzerland.yaml \
         --base-dir $src \
         --zip-file $out/packet.zip \
-        --readme-file $out/README.pdf
+        --packet-dir $out/packet
     '';
   };
   makeSwitzerlandVATPacket = src: final.stdenv.mkDerivation {
@@ -48,7 +48,7 @@ with final.haskell.lib;
         --config-file $src/switzerland.yaml \
         --base-dir $src \
         --zip-file $out/packet.zip \
-        --readme-file $out/README.pdf
+        --packet-dir $out/packet
     '';
   };
 
