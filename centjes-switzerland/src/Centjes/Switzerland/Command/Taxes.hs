@@ -48,7 +48,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   schemaFile <- resolveFile schemaDir "eCH-0119-4-0-0.xsd"
 
   let withPacketDir func = case taxesSettingPacketDir of
-        Nothing -> withSystemTempDir "centjes-switzerland" func
+        Nothing -> withSystemTempDir "centjes-switzerland-taxes" func
         Just dir -> do
           ignoringAbsence $ removeDirRecur dir
           ensureDir dir
