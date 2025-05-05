@@ -90,7 +90,7 @@ parseDispatch =
 
 data TaxesSettings = TaxesSettings
   { taxesSettingZipFile :: !(Path Abs File),
-    taxesSettingReadmeFile :: !(Path Abs File),
+    taxesSettingPacketDir :: !(Maybe (Path Abs Dir)),
     taxesSettingInput :: !TaxesInput
   }
 
@@ -101,20 +101,20 @@ instance HasParser TaxesSettings where
 parseTaxesSettings :: Parser TaxesSettings
 parseTaxesSettings = do
   taxesSettingInput <- settingsParser
-  (taxesSettingZipFile, taxesSettingReadmeFile) <- subConfig_ "taxes" $ do
+  (taxesSettingZipFile, taxesSettingPacketDir) <- subConfig_ "taxes" $ do
     zf <-
       filePathSetting
         [ help "Path to the zip file to create",
           name "zip-file",
           value "tax-packet.zip"
         ]
-    rf <-
-      filePathSetting
-        [ help "Path to the readme file to create",
-          name "readme-file",
-          value "README.pdf"
-        ]
-    pure (zf, rf)
+    pd <-
+      optional $
+        directoryPathSetting
+          [ help "Path to the packet directory to create",
+            name "packet-dir"
+          ]
+    pure (zf, pd)
   pure TaxesSettings {..}
 
 data VATSettings = VATSettings
