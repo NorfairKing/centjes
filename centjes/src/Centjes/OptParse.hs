@@ -40,6 +40,7 @@ parseInstructions =
 
 data Settings = Settings
   { settingLedgerFile :: !(Path Abs File),
+    settingWatch :: !Bool,
     settingLogLevel :: !LogLevel
   }
   deriving (Show)
@@ -56,6 +57,13 @@ parseSettings = do
         short 'l',
         name "ledger",
         value "ledger.cent"
+      ]
+  settingWatch <-
+    yesNoSwitch
+      [ help "Run centjes in a loop",
+        name "watch",
+        short 'w',
+        value True
       ]
   settingLogLevel <- settingsParser
   pure Settings {..}

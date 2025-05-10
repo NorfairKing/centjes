@@ -64,4 +64,9 @@
       };
     };
   };
+  watch = lib.mkOption {
+    default = null;
+    description = "Run centjes in a loop";
+    type = lib.types.nullOr lib.types.bool;
+  };
 }

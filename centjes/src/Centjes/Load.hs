@@ -4,7 +4,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Load
-  ( loadModules,
+  ( loadMWatchedModules,
+    loadWatchedModules,
+    loadModules,
     loadModules',
     loadModulesOrErr,
     LoadError (..),
@@ -29,6 +31,8 @@ import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -36,14 +40,89 @@ import Error.Diagnose
 import Path
 import Path.IO
 import System.Exit
+import System.FSNotify as Notify
 import Text.Read (readMaybe)
+import UnliftIO
 
-loadModules :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Diagnostic String)
+loadMWatchedModules ::
+  (MonadUnliftIO m, MonadLogger m) =>
+  Bool ->
+  Path Abs File ->
+  (([LDeclaration], Diagnostic String) -> m ()) ->
+  m ()
+loadMWatchedModules watch firstPath func =
+  if watch
+    then loadWatchedModules firstPath func
+    else loadModules firstPath >>= func
+
+loadWatchedModules ::
+  forall m.
+  (MonadUnliftIO m, MonadLogger m) =>
+  Path Abs File ->
+  (([LDeclaration], Diagnostic String) -> m ()) ->
+  m ()
+loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager -> do
+  let dir = parent firstPath
+  let loop = do
+        eventChan <- newChan
+        (declarations, fileMap) <- loadModules' firstPath
+        let dirMap :: Map (Path Rel Dir) (Set (Path Rel File))
+            dirMap =
+              M.unionsWith S.union $
+                map (\f -> M.singleton (parent f) (S.singleton (filename f))) $
+                  M.keys fileMap
+
+        let subdirPredicate :: Path Rel Dir -> Set (Path Rel File) -> Event -> Bool
+            subdirPredicate subdir subFileSet e =
+              let isRelevantFile = isJust $ do
+                    absFile <- parseAbsFile $ eventPath e
+                    relFile <- stripProperPrefix (dir </> subdir) absFile
+                    guard $ S.member relFile subFileSet
+                  isRelevantEvent = case e of
+                    Added {} -> True
+                    Modified {} -> True
+                    ModifiedAttributes {} -> False
+                    Removed {} ->
+                      -- We don't want to run a report when a file is deleted and added in quick succession
+                      False
+                    WatchedDirectoryRemoved {} -> False
+                    CloseWrite {} -> False
+                    Unknown {} -> False
+               in and [isRelevantFile, eventIsDirectory e == IsFile, isRelevantEvent]
+
+        let watchSubdir :: Path Rel Dir -> Set (Path Rel File) -> m StopListening
+            watchSubdir subdir subFileSet = do
+              logDebugN $ T.pack $ unwords ["Watching", fromRelDir subdir]
+              liftIO $ watchDirChan watchManager (fromAbsDir (dir </> subdir)) (subdirPredicate subdir subFileSet) eventChan
+
+        let watchDirMap :: m [StopListening]
+            watchDirMap = mapM (uncurry watchSubdir) $ M.toList dirMap
+
+        bracket watchDirMap (liftIO . sequence_) $ \_ -> do
+          let diag = diagFromFileMap fileMap
+          func (declarations, diag)
+          -- Wait for an event
+          event <- readChan eventChan
+          logDebugN $ T.pack $ unwords ["Changed:", maybe "a file" fromRelFile $ parseAbsFile (eventPath event) >>= stripProperPrefix dir]
+          pure ()
+        loop
+
+  loop
+
+liftWith ::
+  (MonadUnliftIO m) =>
+  ((x -> IO a) -> IO a) ->
+  ((x -> m a) -> m a)
+liftWith withFunc func = do
+  unlift <- askRunInIO
+  liftIO $ withFunc $ \x -> unlift (func x)
+
+loadModules :: forall m. (MonadIO m, MonadLogger m) => Path Abs File -> m ([LDeclaration], Diagnostic String)
 loadModules firstPath = do
   (declarations, fileMap) <- withLoggedDuration "Load" $ loadModules' firstPath
   pure (declarations, diagFromFileMap fileMap)
 
-loadModules' :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModules' :: forall m. (MonadIO m, MonadLogger m) => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModules' firstPath = do
   errOrRes <- runExceptT $ loadModulesOrErr firstPath
   case errOrRes of
@@ -117,7 +196,11 @@ instance ToReport LoadError' where
             _ -> Nothing
           _ -> Nothing
 
-loadModulesOrErr :: forall m. (MonadLoggerIO m) => Path Abs File -> ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModulesOrErr ::
+  forall m.
+  (MonadIO m, MonadLogger m) =>
+  Path Abs File ->
+  ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModulesOrErr firstPath = do
   let base = parent firstPath
   flip runStateT M.empty $ do
@@ -178,7 +261,7 @@ diagFromFileMap' =
     . M.toList
 
 readSingleModule ::
-  (MonadLoggerIO m) =>
+  (MonadIO m, MonadLogger m) =>
   Path Abs Dir ->
   Map (Path Rel File) Text ->
   Maybe SourceSpan ->

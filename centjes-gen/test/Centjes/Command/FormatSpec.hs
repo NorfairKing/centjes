@@ -28,7 +28,7 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
       let rf = [relfile|test.foobar|]
       let af = tdir </> rf
       T.writeFile (fromAbsFile af) (formatModule @() m)
-      let settings = Settings {settingLedgerFile = af, settingLogLevel = LevelError}
+      let settings = Settings {settingLedgerFile = af, settingLogLevel = LevelError, settingWatch = False}
       let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Left af)}
       runStderrLoggingT $ runCentjesFormat settings formatSettings
       assertFormatted tdir rf
@@ -42,7 +42,7 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
         let af2 = tdir </> rf2
         T.writeFile (fromAbsFile af1) (formatModule @() m1)
         T.writeFile (fromAbsFile af2) (formatModule @() m2)
-        let settings = Settings {settingLedgerFile = af1, settingLogLevel = LevelError}
+        let settings = Settings {settingLedgerFile = af1, settingLogLevel = LevelError, settingWatch = False}
         let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
         runStderrLoggingT $ runCentjesFormat settings formatSettings
         assertFormatted tdir rf1
@@ -54,7 +54,7 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
     T.writeFile (fromAbsFile testFile1) "#invalid file"
     let unformatted = "import   foo.cent\n" -- Valid but unformatted
     T.writeFile (fromAbsFile testFile2) unformatted
-    let settings = Settings {settingLedgerFile = testFile1, settingLogLevel = LevelError}
+    let settings = Settings {settingLedgerFile = testFile1, settingLogLevel = LevelError, settingWatch = False}
     let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
     runStderrLoggingT (runCentjesFormat settings formatSettings) `shouldThrow` (\(_ :: ExitCode) -> True)
     T.readFile (fromAbsFile testFile2) `shouldReturn` unformatted

@@ -1,4 +1,4 @@
-[36mUsage: [m[33mcentjes[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m COMMAND [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m [36m[[m[37m--log-level[m [33mLOG_LEVEL[m[36m][m
+[36mUsage: [m[33mcentjes[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m COMMAND [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m [36m[[m[37m--[no-]watch[m[36m][m [36m[[m[37m--log-level[m [33mLOG_LEVEL[m[36m][m
 
 [36mAll settings[m:
   [34mShow this help text[m
@@ -18,6 +18,13 @@
     [37mledger[m: # [32mor null[m
       [33m<string>[m
   default: [33m"ledger.cent"[m
+
+  [34mRun centjes in a loop[m
+  switch: [37m--[no-]watch[m
+  env: [37mCENTJES_WATCH[m [33mBOOL[m
+  config:
+    [37mwatch[m: # [32mor null[m
+      [33m<boolean>[m
 
   [34mMinimal severity of log messages[m
   option: [37m--log-level[m [33mLOG_LEVEL[m
@@ -150,6 +157,7 @@
       [37m-f[m[36m|[m[37m--file[m      [34mFile to format[m     
       [37m-d[m[36m|[m[37m--directory[m [34mDirectory to format[m
   [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
+  [37m--[no-]watch[m [34mRun centjes in a loop[m
   [37m--log-level[m [34mMinimal severity of log messages[m default: [33mLevelInfo[m example: [33mInfo[m
 
 [36mEnvironment Variables[m:
@@ -157,6 +165,7 @@
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_LEDGER[m [33mFILE_PATH[m        [34mledger file[m                            default: [33m"ledger.cent"[m                
+  [37mCENTJES_WATCH[m [33mBOOL[m              [34mRun centjes in a loop[m                                                        
   [37mCENTJES_LOG_LEVEL[m [33mLOG_LEVEL[m     [34mMinimal severity of log messages[m       default: [33mLevelInfo[m       example: [33mInfo[m
 
 [36mConfiguration Values[m:
@@ -196,6 +205,10 @@
   [37mledger[m:
     # [32mor null[m
     [33m<string>[m
+  [34mRun centjes in a loop[m
+  [37mwatch[m:
+    # [32mor null[m
+    [33m<boolean>[m
   [34mMinimal severity of log messages[m
   default: [33mLevelInfo[m
   example: [33mInfo[m
