@@ -89,8 +89,8 @@ loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager 
           let diag = diagFromFileMap fileMap
           func (declarations, diag)
           -- Wait for an event
-          event <- readChan eventChan
-          liftIO $ print event
+          _ <- readChan eventChan
+          pure ()
         loop
   loop
 
