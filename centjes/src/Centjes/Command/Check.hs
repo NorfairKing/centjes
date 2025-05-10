@@ -12,7 +12,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger
 
 runCentjesCheck :: Settings -> CheckSettings -> LoggingT IO ()
-runCentjesCheck Settings {..} CheckSettings = withLoggedDuration "Check" $ do
-  (declarations, diag) <- loadModules settingLedgerFile
-  val <- runValidationT $ doCompleteCheck declarations
-  void $ liftIO $ checkValidation diag val
+runCentjesCheck Settings {..} CheckSettings =
+  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, diagnostic) ->
+    withLoggedDuration "Check" $ do
+      val <- runValidationT $ doCompleteCheck declarations
+      void $ liftIO $ checkValidation diagnostic val
