@@ -30,21 +30,21 @@ import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
 
 runCentjesBalance :: Settings -> BalanceSettings -> LoggingT IO ()
-runCentjesBalance Settings {..} BalanceSettings {..} = do
-  (declarations, diagnostic) <- loadModules settingLedgerFile
-  ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
-  br <-
-    withLoggedDuration "Balance report" $
-      liftIO $
-        checkValidation diagnostic $
-          produceBalanceReport
-            balanceSettingFilter
-            balanceSettingEnd
-            balanceSettingCurrency
-            balanceSettingShowVirtual
-            ledger
-  terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-  liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
+runCentjesBalance Settings {..} BalanceSettings {..} =
+  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, diagnostic) -> do
+    ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
+    br <-
+      withLoggedDuration "Balance report" $
+        liftIO $
+          checkValidation diagnostic $
+            produceBalanceReport
+              balanceSettingFilter
+              balanceSettingEnd
+              balanceSettingCurrency
+              balanceSettingShowVirtual
+              ledger
+    terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
+    liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
 
 renderBalanceReport :: ShowEmpty -> BalanceReport ann -> [Chunk]
 renderBalanceReport se br =

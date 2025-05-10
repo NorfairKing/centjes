@@ -4,7 +4,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Load
-  ( loadModules,
+  ( loadMWatchedModules,
+    loadWatchedModules,
+    loadModules,
     loadModules',
     loadModulesOrErr,
     LoadError (..),
@@ -36,14 +38,76 @@ import Error.Diagnose
 import Path
 import Path.IO
 import System.Exit
+import System.FSNotify as Notify
 import Text.Read (readMaybe)
+import UnliftIO
 
-loadModules :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Diagnostic String)
+loadMWatchedModules ::
+  (MonadUnliftIO m, MonadLogger m) =>
+  Bool ->
+  Path Abs File ->
+  (([LDeclaration], Diagnostic String) -> m ()) ->
+  m ()
+loadMWatchedModules watch firstPath func =
+  if watch
+    then loadWatchedModules firstPath func
+    else loadModules firstPath >>= func
+
+loadWatchedModules ::
+  (MonadUnliftIO m, MonadLogger m) =>
+  Path Abs File ->
+  (([LDeclaration], Diagnostic String) -> m ()) ->
+  m ()
+loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager -> do
+  let dir = parent firstPath
+  let loop = do
+        eventChan <- newChan
+        (declarations, fileMap) <- loadModules' firstPath
+        let predicate e =
+              let isRelevantFile = isJust $ do
+                    absFile <- parseAbsFile $ eventPath e
+                    relFile <- stripProperPrefix dir absFile
+                    M.lookup relFile fileMap
+                  isRelevantEvent = case e of
+                    Added {} -> True
+                    Modified {} -> True
+                    ModifiedAttributes {} -> False
+                    Removed {} ->
+                      -- We don't want to run a report when a file is deleted and added in quick succession
+                      False
+                    WatchedDirectoryRemoved {} -> False
+                    CloseWrite {} -> False
+                    Unknown {} -> False
+               in and [isRelevantFile, eventIsDirectory e == IsFile, isRelevantEvent]
+
+        -- We must not watch recursively because this directory could have a
+        -- reference to the nix store, which is enormous.
+        -- TODO watch each relevant dir, not just the top level.
+        let startWatching = liftIO $ watchDirChan watchManager (fromAbsDir dir) predicate eventChan
+        let stopWatching = pure
+        bracket startWatching stopWatching $ \_ -> do
+          let diag = diagFromFileMap fileMap
+          func (declarations, diag)
+          -- Wait for an event
+          event <- readChan eventChan
+          liftIO $ print event
+        loop
+  loop
+
+liftWith ::
+  (MonadUnliftIO m) =>
+  ((x -> IO a) -> IO a) ->
+  ((x -> m a) -> m a)
+liftWith withFunc func = do
+  unlift <- askRunInIO
+  liftIO $ withFunc $ \x -> unlift (func x)
+
+loadModules :: forall m. (MonadIO m, MonadLogger m) => Path Abs File -> m ([LDeclaration], Diagnostic String)
 loadModules firstPath = do
   (declarations, fileMap) <- withLoggedDuration "Load" $ loadModules' firstPath
   pure (declarations, diagFromFileMap fileMap)
 
-loadModules' :: forall m. (MonadLoggerIO m) => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModules' :: forall m. (MonadIO m, MonadLogger m) => Path Abs File -> m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModules' firstPath = do
   errOrRes <- runExceptT $ loadModulesOrErr firstPath
   case errOrRes of
@@ -117,7 +181,11 @@ instance ToReport LoadError' where
             _ -> Nothing
           _ -> Nothing
 
-loadModulesOrErr :: forall m. (MonadLoggerIO m) => Path Abs File -> ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
+loadModulesOrErr ::
+  forall m.
+  (MonadIO m, MonadLogger m) =>
+  Path Abs File ->
+  ExceptT LoadError m ([LDeclaration], Map (Path Rel File) (Text, LModule))
 loadModulesOrErr firstPath = do
   let base = parent firstPath
   flip runStateT M.empty $ do
@@ -178,7 +246,7 @@ diagFromFileMap' =
     . M.toList
 
 readSingleModule ::
-  (MonadLoggerIO m) =>
+  (MonadIO m, MonadLogger m) =>
   Path Abs Dir ->
   Map (Path Rel File) Text ->
   Maybe SourceSpan ->
