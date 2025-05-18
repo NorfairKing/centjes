@@ -63,7 +63,7 @@ parseSettings = do
       [ help "Run centjes in a loop",
         name "watch",
         short 'w',
-        value True
+        value False
       ]
   settingLogLevel <- settingsParser
   pure Settings {..}
