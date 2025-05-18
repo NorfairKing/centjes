@@ -101,6 +101,10 @@ loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager 
         bracket watchDirMap (liftIO . sequence_) $ \_ -> do
           let diag = diagFromFileMap fileMap
           func (declarations, diag)
+            `catch` ( \case
+                        ExitSuccess -> pure ()
+                        ExitFailure _ -> pure ()
+                    )
           -- Wait for an event
           event <- readChan eventChan
           logDebugN $ T.pack $ unwords ["Changed:", maybe "a file" fromRelFile $ parseAbsFile (eventPath event) >>= stripProperPrefix dir]

@@ -59,10 +59,13 @@ parseSettings = do
         value "ledger.cent"
       ]
   settingWatch <-
-    yesNoSwitch
+    setting
       [ help "Run centjes in a loop",
         name "watch",
         short 'w',
+        metavar "ANY",
+        switch True,
+        reader exists,
         value False
       ]
   settingLogLevel <- settingsParser

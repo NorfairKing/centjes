@@ -31,8 +31,6 @@
   - {name: unsafeInterleaveIO, within: []} # Unsafe
   - {name: unsafeFixIO, within: []} # Unsafe
   - name: unsafePerformIO # Unsafe
-    within:
-    - Smos.API.SHA256
 
   - {name: forkIO, within: []} # Hard to get right, use the async library instead.
 
@@ -48,8 +46,6 @@
   - {name: until, within: []} # Really confusing, use 'when' instead.
 
   - name: toEnum # Partial
-    within:
-    - Smos.Report.TimeBlock
 
   - {name: Data.Foldable.foldl, within: []} # Lazy. Use foldl' instead.
 
@@ -62,8 +58,6 @@
   - {name: System.IO.putStr, within: []}
   - {name: System.IO.print, within: []}
   - name: System.IO.putChar
-    within:
-    - Smos.Sync.Client.Prompt
 
   # Don't use string for command-line input either.
   - {name: System.IO.getChar, within: []}
@@ -95,6 +89,7 @@
       - Centjes.Switzerland.Command.VAT
   - name: Prelude.putStrLn
     within:
+      - Centjes.Command.Check
       - Centjes.Docs.Site.ModuleDocs
       - Centjes.Docs.Site.DependencyGraph
       - Centjes.Docs.Site.Handler.Reload
