@@ -76,7 +76,7 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
           )
           ledgerPrices
 
-  let memoisedPriceGraph = pricesToPriceGraph yearPrices
+  let memoisedPriceGraph = pricesToMemoisedPriceGraph yearPrices
 
   let taxesReportConversionRates =
         M.fromList

@@ -16,6 +16,9 @@ extra-source-files:
     test_resources/balance/balanced/conversion-hop.cent
     test_resources/balance/balanced/conversion-hop.config
     test_resources/balance/balanced/conversion-hop.txt
+    test_resources/balance/balanced/conversion-old-path.cent
+    test_resources/balance/balanced/conversion-old-path.config
+    test_resources/balance/balanced/conversion-old-path.txt
     test_resources/balance/balanced/conversion-old-price.cent
     test_resources/balance/balanced/conversion-old-price.config
     test_resources/balance/balanced/conversion-old-price.txt

@@ -25,6 +25,7 @@ extra-source-files:
     content/pages/centjes/balance.markdown
     content/pages/centjes/check.markdown
     content/pages/centjes/format.markdown
+    content/pages/centjes/rates-graph.markdown
     content/pages/centjes/register.markdown
     content/pages/development.markdown
     content/pages/syntax.markdown

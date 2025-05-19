@@ -17,3 +17,4 @@ runCentjes = do
         DispatchRegister cs -> runCentjesRegister settings cs
         DispatchBalance cs -> runCentjesBalance settings cs
         DispatchFormat cs -> runCentjesFormat settings cs
+        DispatchRatesGraph cs -> runCentjesRatesGraph settings cs

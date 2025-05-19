@@ -1,0 +1,22 @@
+currency USD 0.01
+currency CHF 0.05
+currency EUR 0.01
+currency PLN 0.01
+currency JPY 1
+
+account equity
+account investments assets
+
+2024-11-01
+  | Opening
+  * equity      -100 PLN
+  * investments +100 PLN
+
+-- There are two paths from PLN to CHF here:
+-- Path 1: PLN -> EUR -> CHF
+-- Path 2: PLN -> CHF
+-- The first path goes via EUR but is much more recent overall.
+-- The second path does not go via an intermediate hop but is way older and therefore not preferrable.
+price 2024-11-02 PLN 1.0 CHF
+price 2024-11-05 PLN 2.0 EUR
+price 2024-11-05 EUR 2.0 CHF

@@ -85,7 +85,7 @@ spec = do
               PriceGraph.lookup @Int @CurrencySymbol (PriceGraph.singleton from to rate priority) to from
                 `shouldBe` Just (ConversionRate.invert rate)
 
-    it "can a find a one-hop rate" $
+    it "can find a one-hop rate" $
       forAllValid $ \c1 ->
         forAll (genValid `suchThat` (/= c1)) $ \c2 ->
           forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2)) $ \c3 ->
@@ -95,17 +95,43 @@ spec = do
                 context (ppShow ps) $
                   PriceGraph.lookup @Int @CurrencySymbol ps c1 c3 `shouldBe` Just (ConversionRate.compose r1 r2)
 
-    it "can a find a zero-hop rate even if multiple hops are available" $
+    it "can find a zero-hop rate with higher priority even if multiple hops are available" $
       forAllValid $ \c1 ->
         forAll (genValid `suchThat` (/= c1)) $ \c2 ->
           forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2)) $ \c3 ->
-            forAllValid $ \(r1, p1) ->
-              forAllValid $ \(r2, p2) ->
-                forAllValid $ \(r3, p3) ->
-                  let ps = PriceGraph.fromList [((c1, c2), (r1, p1)), ((c2, c3), (r2, p2)), ((c1, c3), (r3, p3))]
-                   in PriceGraph.lookup @Int @CurrencySymbol ps c1 c3 `shouldBe` Just r3
+            forAllValid $ \r1 ->
+              forAllValid $ \p1 ->
+                forAllValid $ \r2 ->
+                  forAllValid $ \p2 ->
+                    forAllValid $ \r3 ->
+                      forAll (genValid `suchThat` (>= min p1 p2)) $ \p3 ->
+                        -- C1 -> C2
+                        --   \    \
+                        --    \    v
+                        --     --> C3
+                        let ps = PriceGraph.fromList [((c1, c2), (r1, p1)), ((c2, c3), (r2, p2)), ((c1, c3), (r3, p3))]
+                         in context (ppShow (PriceGraph.lookup' @Int @CurrencySymbol ps c1 c3)) $
+                              PriceGraph.lookup @Int @CurrencySymbol ps c1 c3 `shouldBe` Just r3
 
-    it "can a find a two-hop rate" $
+    it "can find a multi-hop rate with higher priority even if a zero-hop rate is available" $
+      forAllValid $ \c1 ->
+        forAll (genValid `suchThat` (/= c1)) $ \c2 ->
+          forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2)) $ \c3 ->
+            forAllValid $ \r1 ->
+              forAllValid $ \p1 ->
+                forAllValid $ \r2 ->
+                  forAllValid $ \p2 ->
+                    forAllValid $ \r3 ->
+                      forAll (genValid `suchThat` (< min p1 p2)) $ \p3 ->
+                        -- C1 -> C2
+                        --   \    \
+                        --    \    v
+                        --     --> C3
+                        let ps = PriceGraph.fromList [((c1, c2), (r1, p1)), ((c2, c3), (r2, p2)), ((c1, c3), (r3, p3))]
+                         in context (ppShow (PriceGraph.lookup' @Int @CurrencySymbol ps c1 c3)) $
+                              PriceGraph.lookup @Int @CurrencySymbol ps c1 c3 `shouldBe` Just (ConversionRate.compose r1 r2)
+
+    it "can find a two-hop rate" $
       forAllValid $ \c1 ->
         forAll (genValid `suchThat` (/= c1)) $ \c2 ->
           forAll (genValid `suchThat` (\c -> c /= c1 && c /= c2)) $ \c3 ->

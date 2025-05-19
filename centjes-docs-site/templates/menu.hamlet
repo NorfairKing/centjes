@@ -22,6 +22,9 @@
     <li>
       <a href=@{CentjesCommandR "format"}>
         Format
+    <li>
+      <a href=@{CentjesCommandR "rates-graph"}>
+        Rates Graph
 
   <p .menu-label>
     Importers

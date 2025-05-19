@@ -23,6 +23,7 @@ library
       Centjes.Command.Balance
       Centjes.Command.Check
       Centjes.Command.Format
+      Centjes.Command.RatesGraph
       Centjes.Command.Register
       Centjes.Compile
       Centjes.Convert
@@ -68,6 +69,7 @@ library
     , dlist
     , fast-myers-diff
     , fsnotify
+    , graphviz
     , monad-logger
     , mtl
     , opt-env-conf

@@ -107,6 +107,7 @@ data Dispatch
   | DispatchRegister !RegisterSettings
   | DispatchBalance !BalanceSettings
   | DispatchFormat !FormatSettings
+  | DispatchRatesGraph !RatesGraphSettings
   deriving (Show)
 
 instance HasParser Dispatch where
@@ -119,7 +120,8 @@ parseDispatch =
     [ command "check" "perform an internal consistency check" $ DispatchCheck <$> settingsParser,
       command "register" "register report" $ DispatchRegister <$> settingsParser,
       command "balance" "balance report" $ DispatchBalance <$> settingsParser,
-      command "format" "format files" $ DispatchFormat <$> settingsParser
+      command "format" "format files" $ DispatchFormat <$> settingsParser,
+      command "rates-graph" "graph exchange rates" $ DispatchRatesGraph <$> settingsParser
     ]
 
 data CheckSettings = CheckSettings
@@ -295,3 +297,13 @@ parseFormatSettings = do
               ]
         ]
   pure FormatSettings {..}
+
+data RatesGraphSettings = RatesGraphSettings
+  deriving (Show)
+
+instance HasParser RatesGraphSettings where
+  settingsParser = parseRatesGraphSettings
+
+{-# ANN parseRatesGraphSettings ("NOCOVER" :: String) #-}
+parseRatesGraphSettings :: Parser RatesGraphSettings
+parseRatesGraphSettings = pure RatesGraphSettings

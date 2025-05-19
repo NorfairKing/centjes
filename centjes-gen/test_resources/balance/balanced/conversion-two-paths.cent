@@ -17,12 +17,12 @@ account investments assets
 -- Path 2: PLN -> JPY -> USD -> CHF
 -- Path 3: PLN -> USD -> CHF
 -- The first path goes via EUR (which comes before USD lexicographically), but is working with older prices.
--- The second path uses three hops, so it should not be preferred.
+-- The second path uses three hops with similarly new prices so it should not be preferred.
 -- The last path goes via USD, and uses more recent prices.
 -- The last path should be preferred.
 price 2024-11-05 PLN 2.0 EUR
+price 2024-11-06 JPY 1.0 PLN
 price 2024-11-06 PLN 3.0 USD
 price 2024-11-07 CHF 1.0 USD
-price 2024-11-07 JPY 1.0 PLN
 price 2024-11-07 USD 1.0 JPY
 price 2024-11-07 CHF 1.0 EUR

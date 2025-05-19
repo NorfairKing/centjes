@@ -5,11 +5,13 @@
 
 module Centjes.Convert.PriceGraph
   ( PriceGraph (..),
+    Direction (..),
     empty,
     singleton,
     insert,
     fromList,
     lookup,
+    lookup',
   )
 where
 
@@ -20,8 +22,6 @@ import Data.Maybe
 import Data.Ord
 import Data.OrdPSQ (OrdPSQ)
 import qualified Data.OrdPSQ as PSQ
-import Data.Set (Set)
-import qualified Data.Set as S
 import Data.Validity
 import Data.Validity.Containers ()
 import GHC.Generics (Generic)
@@ -34,10 +34,21 @@ import Prelude hiding (lookup)
 -- Instead of saving undirected edges, we save directed edges twice each: one
 -- with the rate and one with the reverse rate.
 -- This way we use twice the memory, and take twice as long to insert, but lookups are cheap.
-newtype PriceGraph priority cur = PriceGraph {unPriceGraph :: Map cur (Map cur (ConversionRate, priority))}
+newtype PriceGraph priority cur = PriceGraph {unPriceGraph :: Map cur (Map cur (Direction (ConversionRate, priority)))}
   deriving (Show, Eq, Generic)
 
 instance (Validity priority, Show priority, Ord priority, Validity cur, Show cur, Ord cur) => Validity (PriceGraph priority cur)
+
+-- We remember which direction the rate was added in, for the graph command.
+data Direction a = Forward a | Backward a
+  deriving (Show, Eq, Generic)
+
+instance (Validity a) => Validity (Direction a)
+
+unDirection :: Direction a -> a
+unDirection = \case
+  Forward a -> a
+  Backward a -> a
 
 empty :: PriceGraph priority cur
 empty = PriceGraph M.empty
@@ -62,70 +73,133 @@ insert from to rate priority p@(PriceGraph m) =
     then p
     else
       PriceGraph $
-        M.insertWith M.union to (M.singleton from (ConversionRate.invert rate, priority)) $
-          M.insertWith M.union from (M.singleton to (rate, priority)) m
+        M.insertWith M.union to (M.singleton from (Backward (ConversionRate.invert rate, priority))) $
+          M.insertWith M.union from (M.singleton to (Forward (rate, priority))) m
 
 fromList :: (Ord cur) => [((cur, cur), (Money.ConversionRate, priority))] -> PriceGraph priority cur
 fromList = foldl' (\ps ((c1, c2), (r, p)) -> insert c1 c2 r p ps) empty
 
-lookup :: forall priority cur. (Ord priority, Ord cur) => PriceGraph priority cur -> cur -> cur -> Maybe Money.ConversionRate
-lookup (PriceGraph m) from to =
-  go ConversionRate.oneToOne
-    <$> breadthFirstSearch edgesFrom from to
+lookup ::
+  forall priority cur.
+  (Show priority, Ord priority, Ord cur) =>
+  PriceGraph priority cur ->
+  cur ->
+  cur ->
+  Maybe Money.ConversionRate
+lookup pg from to =
+  if from == to
+    then Just ConversionRate.oneToOne
+    else go ConversionRate.oneToOne . fst <$> lookup' pg from to
   where
     go r = \case
       PathStart _ -> r
       PathFrom _ r' p -> go (ConversionRate.compose r r') p
-    edgesFrom :: cur -> Map cur (Money.ConversionRate, priority)
-    edgesFrom n = fromMaybe M.empty $ M.lookup n m
 
--- Greatest priority is the largest
-breadthFirstSearch ::
-  forall node edge priority.
-  (Ord node, Ord edge, Ord priority) =>
+-- Strategy note: We use the path with the most recent prices, and of those the
+-- shortest one.
+--
+-- Note that this function only returns paths with at least one step.
+-- A -> A will not be considered here but in 'lookup'.
+lookup' ::
+  forall priority cur.
+  (Show priority, Ord priority, Ord cur) =>
+  PriceGraph priority cur ->
+  cur ->
+  cur ->
+  Maybe (Path cur Money.ConversionRate, WorstPriorityCost priority)
+lookup' (PriceGraph m) =
+  dijkstra edgesFrom buildWorstPriorityCost (<>)
+  where
+    edgesFrom :: cur -> Map cur (Money.ConversionRate, priority)
+    edgesFrom n = M.map unDirection $ fromMaybe M.empty $ M.lookup n m
+
+-- Sort by minimal priority in the chain first (bigger is better, should come first), then the
+-- length of the chain (shorter is better, should come first).
+data WorstPriorityCost priority = WorstPriorityCost (Down priority) Word
+  deriving (Show, Eq, Ord)
+
+instance (Show priority, Ord priority) => Semigroup (WorstPriorityCost priority) where
+  WorstPriorityCost (Down p1) l1 <> WorstPriorityCost (Down p2) l2 =
+    -- Remember the worst (lowest) priority as the one to sort by.
+    WorstPriorityCost (Down (min p1 p2)) (l1 + l2)
+
+buildWorstPriorityCost :: priority -> WorstPriorityCost priority
+buildWorstPriorityCost p = WorstPriorityCost (Down p) 1
+
+dijkstra ::
+  forall node edge priority cost.
+  (Ord node, Ord cost) =>
   (node -> Map node (edge, priority)) ->
+  (priority -> cost) ->
+  (cost -> cost -> cost) ->
   node ->
   node ->
   -- Reverse path from goal to start
-  Maybe (Path node edge)
-breadthFirstSearch getEdges start goal =
-  go (S.singleton start) (PSQ.singleton (PathStart start) (0, Nothing) ())
-  where
-    go :: Set node -> OrdPSQ (Path node edge) (Int, Maybe (Down priority)) () -> Maybe (Path node edge)
-    go visited queue = case PSQ.minView queue of
-      -- If the queue is empty, there's no path from the goal to the start
-      Nothing -> Nothing
-      Just (currentPath, (curLen, mCurrentPriority), _, restQueue) ->
-        -- If the head is the goal node, this is path to the start and we're
-        -- done.
-        let currentNode = pathHead currentPath
-         in if currentNode == goal
-              then Just currentPath
-              else
-                let considerEdge (v, q) (node, (edge, priority)) =
-                      -- If this node is already explored, don't consider this edge
-                      if S.member node visited
-                        then (v, q)
-                        else do
-                          -- Consider this node explored now and
-                          -- make a path and add it to the queue
-                          let p = PathFrom node edge currentPath
-                          let combinedPriority = case mCurrentPriority of
-                                Nothing -> priority
-                                Just (Down currentPriority) -> min currentPriority priority
-                          (S.insert node v, PSQ.insert p (succ curLen, Just (Down combinedPriority)) () q)
+  Maybe (Path node edge, cost)
+dijkstra
+  getEdges
+  buildCost
+  combineCost
+  start
+  goal = do
+    (path, mCost) <-
+      go
+        (M.singleton start (PathStart start, Nothing))
+        (PSQ.singleton start Nothing ())
+    cost <- mCost
+    pure (path, cost)
+    where
+      go ::
+        Map node (Path node edge, Maybe cost) ->
+        OrdPSQ node (Maybe cost) () ->
+        Maybe (Path node edge, Maybe cost)
+      go visited queue = case PSQ.minView queue of
+        -- If the queue is empty, the visited map now has the shortest path
+        -- from any node to the start.
+        Nothing -> M.lookup goal visited
+        Just (currentNode, _, (), restQueue) ->
+          let (newVisited, newQueue) =
+                foldl'
+                  (considerEdge currentNode)
+                  (visited, restQueue)
+                  (M.toList (getEdges currentNode))
+           in go newVisited newQueue
 
-                    (newVisited, newQueue) = foldl' considerEdge (visited, restQueue) (M.toList (getEdges currentNode))
-                 in go newVisited newQueue
+      considerEdge ::
+        node ->
+        ( Map node (Path node edge, Maybe cost),
+          OrdPSQ node (Maybe cost) ()
+        ) ->
+        (node, (edge, priority)) ->
+        ( Map node (Path node edge, Maybe cost),
+          OrdPSQ node (Maybe cost) ()
+        )
+      considerEdge currentNode (visited, queue) (node, (edge, priority)) =
+        let ignoreThisEdge = (visited, queue)
+         in case M.lookup currentNode visited of
+              Nothing ->
+                -- If the distance is infinite, don't consider this edge.
+                ignoreThisEdge
+              Just (pathSoFar, mCostSoFar) ->
+                let pathToNode = PathFrom node edge pathSoFar
+                    costToNode = case mCostSoFar of
+                      Nothing -> buildCost priority
+                      Just costSoFar -> combineCost costSoFar (buildCost priority)
+                    newVisited = M.insert node (pathToNode, Just costToNode) visited
+                    newQueue = PSQ.insert node (Just costToNode) () queue
+                    foundNewBetterCost = (newVisited, newQueue)
+                 in case M.lookup node visited of
+                      Nothing ->
+                        -- First path to this node, set the cost
+                        foundNewBetterCost
+                      Just (_, bestCostSoFar) ->
+                        -- New path to this node, only set the cost if it's lower.
+                        if Just costToNode < bestCostSoFar
+                          then foundNewBetterCost
+                          else ignoreThisEdge
 
 -- Path from start to goal
 data Path node edge
   = PathStart node
   | PathFrom node edge (Path node edge)
-  deriving (Eq, Ord)
-
--- | The tip of the path
-pathHead :: Path node edge -> node
-pathHead = \case
-  PathStart cur -> cur
-  PathFrom cur _ _ -> cur
+  deriving (Show)

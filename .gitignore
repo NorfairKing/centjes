@@ -3,3 +3,5 @@
 *.pdf
 *.tar
 *.zip
+*.dot
+*.svg

@@ -150,6 +150,7 @@
           pkg-config
           typst
           zlib
+          graphviz
         ] ++ self.checks.${system}.pre-commit.enabledPackages;
         shellHook = self.checks.${system}.pre-commit.shellHook;
 

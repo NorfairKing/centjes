@@ -13,6 +13,7 @@ module Centjes.Convert
     convertMultiAccountToAccount,
     lookupConversionRate,
     LatestPriceGraph,
+    pricesToMemoisedPriceGraph,
     pricesToPriceGraph,
     pricesToDailyPriceGraphs,
   )
@@ -141,11 +142,17 @@ lookupConversionRate al graph currencyTo currencyFrom = do
 
 type LatestPriceGraph = PriceGraph Day
 
-pricesToPriceGraph ::
+pricesToMemoisedPriceGraph ::
   (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
   MemoisedPriceGraph (Currency ann)
-pricesToPriceGraph = MemoisedPriceGraph.fromPriceGraph . V.foldl go PriceGraph.empty
+pricesToMemoisedPriceGraph = MemoisedPriceGraph.fromPriceGraph . pricesToPriceGraph
+
+pricesToPriceGraph ::
+  (Ord ann) =>
+  Vector (GenLocated ann (Price ann)) ->
+  PriceGraph Day (Currency ann)
+pricesToPriceGraph = V.foldl go PriceGraph.empty
   where
     go g (Located _ Price {..}) =
       let Located _ currencyFrom = priceCurrency
