@@ -29,7 +29,6 @@ import Data.Word
 import qualified Money.Account as Account
 import qualified Money.MultiAccount as Money (MultiAccount)
 import Text.Colour
-import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
 
 runCentjesRegister :: Settings -> RegisterSettings -> LoggingT IO ()
@@ -47,8 +46,7 @@ runCentjesRegister Settings {..} RegisterSettings {..} =
               registerSettingBegin
               registerSettingEnd
               ledger
-    terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-    liftIO $ putChunksLocaleWith terminalCapabilities $ renderRegister register
+    liftIO $ putChunksLocaleWith settingTerminalCapabilities $ renderRegister register
 
 renderRegister :: Register ann -> [Chunk]
 renderRegister register =

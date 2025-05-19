@@ -26,7 +26,6 @@ import Data.Word
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import Text.Colour
-import Text.Colour.Capabilities.FromEnv
 import Text.Colour.Layout
 
 runCentjesBalance :: Settings -> BalanceSettings -> LoggingT IO ()
@@ -43,8 +42,7 @@ runCentjesBalance Settings {..} BalanceSettings {..} =
               balanceSettingCurrency
               balanceSettingShowVirtual
               ledger
-    terminalCapabilities <- liftIO getTerminalCapabilitiesFromEnv
-    liftIO $ putChunksLocaleWith terminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
+    liftIO $ putChunksLocaleWith settingTerminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
 
 renderBalanceReport :: ShowEmpty -> BalanceReport ann -> [Chunk]
 renderBalanceReport se br =

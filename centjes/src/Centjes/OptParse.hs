@@ -18,6 +18,8 @@ import OptEnvConf
 import Path
 import Path.IO
 import Paths_centjes (version)
+import Text.Colour
+import Text.Colour.Capabilities.FromEnv
 
 getInstructions :: IO Instructions
 getInstructions = runSettingsParser version "really safe double-entry accounting"
@@ -41,7 +43,8 @@ parseInstructions =
 data Settings = Settings
   { settingLedgerFile :: !(Path Abs File),
     settingWatch :: !Bool,
-    settingLogLevel :: !LogLevel
+    settingLogLevel :: !LogLevel,
+    settingTerminalCapabilities :: !TerminalCapabilities
   }
   deriving (Show)
 
@@ -69,6 +72,7 @@ parseSettings = do
         value False
       ]
   settingLogLevel <- settingsParser
+  settingTerminalCapabilities <- runIO getTerminalCapabilitiesFromEnv
   pure Settings {..}
 
 instance HasParser LogLevel where
