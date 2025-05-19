@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Load
@@ -64,16 +65,21 @@ loadWatchedModules ::
   m ()
 loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager -> do
   let dir = parent firstPath
-  let loop = do
+  let loop :: Maybe (Map (Path Rel Dir) (Set (Path Rel File))) -> m ()
+      loop mDirMap = do
         logDebugN "Clearing"
         liftIO clearScreen
         eventChan <- newChan
-        (declarations, fileMap) <- loadModules' firstPath
+        errOrTup <- (Right <$> loadModules' firstPath) `catch` (\ec -> pure (Left (ec :: ExitCode)))
         let dirMap :: Map (Path Rel Dir) (Set (Path Rel File))
-            dirMap =
-              M.unionsWith S.union $
-                map (\f -> M.singleton (parent f) (S.singleton (filename f))) $
-                  M.keys fileMap
+            dirMap = case errOrTup of
+              Left _ -> case mDirMap of
+                Nothing -> M.singleton [reldir|.|] (S.singleton (filename firstPath))
+                Just dirMap' -> dirMap'
+              Right (_, fileMap) ->
+                M.unionsWith S.union $
+                  map (\f -> M.singleton (parent f) (S.singleton (filename f))) $
+                    M.keys fileMap
 
         let subdirPredicate :: Path Rel Dir -> Set (Path Rel File) -> Event -> Bool
             subdirPredicate subdir subFileSet e =
@@ -102,19 +108,25 @@ loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager 
             watchDirMap = mapM (uncurry watchSubdir) $ M.toList dirMap
 
         bracket watchDirMap (liftIO . sequence_) $ \_ -> do
-          let diag = diagFromFileMap fileMap
-          func (declarations, diag)
-            `catch` ( \case
-                        ExitSuccess -> pure ()
-                        ExitFailure _ -> pure ()
-                    )
+          case errOrTup of
+            Left _ -> do
+              logDebugN "Error loading modules"
+              pure ()
+            Right (declarations, fileMap) -> do
+              -- Run the function with the loaded modules
+              let diag = diagFromFileMap fileMap
+              func (declarations, diag)
+                `catch` ( \case
+                            ExitSuccess -> pure ()
+                            ExitFailure _ -> pure ()
+                        )
           -- Wait for an event
           event <- readChan eventChan
           logDebugN $ T.pack $ unwords ["Changed:", maybe "a file" fromRelFile $ parseAbsFile (eventPath event) >>= stripProperPrefix dir]
           pure ()
-        loop
+        loop (Just dirMap)
 
-  loop
+  loop Nothing
 
 -- Clear screen using ANSI codes
 clearScreen :: IO ()
