@@ -91,7 +91,6 @@
       - Centjes.Switzerland.Command.VAT
   - name: Prelude.putStrLn
     within:
-      - Centjes.Command.Check
       - Centjes.Docs.Site.ModuleDocs
       - Centjes.Docs.Site.DependencyGraph
       - Centjes.Docs.Site.Handler.Reload

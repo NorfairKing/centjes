@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Command.Check (runCentjesCheck) where
@@ -9,6 +10,8 @@ import Centjes.Timing
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import Text.Colour
+import Text.Colour.Term
 
 runCentjesCheck :: Settings -> CheckSettings -> LoggingT IO ()
 runCentjesCheck Settings {..} CheckSettings =
@@ -16,4 +19,4 @@ runCentjesCheck Settings {..} CheckSettings =
     withLoggedDuration "Check" $ do
       val <- runValidationT $ doCompleteCheck declarations
       _ <- liftIO $ checkValidation diagnostic val
-      liftIO $ putStrLn "Valid"
+      liftIO $ putChunksLocale [fore green $ chunk "Valid\n"]
