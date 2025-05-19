@@ -18,6 +18,8 @@
     name: "Use tuple-section"
 - ignore:
     name: "Use unless"
+- ignore:
+    name: "Use putStr"
 # Until we can upgrade to a newer hlint:
 # https://github.com/ndmitchell/hlint/issues/1557
 - ignore:

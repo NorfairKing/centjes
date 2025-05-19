@@ -41,6 +41,7 @@ import Path
 import Path.IO
 import System.Exit
 import System.FSNotify as Notify
+import System.IO
 import Text.Read (readMaybe)
 import UnliftIO
 
@@ -64,6 +65,8 @@ loadWatchedModules ::
 loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager -> do
   let dir = parent firstPath
   let loop = do
+        logDebugN "Clearing"
+        liftIO clearScreen
         eventChan <- newChan
         (declarations, fileMap) <- loadModules' firstPath
         let dirMap :: Map (Path Rel Dir) (Set (Path Rel File))
@@ -112,6 +115,10 @@ loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager 
         loop
 
   loop
+
+-- Clear screen using ANSI codes
+clearScreen :: IO ()
+clearScreen = hPutStr stdout "\ESCc" >> hPutStr stderr "\ESCc"
 
 liftWith ::
   (MonadUnliftIO m) =>
