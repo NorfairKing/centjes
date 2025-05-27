@@ -1,7 +1,7 @@
 {
-{-# LANGUAGE LambdaCase #-}
-{-# OPTIONS -w -Wunused-imports #-}
+{-# OPTIONS_GHC -w -Wno-unused-imports #-}
 {-# OPTIONS_GHC -funbox-strict-fields #-} -- Because the comments in the generated code said so.
+{-# LANGUAGE LambdaCase #-}
 module Centjes.Parse.Alex
   ( Token(..)
   , AlexPosn(..)

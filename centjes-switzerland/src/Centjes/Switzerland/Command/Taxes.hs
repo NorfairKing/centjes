@@ -84,7 +84,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
             logDebugN $
               LT.toStrict $
                 XML.renderText
-                  (xmlRenderSettings {rsPretty = True})
+                  xmlRenderSettings
                   xmlDoc
 
             logInfoN $

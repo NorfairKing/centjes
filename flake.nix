@@ -6,23 +6,13 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     haskell-dependency-graph-nix.url = "github:NorfairKing/haskell-dependency-graph-nix";
     haskell-dependency-graph-nix.inputs.nixpkgs.follows = "nixpkgs";
     haskell-dependency-graph-nix.inputs.pre-commit-hooks.follows = "pre-commit-hooks";
     weeder-nix.url = "github:NorfairKing/weeder-nix";
     weeder-nix.flake = false;
-    validity.url = "github:NorfairKing/validity";
-    validity.flake = false;
-    autodocodec.url = "github:NorfairKing/autodocodec";
-    autodocodec.flake = false;
-    safe-coloured-text.url = "github:NorfairKing/safe-coloured-text";
-    safe-coloured-text.flake = false;
-    sydtest.url = "github:NorfairKing/sydtest";
-    sydtest.flake = false;
-    fast-myers-diff.url = "github:NorfairKing/fast-myers-diff";
-    fast-myers-diff.flake = false;
     opt-env-conf.url = "github:NorfairKing/opt-env-conf";
     opt-env-conf.flake = false;
     really-safe-money.url = "github:NorfairKing/really-safe-money";
@@ -47,12 +37,7 @@
     , pre-commit-hooks
     , haskell-dependency-graph-nix
     , weeder-nix
-    , validity
-    , safe-coloured-text
-    , sydtest
-    , fast-myers-diff
     , opt-env-conf
-    , autodocodec
     , really-safe-money
     , yesod-autoreload
     , yesod-static-remote
@@ -67,12 +52,7 @@
         inherit system;
         config.allowUnfree = true;
         overlays = [
-          (import (validity + "/nix/overlay.nix"))
-          (import (safe-coloured-text + "/nix/overlay.nix"))
-          (import (sydtest + "/nix/overlay.nix"))
-          (import (fast-myers-diff + "/nix/overlay.nix"))
           (import (opt-env-conf + "/nix/overlay.nix"))
-          (import (autodocodec + "/nix/overlay.nix"))
           (import (really-safe-money + "/nix/overlay.nix"))
           (import (yesod-autoreload + "/nix/overlay.nix"))
           (import (yesod-static-remote + "/nix/overlay.nix"))

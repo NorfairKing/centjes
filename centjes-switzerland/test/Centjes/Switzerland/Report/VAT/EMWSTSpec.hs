@@ -55,5 +55,5 @@ spec = sequential $
           pure $
             LT.toStrict $
               XML.renderText
-                (xmlRenderSettings {rsPretty = True})
+                xmlRenderSettings
                 xmlDoc

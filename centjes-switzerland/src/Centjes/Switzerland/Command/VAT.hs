@@ -84,7 +84,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
             logDebugN $
               LT.toStrict $
                 XML.renderText
-                  (xmlRenderSettings {rsPretty = True})
+                  xmlRenderSettings
                   xmlDoc
 
             logInfoN $

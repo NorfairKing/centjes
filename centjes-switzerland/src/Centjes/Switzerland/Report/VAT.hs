@@ -100,9 +100,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
         if dayInQuarter vatReportQuarter day
           then do
             -- Every posting and the next
-            let postingsTups =
-                  let l = V.toList transactionPostings
-                   in zip l (map Just (tail l) ++ [Nothing])
+            let postingsTups = consequtiveTups $ V.toList transactionPostings
 
             fmap catMaybes $
               forM postingsTups $
@@ -469,4 +467,4 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
 
 consequtiveTups :: [a] -> [(a, Maybe a)]
 consequtiveTups l =
-  zip l (map Just (tail l) ++ [Nothing])
+  zip l (map Just (drop 1 l) ++ [Nothing])
