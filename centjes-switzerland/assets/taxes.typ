@@ -32,6 +32,49 @@ All income is reported in CHF, using the exchange of the day of the transaction.
   ).flatten(), [], text(weight: "bold", [Total]), [], [#text(weight: "bold", input.total_revenues) CHF],
 )
 
+== Deductions
+
+=== Self-employment
+
+==== Abschreibungen
+
+- TODO Deduct furniture used for work, 25% for deductions
+- TODO Deduct machines used for work, 40% for deductions
+
+Check the document #link(
+  "https://www.estv.admin.ch/dam/estv/de/dokumente/dbst/merkblaetter/dbst-mb-a-1995-geschbetriebe-de.pdf.download.pdf/dbst-mb-a-1995-geschbetriebe-de.pdf", "Merkblatt A 1995 der Eidgenössischen Steuerverwaltung (ESTV)",
+) for more information.
+
+==== Expenses
+
+- TODO Rent
+- TODO Communications: mobile, internet
+- TODO Travel: Public transport, parking, fuel
+
+=== Debts
+
+- TODO calculate liabilities
+
+=== 3rd pillar
+
+- TODO 3rd pillar contributions (expenses)
+- TODO 3rd pillar contributions (assets)
+
+=== Health insurance
+
+- TODO: Health insurance payments
+- TODO: Uninsured doctor costs.
+- TODO: Uninsured dentist costs.
+
+=== Donations
+
+- TODO: 300 CHF of small donations
+
+=== Costs of asset management
+
+- 3 promille of the total assets are deductible as costs of asset management. TODO
+  compute this 3 promille.
+
 == Assets
 
 #table(

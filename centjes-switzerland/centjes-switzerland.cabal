@@ -38,6 +38,7 @@ extra-source-files:
     test_resources/empty/taxes.xml
     test_resources/empty/vat.xml
     test_resources/example/bank-statement.txt
+    test_resources/example/currency-rates.cent
     test_resources/example/foobar-dec.txt
     test_resources/example/foobar-feb.txt
     test_resources/example/foobar-jan.txt
