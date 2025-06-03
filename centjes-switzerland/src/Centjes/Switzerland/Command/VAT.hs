@@ -48,14 +48,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   catalogFile <- resolveFile schemaDir "catalog.xml"
   schemaFile <- resolveFile schemaDir "eCH-0217-1-0.xsd"
 
-  let withPacketDir func = case vatSettingPacketDir of
-        Nothing -> withSystemTempDir "centjes-switzerland-vat" func
-        Just dir -> do
-          ignoringAbsence $ removeDirRecur dir
-          ensureDir dir
-          func dir
-
-  withPacketDir $ \packetDir -> do
+  withPacketDir settingClean vatSettingPacketDir $ \packetDir -> do
     runStderrLoggingT $ do
       -- Produce the input.json structure
       let firstPath = settingBaseDir </> settingLedgerFile

@@ -66,7 +66,7 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 == Exchange rates
 
-These exchange rates are used for valuations on #datetime(year: input.year, month: 12, day: 31).display()
+These exchange rates are used for asset valuations on #datetime(year: input.year, month: 12, day: 31).display()
 
 #table(
   stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..(input.rates.pairs().map(((currency, rate)) =>

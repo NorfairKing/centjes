@@ -10,6 +10,11 @@
     description = "base directory";
     type = lib.types.nullOr lib.types.str;
   };
+  clean = lib.mkOption {
+    default = null;
+    description = "Clean the packet directory";
+    type = lib.types.nullOr lib.types.bool;
+  };
   domestic-income-account = lib.mkOption {
     default = null;
     description = "Account name of your domestic income";

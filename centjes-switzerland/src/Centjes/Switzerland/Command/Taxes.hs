@@ -48,15 +48,7 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   catalogFile <- resolveFile schemaDir "catalog.xml"
   schemaFile <- resolveFile schemaDir "eCH-0119-4-0-0.xsd"
 
-  let withPacketDir func = case taxesSettingPacketDir of
-        Nothing -> withSystemTempDir "centjes-switzerland-taxes" func
-        Just dir -> do
-          -- TODO: Uncomment this once we are done building the taxes report
-          -- ignoringAbsence $ removeDirRecur dir
-          ensureDir dir
-          func dir
-
-  withPacketDir $ \packetDir ->
+  withPacketDir settingClean taxesSettingPacketDir $ \packetDir ->
     runStderrLoggingT $ do
       let firstPath = settingBaseDir </> settingLedgerFile
       (declarations, fileMap) <- loadModules' firstPath

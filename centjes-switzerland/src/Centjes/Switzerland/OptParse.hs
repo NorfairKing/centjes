@@ -45,7 +45,8 @@ data Settings = Settings
     settingLedgerFile :: !(Path Rel File),
     -- We must use a separate file for prices because the swiss taxes require
     -- that we use the prices downloaded with the `download-rates` command.
-    settingPricesFile :: !(Path Rel File)
+    settingPricesFile :: !(Path Rel File),
+    settingClean :: !Bool
   }
 
 instance HasParser Settings where
@@ -81,6 +82,12 @@ parseSettings = do
           value "currency-rates.cent",
           metavar "FILE_PATH"
         ]
+  settingClean <-
+    yesNoSwitch
+      [ help "Clean the packet directory",
+        name "clean",
+        value True
+      ]
   pure Settings {..}
 
 data Dispatch
