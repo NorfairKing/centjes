@@ -1,13 +1,17 @@
-#show raw: set text(font: "DejaVu Sans Mono", size: 8pt)
 #set text(font: "DejaVu Sans Mono", size: 8pt)
 
 #let input = json("input.json")
 
+#set document(title: [Tax Packet #{ input.year }], date: none)
+
 = Taxes #{ input.year }
 
-Name: #{ input.first_name } #{ input.last_name }
+This document is the index of all the attachment for the tax declaration of #{ input.first_name } #{ input.last_name } for
+the year #{ input.year }.
 
 == Income
+
+All income is reported in CHF, using the exchange of the day of the transaction.
 
 #table(
   stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.revenues.map(

@@ -72,6 +72,11 @@
     description = "Your legal name";
     type = lib.types.nullOr lib.types.str;
   };
+  prices = lib.mkOption {
+    default = null;
+    description = "prices file";
+    type = lib.types.nullOr lib.types.str;
+  };
   quarter = lib.mkOption {
     default = null;
     description = "the quarter to produce the report for";

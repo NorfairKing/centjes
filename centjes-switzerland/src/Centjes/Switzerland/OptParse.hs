@@ -42,7 +42,10 @@ parseInstructions =
 
 data Settings = Settings
   { settingBaseDir :: !(Path Abs Dir),
-    settingLedgerFile :: !(Path Rel File)
+    settingLedgerFile :: !(Path Rel File),
+    -- We must use a separate file for prices because the swiss taxes require
+    -- that we use the prices downloaded with the `download-rates` command.
+    settingPricesFile :: !(Path Rel File)
   }
 
 instance HasParser Settings where
@@ -67,6 +70,15 @@ parseSettings = do
           short 'l',
           name "ledger",
           value "ledger.cent",
+          metavar "FILE_PATH"
+        ]
+  settingPricesFile <-
+    mapIO parseRelFile $
+      setting
+        [ help "prices file",
+          reader str,
+          name "prices",
+          value "currency-rates.cent",
           metavar "FILE_PATH"
         ]
   pure Settings {..}

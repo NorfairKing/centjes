@@ -12,6 +12,7 @@ import Centjes.Compile
 import Centjes.Load
 import Centjes.Report.Check
 import Centjes.Switzerland.OptParse
+import Centjes.Switzerland.Report.Common
 import Centjes.Switzerland.Report.Taxes
 import Centjes.Switzerland.Reporter
 import Centjes.Switzerland.Typst
@@ -50,19 +51,23 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   let withPacketDir func = case taxesSettingPacketDir of
         Nothing -> withSystemTempDir "centjes-switzerland-taxes" func
         Just dir -> do
-          ignoringAbsence $ removeDirRecur dir
+          -- TODO: Uncomment this once we are done building the taxes report
+          -- ignoringAbsence $ removeDirRecur dir
           ensureDir dir
           func dir
 
   withPacketDir $ \packetDir ->
     runStderrLoggingT $ do
-      -- Produce the input.json structure
       let firstPath = settingBaseDir </> settingLedgerFile
       (declarations, fileMap) <- loadModules' firstPath
       let diag = diagFromFileMap fileMap
       let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
 
-      ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
+      ledger <-
+        liftIO $
+          checkValidation diag $
+            filterLedgerByPricesFile settingPricesFile
+              <$> compileDeclarations declarations
 
       -- Check ahead of time, so we don't generate reports of invalid ledgers
       val <- runValidationT $ doCompleteCheck declarations

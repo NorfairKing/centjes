@@ -12,6 +12,7 @@ import Centjes.Compile
 import Centjes.Load
 import Centjes.Report.Check
 import Centjes.Switzerland.OptParse
+import Centjes.Switzerland.Report.Common
 import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.Reporter
 import Centjes.Switzerland.Typst
@@ -62,7 +63,11 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       let diag = diagFromFileMap fileMap
       let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
 
-      ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
+      ledger <-
+        liftIO $
+          checkValidation diag $
+            filterLedgerByPricesFile settingPricesFile
+              <$> compileDeclarations declarations
       -- Check ahead of time, so we don't generate reports of invalid ledgers
       val <- runValidationT $ doCompleteCheck declarations
       void $ liftIO $ checkValidation diag val

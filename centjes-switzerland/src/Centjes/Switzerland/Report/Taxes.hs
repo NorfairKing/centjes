@@ -73,6 +73,7 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
 
   let endOfYear = fromGregorian taxesReportYear 12 31
 
+  -- Only use prices from the year
   let yearPrices =
         V.filter
           ( \(Located _ Price {..}) ->
@@ -82,6 +83,16 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
           ledgerPrices
 
   let memoisedPriceGraph = pricesToMemoisedPriceGraph yearPrices
+  let dailyPriceGraphs = pricesToDailyPriceGraphs yearPrices
+
+  let currenciesInPrices =
+        M.fromList
+          $ map
+            ( \(Located _ Price {..}) ->
+                let Located _ Currency {..} = priceCurrency
+                 in (currencySymbol, currencyQuantisationFactor)
+            )
+          $ V.toList yearPrices
 
   let taxesReportConversionRates =
         M.fromList
@@ -90,7 +101,7 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
                 let from = Currency symbol lqf
                  in (,) from <$> MemoisedPriceGraph.lookup memoisedPriceGraph from taxesReportCHF
             )
-          $ M.toList ledgerCurrencies
+          $ M.toList currenciesInPrices
 
   balanceReport <-
     liftValidation $
@@ -139,12 +150,6 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
     case Amount.sum $ map assetAccountConvertedBalance taxesReportAssetAccounts of
       Nothing -> validationTFailure TaxesErrorSum
       Just s -> pure s
-
-  -- TODO: Let the user pass in the correct rates, don't just use the ones they used.
-  -- We can't build the rates into the binary because there are MANY Currencies
-  -- that could be relevant.
-  -- So we let the user download rates with download-rates instead.
-  let dailyPriceGraphs = pricesToDailyPriceGraphs ledgerPrices
 
   taxesReportRevenues <- fmap concat $
     forM (V.toList ledgerTransactions) $
