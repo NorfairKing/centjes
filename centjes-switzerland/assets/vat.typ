@@ -22,7 +22,7 @@ Alle Umsatzangaben sind netto
 ==== Entgelte
 
 #table(
-  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")), "200", "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)", "", input.total_revenue,
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right,).at(x), ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")), "200", "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)", "", input.total_revenue,
 )
 
 ==== Abzüge
@@ -96,21 +96,31 @@ Alle Umsatzangaben sind netto
 == Income
 
 #for revenue in input.revenues [
-  === #{ revenue.description }
+  === #{
+    revenue.description
+  }
 
   Day: #{ revenue.day }
 
   #if revenue.amount.symbol == "CHF" [
-    Amount: #{ revenue.amount.formatted } #{ revenue.amount.symbol }
+    Amount: #{ revenue.amount.formatted } #{
+      revenue.amount.symbol
+    }
   ] else [
-    Amount: #{ revenue.amount.formatted } #{ revenue.amount.symbol }: #{ revenue.amount_chf } CHF
+    Amount: #{ revenue.amount.formatted } #{
+      revenue.amount.symbol
+    }: #{ revenue.amount_chf } CHF
   ]
 
   #if revenue.keys().contains("vat_amount") [
     #if revenue.amount.symbol == "CHF" [
-      VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }
+      VAT: #{ revenue.vat_amount.formatted } #{
+        revenue.vat_amount.symbol
+      }
     ] else [
-      VAT: #{ revenue.vat_amount.formatted } #{ revenue.vat_amount.symbol }: #{ revenue.vat_amount_chf } CHF
+      VAT: #{ revenue.vat_amount.formatted } #{
+        revenue.vat_amount.symbol
+      }: #{ revenue.vat_amount_chf } CHF
     ]
   ]
 
@@ -129,23 +139,35 @@ Alle Umsatzangaben sind netto
 == Expenses
 
 #for expense in input.expenses [
-  === #{ expense.description }
+  === #{
+    expense.description
+  }
 
   Day: #{ expense.day }
 
   #if expense.amount.symbol == "CHF" [
-    Amount: #{ expense.amount.formatted } #{ expense.amount.symbol }
+    Amount: #{ expense.amount.formatted } #{
+      expense.amount.symbol
+    }
   ] else [
-    Amount: #{ expense.amount.formatted } #{ expense.amount.symbol }: #{ expense.amount_chf } CHF
+    Amount: #{ expense.amount.formatted } #{
+      expense.amount.symbol
+    }: #{ expense.amount_chf } CHF
   ]
 
   #if expense.amount.symbol == "CHF" [
-    VAT: #{ expense.vat_amount.formatted } #{ expense.vat_amount.symbol }
+    VAT: #{ expense.vat_amount.formatted } #{
+      expense.vat_amount.symbol
+    }
   ] else [
-    VAT: #{ expense.vat_amount.formatted } #{ expense.vat_amount.symbol }: #{ expense.vat_amount_chf } CHF
+    VAT: #{ expense.vat_amount.formatted } #{
+      expense.vat_amount.symbol
+    }: #{ expense.vat_amount_chf } CHF
   ]
 
   #for evidence in expense.evidence [
-    - #{ evidence }
+    - #{
+        evidence
+      }
   ]
 ]

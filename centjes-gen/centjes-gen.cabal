@@ -45,6 +45,8 @@ extra-source-files:
     test_resources/balance/balanced/empty.txt
     test_resources/balance/balanced/example.cent
     test_resources/balance/balanced/example.txt
+    test_resources/balance/balanced/percentage.cent
+    test_resources/balance/balanced/percentage.txt
     test_resources/balance/balanced/rates.cent
     test_resources/balance/balanced/rates.config
     test_resources/balance/balanced/rates.txt

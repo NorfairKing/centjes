@@ -26,6 +26,10 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         totalRevenues <- Amount.sum (map revenueAmount (taxesReportRevenues tr))
                         pure $ tr {taxesReportTotalRevenues = totalRevenues}
                     )
+      `suchThatMap` ( \tr -> do
+                        totalHomeofficeExpenses <- Amount.sum (map homeofficeExpenseAmount (taxesReportHomeofficeExpenses tr))
+                        pure $ tr {taxesReportTotalHomeofficeExpenses = totalHomeofficeExpenses}
+                    )
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (AssetAccount ann) where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
@@ -54,4 +58,17 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (Revenue ann) where
       r
         { revenueAmount = amount,
           revenueCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (HomeofficeExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { homeofficeExpenseAmount = amount,
+          homeofficeExpenseCHFAmount = chfAmount
         }

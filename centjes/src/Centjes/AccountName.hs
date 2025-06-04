@@ -6,6 +6,7 @@
 
 module Centjes.AccountName
   ( AccountName (..),
+    Centjes.AccountName.fromString,
     fromText,
     fromTextOrError,
     fromStringOrError,
@@ -73,12 +74,16 @@ instance HasCodec AccountName where
         Just an -> Right an
 
 instance IsString AccountName where
-  fromString s = case fromText (fromString s) of
+  fromString s = case fromText (T.pack s) of
     Nothing -> error $ "Invalid AccountName literal: " <> show s
     Just an -> an
 
 fromText :: Text -> Maybe AccountName
 fromText = either (const Nothing) Just . fromTextOrError
+
+-- | Prefer 'fromText' over 'fromString'.
+fromString :: String -> Maybe AccountName
+fromString = fromText . T.pack
 
 fromTextOrError :: Text -> Either String AccountName
 fromTextOrError = prettyValidate . AccountName . NE.fromList . reverse . T.splitOn ":"

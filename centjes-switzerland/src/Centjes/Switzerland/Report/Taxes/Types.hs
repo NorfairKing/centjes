@@ -12,14 +12,16 @@ module Centjes.Switzerland.Report.Taxes.Types
     TaxesReport (..),
     AssetAccount (..),
     Revenue (..),
+    HomeofficeExpense (..),
     TaxesError (..),
   )
 where
 
+import qualified Centjes.AccountName as AccountName
 import Centjes.Convert
 import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Format
-import Centjes.Ledger
+import Centjes.Ledger as Ledger
 import Centjes.Location
 import Centjes.Module
 import Centjes.Report.Balance
@@ -47,13 +49,14 @@ import Path
 data TaxesInput = TaxesInput
   { taxesInputLastName :: !Text,
     taxesInputFirstName :: !Text,
+    taxesInputInsuredPersonNumber :: !Text,
     taxesInputYear :: !Year,
     taxesInputTagUndeclared :: !Tag,
     taxesInputTagDeductible :: !Tag,
     taxesInputTagNotDeductible :: !Tag,
     taxesInputTagTaxDeductible :: !Tag,
     taxesInputTagNotTaxDeductible :: !Tag,
-    taxesInputInsuredPersonNumber :: !Text
+    taxesInputHomeofficeExpensesAccount :: !AccountName
   }
   deriving (Show, Generic)
 
@@ -74,6 +77,12 @@ parseTaxesInput = do
     setting
       [ help "your last name",
         conf "last-name"
+      ]
+  taxesInputInsuredPersonNumber <-
+    setting
+      [ help "The AHV identifier.",
+        conf "ahv-id",
+        example "7461111222233"
       ]
   taxesInputYear <-
     choice
@@ -118,11 +127,12 @@ parseTaxesInput = do
         conf "tag-not-tax-deductible",
         value "not-tax-deductible"
       ]
-  taxesInputInsuredPersonNumber <-
+  taxesInputHomeofficeExpensesAccount <-
     setting
-      [ help "The AHV identifier.",
-        conf "ahv-id",
-        example "7461111222233"
+      [ help "the account to use for homeoffice expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "homeoffice-expenses-account",
+        value "expenses:homeoffice"
       ]
   pure TaxesInput {..}
 
@@ -138,7 +148,9 @@ data TaxesReport ann = TaxesReport
     taxesReportAssetAccounts :: ![AssetAccount ann],
     taxesReportTotalAssets :: !Money.Amount,
     taxesReportRevenues :: ![Revenue ann],
-    taxesReportTotalRevenues :: !Money.Amount
+    taxesReportTotalRevenues :: !Money.Amount,
+    taxesReportHomeofficeExpenses :: ![HomeofficeExpense ann],
+    taxesReportTotalHomeofficeExpenses :: !Money.Amount
   }
   deriving (Show, Generic)
 
@@ -149,7 +161,9 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
         declare "the assets sum to the total assets" $
           Amount.sum (map assetAccountConvertedBalance taxesReportAssetAccounts) == Just taxesReportTotalAssets,
         declare "the revenues sum to the total revenues" $
-          Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues
+          Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues,
+        declare "the homeoffice costs sum to the total homeoffice costs" $
+          Amount.sum (map homeofficeExpenseAmount taxesReportHomeofficeExpenses) == Just taxesReportTotalHomeofficeExpenses
       ]
 
 data AssetAccount ann = AssetAccount
@@ -170,10 +184,13 @@ data TaxesError ann
   | TaxesErrorBalanceError !(BalanceError ann)
   | TaxesErrorNoDescription
   | TaxesErrorNegativeAsset !ann !Money.Account
+  | TaxesErrorNegativeExpense !ann !Money.Account
   | TaxesErrorPositiveIncome !ann !ann !Money.Account
   | TaxesErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
   | TaxesErrorAssetAccountWithoutEvidence !(GenLocated ann AccountName)
   | TaxesErrorRevenueWithoutEvidence !ann !ann !(GenLocated ann AccountName)
+  | TaxesErrorAmbiguousExpenses !ann
+  | TaxesErrorUntaggedExpenses !ann !(GenLocated ann (Ledger.Posting ann))
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (TaxesError ann)
@@ -195,6 +212,13 @@ instance ToReport (TaxesError SourceSpan) where
       Err
         Nothing
         "Negative asset amount"
+        [ (toDiagnosePosition al, Where "in this account")
+        ]
+        []
+    TaxesErrorNegativeExpense al _ ->
+      Err
+        Nothing
+        "Negative expense amount"
         [ (toDiagnosePosition al, Where "in this account")
         ]
         []
@@ -264,6 +288,21 @@ instance ToReport (TaxesError SourceSpan) where
                             }
               ]
         ]
+    TaxesErrorAmbiguousExpenses tl ->
+      Err
+        Nothing
+        "Transaction tagged ambiguously"
+        [ (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        [Hint "tag as 'deductible' or 'not-deductible' to resolve this ambiguity"]
+    TaxesErrorUntaggedExpenses tl (Located pl _) ->
+      Err
+        Nothing
+        "Expense not marked as either deductible or not-deductible"
+        [ (toDiagnosePosition pl, This "This posting represents an expense that is neither tagged as deductible nor as not-deductible."),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
@@ -280,3 +319,16 @@ data Revenue ann = Revenue
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (Revenue ann)
+
+data HomeofficeExpense ann = HomeofficeExpense
+  { homeofficeExpenseTimestamp :: !Timestamp,
+    homeofficeExpenseDescription :: !Description,
+    homeofficeExpenseAmount :: !Money.Amount,
+    homeofficeExpenseCurrency :: !(Currency ann),
+    homeofficeExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    homeofficeExpenseEvidence :: ![Path Rel File]
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (HomeofficeExpense ann)

@@ -116,14 +116,14 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
         Nothing -> do
           let assetAccountName = an
           assetAccountBalances <- flip M.traverseWithKey (MultiAccount.unMultiAccount $ fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport) $ \c b -> do
-            positive <- requirePositive al b
+            positive <- requireAssetPositive al b
             converted <-
               liftValidation $
                 mapValidationFailure TaxesErrorConvertError $
                   convertMultiAccountToAccount (Just al) memoisedPriceGraph taxesReportCHF $
                     MultiAccount $
                       M.singleton c b
-            positiveConverted <- requirePositive al converted
+            positiveConverted <- requireAssetPositive al converted
             pure (positive, positiveConverted)
 
           assetAccountConvertedBalance <-
@@ -198,6 +198,48 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
       Nothing -> validationTFailure TaxesErrorSum
       Just s -> pure s
 
+  taxesReportHomeofficeExpenses <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInYear taxesReportYear day
+          then fmap catMaybes $
+            forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
+              let Located _ accountName = postingAccountName
+              if accountName == taxesInputHomeofficeExpensesAccount
+                then do
+                  let mDeductibleTag = M.lookup taxesInputTagDeductible transactionTags
+                  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible transactionTags
+                  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible transactionTags
+                  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible transactionTags
+                  let tryToDeclare = do
+                        homeofficeExpenseDescription <- requireDescription transactionDescription
+                        let Located al account = postingAccount
+                        homeofficeExpenseAmount <- requireExpensePositive al account
+                        let homeofficeExpenseTimestamp = timestamp
+                        let Located _ homeofficeExpenseCurrency = postingCurrency
+                        homeofficeExpenseCHFAmount <- convertDaily al dailyPriceGraphs day homeofficeExpenseCurrency taxesReportCHF homeofficeExpenseAmount
+                        homeofficeExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+                          let fileInTarball = [reldir|expenses/homeoffice|] </> filename rf
+                          includeFile fileInTarball rf
+                          pure fileInTarball
+                        pure $ Just HomeofficeExpense {..}
+                  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
+                    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+                    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
+                    (Nothing, Nothing, Just _, Nothing) -> tryToDeclare
+                    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
+                    (Just _, Nothing, Nothing, Nothing) -> tryToDeclare
+                    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+                else pure Nothing
+          else pure []
+
+  taxesReportTotalHomeofficeExpenses <-
+    case Amount.sum $ map homeofficeExpenseCHFAmount taxesReportHomeofficeExpenses of
+      Nothing -> validationTFailure TaxesErrorSum
+      Just s -> pure s
+
   pure TaxesReport {..}
 
 dayInYear :: Integer -> Day -> Bool
@@ -219,13 +261,22 @@ requireDescription = \case
   Nothing -> validationTFailure TaxesErrorNoDescription
   Just (Located _ d) -> pure d
 
-requirePositive ::
+requireAssetPositive ::
   ann ->
   Money.Account ->
   Reporter (TaxesError ann) Money.Amount
-requirePositive al account =
+requireAssetPositive al account =
   case account of
     Money.Negative _ -> validationTFailure $ TaxesErrorNegativeAsset al account
+    Money.Positive a -> pure a
+
+requireExpensePositive ::
+  ann ->
+  Money.Account ->
+  Reporter (TaxesError ann) Money.Amount
+requireExpensePositive al account =
+  case account of
+    Money.Negative _ -> validationTFailure $ TaxesErrorNegativeExpense al account
     Money.Positive a -> pure a
 
 requireNegative ::
