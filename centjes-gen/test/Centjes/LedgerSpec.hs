@@ -10,7 +10,7 @@ import Test.Syd.Validity
 spec :: Spec
 spec = do
   genValidSpec @(Currency ())
-  genValidSpec @(Percentage ())
+  genValidSpec @(AmountRatio ())
   genValidSpec @(Cost ())
   genValidSpec @(Price ())
   genValidSpec @(Assertion ())

@@ -60,7 +60,7 @@ instance (GenValid ann) => GenValid (CostExpression ann) where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (PercentageExpression ann) where
+instance (GenValid ann) => GenValid (RatioExpression ann) where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 

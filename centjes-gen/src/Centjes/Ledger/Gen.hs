@@ -128,7 +128,7 @@ genPostingWith accounts currencies = do
       [ (1, pure Nothing),
         (3, genMLocatedWith $ genCostWithCurrencies currencies postingCurrency)
       ]
-  postingPercentage <- genValid
+  postingAmountRatio <- genValid
   pure Posting {..}
 
 instance (GenValid ann) => GenValid (Assertion ann)
@@ -174,7 +174,7 @@ genCostWithCurrencies currencies (Located _ referenceCurrency) = do
   forM mCurrency $ \costCurrency ->
     pure Cost {..}
 
-instance (GenValid ann) => GenValid (Percentage ann)
+instance (GenValid ann) => GenValid (AmountRatio ann)
 
 instance (GenValid ann) => GenValid (Currency ann)
 

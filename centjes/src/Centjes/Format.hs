@@ -9,6 +9,7 @@ module Centjes.Format
     formatAccountDeclaration,
     formatTagDeclaration,
     formatPriceDeclaration,
+    formatRationalExpression,
     formatTransaction,
     moduleDoc,
     SyntaxElement (..),
@@ -49,6 +50,9 @@ formatTagDeclaration = renderDocText . tagDeclarationDoc
 
 formatPriceDeclaration :: PriceDeclaration l -> Text
 formatPriceDeclaration = renderDocText . priceDeclarationDoc
+
+formatRationalExpression :: RationalExpression l -> Text
+formatRationalExpression = renderDocText . rationalExpressionDoc
 
 formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
@@ -255,7 +259,7 @@ descriptionDocs = map (annotate SyntaxDescription . pretty . ("| " <>)) . T.line
 
 postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc SyntaxElement
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =
-  maybe id (\pe -> (<+> lPercentageExpressionDoc pe)) postingPercentage $
+  maybe id (\pe -> (<+> lRatioExpressionDoc pe)) postingRatio $
     maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
       (if postingReal then "*" else "!")
         <+> maybe id (fill . getMax) mMaxAccountNameWidth (lAccountNameDoc postingAccountName)
@@ -267,33 +271,34 @@ lCostExpressionDoc (Located _ CostExpression {..}) =
   lConversionRateDoc costExpressionConversionRate
     <+> lCurrencySymbolDoc costExpressionCurrencySymbol
 
-lPercentageExpressionDoc :: GenLocated l (PercentageExpression l) -> Doc SyntaxElement
-lPercentageExpressionDoc (Located _ PercentageExpression {..}) =
+lRatioExpressionDoc :: GenLocated l (RatioExpression l) -> Doc SyntaxElement
+lRatioExpressionDoc (Located _ RatioExpression {..}) =
   "~"
-    <> ( case percentageExpressionInclusive of
+    <> ( case ratioExpressionInclusive of
            Nothing -> ""
            Just True -> "i"
            Just False -> "e"
        )
-    <> ( case percentageExpressionRounding of
+    <> ( case ratioExpressionRounding of
            Nothing -> ""
            Just RoundUp -> "u"
            Just RoundDown -> "d"
            Just RoundNearest -> "n"
        )
-    <+> lRationalExpressionDoc percentageExpressionRationalExpression
-    <> "%"
+    <+> lRationalExpressionDoc ratioExpressionRationalExpression
 
 lRationalExpressionDoc :: GenLocated l (RationalExpression l) -> Doc SyntaxElement
 lRationalExpressionDoc = rationalExpressionDoc . locatedValue
 
 rationalExpressionDoc :: RationalExpression l -> Doc SyntaxElement
-rationalExpressionDoc = \case
-  RationalExpressionDecimal ldl -> lRationalDecimalLiteralDoc ldl
-  RationalExpressionFraction ln ld ->
-    lRationalDecimalLiteralDoc ln
-      <+> "/"
-      <+> lRationalDecimalLiteralDoc ld
+rationalExpressionDoc RationalExpression {..} =
+  mconcat
+    [ lRationalDecimalLiteralDoc rationalExpressionNumerator,
+      case rationalExpressionDenominator of
+        Nothing -> mempty
+        Just ld -> " /" <+> lRationalDecimalLiteralDoc ld,
+      if rationalExpressionPercent then "%" else mempty
+    ]
 
 lRationalDecimalLiteralDoc :: GenLocated l DecimalLiteral -> Doc SyntaxElement
 lRationalDecimalLiteralDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional . locatedValue

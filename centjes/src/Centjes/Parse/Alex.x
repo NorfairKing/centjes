@@ -133,6 +133,7 @@ tokens :-
 <price> @var             { lexVar }
 <price> @decimal_literal { lexDL }
 <price> @slash           { lexSlash }
+<price> @percent         { lexPercent }
 <price> @newline         { begin 0 }
 
 -- Transactions

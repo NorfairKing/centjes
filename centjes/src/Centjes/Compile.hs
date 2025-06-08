@@ -36,7 +36,6 @@ import Data.List (intercalate, sortBy)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -53,7 +52,6 @@ import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor
 import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
-import Numeric.Natural
 
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
@@ -72,7 +70,7 @@ data CompileError ann
   | CompileErrorCostSameCurrency !ann !ann !ann
   | CompileErrorPriceSameCurrency !ann !ann !ann
   | CompileErrorInvalidPrice !ann !(GenLocated ann (RationalExpression ann))
-  | CompileErrorInvalidPercentage !ann !ann !(GenLocated ann (RationalExpression ann))
+  | CompileErrorInvalidRatio !ann !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidRational !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   deriving (Show, Generic)
@@ -293,19 +291,19 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition dl, Where "While compiling this declaration")
         ]
         []
-    CompileErrorInvalidPercentage tl pel (Located ll _) ->
+    CompileErrorInvalidRatio tl pel (Located ll _) ->
       Err
-        (Just "CE_INVALID_PERCENTAGE")
-        "Invalid percentage, cannot be interpreted as a positive fraction."
-        [ (toDiagnosePosition ll, This "This percentage is invalid"),
-          (toDiagnosePosition pel, Where "While compiling this percentage"),
+        (Just "CE_INVALID_RATIO")
+        "Invalid ratio, cannot be interpreted as a fraction."
+        [ (toDiagnosePosition ll, This "This ratio is invalid"),
+          (toDiagnosePosition pel, Where "While compiling this ratio"),
           (toDiagnosePosition tl, Where "While compiling this transaction")
         ]
         []
     CompileErrorInvalidRational tl (Located ll _) ->
       Err
         (Just "CE_INVALID_RATIONAL")
-        "Invalid rational, cannot be interpreted as a positive fraction."
+        "Invalid rational, cannot be interpreted as a fraction."
         [ (toDiagnosePosition ll, This "This rational expression is invalid"),
           (toDiagnosePosition tl, Blank)
         ]
@@ -610,50 +608,46 @@ compileConversionRate pdl lre = do
           e -> e
       )
       (compileRational pdl lre)
-  case ConversionRate.fromRatio r of
+  case ConversionRate.fromRational r of
     Nothing -> validationFailure $ CompileErrorInvalidPrice pdl lre
     Just cr -> pure (Located rl cr)
 
-compilePercentageExpression ::
+compileRatioExpression ::
   ann ->
-  GenLocated ann (PercentageExpression ann) ->
-  Validation (CompileError ann) (GenLocated ann (Percentage ann))
-compilePercentageExpression pl (Located pel PercentageExpression {..}) = do
-  let percentageInclusive = fromMaybe True percentageExpressionInclusive
-  let percentageRounding = fromMaybe RoundNearest percentageExpressionRounding
-  percentageRatio <- compilePercentage pl pel percentageExpressionRationalExpression
-  pure $ Located pel Percentage {..}
+  GenLocated ann (RatioExpression ann) ->
+  Validation (CompileError ann) (GenLocated ann (AmountRatio ann))
+compileRatioExpression pl (Located pel RatioExpression {..}) = do
+  let amountRatioInclusive = fromMaybe True ratioExpressionInclusive
+  let amountRatioRounding = fromMaybe RoundNearest ratioExpressionRounding
+  amountRatio <- compileRatio pl pel ratioExpressionRationalExpression
+  pure $ Located pel AmountRatio {..}
 
-compilePercentage ::
+compileRatio ::
   ann ->
   ann ->
   GenLocated ann (RationalExpression ann) ->
-  Validation (CompileError ann) (GenLocated ann (Ratio Natural))
-compilePercentage pl pel ldl = do
-  Located rl r <-
-    mapValidationFailure
-      ( \case
-          CompileErrorInvalidRational _ lre -> CompileErrorInvalidPercentage pl pel lre
-          e -> e
-      )
-      $ compileRational pl ldl
-  pure $ Located rl $ r / 100 -- We undo the percentage-ness here
+  Validation (CompileError ann) (GenLocated ann Rational)
+compileRatio pl pel ldl =
+  mapValidationFailure
+    ( \case
+        CompileErrorInvalidRational _ lre -> CompileErrorInvalidRatio pl pel lre
+        e -> e
+    )
+    $ compileRational pl ldl
 
 compileRational ::
   ann ->
   GenLocated ann (RationalExpression ann) ->
-  Validation (CompileError ann) (GenLocated ann (Ratio Natural))
-compileRational l lre@(Located rel re) = case re of
-  RationalExpressionDecimal (Located del dl) ->
-    case DecimalLiteral.toRatio dl of
-      Nothing -> validationFailure $ CompileErrorInvalidRational l lre
-      Just r -> pure (Located del r)
-  RationalExpressionFraction (Located _ ndl) (Located _ ddl) ->
-    case (,) <$> DecimalLiteral.toRatio ndl <*> DecimalLiteral.toRatio ddl of
-      Nothing -> validationFailure $ CompileErrorInvalidRational l lre
-      Just (n, d) -> do
-        when (d == 0) $ validationFailure $ CompileErrorInvalidRational l lre
-        pure (Located rel (n / d)) -- TODO err on zero denominator
+  Validation (CompileError ann) (GenLocated ann Rational)
+compileRational l lre@(Located rel RationalExpression {..}) = do
+  let Located _ ndl = rationalExpressionNumerator
+      n :: Rational
+      n = DecimalLiteral.toRational ndl
+      d :: Rational
+      d = maybe 1 (DecimalLiteral.toRational . locatedValue) rationalExpressionDenominator
+  when (d == 0) $ validationFailure $ CompileErrorInvalidRational l lre
+  let percentageMod = if rationalExpressionPercent then 1 / 100 else 1
+  pure (Located rel (n / d * percentageMod))
 
 compileTransaction ::
   (Ord ann) =>
@@ -773,7 +767,7 @@ compilePosting currencies accounts tl (Located l mp) = do
       $ validationFailure
       $ CompileErrorCostSameCurrency tl pcl ccl
     pure lCost
-  postingPercentage <- traverse (compilePercentageExpression tl) (Module.postingPercentage mp)
+  postingAmountRatio <- traverse (compileRatioExpression tl) (Module.postingRatio mp)
   pure (Located l Ledger.Posting {..})
 
 compileAccountName ::

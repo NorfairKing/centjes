@@ -1,4 +1,4 @@
-[0;91;1m[error BE_PERCENTAGE_CURRENCY][0m: Posting with percentage has different currency than the previous posting
+[0;91;1m[error BE_AMOUNTRATIO_CURRENCY][0m: Posting with ratio has different currency than the previous posting
      [0;90;1m╭──▶[0m [0;32;1mBE_PERCENTAGE_CURRENCY.cent@17:28-17:31[0m
      [0;90;1m│[0m
 [0;90;1m  14 │[0m [0;34m╭[0m[0;34m┤[0m [0;34;1m2[0m[0;34;1m0[0m[0;34;1m2[0m[0;34;1m3[0m[0;34;1m-[0m[0;34;1m0[0m[0;34;1m1[0m[0;34;1m-[0m[0;34;1m0[0m[0;34;1m2[0m

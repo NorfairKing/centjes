@@ -110,13 +110,18 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
                 rateRatio <- DecimalLiteral.toRatio rateLiteral
                 let actualRate = rateRatio / baseRatio
                 let rateExpression = case DecimalLiteral.fromRatio actualRate of
-                      Just r -> RationalExpressionDecimal (noLoc r)
+                      Just r ->
+                        RationalExpression
+                          { rationalExpressionNumerator = noLoc r,
+                            rationalExpressionDenominator = Nothing,
+                            rationalExpressionPercent = False
+                          }
                       Nothing ->
-                        let n = numerator actualRate
-                            d = denominator actualRate
-                         in RationalExpressionFraction
-                              (noLoc (DecimalLiteral.fromNatural n))
-                              (noLoc (DecimalLiteral.fromNatural d))
+                        RationalExpression
+                          { rationalExpressionNumerator = noLoc (DecimalLiteral.fromNatural (numerator actualRate)),
+                            rationalExpressionDenominator = Just (noLoc (DecimalLiteral.fromNatural (denominator actualRate))),
+                            rationalExpressionPercent = False
+                          }
                 pure (day, currencySymbol, rateExpression)
             )
           -- \| Produce Price declarations

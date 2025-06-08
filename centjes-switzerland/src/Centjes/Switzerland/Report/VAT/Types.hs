@@ -27,7 +27,6 @@ import Centjes.Location
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Ratio
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -41,7 +40,6 @@ import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
-import Numeric.Natural
 import OptEnvConf
 import Path
 import Text.Show.Pretty
@@ -354,7 +352,7 @@ data DeductibleExpense ann = DeductibleExpense
     deductibleExpenseVATAmount :: !Money.Amount,
     deductibleExpenseVATCurrency :: !(Currency ann),
     deductibleExpenseVATCHFAmount :: !Money.Amount,
-    deductibleExpenseVATRate :: !(Ratio Natural),
+    deductibleExpenseVATRate :: !Rational,
     -- | Evidence in tarball
     deductibleExpenseEvidence :: !(NonEmpty (Path Rel File))
   }
@@ -375,7 +373,7 @@ data VATError ann
   | VATErrorNoVATPosting !ann !ann
   | VATErrorVATPostingNotVATAccount !ann !ann
   | VATErrorNoVATPercentage !ann
-  | VATErrorUnknownVATRate !ann !ann !(Ratio Natural)
+  | VATErrorUnknownVATRate !ann !ann !Rational
   | VATErrorDeductibleAndNotDeductible !ann !ann !ann
   | VATErrorDeductibleNoExpenses !ann !ann
   | VATErrorUntaggedExpenses !ann !(GenLocated ann (Posting ann))

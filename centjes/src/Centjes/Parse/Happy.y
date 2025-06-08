@@ -21,6 +21,7 @@ import Centjes.Parse.Alex
 import Centjes.Tag as Tag
 import Centjes.Timestamp as Timestamp
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Maybe (isJust)
 import Data.Semigroup
 import Data.Text (Text)
 import Money.Amount (Rounding(..))
@@ -166,7 +167,7 @@ description
 
 posting
   :: { LPosting }
-  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_percentage) { sBEMM $1 $4 $5 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
+  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_ratio) { sBEMM $1 $4 $5 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
 
 posting_header
   :: { Located Bool }
@@ -177,17 +178,17 @@ posting_cost
   :: { LCostExpression }
   : tok_at cost_exp { $2 }
 
-posting_percentage
-  :: { LPercentageExpression }
-  : tok_tilde rational_exp tok_percent {
+posting_ratio
+  :: { LRatioExpression }
+  : tok_tilde rational_exp {
         let (mInclusive, mRounding) = parseTilde $1
-        in sBE $1 $3 $ PercentageExpression mInclusive mRounding $2
+        in sBE $1 $2 $ RatioExpression mInclusive mRounding $2
       }
 
 rational_exp
   :: { LRationalExpression }
-  : tok_decimal_literal { sL1 $1 $ RationalExpressionDecimal $ parseDecimalLiteral $1 }
-  | tok_decimal_literal tok_slash tok_decimal_literal { sBE $1 $3 $ RationalExpressionFraction (parseDecimalLiteral $1) (parseDecimalLiteral $3) }
+  : tok_decimal_literal tok_slash tok_decimal_literal optional(tok_percent) { sBEM $1 $3 $4 $ RationalExpression (parseDecimalLiteral $1) (Just (parseDecimalLiteral $3)) (isJust $4) }
+  | tok_decimal_literal optional(tok_percent) { sBM $1 $2 $ RationalExpression (parseDecimalLiteral $1) Nothing (isJust $2)}
 
 account_name
   :: { Located AccountName }

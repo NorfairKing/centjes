@@ -49,7 +49,6 @@ import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
-import Data.Ratio
 import Data.Time
 import Data.Time.Calendar.Quarter
 import Data.Validity
@@ -61,7 +60,6 @@ import qualified Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import qualified Money.QuantisationFactor as QuantisationFactor
-import Numeric.Natural
 import Path
 
 produceVATReport ::
@@ -127,7 +125,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
                           domesticRevenueVATAmount <- requireNegative tl pl2 vatAccount
                           domesticRevenueVATCHFAmount <- convertDaily al2 dailyPriceGraphs day domesticRevenueVATCurrency vatReportCHF domesticRevenueVATAmount
 
-                          domesticRevenueVATRate <- requirePercentageVATRate tl (postingPercentage p2)
+                          domesticRevenueVATRate <- requirePercentageVATRate tl (postingAmountRatio p2)
                           pure DomesticRevenue {..}
                     else pure Nothing
           else pure []
@@ -314,15 +312,15 @@ convertDaily al dailyPrices day currencyFrom currencyTo amount =
 
 requirePercentageRate ::
   ann ->
-  Maybe (GenLocated ann (Percentage ann)) ->
-  Reporter (VATError ann) (ann, Ratio Natural)
+  Maybe (GenLocated ann (AmountRatio ann)) ->
+  Reporter (VATError ann) (ann, Rational)
 requirePercentageRate tl = \case
   Nothing -> validationTFailure $ VATErrorNoVATPercentage tl
-  Just (Located pl (Percentage _ _ (Located _ r))) -> pure (pl, r)
+  Just (Located pl (AmountRatio _ _ (Located _ r))) -> pure (pl, r)
 
 requirePercentageVATRate ::
   ann ->
-  Maybe (GenLocated ann (Percentage ann)) ->
+  Maybe (GenLocated ann (AmountRatio ann)) ->
   Reporter (VATError ann) VATRate
 requirePercentageVATRate tl mp = do
   (pl, r) <- requirePercentageRate tl mp
@@ -331,7 +329,7 @@ requirePercentageVATRate tl mp = do
 requireRatioVATRate ::
   ann ->
   ann ->
-  Ratio Natural ->
+  Rational ->
   Reporter (VATError ann) VATRate
 requireRatioVATRate tl pl r = case r of
   0.077 -> pure VATRate2023Standard
@@ -342,7 +340,7 @@ requireRatioVATRate tl pl r = case r of
   0.038 -> pure VATRate2024Hotel
   _ -> validationTFailure $ VATErrorUnknownVATRate tl pl r
 
-vatRateRatio :: VATRate -> Ratio Natural
+vatRateRatio :: VATRate -> Rational
 vatRateRatio = \case
   VATRate2023Standard -> 0.077
   VATRate2024Standard -> 0.081
@@ -456,7 +454,7 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
                   let Located al vatAccount = postingAccount p2
                   deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
                   deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount
-                  (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingPercentage p2
+                  (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingAmountRatio p2
                   deductibleExpenseVATRate <-
                     if deductibleExpenseVATCurrency == chf
                       then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate

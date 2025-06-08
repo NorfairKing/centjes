@@ -14,7 +14,7 @@ module Centjes.Ledger
     Description (..),
     Posting (..),
     Cost (..),
-    Percentage (..),
+    AmountRatio (..),
     Attachment (..),
     Tag (..),
     Currency (..),
@@ -32,7 +32,6 @@ import Centjes.Timestamp as Timestamp
 import Data.Function
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
-import Data.Ratio
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Validity
@@ -46,7 +45,6 @@ import qualified Money.Account as Money (Account)
 import Money.Amount (Rounding (..))
 import Money.ConversionRate (ConversionRate)
 import Money.QuantisationFactor
-import Numeric.Natural
 
 data Ledger ann = Ledger
   { -- Note: This field will have the source location of the currency _declaration_ that defined it.
@@ -193,9 +191,9 @@ data Posting ann = Posting
     -- that defined it.
     postingAccount :: !(GenLocated ann Money.Account),
     postingCost :: !(Maybe (GenLocated ann (Cost ann))),
-    -- Note: This field will have the source location of the percentage
+    -- Note: This field will have the source location of the amountRatio
     -- expression that defined it.
-    postingPercentage :: !(Maybe (GenLocated ann (Percentage ann)))
+    postingAmountRatio :: !(Maybe (GenLocated ann (AmountRatio ann)))
   }
   deriving stock (Show, Eq, Generic)
 
@@ -222,19 +220,16 @@ data Cost ann = Cost
 
 instance (Validity ann) => Validity (Cost ann)
 
-data Percentage ann = Percentage
-  { percentageInclusive :: !Bool,
-    percentageRounding :: !Rounding,
+data AmountRatio ann = AmountRatio
+  { amountRatioInclusive :: !Bool,
+    amountRatioRounding :: !Rounding,
     -- Note: This field will have the source location of the decimal literal in
-    -- the percentage expression
-    -- Note: This field does not contain a percentage anymore. I.e. the /100
-    -- has already been applied. It is just called this because of what it's
-    -- called in the module. TODO maybe we want to rename it?
-    percentageRatio :: !(GenLocated ann (Ratio Natural))
+    -- the amountRatio expression
+    amountRatio :: !(GenLocated ann Rational)
   }
   deriving stock (Show, Eq, Generic)
 
-instance (Validity ann) => Validity (Percentage ann)
+instance (Validity ann) => Validity (AmountRatio ann)
 
 data Currency ann = Currency
   { currencySymbol :: !CurrencySymbol,

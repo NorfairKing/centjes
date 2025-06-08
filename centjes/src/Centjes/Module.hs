@@ -29,8 +29,8 @@ module Centjes.Module
     priceDeclarationCurrencySymbols,
     LCostExpression,
     CostExpression (..),
-    LPercentageExpression,
-    PercentageExpression (..),
+    LRatioExpression,
+    RatioExpression (..),
     LRationalExpression,
     RationalExpression (..),
     LTransaction,
@@ -328,7 +328,7 @@ data Posting ann = Posting
     postingAccount :: !(GenLocated ann DecimalLiteral),
     postingCurrencySymbol :: !(GenLocated ann CurrencySymbol),
     postingCost :: !(Maybe (GenLocated ann (CostExpression ann))),
-    postingPercentage :: !(Maybe (GenLocated ann (PercentageExpression ann)))
+    postingRatio :: !(Maybe (GenLocated ann (RatioExpression ann)))
   }
   deriving stock (Show, Generic)
 
@@ -355,33 +355,33 @@ data CostExpression ann = CostExpression
 
 instance (Validity ann) => Validity (CostExpression ann)
 
-type LPercentageExpression = LLocated PercentageExpression
+type LRatioExpression = LLocated RatioExpression
 
--- | Percentage expression
+-- | Ratio expression
 --
 -- @
--- 50 %
+-- ~:e 50 %
 -- @
---
--- or
---
--- @
--- 1 / 2 %
--- @
-data PercentageExpression ann = PercentageExpression
-  { percentageExpressionInclusive :: !(Maybe Bool),
-    percentageExpressionRounding :: !(Maybe Rounding),
-    percentageExpressionRationalExpression :: !(GenLocated ann (RationalExpression ann))
+data RatioExpression ann = RatioExpression
+  { ratioExpressionInclusive :: !(Maybe Bool),
+    ratioExpressionRounding :: !(Maybe Rounding),
+    ratioExpressionRationalExpression :: !(GenLocated ann (RationalExpression ann))
   }
   deriving stock (Show, Generic)
 
-instance (Validity ann) => Validity (PercentageExpression ann)
+instance (Validity ann) => Validity (RatioExpression ann)
 
 type LRationalExpression = LLocated RationalExpression
 
 -- | Rational expression
 --
 -- @
+-- 50
+-- @
+--
+-- or
+--
+-- @
 -- 50 %
 -- @
 --
@@ -390,13 +390,17 @@ type LRationalExpression = LLocated RationalExpression
 -- @
 -- 1 / 2 %
 -- @
-data RationalExpression ann
-  = RationalExpressionDecimal !(GenLocated ann DecimalLiteral)
-  | RationalExpressionFraction
-      -- | Numerator
-      !(GenLocated ann DecimalLiteral)
-      -- | Denominator
-      !(GenLocated ann DecimalLiteral)
+--
+-- or
+--
+-- @
+-- 1 / 2
+-- @
+data RationalExpression ann = RationalExpression
+  { rationalExpressionNumerator :: !(GenLocated ann DecimalLiteral),
+    rationalExpressionDenominator :: !(Maybe (GenLocated ann DecimalLiteral)),
+    rationalExpressionPercent :: !Bool
+  }
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (RationalExpression ann)
