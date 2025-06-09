@@ -13,6 +13,7 @@ module Centjes.Switzerland.Report.Taxes.Types
     AssetAccount (..),
     Revenue (..),
     HomeofficeExpense (..),
+    ElectricityExpense (..),
     PhoneExpense (..),
     InternetExpense (..),
     TaxesError (..),
@@ -59,6 +60,7 @@ data TaxesInput = TaxesInput
     taxesInputTagTaxDeductible :: !Tag,
     taxesInputTagNotTaxDeductible :: !Tag,
     taxesInputHomeofficeExpensesAccount :: !AccountName,
+    taxesInputElectricityExpensesAccount :: !AccountName,
     taxesInputPhoneExpensesAccount :: !AccountName,
     taxesInputInternetExpensesAccount :: !AccountName
   }
@@ -138,6 +140,13 @@ parseTaxesInput = do
         conf "homeoffice-expenses-account",
         value "expenses:homeoffice"
       ]
+  taxesInputElectricityExpensesAccount <-
+    setting
+      [ help "the account to use for electricity expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "electricity-expenses-account",
+        value "expenses:electricity"
+      ]
   taxesInputPhoneExpensesAccount <-
     setting
       [ help "the account to use for phone expenses",
@@ -169,6 +178,8 @@ data TaxesReport ann = TaxesReport
     taxesReportTotalRevenues :: !Money.Amount,
     taxesReportHomeofficeExpenses :: ![HomeofficeExpense ann],
     taxesReportTotalHomeofficeExpenses :: !Money.Amount,
+    taxesReportElectricityExpenses :: ![ElectricityExpense ann],
+    taxesReportTotalElectricityExpenses :: !Money.Amount,
     taxesReportPhoneExpenses :: ![PhoneExpense ann],
     taxesReportTotalPhoneExpenses :: !Money.Amount,
     taxesReportInternetExpenses :: ![InternetExpense ann],
@@ -186,6 +197,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
           Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues,
         declare "the homeoffice costs sum to the total homeoffice costs" $
           Amount.sum (map homeofficeExpenseAmount taxesReportHomeofficeExpenses) == Just taxesReportTotalHomeofficeExpenses,
+        declare "the electricity costs sum to the total electricity costs" $
+          Amount.sum (map electricityExpenseAmount taxesReportElectricityExpenses) == Just taxesReportTotalElectricityExpenses,
         declare "the phone costs sum to the total phone costs" $
           Amount.sum (map phoneExpenseAmount taxesReportPhoneExpenses) == Just taxesReportTotalPhoneExpenses,
         declare "the internet costs sum to the total internet costs" $
@@ -365,6 +378,19 @@ data HomeofficeExpense ann = HomeofficeExpense
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (HomeofficeExpense ann)
+
+data ElectricityExpense ann = ElectricityExpense
+  { electricityExpenseTimestamp :: !Timestamp,
+    electricityExpenseDescription :: !Description,
+    electricityExpenseAmount :: !Money.Amount,
+    electricityExpenseCurrency :: !(Currency ann),
+    electricityExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    electricityExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (ElectricityExpense ann)
 
 data PhoneExpense ann = PhoneExpense
   { phoneExpenseTimestamp :: !Timestamp,

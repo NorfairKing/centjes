@@ -89,6 +89,18 @@ taxesReportInput TaxesReport {..} =
             inputHomeofficeExpenseEvidence = homeofficeExpenseEvidence
          in HomeofficeExpenseInput {..}
       inputTotalHomeofficeExpenses = formatChfAmount taxesReportTotalHomeofficeExpenses
+      inputElectricityExpenses = flip map taxesReportElectricityExpenses $ \ElectricityExpense {..} ->
+        let inputElectricityExpenseDay = Timestamp.toDay electricityExpenseTimestamp
+            inputElectricityExpenseDescription = Description.toText electricityExpenseDescription
+            inputElectricityExpenseAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount electricityExpenseCurrency electricityExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol electricityExpenseCurrency
+                }
+            inputElectricityExpenseCHFAmount = formatChfAmount electricityExpenseCHFAmount
+            inputElectricityExpenseEvidence = electricityExpenseEvidence
+         in ElectricityExpenseInput {..}
+      inputTotalElectricityExpenses = formatChfAmount taxesReportTotalElectricityExpenses
       inputPhoneExpenses = flip map taxesReportPhoneExpenses $ \PhoneExpense {..} ->
         let inputPhoneExpenseDay = Timestamp.toDay phoneExpenseTimestamp
             inputPhoneExpenseDescription = Description.toText phoneExpenseDescription
@@ -128,6 +140,8 @@ data Input = Input
     inputTotalRevenues :: !FormattedAmount,
     inputHomeofficeExpenses :: ![HomeofficeExpenseInput],
     inputTotalHomeofficeExpenses :: !FormattedAmount,
+    inputElectricityExpenses :: ![ElectricityExpenseInput],
+    inputTotalElectricityExpenses :: !FormattedAmount,
     inputPhoneExpenses :: ![PhoneExpenseInput],
     inputTotalPhoneExpenses :: !FormattedAmount,
     inputInternetExpenses :: ![InternetExpenseInput],
@@ -159,6 +173,10 @@ instance HasCodec Input where
           .= inputHomeofficeExpenses
         <*> requiredField "total_homeoffice_expenses" "total homeoffice expenses"
           .= inputTotalHomeofficeExpenses
+        <*> requiredField "electricity_expenses" "electricity expenses"
+          .= inputElectricityExpenses
+        <*> requiredField "total_electricity_expenses" "total electricity expenses"
+          .= inputTotalElectricityExpenses
         <*> requiredField "phone_expenses" "phone expenses"
           .= inputPhoneExpenses
         <*> requiredField "total_phone_expenses" "total phone expenses"
@@ -245,6 +263,29 @@ instance HasCodec HomeofficeExpenseInput where
           .= inputHomeofficeExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputHomeofficeExpenseEvidence
+
+data ElectricityExpenseInput = ElectricityExpenseInput
+  { inputElectricityExpenseDay :: !Day,
+    inputElectricityExpenseDescription :: !Text,
+    inputElectricityExpenseAmount :: !AmountWithCurrency,
+    inputElectricityExpenseCHFAmount :: !FormattedAmount,
+    inputElectricityExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec ElectricityExpenseInput where
+  codec =
+    object "ElectricityExpenseInput" $
+      ElectricityExpenseInput
+        <$> requiredField "day" "day of homeofficeexpense"
+          .= inputElectricityExpenseDay
+        <*> requiredField "description" "description of homeofficeexpense"
+          .= inputElectricityExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputElectricityExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputElectricityExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputElectricityExpenseEvidence
 
 data PhoneExpenseInput = PhoneExpenseInput
   { inputPhoneExpenseDay :: !Day,
