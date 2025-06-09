@@ -186,7 +186,7 @@ instance ToReport (BalanceError SourceSpan) where
         []
     BalanceErrorAmountRatioNoPrevious s pctl ->
       Err
-        (Just "BE_AMOUNTRATIO_NO_PREVIOUS")
+        (Just "BE_AMOUNT_RATIO_NO_PREVIOUS")
         "Posting with a ratio has no previous posting"
         [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
           (toDiagnosePosition pctl, This "This ratio requires a previous posting")
@@ -194,7 +194,7 @@ instance ToReport (BalanceError SourceSpan) where
         []
     BalanceErrorAmountRatioCurrency s pcl cl ->
       Err
-        (Just "BE_AMOUNTRATIO_CURRENCY")
+        (Just "BE_AMOUNT_RATIO_CURRENCY")
         "Posting with ratio has different currency than the previous posting"
         [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
           (toDiagnosePosition pcl, This "This currency is different ..."),
@@ -203,7 +203,7 @@ instance ToReport (BalanceError SourceSpan) where
         []
     BalanceErrorAmountRatioFraction s al rl isInverse ->
       Err
-        (Just "BE_AMOUNTRATIO_FRACTION")
+        (Just "BE_AMOUNT_RATIO_FRACTION")
         ""
         [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
           (toDiagnosePosition al, This $ unwords ["Could not", if isInverse then "divide" else "multiply", "this amount"]),
@@ -212,7 +212,7 @@ instance ToReport (BalanceError SourceSpan) where
         []
     BalanceErrorAmountRatioFraction' s al ratio ->
       Err
-        (Just "BE_AMOUNTRATIO_FRACTION")
+        (Just "BE_AMOUNT_RATIO_FRACTION")
         ""
         [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
           ( toDiagnosePosition al,
@@ -228,7 +228,7 @@ instance ToReport (BalanceError SourceSpan) where
     BalanceErrorAmountRatio s pl ppl pctl currency (Located pal computedPrevious) mComputedCurrent mComputedRatio ->
       let Located _ qf = currencyQuantisationFactor currency
        in Err
-            (Just "BE_AMOUNTRATIO")
+            (Just "BE_AMOUNT_RATIO")
             "The given ratio does not match the amount it describes."
             ( concat
                 [ [ (toDiagnosePosition pctl, This "Using this ratio")
@@ -272,7 +272,7 @@ instance ToReport (BalanceError SourceSpan) where
                   ]
                 ]
             )
-            []
+            [Hint "Make sure to double-check the signs of the suggested and actual amounts."]
     BalanceErrorAccountTypeAssertion s adl at bal ->
       Err
         (Just "BE_ACCOUNT_TYPE_ASSERTION")

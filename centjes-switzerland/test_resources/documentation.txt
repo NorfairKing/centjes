@@ -111,7 +111,7 @@
     config:
       [37mphone-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:phone"[m
+    default: [33m"expenses:homeoffice:phone"[m
     
     [34mthe account to use for internet expenses[m
     config:
@@ -353,7 +353,7 @@
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for phone expenses[m
-  default: [33m"expenses:phone"[m
+  default: [33m"expenses:homeoffice:phone"[m
   [37mphone-expenses-account[m:
     # [32mor null[m
     [33m<string>[m

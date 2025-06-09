@@ -152,7 +152,7 @@ parseTaxesInput = do
       [ help "the account to use for phone expenses",
         reader $ maybeReader AccountName.fromString,
         conf "phone-expenses-account",
-        value "expenses:phone"
+        value "expenses:homeoffice:phone"
       ]
   taxesInputInternetExpensesAccount <-
     setting
