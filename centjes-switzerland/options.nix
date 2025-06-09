@@ -42,6 +42,11 @@
       };
     };
   };
+  electricity-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for electricity expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   exports-income-account = lib.mkOption {
     default = null;
     description = "Account name of your exports' income";
@@ -85,6 +90,11 @@
   person-name = lib.mkOption {
     default = null;
     description = "Your legal name";
+    type = lib.types.nullOr lib.types.str;
+  };
+  phone-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for phone expenses";
     type = lib.types.nullOr lib.types.str;
   };
   prices = lib.mkOption {

@@ -31,6 +31,14 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         pure $ tr {taxesReportTotalHomeofficeExpenses = totalHomeofficeExpenses}
                     )
       `suchThatMap` ( \tr -> do
+                        totalElectricityExpenses <- Amount.sum (map electricityExpenseAmount (taxesReportElectricityExpenses tr))
+                        pure $ tr {taxesReportTotalElectricityExpenses = totalElectricityExpenses}
+                    )
+      `suchThatMap` ( \tr -> do
+                        totalPhoneExpenses <- Amount.sum (map phoneExpenseAmount (taxesReportPhoneExpenses tr))
+                        pure $ tr {taxesReportTotalPhoneExpenses = totalPhoneExpenses}
+                    )
+      `suchThatMap` ( \tr -> do
                         totalInternetExpenses <- Amount.sum (map internetExpenseAmount (taxesReportInternetExpenses tr))
                         pure $ tr {taxesReportTotalInternetExpenses = totalInternetExpenses}
                     )
@@ -75,6 +83,32 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (HomeofficeExpense ann) w
       r
         { homeofficeExpenseAmount = amount,
           homeofficeExpenseCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (ElectricityExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { electricityExpenseAmount = amount,
+          electricityExpenseCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (PhoneExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { phoneExpenseAmount = amount,
+          phoneExpenseCHFAmount = chfAmount
         }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (InternetExpense ann) where
