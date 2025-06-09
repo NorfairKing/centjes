@@ -242,6 +242,49 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
       Nothing -> validationTFailure TaxesErrorSum
       Just s -> pure s
 
+  taxesReportPhoneExpenses <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInYear taxesReportYear day
+          then fmap catMaybes $
+            forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
+              let Located _ accountName = postingAccountName
+              if accountName == taxesInputPhoneExpensesAccount
+                then do
+                  let mDeductibleTag = M.lookup taxesInputTagDeductible transactionTags
+                  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible transactionTags
+                  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible transactionTags
+                  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible transactionTags
+                  let tryToDeclare = do
+                        phoneExpenseDescription <- requireDescription transactionDescription
+                        let Located al account = postingAccount
+                        phoneExpenseAmount <- requireExpensePositive al account
+                        let phoneExpenseTimestamp = timestamp
+                        let Located _ phoneExpenseCurrency = postingCurrency
+                        phoneExpenseCHFAmount <- convertDaily al dailyPriceGraphs day phoneExpenseCurrency taxesReportCHF phoneExpenseAmount
+                        ne <- requireNonEmptyEvidence tl transactionAttachments
+                        phoneExpenseEvidence <- forM ne $ \rf -> do
+                          let fileInTarball = [reldir|expenses/phone|] </> filename rf
+                          includeFile fileInTarball rf
+                          pure fileInTarball
+                        pure $ Just PhoneExpense {..}
+                  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
+                    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+                    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
+                    (Nothing, Nothing, Just _, Nothing) -> tryToDeclare
+                    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
+                    (Just _, Nothing, Nothing, Nothing) -> tryToDeclare
+                    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+                else pure Nothing
+          else pure []
+
+  taxesReportTotalPhoneExpenses <-
+    case Amount.sum $ map phoneExpenseCHFAmount taxesReportPhoneExpenses of
+      Nothing -> validationTFailure TaxesErrorSum
+      Just s -> pure s
+
   taxesReportInternetExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
       \(Located tl Transaction {..}) -> do
