@@ -37,12 +37,14 @@ import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad
+import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Time
 import Data.Traversable
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..), Rounding (..))
@@ -240,6 +242,49 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
       Nothing -> validationTFailure TaxesErrorSum
       Just s -> pure s
 
+  taxesReportInternetExpenses <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInYear taxesReportYear day
+          then fmap catMaybes $
+            forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
+              let Located _ accountName = postingAccountName
+              if accountName == taxesInputInternetExpensesAccount
+                then do
+                  let mDeductibleTag = M.lookup taxesInputTagDeductible transactionTags
+                  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible transactionTags
+                  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible transactionTags
+                  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible transactionTags
+                  let tryToDeclare = do
+                        internetExpenseDescription <- requireDescription transactionDescription
+                        let Located al account = postingAccount
+                        internetExpenseAmount <- requireExpensePositive al account
+                        let internetExpenseTimestamp = timestamp
+                        let Located _ internetExpenseCurrency = postingCurrency
+                        internetExpenseCHFAmount <- convertDaily al dailyPriceGraphs day internetExpenseCurrency taxesReportCHF internetExpenseAmount
+                        ne <- requireNonEmptyEvidence tl transactionAttachments
+                        internetExpenseEvidence <- forM ne $ \rf -> do
+                          let fileInTarball = [reldir|expenses/internet|] </> filename rf
+                          includeFile fileInTarball rf
+                          pure fileInTarball
+                        pure $ Just InternetExpense {..}
+                  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
+                    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+                    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
+                    (Nothing, Nothing, Just _, Nothing) -> tryToDeclare
+                    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
+                    (Just _, Nothing, Nothing, Nothing) -> tryToDeclare
+                    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+                else pure Nothing
+          else pure []
+
+  taxesReportTotalInternetExpenses <-
+    case Amount.sum $ map internetExpenseCHFAmount taxesReportInternetExpenses of
+      Nothing -> validationTFailure TaxesErrorSum
+      Just s -> pure s
+
   pure TaxesReport {..}
 
 dayInYear :: Integer -> Day -> Bool
@@ -313,3 +358,12 @@ convertDaily al dailyPrices day currencyFrom currencyTo amount =
             case mA of
               Nothing -> validationTFailure $ TaxesErrorCouldNotConvert al currencyFrom currencyTo amount
               Just convertedAmount -> pure convertedAmount
+
+requireNonEmptyEvidence ::
+  ann ->
+  Vector (GenLocated ann (Attachment ann)) ->
+  Reporter (TaxesError ann) (NonEmpty (Path Rel File))
+requireNonEmptyEvidence tl attachments =
+  case NE.nonEmpty (V.toList attachments) of
+    Nothing -> validationTFailure $ TaxesErrorNoEvidence tl
+    Just ne -> forM ne $ \(Located _ (Attachment (Located _ rf))) -> pure rf

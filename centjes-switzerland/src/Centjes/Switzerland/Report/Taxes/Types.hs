@@ -13,6 +13,7 @@ module Centjes.Switzerland.Report.Taxes.Types
     AssetAccount (..),
     Revenue (..),
     HomeofficeExpense (..),
+    InternetExpense (..),
     TaxesError (..),
   )
 where
@@ -56,7 +57,8 @@ data TaxesInput = TaxesInput
     taxesInputTagNotDeductible :: !Tag,
     taxesInputTagTaxDeductible :: !Tag,
     taxesInputTagNotTaxDeductible :: !Tag,
-    taxesInputHomeofficeExpensesAccount :: !AccountName
+    taxesInputHomeofficeExpensesAccount :: !AccountName,
+    taxesInputInternetExpensesAccount :: !AccountName
   }
   deriving (Show, Generic)
 
@@ -134,6 +136,13 @@ parseTaxesInput = do
         conf "homeoffice-expenses-account",
         value "expenses:homeoffice"
       ]
+  taxesInputInternetExpensesAccount <-
+    setting
+      [ help "the account to use for internet expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "internet-expenses-account",
+        value "expenses:internet"
+      ]
   pure TaxesInput {..}
 
 -- | The information we need to produce Taxes reports like the pdfs, zip files,
@@ -150,7 +159,9 @@ data TaxesReport ann = TaxesReport
     taxesReportRevenues :: ![Revenue ann],
     taxesReportTotalRevenues :: !Money.Amount,
     taxesReportHomeofficeExpenses :: ![HomeofficeExpense ann],
-    taxesReportTotalHomeofficeExpenses :: !Money.Amount
+    taxesReportTotalHomeofficeExpenses :: !Money.Amount,
+    taxesReportInternetExpenses :: ![InternetExpense ann],
+    taxesReportTotalInternetExpenses :: !Money.Amount
   }
   deriving (Show, Generic)
 
@@ -163,7 +174,9 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
         declare "the revenues sum to the total revenues" $
           Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues,
         declare "the homeoffice costs sum to the total homeoffice costs" $
-          Amount.sum (map homeofficeExpenseAmount taxesReportHomeofficeExpenses) == Just taxesReportTotalHomeofficeExpenses
+          Amount.sum (map homeofficeExpenseAmount taxesReportHomeofficeExpenses) == Just taxesReportTotalHomeofficeExpenses,
+        declare "the internet costs sum to the total internet costs" $
+          Amount.sum (map internetExpenseAmount taxesReportInternetExpenses) == Just taxesReportTotalInternetExpenses
       ]
 
 data AssetAccount ann = AssetAccount
@@ -183,6 +196,7 @@ data TaxesError ann
   | TaxesErrorConvertError !(ConvertError ann)
   | TaxesErrorBalanceError !(BalanceError ann)
   | TaxesErrorNoDescription
+  | TaxesErrorNoEvidence !ann
   | TaxesErrorNegativeAsset !ann !Money.Account
   | TaxesErrorNegativeExpense !ann !Money.Account
   | TaxesErrorPositiveIncome !ann !ann !Money.Account
@@ -208,6 +222,12 @@ instance ToReport (TaxesError SourceSpan) where
     TaxesErrorConvertError ce -> toReport ce
     TaxesErrorBalanceError be -> toReport be
     TaxesErrorNoDescription -> Err Nothing "no description" [] []
+    TaxesErrorNoEvidence tl ->
+      Err
+        Nothing
+        "No evidence in transaction"
+        [(toDiagnosePosition tl, This "This transaction is missing evidence")]
+        []
     TaxesErrorNegativeAsset al _ ->
       Err
         Nothing
@@ -332,3 +352,16 @@ data HomeofficeExpense ann = HomeofficeExpense
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (HomeofficeExpense ann)
+
+data InternetExpense ann = InternetExpense
+  { internetExpenseTimestamp :: !Timestamp,
+    internetExpenseDescription :: !Description,
+    internetExpenseAmount :: !Money.Amount,
+    internetExpenseCurrency :: !(Currency ann),
+    internetExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    internetExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (InternetExpense ann)

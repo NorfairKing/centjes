@@ -101,6 +101,12 @@
         [33m<string>[m
     default: [33m"expenses:homeoffice"[m
     
+    [34mthe account to use for internet expenses[m
+    config:
+      [37minternet-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:internet"[m
+    
     [34mPath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
     env: [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m
@@ -327,6 +333,11 @@
   [34mthe account to use for homeoffice expenses[m
   default: [33m"expenses:homeoffice"[m
   [37mhomeoffice-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for internet expenses[m
+  default: [33m"expenses:internet"[m
+  [37minternet-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mPath to the zip file to create[m

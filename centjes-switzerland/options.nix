@@ -62,6 +62,11 @@
     description = "the account to use for homeoffice expenses";
     type = lib.types.nullOr lib.types.str;
   };
+  internet-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for internet expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   last-name = lib.mkOption {
     default = null;
     description = "your last name";

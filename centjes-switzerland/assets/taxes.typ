@@ -47,6 +47,8 @@ Check the document #link(
 
 ==== Expenses
 
+===== Homeoffice
+
 #table(
   stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.homeoffice_expenses.map(
     expense =>
@@ -66,7 +68,28 @@ Check the document #link(
   ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_homeoffice_expenses) CHF],
 )
 
-- TODO Communications: mobile, internet
+===== Internet
+
+#table(
+  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.internet_expenses.map(
+    expense =>
+    (
+      expense.day, [ #{ expense.description }
+        #linebreak()
+        #if expense.evidence.len() == 1 [
+          #for evidence in expense.evidence [
+            #link(evidence, evidence)
+          ]
+        ] else [
+          #for evidence in expense.evidence [
+            - #link(evidence, evidence)
+          ]
+        ] ], [ #{ expense.amount.formatted } #{ expense.amount.symbol } ], [ #{ expense.amount_chf } CHF ],
+    ),
+  ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_internet_expenses) CHF],
+)
+
+- TODO Communications: mobile
 - TODO Travel: Public transport, parking, fuel
 
 === Debts

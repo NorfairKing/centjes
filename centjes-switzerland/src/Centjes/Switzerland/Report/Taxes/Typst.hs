@@ -89,6 +89,18 @@ taxesReportInput TaxesReport {..} =
             inputHomeofficeExpenseEvidence = homeofficeExpenseEvidence
          in HomeofficeExpenseInput {..}
       inputTotalHomeofficeExpenses = formatChfAmount taxesReportTotalHomeofficeExpenses
+      inputInternetExpenses = flip map taxesReportInternetExpenses $ \InternetExpense {..} ->
+        let inputInternetExpenseDay = Timestamp.toDay internetExpenseTimestamp
+            inputInternetExpenseDescription = Description.toText internetExpenseDescription
+            inputInternetExpenseAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount internetExpenseCurrency internetExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol internetExpenseCurrency
+                }
+            inputInternetExpenseCHFAmount = formatChfAmount internetExpenseCHFAmount
+            inputInternetExpenseEvidence = internetExpenseEvidence
+         in InternetExpenseInput {..}
+      inputTotalInternetExpenses = formatChfAmount taxesReportTotalInternetExpenses
    in Input {..}
 
 -- Note that this is a separate type from the ETax 'XMLReport' because there
@@ -103,7 +115,9 @@ data Input = Input
     inputRevenues :: ![RevenueInput],
     inputTotalRevenues :: !FormattedAmount,
     inputHomeofficeExpenses :: ![HomeofficeExpenseInput],
-    inputTotalHomeofficeExpenses :: !FormattedAmount
+    inputTotalHomeofficeExpenses :: !FormattedAmount,
+    inputInternetExpenses :: ![InternetExpenseInput],
+    inputTotalInternetExpenses :: !FormattedAmount
   }
   deriving (ToJSON) via (Autodocodec Input)
 
@@ -131,6 +145,10 @@ instance HasCodec Input where
           .= inputHomeofficeExpenses
         <*> requiredField "total_homeoffice_expenses" "total homeoffice expenses"
           .= inputTotalHomeofficeExpenses
+        <*> requiredField "internet_expenses" "internet expenses"
+          .= inputInternetExpenses
+        <*> requiredField "total_internet_expenses" "total internet expenses"
+          .= inputTotalInternetExpenses
 
 data AssetInput = AssetInput
   { assetInputAccountName :: !AccountName,
@@ -209,6 +227,29 @@ instance HasCodec HomeofficeExpenseInput where
           .= inputHomeofficeExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputHomeofficeExpenseEvidence
+
+data InternetExpenseInput = InternetExpenseInput
+  { inputInternetExpenseDay :: !Day,
+    inputInternetExpenseDescription :: !Text,
+    inputInternetExpenseAmount :: !AmountWithCurrency,
+    inputInternetExpenseCHFAmount :: !FormattedAmount,
+    inputInternetExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec InternetExpenseInput where
+  codec =
+    object "InternetExpenseInput" $
+      InternetExpenseInput
+        <$> requiredField "day" "day of homeofficeexpense"
+          .= inputInternetExpenseDay
+        <*> requiredField "description" "description of homeofficeexpense"
+          .= inputInternetExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputInternetExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputInternetExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputInternetExpenseEvidence
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: FormattedAmount,
