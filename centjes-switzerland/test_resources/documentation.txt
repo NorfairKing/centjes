@@ -99,13 +99,13 @@
     config:
       [37mhomeoffice-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:homeoffice"[m
+    default: [33m"expenses:homeoffice:rent"[m
     
     [34mthe account to use for electricity expenses[m
     config:
       [37melectricity-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:electricity"[m
+    default: [33m"expenses:homeoffice:electricity"[m
     
     [34mthe account to use for phone expenses[m
     config:
@@ -117,7 +117,7 @@
     config:
       [37minternet-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:internet"[m
+    default: [33m"expenses:homeoffice:internet"[m
     
     [34mPath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
@@ -343,12 +343,12 @@
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for homeoffice expenses[m
-  default: [33m"expenses:homeoffice"[m
+  default: [33m"expenses:homeoffice:rent"[m
   [37mhomeoffice-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for electricity expenses[m
-  default: [33m"expenses:electricity"[m
+  default: [33m"expenses:homeoffice:electricity"[m
   [37melectricity-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
@@ -358,7 +358,7 @@
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for internet expenses[m
-  default: [33m"expenses:internet"[m
+  default: [33m"expenses:homeoffice:internet"[m
   [37minternet-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
