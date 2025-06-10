@@ -42,6 +42,7 @@ import qualified Money.Amount as Amount
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import OptEnvConf
 import Path
+import Text.Read (readMaybe)
 import Text.Show.Pretty
 
 -- TODO upstream this to validity-time
@@ -106,7 +107,11 @@ parseVATInput = do
     choice
       [ setting
           [ help "the quarter to produce the report for",
-            confWith "quarter" $ codecViaAeson "Quarter"
+            option,
+            reader $ maybeReader readMaybe,
+            long "quarter",
+            confWith "quarter" $ codecViaAeson "Quarter",
+            metavar "YYYY-QN"
           ],
         runIO $ dayQuarter . utctDay <$> getCurrentTime
       ]

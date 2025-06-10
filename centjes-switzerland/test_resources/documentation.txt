@@ -173,6 +173,7 @@
     example: [33m111.222.333[m
     
     [34mthe quarter to produce the report for[m
+    option: [37m--quarter[m [33mYYYY-QN[m
     config:
       [37mquarter[m: # [32mor null[m
         # Quarter
@@ -283,6 +284,7 @@
       [37m--zip-file[m   [34mPath to the zip file to create[m         default: [33m"tax-packet.zip"[m
       [37m--packet-dir[m [34mPath to the packet directory to create[m                          
   [35mvat[m [34mproduce a VAT report[m
+      [37m--quarter[m    [34mthe quarter to produce the report for[m                           
       [37m--zip-file[m   [34mpath to the zip file to create[m         default: [33m"vat-packet.zip"[m
       [37m--packet-dir[m [34mPath to the packet directory to create[m                          
   [35mdownload-rates[m [34mDownload exchange rates[m

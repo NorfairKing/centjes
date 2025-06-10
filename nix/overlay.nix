@@ -23,34 +23,42 @@ with final.haskell.lib;
       '';
     };
 
-  makeSwitzerlandTaxesPacket = src: final.stdenv.mkDerivation {
-    name = "taxes";
-    inherit src;
-    buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
-    buildCommand = ''
-      mkdir -p $out
-      centjes-switzerland \
-        taxes \
-        --config-file $src/switzerland.yaml \
-        --base-dir $src \
-        --zip-file $out/packet.zip \
-        --packet-dir $out/packet
-    '';
-  };
-  makeSwitzerlandVATPacket = src: final.stdenv.mkDerivation {
-    name = "vat";
-    inherit src;
-    buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
-    buildCommand = ''
-      mkdir -p $out
-      centjes-switzerland \
-        vat \
-        --config-file $src/switzerland.yaml \
-        --base-dir $src \
-        --zip-file $out/packet.zip \
-        --packet-dir $out/packet
-    '';
-  };
+  makeSwitzerlandTaxesPacket =
+    { src
+    , extraArgs ? [ ]
+    }: final.stdenv.mkDerivation {
+      name = "taxes";
+      inherit src;
+      buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
+      buildCommand = ''
+        mkdir -p $out
+        centjes-switzerland \
+          taxes \
+          --config-file $src/switzerland.yaml \
+          --base-dir $src \
+          --zip-file $out/packet.zip \
+          --packet-dir $out/packet \
+          ${concatStringsSep " " extraArgs}
+      '';
+    };
+  makeSwitzerlandVATPacket =
+    { src
+    , extraArgs ? [ ]
+    }: final.stdenv.mkDerivation {
+      name = "vat";
+      inherit src;
+      buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
+      buildCommand = ''
+        mkdir -p $out
+        centjes-switzerland \
+          vat \
+          --config-file $src/switzerland.yaml \
+          --base-dir $src \
+          --zip-file $out/packet.zip \
+          --packet-dir $out/packet \
+          ${concatStringsSep " " extraArgs}
+      '';
+    };
 
   centjesDependencyGraph = final.makeDependencyGraph {
     name = "centjes-dependency-graph";
