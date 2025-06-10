@@ -14,8 +14,9 @@ import Text.Colour
 
 runCentjesCheck :: Settings -> CheckSettings -> LoggingT IO ()
 runCentjesCheck Settings {..} CheckSettings =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, diagnostic) ->
+  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) ->
     withLoggedDuration "Check" $ do
       val <- runValidationT $ doCompleteCheck declarations
+      let diagnostic = diagFromFileMap fileMap
       _ <- liftIO $ checkValidation diagnostic val
       liftIO $ putChunksLocaleWith settingTerminalCapabilities [fore green $ chunk "Valid\n"]

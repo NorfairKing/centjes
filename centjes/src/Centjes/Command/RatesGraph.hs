@@ -28,8 +28,9 @@ import Text.Printf
 
 runCentjesRatesGraph :: Settings -> RatesGraphSettings -> LoggingT IO ()
 runCentjesRatesGraph Settings {..} RatesGraphSettings =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, diagnostic) ->
+  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) ->
     withLoggedDuration "RatestGraph" $ do
+      let diagnostic = diagFromFileMap fileMap
       ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
       let priceGraph = pricesToPriceGraph (ledgerPrices ledger)
       liftIO $ writeDotFile "currency-rates.dot" $ digraph (Data.GraphViz.Types.Monadic.Str "currency-rates") $ do

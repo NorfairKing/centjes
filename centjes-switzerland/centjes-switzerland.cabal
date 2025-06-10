@@ -133,6 +133,7 @@ library
     , text
     , time
     , typed-process
+    , unliftio
     , validity
     , validity-time
     , vector

@@ -30,7 +30,8 @@ import Text.Colour.Layout
 
 runCentjesBalance :: Settings -> BalanceSettings -> LoggingT IO ()
 runCentjesBalance Settings {..} BalanceSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, diagnostic) -> do
+  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+    let diagnostic = diagFromFileMap fileMap
     ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
     br <-
       withLoggedDuration "Balance report" $

@@ -48,11 +48,8 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   catalogFile <- resolveFile schemaDir "catalog.xml"
   schemaFile <- resolveFile schemaDir "eCH-0217-1-0.xsd"
 
-  withPacketDir settingClean vatSettingPacketDir $ \packetDir -> do
-    runStderrLoggingT $ do
-      -- Produce the input.json structure
-      let firstPath = settingBaseDir </> settingLedgerFile
-      (declarations, fileMap) <- loadModules' firstPath
+  runStderrLoggingT $
+    loadMWatchedModules settingWatch (settingBaseDir </> settingLedgerFile) $ \(declarations, fileMap) -> do
       let diag = diagFromFileMap fileMap
       let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
 
@@ -72,113 +69,114 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
 
       let input = vatReportInput vatReport
 
-      -- Write the xml to a file
-      xmlFile <- do
-        now <- liftIO getCurrentTime
-        case produceXMLReport now vatReport of
-          Nothing -> liftIO $ die "Failed to produce XML report. This should not happen"
-          Just xmlReport -> do
-            logDebugN $ T.pack $ ppShow xmlReport
-            xf <- resolveFile packetDir "vat.xml"
-            let xmlDoc = xmlReportDocument xmlReport
-            liftIO $
-              XML.writeFile
-                xmlRenderSettings
-                (fromAbsFile xf)
-                xmlDoc
-            logInfoN $
-              T.pack $
-                unwords
-                  [ "Wrote XML version to",
-                    fromAbsFile xf
-                  ]
-            logDebugN $
-              LT.toStrict $
-                XML.renderText
+      withPacketDir settingClean vatSettingPacketDir $ \packetDir -> do
+        -- Write the xml to a file
+        xmlFile <- do
+          now <- liftIO getCurrentTime
+          case produceXMLReport now vatReport of
+            Nothing -> liftIO $ die "Failed to produce XML report. This should not happen"
+            Just xmlReport -> do
+              logDebugN $ T.pack $ ppShow xmlReport
+              xf <- resolveFile packetDir "vat.xml"
+              let xmlDoc = xmlReportDocument xmlReport
+              liftIO $
+                XML.writeFile
                   xmlRenderSettings
+                  (fromAbsFile xf)
                   xmlDoc
+              logInfoN $
+                T.pack $
+                  unwords
+                    [ "Wrote XML version to",
+                      fromAbsFile xf
+                    ]
+              logDebugN $
+                LT.toStrict $
+                  XML.renderText
+                    xmlRenderSettings
+                    xmlDoc
 
-            logInfoN $
-              T.pack $
-                unwords
-                  [ "Validating XML output at",
-                    fromAbsFile xf,
-                    "against schema",
-                    fromAbsFile schemaFile
-                  ]
-            environment <- liftIO getEnvironment
-            let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
-            runProcess_ $
-              setWorkingDir (fromAbsDir packetDir) $
-                setEnv newEnvironment $
-                  setStdout inherit $
-                    setStderr inherit $
-                      proc
-                        "xmllint"
-                        [ "--schema",
-                          fromAbsFile schemaFile,
-                          fromAbsFile xf,
-                          "--catalogs"
-                        ]
-            pure xf
+              logInfoN $
+                T.pack $
+                  unwords
+                    [ "Validating XML output at",
+                      fromAbsFile xf,
+                      "against schema",
+                      fromAbsFile schemaFile
+                    ]
+              environment <- liftIO getEnvironment
+              let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
+              runProcess_ $
+                setWorkingDir (fromAbsDir packetDir) $
+                  setEnv newEnvironment $
+                    setStdout inherit $
+                      setStderr inherit $
+                        proc
+                          "xmllint"
+                          [ "--schema",
+                            fromAbsFile schemaFile,
+                            fromAbsFile xf,
+                            "--catalogs"
+                          ]
+              pure xf
 
-      -- Write the input to a file
-      jsonInputFile <- do
-        jif <- resolveFile packetDir "input.json"
-        liftIO $ SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
+        -- Write the input to a file
+        jsonInputFile <- do
+          jif <- resolveFile packetDir "input.json"
+          liftIO $ SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
+          logInfoN $
+            T.pack $
+              unwords
+                [ "Succesfully compiled information into",
+                  fromAbsFile jif
+                ]
+          logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
+          pure jif
+
+        readmeFile <- do
+          -- Write the template to a file
+          mainTypFile <- liftIO $ do
+            mtf <- resolveFile packetDir "main.typ"
+            copyFile typstTemplateFile mtf
+            pure mtf
+
+          rf <- resolveFile packetDir "README.pdf"
+
+          -- Compile the README.pdf using typst
+          liftIO $ compileTypst mainTypFile rf
+          logInfoN $
+            T.pack $
+              unwords
+                [ "Typst compilation succesfully created",
+                  fromAbsFile rf
+                ]
+
+          pure rf
+
+        absFiles <- fmap M.fromList $ forM (M.toList includedFiles) $ \(to, from) -> do
+          logInfoN $
+            T.pack $
+              unwords
+                [ "Putting",
+                  fromRelFile from,
+                  "in the packet at",
+                  fromRelFile to
+                ]
+          let fromFile = settingBaseDir </> from
+          let packetFile = packetDir </> to
+          ensureDir (parent packetFile)
+          copyFile fromFile packetFile
+          pure (to, packetFile)
+
+        -- Create a nice zip file
+        createZipFile vatSettingZipFile $
+          M.insert [relfile|README.pdf|] readmeFile $
+            M.insert [relfile|raw-input.json|] jsonInputFile $
+              M.insert [relfile|vat.xml|] xmlFile absFiles
+
         logInfoN $
           T.pack $
             unwords
-              [ "Succesfully compiled information into",
-                fromAbsFile jif
+              [ "Succesfully created packet",
+                fromAbsFile vatSettingZipFile
               ]
-        logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
-        pure jif
-
-      readmeFile <- do
-        -- Write the template to a file
-        mainTypFile <- liftIO $ do
-          mtf <- resolveFile packetDir "main.typ"
-          copyFile typstTemplateFile mtf
-          pure mtf
-
-        rf <- resolveFile packetDir "README.pdf"
-
-        -- Compile the README.pdf using typst
-        liftIO $ compileTypst mainTypFile rf
-        logInfoN $
-          T.pack $
-            unwords
-              [ "Typst compilation succesfully created",
-                fromAbsFile rf
-              ]
-
-        pure rf
-
-      absFiles <- fmap M.fromList $ forM (M.toList includedFiles) $ \(to, from) -> do
-        logInfoN $
-          T.pack $
-            unwords
-              [ "Putting",
-                fromRelFile from,
-                "in the packet at",
-                fromRelFile to
-              ]
-        let fromFile = settingBaseDir </> from
-        let packetFile = packetDir </> to
-        ensureDir (parent packetFile)
-        copyFile fromFile packetFile
-        pure (to, packetFile)
-
-      -- Create a nice zip file
-      createZipFile vatSettingZipFile $
-        M.insert [relfile|README.pdf|] readmeFile $
-          M.insert [relfile|raw-input.json|] jsonInputFile $
-            M.insert [relfile|vat.xml|] xmlFile absFiles
-
-      logInfoN $
-        T.pack $
-          unwords
-            [ "Succesfully created packet",
-              fromAbsFile vatSettingZipFile
-            ]

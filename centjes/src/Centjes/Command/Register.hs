@@ -33,7 +33,8 @@ import Text.Colour.Layout
 
 runCentjesRegister :: Settings -> RegisterSettings -> LoggingT IO ()
 runCentjesRegister Settings {..} RegisterSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, diagnostic) -> do
+  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+    let diagnostic = diagFromFileMap fileMap
     ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
     register <-
       withLoggedDuration "Produce register" $

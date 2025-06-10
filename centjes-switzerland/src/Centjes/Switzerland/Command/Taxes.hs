@@ -48,10 +48,8 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   catalogFile <- resolveFile schemaDir "catalog.xml"
   schemaFile <- resolveFile schemaDir "eCH-0119-4-0-0.xsd"
 
-  withPacketDir settingClean taxesSettingPacketDir $ \packetDir ->
-    runStderrLoggingT $ do
-      let firstPath = settingBaseDir </> settingLedgerFile
-      (declarations, fileMap) <- loadModules' firstPath
+  runStderrLoggingT $ do
+    loadMWatchedModules settingWatch (settingBaseDir </> settingLedgerFile) $ \(declarations, fileMap) -> do
       let diag = diagFromFileMap fileMap
       let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
 
@@ -70,121 +68,122 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
 
       let includedFiles = M.union reportFiles centjesFiles
 
-      -- Write the xml to a file
-      xmlFile <- do
-        now <- liftIO getCurrentTime
-        case produceXMLReport now taxesReport of
-          Nothing -> liftIO $ die "Failed to produce XML report. This should not happen"
-          Just xmlReport -> do
-            logDebugN $ T.pack $ ppShow xmlReport
-            xf <- resolveFile packetDir "taxes.xml"
-            let xmlDoc = xmlReportDocument xmlReport
+      withPacketDir settingClean taxesSettingPacketDir $ \packetDir -> do
+        -- Write the xml to a file
+        xmlFile <- do
+          now <- liftIO getCurrentTime
+          case produceXMLReport now taxesReport of
+            Nothing -> liftIO $ die "Failed to produce XML report. This should not happen"
+            Just xmlReport -> do
+              logDebugN $ T.pack $ ppShow xmlReport
+              xf <- resolveFile packetDir "taxes.xml"
+              let xmlDoc = xmlReportDocument xmlReport
 
-            liftIO $
-              XML.writeFile
-                xmlRenderSettings
-                (fromAbsFile xf)
-                xmlDoc
-            logInfoN $
-              T.pack $
-                unwords
-                  [ "Wrote XML version to",
-                    fromAbsFile xf
-                  ]
-            logDebugN $
-              LT.toStrict $
-                XML.renderText
+              liftIO $
+                XML.writeFile
                   xmlRenderSettings
+                  (fromAbsFile xf)
                   xmlDoc
+              logInfoN $
+                T.pack $
+                  unwords
+                    [ "Wrote XML version to",
+                      fromAbsFile xf
+                    ]
+              logDebugN $
+                LT.toStrict $
+                  XML.renderText
+                    xmlRenderSettings
+                    xmlDoc
 
-            logInfoN $
-              T.pack $
-                unwords
-                  [ "Validating XML output at",
-                    fromAbsFile xf,
-                    "against schema",
-                    fromAbsFile schemaFile
-                  ]
-            environment <- liftIO getEnvironment
-            let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
-            runProcess_ $
-              setWorkingDir (fromAbsDir packetDir) $
-                setEnv newEnvironment $
-                  setStdout inherit $
-                    setStderr inherit $
-                      proc
-                        "xmllint"
-                        [ "--debugent",
-                          "--noout",
-                          "--schema",
-                          fromAbsFile schemaFile,
-                          fromAbsFile xf,
-                          "--catalogs"
-                        ]
-            pure xf
+              logInfoN $
+                T.pack $
+                  unwords
+                    [ "Validating XML output at",
+                      fromAbsFile xf,
+                      "against schema",
+                      fromAbsFile schemaFile
+                    ]
+              environment <- liftIO getEnvironment
+              let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
+              runProcess_ $
+                setWorkingDir (fromAbsDir packetDir) $
+                  setEnv newEnvironment $
+                    setStdout inherit $
+                      setStderr inherit $
+                        proc
+                          "xmllint"
+                          [ "--debugent",
+                            "--noout",
+                            "--schema",
+                            fromAbsFile schemaFile,
+                            fromAbsFile xf,
+                            "--catalogs"
+                          ]
+              pure xf
 
-      let input = taxesReportInput taxesReport
+        let input = taxesReportInput taxesReport
 
-      -- Write the input to a file
-      jsonInputFile <- liftIO $ do
-        jif <- resolveFile packetDir "input.json"
-        SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
-        pure jif
-      logInfoN $
-        T.pack $
-          unwords
-            [ "Succesfully compiled information into",
-              fromAbsFile jsonInputFile
-            ]
-      logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
-
-      readmeFile <- do
-        -- Write the template to a file
-        mainTypFile <- liftIO $ do
-          mtf <- resolveFile packetDir "main.typ"
-          copyFile typstTemplateFile mtf
-          pure mtf
-
-        rf <- resolveFile packetDir "README.pdf"
-
-        -- Compile the README.pdf using typst
-        liftIO $ compileTypst mainTypFile rf
+        -- Write the input to a file
+        jsonInputFile <- liftIO $ do
+          jif <- resolveFile packetDir "input.json"
+          SB.writeFile (fromAbsFile jif) (LB.toStrict (JSON.encode input))
+          pure jif
         logInfoN $
           T.pack $
             unwords
-              [ "Typst compilation succesfully created",
-                fromAbsFile rf
+              [ "Succesfully compiled information into",
+                fromAbsFile jsonInputFile
               ]
+        logDebugN $ TE.decodeUtf8 $ LB.toStrict $ JSON.encodePretty input
 
-        pure rf
+        readmeFile <- do
+          -- Write the template to a file
+          mainTypFile <- liftIO $ do
+            mtf <- resolveFile packetDir "main.typ"
+            copyFile typstTemplateFile mtf
+            pure mtf
 
-      absFiles <- fmap M.fromList $ forM (M.toList includedFiles) $ \(to, from) -> do
+          rf <- resolveFile packetDir "README.pdf"
+
+          -- Compile the README.pdf using typst
+          liftIO $ compileTypst mainTypFile rf
+          logInfoN $
+            T.pack $
+              unwords
+                [ "Typst compilation succesfully created",
+                  fromAbsFile rf
+                ]
+
+          pure rf
+
+        absFiles <- fmap M.fromList $ forM (M.toList includedFiles) $ \(to, from) -> do
+          logInfoN $
+            T.pack $
+              unwords
+                [ "Putting",
+                  fromRelFile from,
+                  "in the packet at",
+                  fromRelFile to
+                ]
+          let fromFile = settingBaseDir </> from
+          let packetFile = packetDir </> to
+          ensureDir (parent packetFile)
+          copyFile fromFile packetFile
+          pure (to, packetFile)
+
+        -- Create a nice zip file
+        createZipFile taxesSettingZipFile $
+          M.insert [relfile|README.pdf|] readmeFile $
+            M.insert [relfile|raw-input.json|] jsonInputFile $
+              M.insert
+                [relfile|taxes.xml|]
+                xmlFile
+                absFiles
+
         logInfoN $
           T.pack $
             unwords
-              [ "Putting",
-                fromRelFile from,
-                "in the packet at",
-                fromRelFile to
+              [ "Succesfully created packet",
+                fromAbsFile taxesSettingZipFile
               ]
-        let fromFile = settingBaseDir </> from
-        let packetFile = packetDir </> to
-        ensureDir (parent packetFile)
-        copyFile fromFile packetFile
-        pure (to, packetFile)
-
-      -- Create a nice zip file
-      createZipFile taxesSettingZipFile $
-        M.insert [relfile|README.pdf|] readmeFile $
-          M.insert [relfile|raw-input.json|] jsonInputFile $
-            M.insert
-              [relfile|taxes.xml|]
-              xmlFile
-              absFiles
-
-      logInfoN $
-        T.pack $
-          unwords
-            [ "Succesfully created packet",
-              fromAbsFile taxesSettingZipFile
-            ]

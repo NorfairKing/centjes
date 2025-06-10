@@ -46,6 +46,7 @@ data Settings = Settings
     -- We must use a separate file for prices because the swiss taxes require
     -- that we use the prices downloaded with the `download-rates` command.
     settingPricesFile :: !(Path Rel File),
+    settingWatch :: !Bool,
     settingClean :: !Bool
   }
 
@@ -82,6 +83,16 @@ parseSettings = do
           value "currency-rates.cent",
           metavar "FILE_PATH"
         ]
+  settingWatch <-
+    setting
+      [ help "Run centjes in a loop",
+        name "watch",
+        short 'w',
+        metavar "ANY",
+        switch True,
+        reader exists,
+        value False
+      ]
   settingClean <-
     yesNoSwitch
       [ help "Clean the packet directory",

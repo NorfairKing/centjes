@@ -50,18 +50,18 @@ loadMWatchedModules ::
   (MonadUnliftIO m, MonadLogger m) =>
   Bool ->
   Path Abs File ->
-  (([LDeclaration], Diagnostic String) -> m ()) ->
+  (([LDeclaration], Map (Path Rel File) (Text, LModule)) -> m ()) ->
   m ()
 loadMWatchedModules watch firstPath func =
   if watch
     then loadWatchedModules firstPath func
-    else loadModules firstPath >>= func
+    else loadModules' firstPath >>= func
 
 loadWatchedModules ::
   forall m.
   (MonadUnliftIO m, MonadLogger m) =>
   Path Abs File ->
-  (([LDeclaration], Diagnostic String) -> m ()) ->
+  (([LDeclaration], Map (Path Rel File) (Text, LModule)) -> m ()) ->
   m ()
 loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager -> do
   let dir = parent firstPath
@@ -114,8 +114,7 @@ loadWatchedModules firstPath func = liftWith Notify.withManager $ \watchManager 
               pure ()
             Right (declarations, fileMap) -> do
               -- Run the function with the loaded modules
-              let diag = diagFromFileMap fileMap
-              func (declarations, diag)
+              func (declarations, fileMap)
                 `catch` ( \case
                             ExitSuccess -> pure ()
                             ExitFailure _ -> pure ()

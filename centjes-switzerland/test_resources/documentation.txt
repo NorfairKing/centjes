@@ -1,4 +1,4 @@
-[36mUsage: [m[33mcentjes-switzerland[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m COMMAND [36m[[m[37m--base-dir[m [33mDIRECTORY_PATH[m[36m][m [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m [36m[[m[37m--prices[m [33mFILE_PATH[m[36m][m [36m[[m[37m--[no-]clean[m[36m][m
+[36mUsage: [m[33mcentjes-switzerland[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m COMMAND [36m[[m[37m--base-dir[m [33mDIRECTORY_PATH[m[36m][m [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m [36m[[m[37m--prices[m [33mFILE_PATH[m[36m][m [36m[[m[37m--watch[m[36m|[m[37m-w[m [37m--watch[m[36m|[m[37m-w[m [33mANY[m[36m][m [36m[[m[37m--[no-]clean[m[36m][m
 
 [36mAll settings[m:
   [34mShow this help text[m
@@ -33,6 +33,15 @@
     [37mprices[m: # [32mor null[m
       [33m<string>[m
   default: [33m"currency-rates.cent"[m
+
+  [34mRun centjes in a loop[m
+  switch: [37m--watch[m[36m|[m[37m-w[m
+  option: [37m--watch[m[36m|[m[37m-w[m [33mANY[m
+  env: [37mCENTJES_SWITZERLAND_WATCH[m [33mANY[m
+  config:
+    [37mwatch[m: # [32mor null[m
+      [33m<boolean>[m
+  default: [33mFalse[m
 
   [34mClean the packet directory[m
   switch: [37m--[no-]clean[m
@@ -283,6 +292,7 @@
   [37m--base-dir[m [34mbase directory[m
   [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
   [37m--prices[m [34mprices file[m default: [33m"currency-rates.cent"[m
+  [37m--watch[m[36m|[m[37m-w[m [34mRun centjes in a loop[m default: [33mFalse[m
   [37m--[no-]clean[m [34mClean the packet directory[m
 
 [36mEnvironment Variables[m:
@@ -297,6 +307,7 @@
   [37mCENTJES_SWITZERLAND_BASE_DIR[m [33mDIRECTORY_PATH[m     [34mbase directory[m                                                                         
   [37mCENTJES_SWITZERLAND_LEDGER[m [33mFILE_PATH[m            [34mledger file[m                                              default: [33m"ledger.cent"[m        
   [37mCENTJES_SWITZERLAND_PRICES[m [33mFILE_PATH[m            [34mprices file[m                                              default: [33m"currency-rates.cent"[m
+  [37mCENTJES_SWITZERLAND_WATCH[m [33mANY[m                   [34mRun centjes in a loop[m                                    default: [33mFalse[m                
   [37mCENTJES_SWITZERLAND_CLEAN[m [33mBOOL[m                  [34mClean the packet directory[m                                                             
 
 [36mConfiguration Values[m:
@@ -479,6 +490,11 @@
   [37mprices[m:
     # [32mor null[m
     [33m<string>[m
+  [34mRun centjes in a loop[m
+  default: [33mFalse[m
+  [37mwatch[m:
+    # [32mor null[m
+    [33m<boolean>[m
   [34mClean the packet directory[m
   [37mclean[m:
     # [32mor null[m

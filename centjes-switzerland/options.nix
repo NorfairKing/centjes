@@ -191,6 +191,11 @@
     description = "Account name of your the VAT you've charged";
     type = lib.types.nullOr lib.types.str;
   };
+  watch = lib.mkOption {
+    default = null;
+    description = "Run centjes in a loop";
+    type = lib.types.nullOr lib.types.bool;
+  };
   year = lib.mkOption {
     default = null;
     description = "the year to produce the report for";

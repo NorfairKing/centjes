@@ -6,13 +6,16 @@ import Control.Monad
 import qualified Data.Vector as V
 import Path
 import Path.IO
+import UnliftIO
 
-withPacketDir :: Bool -> Maybe (Path Abs Dir) -> (Path Abs Dir -> IO a) -> IO a
+{-# ANN withPacketDir ("NOCOVER" :: String) #-}
+withPacketDir :: (MonadUnliftIO m) => Bool -> Maybe (Path Abs Dir) -> (Path Abs Dir -> m a) -> m a
 withPacketDir clean mDir func = case mDir of
-  Nothing -> withSystemTempDir "centjes-switzerland" func
+  Nothing -> withRunInIO $ \runInIO -> withSystemTempDir "centjes-switzerland" $ \dir -> runInIO $ func dir
   Just dir -> do
-    when clean $ ignoringAbsence $ removeDirRecur dir
-    ensureDir dir
+    liftIO $ do
+      when clean $ ignoringAbsence $ removeDirRecur dir
+      ensureDir dir
     func dir
 
 filterLedgerByPricesFile :: Path Rel File -> Ledger SourceSpan -> Ledger SourceSpan
