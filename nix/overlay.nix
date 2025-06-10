@@ -18,20 +18,23 @@ with final.haskell.lib;
       name = "centjes-check";
       inherit src;
       buildCommand = ''
-        set -ex
+        set -e
+
         ${final.centjesReleasePackages.centjes}/bin/centjes --ledger $src/ledger.cent check > $out
       '';
     };
 
   makeSwitzerlandTaxesPacket =
-    { src
+    { name ? "taxes"
+    , src
     , extraArgs ? [ ]
     }: final.stdenv.mkDerivation {
-      name = "taxes";
+      inherit name;
       inherit src;
       buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
       buildCommand = ''
         mkdir -p $out
+
         centjes-switzerland \
           taxes \
           --config-file $src/switzerland.yaml \
@@ -42,14 +45,16 @@ with final.haskell.lib;
       '';
     };
   makeSwitzerlandVATPacket =
-    { src
+    { name ? "vat"
+    , src
     , extraArgs ? [ ]
     }: final.stdenv.mkDerivation {
-      name = "vat";
+      inherit name;
       inherit src;
       buildInputs = [ final.centjesReleasePackages.centjes-switzerland ];
       buildCommand = ''
         mkdir -p $out
+
         centjes-switzerland \
           vat \
           --config-file $src/switzerland.yaml \

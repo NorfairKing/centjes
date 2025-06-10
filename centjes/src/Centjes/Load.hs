@@ -52,7 +52,11 @@ loadMWatchedModules ::
   Path Abs File ->
   (([LDeclaration], Map (Path Rel File) (Text, LModule)) -> m ()) ->
   m ()
-loadMWatchedModules watch firstPath func =
+loadMWatchedModules watch firstPath func = do
+  -- Set locale encoding so diagnose can output unicode characters.
+  liftIO $ do
+    hSetEncoding stdout utf8
+    hSetEncoding stderr utf8
   if watch
     then loadWatchedModules firstPath func
     else loadModules' firstPath >>= func

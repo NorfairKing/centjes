@@ -47,6 +47,7 @@ import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
 import OptEnvConf
 import Path
+import Text.Read (readMaybe)
 
 -- | The settings we need to produce a 'TaxesReport'
 data TaxesInput = TaxesInput
@@ -94,7 +95,11 @@ parseTaxesInput = do
     choice
       [ setting
           [ help "the year to produce the report for",
-            conf "year"
+            option,
+            reader $ maybeReader readMaybe,
+            long "year",
+            conf "year",
+            metavar "YYYY"
           ],
         runIO $ (\d -> let (y, _, _) = toGregorian d in y) . utctDay <$> getCurrentTime
       ]
