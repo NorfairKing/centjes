@@ -30,6 +30,7 @@ import Centjes.Filter
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Report.Balance
+import Centjes.Switzerland.Report.Common
 import Centjes.Switzerland.Report.Taxes.ETax
 import Centjes.Switzerland.Report.Taxes.Types
 import Centjes.Switzerland.Report.Taxes.Typst
@@ -414,14 +415,13 @@ withDeductibleTag ::
   Reporter (TaxesError ann) a ->
   Reporter (TaxesError ann) (Maybe a)
 withDeductibleTag TaxesInput {..} tl lp tags continue = do
-  let mDeductibleTag = M.lookup taxesInputTagDeductible tags
-  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible tags
-  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible tags
-  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible tags
-  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
-    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
-    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
-    (Nothing, Nothing, Just _, Nothing) -> Just <$> continue
-    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
-    (Just _, Nothing, Nothing, Nothing) -> Just <$> continue
-    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+  let mTagDeductible = M.lookup taxesInputTagDeductible tags
+  let mTagNotDeductible = M.lookup taxesInputTagNotDeductible tags
+  let mTagTaxDeductible = M.lookup taxesInputTagTaxDeductible tags
+  let mTagNotTaxDeductible = M.lookup taxesInputTagNotTaxDeductible tags
+  case decideDeductible mTagDeductible mTagNotDeductible mTagTaxDeductible mTagNotTaxDeductible of
+    DefinitelyDeductible _ -> Just <$> continue
+    DefinitelyNotDeductible _ -> pure Nothing
+    Undeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+    RedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
+    AmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl

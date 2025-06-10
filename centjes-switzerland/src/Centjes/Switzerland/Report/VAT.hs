@@ -35,13 +35,13 @@ import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import Centjes.Ledger
 import Centjes.Location
+import Centjes.Switzerland.Report.Common
 import Centjes.Switzerland.Report.VAT.EMWST
 import Centjes.Switzerland.Report.VAT.Types
 import Centjes.Switzerland.Report.VAT.Typst
 import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
-import Control.Applicative
 import Control.Monad
 import Data.Foldable as Foldable
 import Data.List.NonEmpty (NonEmpty (..))
@@ -366,27 +366,27 @@ gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPri
         if not $ dayInQuarter quarter day
           then pure (Nothing :: Maybe (NonEmpty (DeductibleExpense ann)))
           else do
-            let mDeductibleTag = M.lookup vatInputTagDeductible transactionTags
-            let mNotDeductibleTag = M.lookup vatInputTagNotDeductible transactionTags
-            let mVATDeductibleTag = M.lookup vatInputTagVATDeductible transactionTags
-            let mNotVATDeductibleTag = M.lookup vatInputTagNotVATDeductible transactionTags
-
-            case (mVATDeductibleTag <|> mDeductibleTag, mNotVATDeductibleTag <|> mNotDeductibleTag) of
-              -- Can't tag as both deductible and not-deductible
-              (Just tagl, Just tagnotl) -> validationTFailure $ VATErrorDeductibleAndNotDeductible tl tagl tagnotl
-              -- Ignore the transaction if it's tagged as not-deductible
-              (Nothing, Just _) -> pure Nothing
+            let mTagDeductible = M.lookup vatInputTagDeductible transactionTags
+            let mTagNotDeductible = M.lookup vatInputTagNotDeductible transactionTags
+            let mTagVATDeductible = M.lookup vatInputTagVATDeductible transactionTags
+            let mTagNotVATDeductible = M.lookup vatInputTagNotVATDeductible transactionTags
+            case decideDeductible mTagDeductible mTagNotDeductible mTagVATDeductible mTagNotVATDeductible of
               -- If it's tagged as deductible, expect at least one deductible expense
-              (Just tagl, Nothing) -> do
+              DefinitelyDeductible tagl -> do
                 mDes <- parseExpectedDeductibleExpenses vatInput ledgerAccounts dailyPriceGraphs chf lt
                 case mDes of
                   Nothing -> validationTFailure $ VATErrorDeductibleNoExpenses tl tagl
                   Just ne -> pure $ Just ne
+              -- Ignore the transaction if it's tagged as not-deductible
+              DefinitelyNotDeductible _ -> pure Nothing
               -- If it's not tagged at all, error if there are expenses.
-              (Nothing, Nothing) ->
+              Undeclared -> do
                 case parseUnxpectedDeductibleExpenses vatInput ledgerAccounts lt of
                   Nothing -> pure Nothing
                   Just lp -> validationTFailure $ VATErrorUntaggedExpenses tl lp
+              -- Can't tag as both deductible and not-deductible
+              AmbiguouslyDeclared tagl tagnotl -> validationTFailure $ VATErrorDeductibleAndNotDeductible tl tagl tagnotl
+              RedundantlyDeclared t1l t2l -> validationTFailure $ VATErrorRedundantlyDeclared tl t1l t2l
 
 parseUnxpectedDeductibleExpenses ::
   VATInput ->

@@ -229,7 +229,8 @@ data TaxesError ann
   | TaxesErrorCouldNotConvert !ann !(Currency ann) !(Currency ann) !Money.Amount
   | TaxesErrorAssetAccountWithoutEvidence !(GenLocated ann AccountName)
   | TaxesErrorRevenueWithoutEvidence !ann !ann !(GenLocated ann AccountName)
-  | TaxesErrorAmbiguousExpenses !ann
+  | TaxesErrorDeductibleAndNotDeductible !ann !ann !ann
+  | TaxesErrorRedundantlyDeclared !ann !ann !ann
   | TaxesErrorUntaggedExpenses !ann !(GenLocated ann (Ledger.Posting ann))
   deriving (Show, Generic)
 
@@ -334,13 +335,24 @@ instance ToReport (TaxesError SourceSpan) where
                             }
               ]
         ]
-    TaxesErrorAmbiguousExpenses tl ->
+    TaxesErrorDeductibleAndNotDeductible tl tagl nottagl ->
       Err
         Nothing
-        "Transaction tagged ambiguously"
-        [ (toDiagnosePosition tl, Where "in this transaction")
+        "Transaction marked as both deductible and not deductible"
+        [ (toDiagnosePosition tagl, Where "Tagged as deductible"),
+          (toDiagnosePosition nottagl, This "and as not deductible"),
+          (toDiagnosePosition tl, Where "in this transaction")
         ]
-        [Hint "tag as 'deductible' or 'not-deductible' to resolve this ambiguity"]
+        []
+    TaxesErrorRedundantlyDeclared tl t1l t2l ->
+      Err
+        Nothing
+        "Transaction marked as as either deductible or not deductible in multiple ways"
+        [ (toDiagnosePosition t1l, Where "Tagged here"),
+          (toDiagnosePosition t2l, This "and here"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
     TaxesErrorUntaggedExpenses tl (Located pl _) ->
       Err
         Nothing
@@ -348,7 +360,7 @@ instance ToReport (TaxesError SourceSpan) where
         [ (toDiagnosePosition pl, This "This posting represents an expense that is neither tagged as deductible nor as not-deductible."),
           (toDiagnosePosition tl, Where "in this transaction")
         ]
-        []
+        [Hint "tag as 'deductible' or 'not-deductible' to resolve this ambiguity"]
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"

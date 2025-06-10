@@ -375,6 +375,7 @@ data VATError ann
   | VATErrorNoVATPercentage !ann
   | VATErrorUnknownVATRate !ann !ann !Rational
   | VATErrorDeductibleAndNotDeductible !ann !ann !ann
+  | VATErrorRedundantlyDeclared !ann !ann !ann
   | VATErrorDeductibleNoExpenses !ann !ann
   | VATErrorUntaggedExpenses !ann !(GenLocated ann (Posting ann))
   | VATErrorSum ![Money.Amount]
@@ -470,6 +471,15 @@ instance ToReport (VATError SourceSpan) where
         "Transaction marked as both deductible and not deductible"
         [ (toDiagnosePosition tagl, Where "Tagged as deductible"),
           (toDiagnosePosition nottagl, This "and as not deductible"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        []
+    VATErrorRedundantlyDeclared tl t1l t2l ->
+      Err
+        Nothing
+        "Transaction marked as as either deductible or not deductible in multiple ways"
+        [ (toDiagnosePosition t1l, Where "Tagged here"),
+          (toDiagnosePosition t2l, This "and here"),
           (toDiagnosePosition tl, Where "in this transaction")
         ]
         []
