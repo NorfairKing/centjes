@@ -123,6 +123,12 @@
         [33m<string>[m
     default: [33m"expenses:phone:professional"[m
     
+    [34mthe account to use for travel expenses[m
+    config:
+      [37mtravel-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:travel:professional"[m
+    
     [34mthe account to use for internet expenses[m
     config:
       [37minternet-expenses-account[m: # [32mor null[m
@@ -370,6 +376,11 @@
   [34mthe account to use for phone expenses[m
   default: [33m"expenses:phone:professional"[m
   [37mphone-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for travel expenses[m
+  default: [33m"expenses:travel:professional"[m
+  [37mtravel-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for internet expenses[m

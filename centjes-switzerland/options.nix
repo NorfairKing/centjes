@@ -159,6 +159,11 @@
       };
     };
   };
+  travel-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for travel expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   vat = lib.mkOption {
     default = { };
     type = lib.types.submodule {

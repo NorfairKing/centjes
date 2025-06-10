@@ -293,6 +293,37 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
       Nothing -> validationTFailure TaxesErrorSum
       Just s -> pure s
 
+  taxesReportTravelExpenses <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInYear taxesReportYear day
+          then fmap catMaybes $
+            forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
+              let Located _ accountName = postingAccountName
+              if accountName == taxesInputTravelExpensesAccount
+                then withDeductibleTag taxesInput tl lp transactionTags $ do
+                  travelExpenseDescription <- requireDescription transactionDescription
+                  let Located al account = postingAccount
+                  travelExpenseAmount <- requireExpensePositive al account
+                  let travelExpenseTimestamp = timestamp
+                  let Located _ travelExpenseCurrency = postingCurrency
+                  travelExpenseCHFAmount <- convertDaily al dailyPriceGraphs day travelExpenseCurrency taxesReportCHF travelExpenseAmount
+                  ne <- requireNonEmptyEvidence tl transactionAttachments
+                  travelExpenseEvidence <- forM ne $ \rf -> do
+                    let fileInTarball = [reldir|expenses/travel|] </> filename rf
+                    includeFile fileInTarball rf
+                    pure fileInTarball
+                  pure TravelExpense {..}
+                else pure Nothing
+          else pure []
+
+  taxesReportTotalTravelExpenses <-
+    case Amount.sum $ map travelExpenseCHFAmount taxesReportTravelExpenses of
+      Nothing -> validationTFailure TaxesErrorSum
+      Just s -> pure s
+
   taxesReportInternetExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
       \(Located tl Transaction {..}) -> do

@@ -113,6 +113,18 @@ taxesReportInput TaxesReport {..} =
             inputPhoneExpenseEvidence = phoneExpenseEvidence
          in PhoneExpenseInput {..}
       inputTotalPhoneExpenses = formatChfAmount taxesReportTotalPhoneExpenses
+      inputTravelExpenses = flip map taxesReportTravelExpenses $ \TravelExpense {..} ->
+        let inputTravelExpenseDay = Timestamp.toDay travelExpenseTimestamp
+            inputTravelExpenseDescription = Description.toText travelExpenseDescription
+            inputTravelExpenseAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount travelExpenseCurrency travelExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol travelExpenseCurrency
+                }
+            inputTravelExpenseCHFAmount = formatChfAmount travelExpenseCHFAmount
+            inputTravelExpenseEvidence = travelExpenseEvidence
+         in TravelExpenseInput {..}
+      inputTotalTravelExpenses = formatChfAmount taxesReportTotalTravelExpenses
       inputInternetExpenses = flip map taxesReportInternetExpenses $ \InternetExpense {..} ->
         let inputInternetExpenseDay = Timestamp.toDay internetExpenseTimestamp
             inputInternetExpenseDescription = Description.toText internetExpenseDescription
@@ -144,6 +156,8 @@ data Input = Input
     inputTotalElectricityExpenses :: !FormattedAmount,
     inputPhoneExpenses :: ![PhoneExpenseInput],
     inputTotalPhoneExpenses :: !FormattedAmount,
+    inputTravelExpenses :: ![TravelExpenseInput],
+    inputTotalTravelExpenses :: !FormattedAmount,
     inputInternetExpenses :: ![InternetExpenseInput],
     inputTotalInternetExpenses :: !FormattedAmount
   }
@@ -181,6 +195,10 @@ instance HasCodec Input where
           .= inputPhoneExpenses
         <*> requiredField "total_phone_expenses" "total phone expenses"
           .= inputTotalPhoneExpenses
+        <*> requiredField "travel_expenses" "travel expenses"
+          .= inputTravelExpenses
+        <*> requiredField "total_travel_expenses" "total travel expenses"
+          .= inputTotalTravelExpenses
         <*> requiredField "internet_expenses" "internet expenses"
           .= inputInternetExpenses
         <*> requiredField "total_internet_expenses" "total internet expenses"
@@ -309,6 +327,29 @@ instance HasCodec PhoneExpenseInput where
           .= inputPhoneExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputPhoneExpenseEvidence
+
+data TravelExpenseInput = TravelExpenseInput
+  { inputTravelExpenseDay :: !Day,
+    inputTravelExpenseDescription :: !Text,
+    inputTravelExpenseAmount :: !AmountWithCurrency,
+    inputTravelExpenseCHFAmount :: !FormattedAmount,
+    inputTravelExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec TravelExpenseInput where
+  codec =
+    object "TravelExpenseInput" $
+      TravelExpenseInput
+        <$> requiredField "day" "day of homeofficeexpense"
+          .= inputTravelExpenseDay
+        <*> requiredField "description" "description of homeofficeexpense"
+          .= inputTravelExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputTravelExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputTravelExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputTravelExpenseEvidence
 
 data InternetExpenseInput = InternetExpenseInput
   { inputInternetExpenseDay :: !Day,
