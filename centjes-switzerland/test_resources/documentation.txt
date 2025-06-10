@@ -109,25 +109,25 @@
     config:
       [37mhomeoffice-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:homeoffice:rent"[m
+    default: [33m"expenses:rent:homeoffice"[m
     
     [34mthe account to use for electricity expenses[m
     config:
       [37melectricity-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:homeoffice:electricity"[m
+    default: [33m"expenses:electricity:homeoffice"[m
     
     [34mthe account to use for phone expenses[m
     config:
       [37mphone-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:homeoffice:phone"[m
+    default: [33m"expenses:phone:professional"[m
     
     [34mthe account to use for internet expenses[m
     config:
       [37minternet-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:homeoffice:internet"[m
+    default: [33m"expenses:internet:homeoffice"[m
     
     [34mPath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
@@ -358,22 +358,22 @@
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for homeoffice expenses[m
-  default: [33m"expenses:homeoffice:rent"[m
+  default: [33m"expenses:rent:homeoffice"[m
   [37mhomeoffice-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for electricity expenses[m
-  default: [33m"expenses:homeoffice:electricity"[m
+  default: [33m"expenses:electricity:homeoffice"[m
   [37melectricity-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for phone expenses[m
-  default: [33m"expenses:homeoffice:phone"[m
+  default: [33m"expenses:phone:professional"[m
   [37mphone-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for internet expenses[m
-  default: [33m"expenses:homeoffice:internet"[m
+  default: [33m"expenses:internet:homeoffice"[m
   [37minternet-expenses-account[m:
     # [32mor null[m
     [33m<string>[m

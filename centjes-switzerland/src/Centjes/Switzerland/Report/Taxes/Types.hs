@@ -143,28 +143,28 @@ parseTaxesInput = do
       [ help "the account to use for homeoffice expenses",
         reader $ maybeReader AccountName.fromString,
         conf "homeoffice-expenses-account",
-        value "expenses:homeoffice:rent"
+        value "expenses:rent:homeoffice"
       ]
   taxesInputElectricityExpensesAccount <-
     setting
       [ help "the account to use for electricity expenses",
         reader $ maybeReader AccountName.fromString,
         conf "electricity-expenses-account",
-        value "expenses:homeoffice:electricity"
+        value "expenses:electricity:homeoffice"
       ]
   taxesInputPhoneExpensesAccount <-
     setting
       [ help "the account to use for phone expenses",
         reader $ maybeReader AccountName.fromString,
         conf "phone-expenses-account",
-        value "expenses:homeoffice:phone"
+        value "expenses:phone:professional"
       ]
   taxesInputInternetExpensesAccount <-
     setting
       [ help "the account to use for internet expenses",
         reader $ maybeReader AccountName.fromString,
         conf "internet-expenses-account",
-        value "expenses:homeoffice:internet"
+        value "expenses:internet:homeoffice"
       ]
   pure TaxesInput {..}
 
