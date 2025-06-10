@@ -59,7 +59,7 @@ produceTaxesReport ::
   TaxesInput ->
   Ledger ann ->
   Reporter (TaxesError ann) (TaxesReport ann)
-produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
+produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
   let taxesReportLastName = taxesInputLastName
   let taxesReportFirstName = taxesInputFirstName
   let taxesReportYear = taxesInputYear
@@ -210,30 +210,18 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
             forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
               let Located _ accountName = postingAccountName
               if accountName == taxesInputHomeofficeExpensesAccount
-                then do
-                  let mDeductibleTag = M.lookup taxesInputTagDeductible transactionTags
-                  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible transactionTags
-                  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible transactionTags
-                  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible transactionTags
-                  let tryToDeclare = do
-                        homeofficeExpenseDescription <- requireDescription transactionDescription
-                        let Located al account = postingAccount
-                        homeofficeExpenseAmount <- requireExpensePositive al account
-                        let homeofficeExpenseTimestamp = timestamp
-                        let Located _ homeofficeExpenseCurrency = postingCurrency
-                        homeofficeExpenseCHFAmount <- convertDaily al dailyPriceGraphs day homeofficeExpenseCurrency taxesReportCHF homeofficeExpenseAmount
-                        homeofficeExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
-                          let fileInTarball = [reldir|expenses/homeoffice|] </> filename rf
-                          includeFile fileInTarball rf
-                          pure fileInTarball
-                        pure $ Just HomeofficeExpense {..}
-                  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
-                    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
-                    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
-                    (Nothing, Nothing, Just _, Nothing) -> tryToDeclare
-                    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
-                    (Just _, Nothing, Nothing, Nothing) -> tryToDeclare
-                    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+                then withDeductibleTag taxesInput tl lp transactionTags $ do
+                  homeofficeExpenseDescription <- requireDescription transactionDescription
+                  let Located al account = postingAccount
+                  homeofficeExpenseAmount <- requireExpensePositive al account
+                  let homeofficeExpenseTimestamp = timestamp
+                  let Located _ homeofficeExpenseCurrency = postingCurrency
+                  homeofficeExpenseCHFAmount <- convertDaily al dailyPriceGraphs day homeofficeExpenseCurrency taxesReportCHF homeofficeExpenseAmount
+                  homeofficeExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+                    let fileInTarball = [reldir|expenses/homeoffice|] </> filename rf
+                    includeFile fileInTarball rf
+                    pure fileInTarball
+                  pure HomeofficeExpense {..}
                 else pure Nothing
           else pure []
 
@@ -252,31 +240,19 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
             forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
               let Located _ accountName = postingAccountName
               if accountName == taxesInputElectricityExpensesAccount
-                then do
-                  let mDeductibleTag = M.lookup taxesInputTagDeductible transactionTags
-                  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible transactionTags
-                  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible transactionTags
-                  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible transactionTags
-                  let tryToDeclare = do
-                        electricityExpenseDescription <- requireDescription transactionDescription
-                        let Located al account = postingAccount
-                        electricityExpenseAmount <- requireExpensePositive al account
-                        let electricityExpenseTimestamp = timestamp
-                        let Located _ electricityExpenseCurrency = postingCurrency
-                        electricityExpenseCHFAmount <- convertDaily al dailyPriceGraphs day electricityExpenseCurrency taxesReportCHF electricityExpenseAmount
-                        ne <- requireNonEmptyEvidence tl transactionAttachments
-                        electricityExpenseEvidence <- forM ne $ \rf -> do
-                          let fileInTarball = [reldir|expenses/electricity|] </> filename rf
-                          includeFile fileInTarball rf
-                          pure fileInTarball
-                        pure $ Just ElectricityExpense {..}
-                  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
-                    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
-                    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
-                    (Nothing, Nothing, Just _, Nothing) -> tryToDeclare
-                    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
-                    (Just _, Nothing, Nothing, Nothing) -> tryToDeclare
-                    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+                then withDeductibleTag taxesInput tl lp transactionTags $ do
+                  electricityExpenseDescription <- requireDescription transactionDescription
+                  let Located al account = postingAccount
+                  electricityExpenseAmount <- requireExpensePositive al account
+                  let electricityExpenseTimestamp = timestamp
+                  let Located _ electricityExpenseCurrency = postingCurrency
+                  electricityExpenseCHFAmount <- convertDaily al dailyPriceGraphs day electricityExpenseCurrency taxesReportCHF electricityExpenseAmount
+                  ne <- requireNonEmptyEvidence tl transactionAttachments
+                  electricityExpenseEvidence <- forM ne $ \rf -> do
+                    let fileInTarball = [reldir|expenses/electricity|] </> filename rf
+                    includeFile fileInTarball rf
+                    pure fileInTarball
+                  pure ElectricityExpense {..}
                 else pure Nothing
           else pure []
 
@@ -295,31 +271,19 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
             forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
               let Located _ accountName = postingAccountName
               if accountName == taxesInputPhoneExpensesAccount
-                then do
-                  let mDeductibleTag = M.lookup taxesInputTagDeductible transactionTags
-                  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible transactionTags
-                  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible transactionTags
-                  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible transactionTags
-                  let tryToDeclare = do
-                        phoneExpenseDescription <- requireDescription transactionDescription
-                        let Located al account = postingAccount
-                        phoneExpenseAmount <- requireExpensePositive al account
-                        let phoneExpenseTimestamp = timestamp
-                        let Located _ phoneExpenseCurrency = postingCurrency
-                        phoneExpenseCHFAmount <- convertDaily al dailyPriceGraphs day phoneExpenseCurrency taxesReportCHF phoneExpenseAmount
-                        ne <- requireNonEmptyEvidence tl transactionAttachments
-                        phoneExpenseEvidence <- forM ne $ \rf -> do
-                          let fileInTarball = [reldir|expenses/phone|] </> filename rf
-                          includeFile fileInTarball rf
-                          pure fileInTarball
-                        pure $ Just PhoneExpense {..}
-                  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
-                    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
-                    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
-                    (Nothing, Nothing, Just _, Nothing) -> tryToDeclare
-                    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
-                    (Just _, Nothing, Nothing, Nothing) -> tryToDeclare
-                    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+                then withDeductibleTag taxesInput tl lp transactionTags $ do
+                  phoneExpenseDescription <- requireDescription transactionDescription
+                  let Located al account = postingAccount
+                  phoneExpenseAmount <- requireExpensePositive al account
+                  let phoneExpenseTimestamp = timestamp
+                  let Located _ phoneExpenseCurrency = postingCurrency
+                  phoneExpenseCHFAmount <- convertDaily al dailyPriceGraphs day phoneExpenseCurrency taxesReportCHF phoneExpenseAmount
+                  ne <- requireNonEmptyEvidence tl transactionAttachments
+                  phoneExpenseEvidence <- forM ne $ \rf -> do
+                    let fileInTarball = [reldir|expenses/phone|] </> filename rf
+                    includeFile fileInTarball rf
+                    pure fileInTarball
+                  pure PhoneExpense {..}
                 else pure Nothing
           else pure []
 
@@ -338,31 +302,19 @@ produceTaxesReport TaxesInput {..} ledger@Ledger {..} = do
             forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
               let Located _ accountName = postingAccountName
               if accountName == taxesInputInternetExpensesAccount
-                then do
-                  let mDeductibleTag = M.lookup taxesInputTagDeductible transactionTags
-                  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible transactionTags
-                  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible transactionTags
-                  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible transactionTags
-                  let tryToDeclare = do
-                        internetExpenseDescription <- requireDescription transactionDescription
-                        let Located al account = postingAccount
-                        internetExpenseAmount <- requireExpensePositive al account
-                        let internetExpenseTimestamp = timestamp
-                        let Located _ internetExpenseCurrency = postingCurrency
-                        internetExpenseCHFAmount <- convertDaily al dailyPriceGraphs day internetExpenseCurrency taxesReportCHF internetExpenseAmount
-                        ne <- requireNonEmptyEvidence tl transactionAttachments
-                        internetExpenseEvidence <- forM ne $ \rf -> do
-                          let fileInTarball = [reldir|expenses/internet|] </> filename rf
-                          includeFile fileInTarball rf
-                          pure fileInTarball
-                        pure $ Just InternetExpense {..}
-                  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
-                    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
-                    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
-                    (Nothing, Nothing, Just _, Nothing) -> tryToDeclare
-                    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
-                    (Just _, Nothing, Nothing, Nothing) -> tryToDeclare
-                    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
+                then withDeductibleTag taxesInput tl lp transactionTags $ do
+                  internetExpenseDescription <- requireDescription transactionDescription
+                  let Located al account = postingAccount
+                  internetExpenseAmount <- requireExpensePositive al account
+                  let internetExpenseTimestamp = timestamp
+                  let Located _ internetExpenseCurrency = postingCurrency
+                  internetExpenseCHFAmount <- convertDaily al dailyPriceGraphs day internetExpenseCurrency taxesReportCHF internetExpenseAmount
+                  ne <- requireNonEmptyEvidence tl transactionAttachments
+                  internetExpenseEvidence <- forM ne $ \rf -> do
+                    let fileInTarball = [reldir|expenses/internet|] </> filename rf
+                    includeFile fileInTarball rf
+                    pure fileInTarball
+                  pure InternetExpense {..}
                 else pure Nothing
           else pure []
 
@@ -453,3 +405,23 @@ requireNonEmptyEvidence tl attachments =
   case NE.nonEmpty (V.toList attachments) of
     Nothing -> validationTFailure $ TaxesErrorNoEvidence tl
     Just ne -> forM ne $ \(Located _ (Attachment (Located _ rf))) -> pure rf
+
+withDeductibleTag ::
+  TaxesInput ->
+  ann ->
+  GenLocated ann (Posting ann) ->
+  Map Tag ann ->
+  Reporter (TaxesError ann) a ->
+  Reporter (TaxesError ann) (Maybe a)
+withDeductibleTag TaxesInput {..} tl lp tags continue = do
+  let mDeductibleTag = M.lookup taxesInputTagDeductible tags
+  let mNotDeductibleTag = M.lookup taxesInputTagNotDeductible tags
+  let mTaxDeductibleTag = M.lookup taxesInputTagTaxDeductible tags
+  let mNotTaxDeductibleTag = M.lookup taxesInputTagNotTaxDeductible tags
+  case (mTaxDeductibleTag, mNotTaxDeductibleTag, mDeductibleTag, mNotDeductibleTag) of
+    (Nothing, Nothing, Nothing, Nothing) -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+    (Nothing, Nothing, Nothing, Just _) -> pure Nothing
+    (Nothing, Nothing, Just _, Nothing) -> Just <$> continue
+    (Nothing, Just _, Nothing, Nothing) -> pure Nothing
+    (Just _, Nothing, Nothing, Nothing) -> Just <$> continue
+    _ -> validationTFailure $ TaxesErrorAmbiguousExpenses tl
