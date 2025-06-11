@@ -129,10 +129,8 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
             positiveConverted <- requireAssetPositive al converted
             pure (positive, positiveConverted)
 
-          assetAccountConvertedBalance <-
-            case Amount.sum $ M.map snd assetAccountBalances of
-              Nothing -> validationTFailure TaxesErrorSum
-              Just s -> pure s
+          assetAccountConvertedBalance <- requireSum $ M.map snd assetAccountBalances
+
           -- TODO assert that the balance is positive?
           -- this is checked anyway, we may use this in the type
 
@@ -149,10 +147,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
               pure $ Just AssetAccount {..}
       _ -> pure Nothing
 
-  taxesReportTotalAssets <-
-    case Amount.sum $ map assetAccountConvertedBalance taxesReportAssetAccounts of
-      Nothing -> validationTFailure TaxesErrorSum
-      Just s -> pure s
+  taxesReportTotalAssets <- requireSum $ map assetAccountConvertedBalance taxesReportAssetAccounts
 
   taxesReportRevenues <- fmap concat $
     forM (V.toList ledgerTransactions) $
@@ -196,10 +191,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                     else pure Nothing
           else pure []
 
-  taxesReportTotalRevenues <-
-    case Amount.sum $ map revenueCHFAmount taxesReportRevenues of
-      Nothing -> validationTFailure TaxesErrorSum
-      Just s -> pure s
+  taxesReportTotalRevenues <- requireSum $ map revenueCHFAmount taxesReportRevenues
 
   taxesReportHomeofficeExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
@@ -226,10 +218,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                 else pure Nothing
           else pure []
 
-  taxesReportTotalHomeofficeExpenses <-
-    case Amount.sum $ map homeofficeExpenseCHFAmount taxesReportHomeofficeExpenses of
-      Nothing -> validationTFailure TaxesErrorSum
-      Just s -> pure s
+  taxesReportTotalHomeofficeExpenses <- requireSum $ map homeofficeExpenseCHFAmount taxesReportHomeofficeExpenses
 
   taxesReportElectricityExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
@@ -257,10 +246,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                 else pure Nothing
           else pure []
 
-  taxesReportTotalElectricityExpenses <-
-    case Amount.sum $ map electricityExpenseCHFAmount taxesReportElectricityExpenses of
-      Nothing -> validationTFailure TaxesErrorSum
-      Just s -> pure s
+  taxesReportTotalElectricityExpenses <- requireSum $ map electricityExpenseCHFAmount taxesReportElectricityExpenses
 
   taxesReportPhoneExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
@@ -288,10 +274,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                 else pure Nothing
           else pure []
 
-  taxesReportTotalPhoneExpenses <-
-    case Amount.sum $ map phoneExpenseCHFAmount taxesReportPhoneExpenses of
-      Nothing -> validationTFailure TaxesErrorSum
-      Just s -> pure s
+  taxesReportTotalPhoneExpenses <- requireSum $ map phoneExpenseCHFAmount taxesReportPhoneExpenses
 
   taxesReportTravelExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
@@ -319,10 +302,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                 else pure Nothing
           else pure []
 
-  taxesReportTotalTravelExpenses <-
-    case Amount.sum $ map travelExpenseCHFAmount taxesReportTravelExpenses of
-      Nothing -> validationTFailure TaxesErrorSum
-      Just s -> pure s
+  taxesReportTotalTravelExpenses <- requireSum $ map travelExpenseCHFAmount taxesReportTravelExpenses
 
   taxesReportInternetExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
@@ -350,10 +330,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                 else pure Nothing
           else pure []
 
-  taxesReportTotalInternetExpenses <-
-    case Amount.sum $ map internetExpenseCHFAmount taxesReportInternetExpenses of
-      Nothing -> validationTFailure TaxesErrorSum
-      Just s -> pure s
+  taxesReportTotalInternetExpenses <- requireSum $ map internetExpenseCHFAmount taxesReportInternetExpenses
 
   pure TaxesReport {..}
 
@@ -437,6 +414,12 @@ requireNonEmptyEvidence tl attachments =
   case NE.nonEmpty (V.toList attachments) of
     Nothing -> validationTFailure $ TaxesErrorNoEvidence tl
     Just ne -> forM ne $ \(Located _ (Attachment (Located _ rf))) -> pure rf
+
+requireSum :: (Foldable f) => f Money.Amount -> Reporter (TaxesError ann) Money.Amount
+requireSum amounts =
+  case Amount.sum amounts of
+    Nothing -> validationTFailure TaxesErrorSum
+    Just s -> pure s
 
 withDeductibleTag ::
   TaxesInput ->
