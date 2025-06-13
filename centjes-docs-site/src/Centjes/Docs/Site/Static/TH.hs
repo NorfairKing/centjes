@@ -194,6 +194,7 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                                   assertValidates $
                                     produceRegister
                                       FilterAny
+                                      BlockSizeIndividual
                                       Nothing
                                       False
                                       Nothing

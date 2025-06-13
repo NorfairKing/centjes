@@ -4,6 +4,7 @@
 
 module Centjes.Convert.MemoisedPriceGraph
   ( MemoisedPriceGraph (..),
+    empty,
     fromPriceGraph,
     lookup,
   )
@@ -32,6 +33,9 @@ newtype MemoisedPriceGraph cur = MemoisedPriceGraph {unMemoisedPriceGraph :: Map
   deriving (Show, Generic)
 
 instance (Validity cur, Show cur, Ord cur) => Validity (MemoisedPriceGraph cur)
+
+empty :: MemoisedPriceGraph cur
+empty = MemoisedPriceGraph M.empty
 
 -- TODO: this could be even faster by using the already-computed memoised price
 -- graph when looking up paths, but that would give up laziness in constructing

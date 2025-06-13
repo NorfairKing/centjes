@@ -9,6 +9,11 @@
           description = "Currency to convert to";
           type = lib.types.nullOr lib.types.str;
         };
+        filter = lib.mkOption {
+          default = null;
+          description = "filter";
+          type = lib.types.nullOr lib.types.anything;
+        };
         show-empty = lib.mkOption {
           default = null;
           description = "Show empty balances instead of hiding them";
@@ -46,10 +51,20 @@
     default = { };
     type = lib.types.submodule {
       options = {
+        block = lib.mkOption {
+          default = null;
+          description = "Group transactions";
+          type = lib.types.nullOr lib.types.str;
+        };
         convert = lib.mkOption {
           default = null;
           description = "Currency to convert to";
           type = lib.types.nullOr lib.types.str;
+        };
+        filter = lib.mkOption {
+          default = null;
+          description = "filter";
+          type = lib.types.nullOr lib.types.anything;
         };
         virtual = lib.mkOption {
           default = null;

@@ -1,4 +1,5 @@
-[37m0[m [34m2024-01-01[m [33mTransaction 1[m [37massets[m   [31m-1.00[m [31mUSD[m [31m-1.00[m [31mUSD[m
-                           [37mexpenses[m [32m 1.00[m [32mUSD[m          
-[37m1[m [34m2024-12-31[m [33mTransaction 2[m [37massets[m   [31m-1.00[m [31mUSD[m [31m-1.00[m [31mUSD[m
-                           [37mexpenses[m [32m 1.00[m [32mUSD[m          
+Timestamp  Description   Account  Amount     Running    
+[34m2024-01-01[m [33mTransaction 1[m [37massets[m   [31m-1.00[m  [31mUSD[m [31m-1.00[m   [31mUSD[m
+                         [37mexpenses[m [32m 1.00[m  [32mUSD[m            
+[34m2024-12-31[m [33mTransaction 2[m [37massets[m   [31m-1.00[m  [31mUSD[m [31m-1.00[m   [31mUSD[m
+                         [37mexpenses[m [32m 1.00[m  [32mUSD[m            

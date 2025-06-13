@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.Filter
   ( Filter (..),
@@ -7,6 +8,7 @@ module Centjes.Filter
   )
 where
 
+import Autodocodec
 import Centjes.AccountName (AccountName (..))
 import qualified Centjes.AccountName as AccountName
 import Data.List.NonEmpty (NonEmpty)
@@ -25,23 +27,41 @@ data Filter
 
 instance Validity Filter
 
+instance HasCodec Filter where
+  codec = named "Filter" $ dimapCodec f g $ eitherCodec codec codec
+    where
+      f = \case
+        Left "any" -> FilterAny
+        Left s -> FilterSubstring s
+        Right fs -> FilterOr fs
+      g = \case
+        FilterAny -> Left "any"
+        FilterSubstring s -> Left s
+        FilterOr fs -> Right fs
+
 instance HasParser Filter where
   settingsParser =
-    choice
-      [ FilterOr
-          <$> someNonEmpty
-            ( FilterSubstring
-                <$> setting
-                  [ help "filter",
-                    reader $ eitherReader $ \s -> case s of
-                      '-' : _ -> Left "Filters must not start with a dash"
-                      _ -> Right (T.pack s),
-                    argument,
-                    metavar "FILTER"
-                  ]
-            ),
-        pure FilterAny
-      ]
+    withDefault FilterAny $
+      choice
+        [ FilterOr
+            <$> someNonEmpty
+              ( FilterSubstring
+                  <$> setting
+                    [ help "filter",
+                      reader $ eitherReader $ \s -> case s of
+                        '-' : _ -> Left "Filters must not start with a dash"
+                        _ -> Right (T.pack s),
+                      argument,
+                      metavar "FILTER"
+                    ]
+              ),
+          setting
+            [ help "filter",
+              conf "filter",
+              metavar "FILTER"
+            ],
+          pure FilterAny
+        ]
 
 predicate :: Filter -> (AccountName -> Bool)
 predicate = \case

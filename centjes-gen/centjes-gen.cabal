@@ -176,7 +176,6 @@ extra-source-files:
     test_resources/compile/CE_UNDECLARED_TAG-account.err
     test_resources/compile/CE_UNDECLARED_TAG.cent
     test_resources/compile/CE_UNDECLARED_TAG.err
-    test_resources/documentation.txt
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err
@@ -187,16 +186,41 @@ extra-source-files:
     test_resources/load/LE_IMPORT.err
     test_resources/load/LE_IMPORT_DIR.cent
     test_resources/load/LE_IMPORT_DIR.err
+    test_resources/register/error/block-amount-too-big.cent
+    test_resources/register/error/block-amount-too-big.config
+    test_resources/register/valid/daily.cent
+    test_resources/register/valid/daily.config
+    test_resources/register/valid/daily.txt
     test_resources/register/valid/empty.cent
     test_resources/register/valid/empty.txt
     test_resources/register/valid/example.cent
     test_resources/register/valid/example.txt
+    test_resources/register/valid/gap.cent
+    test_resources/register/valid/gap.txt
+    test_resources/register/valid/monthly.cent
+    test_resources/register/valid/monthly.config
+    test_resources/register/valid/monthly.txt
     test_resources/register/valid/one-year.cent
     test_resources/register/valid/one-year.config
     test_resources/register/valid/one-year.txt
+    test_resources/register/valid/open-ended.cent
+    test_resources/register/valid/open-ended.config
+    test_resources/register/valid/open-ended.txt
+    test_resources/register/valid/quarterly.cent
+    test_resources/register/valid/quarterly.config
+    test_resources/register/valid/quarterly.txt
     test_resources/register/valid/rates.cent
     test_resources/register/valid/rates.config
     test_resources/register/valid/rates.txt
+    test_resources/register/valid/virtual.cent
+    test_resources/register/valid/virtual.config
+    test_resources/register/valid/virtual.txt
+    test_resources/register/valid/weekly.cent
+    test_resources/register/valid/weekly.config
+    test_resources/register/valid/weekly.txt
+    test_resources/register/valid/yearly.cent
+    test_resources/register/valid/yearly.config
+    test_resources/register/valid/yearly.txt
     test_resources/syntax/declaration/formatted/account-with-assertions.cent
     test_resources/syntax/declaration/formatted/account-with-attachment.cent
     test_resources/syntax/declaration/formatted/account-with-tag.cent
@@ -271,7 +295,6 @@ extra-source-files:
     test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
     test_resources/syntax/transaction/valid/with-tag.cent
-    options.nix
 
 source-repository head
   type: git
@@ -281,6 +304,7 @@ library
   exposed-modules:
       Centjes.AccountName.Gen
       Centjes.AccountType.Gen
+      Centjes.Block.Gen
       Centjes.Convert.PriceGraph.Gen
       Centjes.CurrencySymbol.Gen
       Centjes.Description.Gen
@@ -335,7 +359,6 @@ test-suite centjes-test
       Centjes.LedgerSpec
       Centjes.LoadSpec
       Centjes.ModuleSpec
-      Centjes.OptParseSpec
       Centjes.ParseSpec
       Centjes.Report.BalanceSpec
       Centjes.Report.CheckSpec
@@ -362,7 +385,6 @@ test-suite centjes-test
     , monad-logger
     , mtl
     , opt-env-conf
-    , opt-env-conf-test
     , path
     , path-io
     , really-safe-money

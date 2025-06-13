@@ -323,6 +323,7 @@ checkLedger l = do
     mapValidationFailure CheckErrorRegisterError $
       produceRegister
         FilterAny
+        BlockSizeIndividual
         Nothing
         False
         Nothing

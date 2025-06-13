@@ -4,7 +4,6 @@ github: "NorfairKing/centjes"
 
 extra-source-files:
 - test_resources/**/*
-- options.nix
 
 dependencies:
 - base >= 4.7 && < 5
@@ -51,7 +50,6 @@ tests:
     - monad-logger
     - mtl
     - opt-env-conf
-    - opt-env-conf-test
     - path
     - path-io
     - really-safe-money

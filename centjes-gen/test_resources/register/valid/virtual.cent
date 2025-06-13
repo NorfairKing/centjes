@@ -3,13 +3,15 @@ currency USD 0.01
 account equity
 account assets
 account expenses
+account expenses:VAT
 
-2023-12-16
+2023-12-21
   | opening
   * equity -1 USD
   * assets +1 USD
 
 2023-12-17
   | Coffee
-  * assets   -1 USD
-  * expenses +1 USD
+  * assets       -1 USD
+  * expenses     +1 USD
+  ! expenses:VAT +1 USD

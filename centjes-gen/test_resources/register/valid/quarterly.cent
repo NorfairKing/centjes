@@ -1,0 +1,25 @@
+currency USD 0.01
+
+account equity
+account assets
+account expenses
+
+2025-09-01
+  | Opening balances
+  * equity -100 USD
+  * assets +100 USD
+
+2025-09-01
+  | Transaction 1
+  * assets   -1 USD
+  * expenses +1 USD
+
+2025-09-02
+  | Transaction 2
+  * assets   -1 USD
+  * expenses +1 USD
+
+2025-10-01
+  | Transaction 3
+  * assets   -1 USD
+  * expenses +1 USD

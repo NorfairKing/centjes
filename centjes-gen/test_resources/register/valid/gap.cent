@@ -6,10 +6,15 @@ account expenses
 
 2023-12-16
   | opening
-  * equity -1 USD
-  * assets +1 USD
+  * equity -10 USD
+  * assets +10 USD
 
 2023-12-17
+  | Coffee
+  * assets   -1 USD
+  * expenses +1 USD
+
+2024-12-17
   | Coffee
   * assets   -1 USD
   * expenses +1 USD

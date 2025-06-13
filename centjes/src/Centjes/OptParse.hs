@@ -10,6 +10,7 @@ module Centjes.OptParse where
 import Autodocodec
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Filter (Filter)
+import Centjes.Report.Register
 import Control.Applicative
 import Control.Monad.Logger
 import qualified Data.Text as T
@@ -136,6 +137,7 @@ parseCheckSettings = pure CheckSettings
 
 data RegisterSettings = RegisterSettings
   { registerSettingFilter :: !Filter,
+    registerSettingBlockSize :: !BlockSize,
     registerSettingCurrency :: !(Maybe CurrencySymbol),
     registerSettingShowVirtual :: !Bool,
     registerSettingBegin :: !(Maybe Day),
@@ -159,6 +161,7 @@ parseRegisterSettings = subConfig_ "register" $ do
           conf "convert",
           metavar "CURRENCY"
         ]
+  registerSettingBlockSize <- settingsParser
   registerSettingShowVirtual <-
     setting
       [ help "Show virtual postings too",

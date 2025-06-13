@@ -5,12 +5,17 @@ account equity
 account assets
 account expenses
 
-price 2024-03-07 CHF 1 USD
+2024-03-07
+  | Opening
+  * equity +100 USD
+  * assets -100 USD
+
+price 2024-03-08 CHF 1 USD
 
 2024-03-08
   | Rate: 1
-  * equity -100 USD
-  * assets +100 USD
+  * assets   -1 USD
+  * expenses +1 USD
 
 2024-03-09
   | Rate: 2

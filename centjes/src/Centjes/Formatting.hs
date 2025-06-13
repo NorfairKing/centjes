@@ -73,8 +73,14 @@ hCatTable = \case
     zipChunks col $ hCatTable restCols
   where
     zipChunks :: [[Chunk]] -> [[Chunk]] -> [[Chunk]]
-    zipChunks rows1 rows2 = case (rows1, rows2) of
-      ([], []) -> []
-      (_ : _, []) -> rows1
-      ([], _ : _) -> map (chunk " " :) rows2
-      (row1 : restRows1, row2 : restRows2) -> (row1 ++ row2) : zipChunks restRows1 restRows2
+    zipChunks r1 r2 = go (r1, r2)
+      where
+        width :: [[Chunk]] -> Max Int
+        width = foldMap (Max . length)
+        Max w1 = width r1
+        Max w2 = width r2
+        go = \case
+          ([], []) -> []
+          (rows1@(_ : _), []) -> map (++ replicate w2 (chunk " ")) rows1
+          ([], rows2@(_ : _)) -> map (replicate w1 (chunk " ") ++) rows2
+          (row1 : restRows1, row2 : restRows2) -> (row1 ++ row2) : go (restRows1, restRows2)

@@ -12,7 +12,6 @@ module Centjes.Convert
     convertMultiAccount,
     convertMultiAccountToAccount,
     lookupConversionRate,
-    LatestPriceGraph,
     pricesToMemoisedPriceGraph,
     pricesToPriceGraph,
     pricesToDailyPriceGraphs,
@@ -139,8 +138,6 @@ lookupConversionRate al graph currencyTo currencyFrom = do
   case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
     Nothing -> validationFailure $ ConvertErrorMissingPrice al currencyFrom currencyTo
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
-
-type LatestPriceGraph = PriceGraph Day
 
 pricesToMemoisedPriceGraph ::
   (Ord ann) =>

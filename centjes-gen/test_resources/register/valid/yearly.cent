@@ -1,0 +1,25 @@
+currency USD 0.01
+
+account equity
+account assets
+account expenses
+
+2023-12-31
+  | Opening balances
+  * equity -100 USD
+  * assets +100 USD
+
+2024-01-01
+  | Transaction 1
+  * assets   -1 USD
+  * expenses +1 USD
+
+2024-12-31
+  | Transaction 2
+  * assets   -1 USD
+  * expenses +1 USD
+
+2025-01-01
+  | Transaction 3
+  * assets   -1 USD
+  * expenses +1 USD
