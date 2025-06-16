@@ -193,6 +193,34 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportTotalRevenues <- requireSum $ map revenueCHFAmount taxesReportRevenues
 
+  taxesReportThirdPillarContributions <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInYear taxesReportYear day
+          then fmap catMaybes $
+            forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
+              let Located _ accountName = postingAccountName
+              if accountName == taxesInputThirdPillarInsuranceExpensesAccount || accountName == taxesInputThirdPillarAssetsAccount
+                then withDeductibleTag taxesInput tl lp transactionTags $ do
+                  thirdPillarContributionDescription <- requireDescription transactionDescription
+                  let Located al account = postingAccount
+                  thirdPillarContributionAmount <- requireExpensePositive al account
+                  let thirdPillarContributionTimestamp = timestamp
+                  let Located _ thirdPillarContributionCurrency = postingCurrency
+                  thirdPillarContributionCHFAmount <- convertDaily al dailyPriceGraphs day thirdPillarContributionCurrency taxesReportCHF thirdPillarContributionAmount
+                  ne <- requireNonEmptyEvidence tl transactionAttachments
+                  thirdPillarContributionEvidence <- forM ne $ \rf -> do
+                    let fileInTarball = [reldir|third-pillar|] </> filename rf
+                    includeFile fileInTarball rf
+                    pure fileInTarball
+                  pure ThirdPillarContribution {..}
+                else pure Nothing
+          else pure []
+
+  taxesReportTotalThirdPillarContributions <- requireSum $ map thirdPillarContributionCHFAmount taxesReportThirdPillarContributions
+
   taxesReportHomeofficeExpenses <- fmap concat $
     forM (V.toList ledgerTransactions) $
       \(Located tl Transaction {..}) -> do

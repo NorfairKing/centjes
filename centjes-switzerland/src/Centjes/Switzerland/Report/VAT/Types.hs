@@ -169,14 +169,14 @@ parseVATInput = do
       [ help "Account name of your the VAT you've charged",
         reader $ eitherReader AccountName.fromStringOrError,
         conf "vat-income-account",
-        value "income:vat"
+        value "income:VAT"
       ]
   vatInputVATExpensesAccountName <-
     setting
       [ help "Account name of your the VAT you've paid",
         reader $ eitherReader AccountName.fromStringOrError,
         conf "vat-expenses-account",
-        value "expenses:vat"
+        value "expenses:VAT"
       ]
 
   pure VATInput {..}

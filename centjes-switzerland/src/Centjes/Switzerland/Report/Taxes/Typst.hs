@@ -77,6 +77,13 @@ taxesReportInput TaxesReport {..} =
             inputRevenueEvidence = revenueEvidence
          in RevenueInput {..}
       inputTotalAssets = formatChfAmount taxesReportTotalAssets
+      inputThirdPillarContributions = flip map taxesReportThirdPillarContributions $ \ThirdPillarContribution {..} ->
+        let inputThirdPillarContributionDay = Timestamp.toDay thirdPillarContributionTimestamp
+            inputThirdPillarContributionDescription = Description.toText thirdPillarContributionDescription
+            inputThirdPillarContributionCHFAmount = formatChfAmount thirdPillarContributionCHFAmount
+            inputThirdPillarContributionEvidence = thirdPillarContributionEvidence
+         in ThirdPillarContributionInput {..}
+      inputTotalThirdPillarContributions = formatChfAmount taxesReportTotalThirdPillarContributions
       inputHomeofficeExpenses = flip map taxesReportHomeofficeExpenses $ \HomeofficeExpense {..} ->
         let inputHomeofficeExpenseDay = Timestamp.toDay homeofficeExpenseTimestamp
             inputHomeofficeExpenseDescription = Description.toText homeofficeExpenseDescription
@@ -150,6 +157,8 @@ data Input = Input
     inputTotalAssets :: !FormattedAmount,
     inputRevenues :: ![RevenueInput],
     inputTotalRevenues :: !FormattedAmount,
+    inputThirdPillarContributions :: ![ThirdPillarContributionInput],
+    inputTotalThirdPillarContributions :: !FormattedAmount,
     inputHomeofficeExpenses :: ![HomeofficeExpenseInput],
     inputTotalHomeofficeExpenses :: !FormattedAmount,
     inputElectricityExpenses :: ![ElectricityExpenseInput],
@@ -183,6 +192,10 @@ instance HasCodec Input where
           .= inputRevenues
         <*> requiredField "total_revenues" "total revenues"
           .= inputTotalRevenues
+        <*> requiredField "third_pillar_contributions" "third pillar contributions"
+          .= inputThirdPillarContributions
+        <*> requiredField "total_third_pillar_contributions" "total third pillar contributions"
+          .= inputTotalThirdPillarContributions
         <*> requiredField "homeoffice_expenses" "homeoffice expenses"
           .= inputHomeofficeExpenses
         <*> requiredField "total_homeoffice_expenses" "total homeoffice expenses"
@@ -258,6 +271,26 @@ instance HasCodec RevenueInput where
           .= inputRevenueCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputRevenueEvidence
+
+data ThirdPillarContributionInput = ThirdPillarContributionInput
+  { inputThirdPillarContributionDay :: !Day,
+    inputThirdPillarContributionDescription :: !Text,
+    inputThirdPillarContributionCHFAmount :: !FormattedAmount,
+    inputThirdPillarContributionEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec ThirdPillarContributionInput where
+  codec =
+    object "ThirdPillarContributionInput" $
+      ThirdPillarContributionInput
+        <$> requiredField "day" "day of homeofficeexpense"
+          .= inputThirdPillarContributionDay
+        <*> requiredField "description" "description of homeofficeexpense"
+          .= inputThirdPillarContributionDescription
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputThirdPillarContributionCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputThirdPillarContributionEvidence
 
 data HomeofficeExpenseInput = HomeofficeExpenseInput
   { inputHomeofficeExpenseDay :: !Day,

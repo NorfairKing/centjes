@@ -34,6 +34,19 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 == Deductions
 
+=== Third pillar
+
+#table(
+  stroke: 0.5pt, columns: (auto, 1fr, auto), align: (left, left, right), ..input.third_pillar_contributions.map(expense =>
+  (expense.day, [
+    #{ expense.description }
+    #for evidence in expense.evidence [
+      #linebreak()
+      #link(evidence, evidence)
+    ]
+  ], [ #{ expense.amount_chf } CHF ],)).flatten(), text(weight: "bold", [Total]), [], [#text(weight: "bold", input.total_third_pillar_contributions) CHF],
+)
+
 === Self-employment
 
 ==== Abschreibungen
