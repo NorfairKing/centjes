@@ -144,6 +144,18 @@ taxesReportInput TaxesReport {..} =
             inputInternetExpenseEvidence = internetExpenseEvidence
          in InternetExpenseInput {..}
       inputTotalInternetExpenses = formatChfAmount taxesReportTotalInternetExpenses
+      inputHealthExpenses = flip map taxesReportHealthExpenses $ \HealthExpense {..} ->
+        let inputHealthExpenseDay = Timestamp.toDay healthExpenseTimestamp
+            inputHealthExpenseDescription = Description.toText healthExpenseDescription
+            inputHealthExpenseAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount healthExpenseCurrency healthExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol healthExpenseCurrency
+                }
+            inputHealthExpenseCHFAmount = formatChfAmount healthExpenseCHFAmount
+            inputHealthExpenseEvidence = healthExpenseEvidence
+         in HealthExpenseInput {..}
+      inputTotalHealthExpenses = formatChfAmount taxesReportTotalHealthExpenses
    in Input {..}
 
 -- Note that this is a separate type from the ETax 'XMLReport' because there
@@ -168,7 +180,9 @@ data Input = Input
     inputTravelExpenses :: ![TravelExpenseInput],
     inputTotalTravelExpenses :: !FormattedAmount,
     inputInternetExpenses :: ![InternetExpenseInput],
-    inputTotalInternetExpenses :: !FormattedAmount
+    inputTotalInternetExpenses :: !FormattedAmount,
+    inputHealthExpenses :: ![HealthExpenseInput],
+    inputTotalHealthExpenses :: !FormattedAmount
   }
   deriving (ToJSON) via (Autodocodec Input)
 
@@ -216,6 +230,10 @@ instance HasCodec Input where
           .= inputInternetExpenses
         <*> requiredField "total_internet_expenses" "total internet expenses"
           .= inputTotalInternetExpenses
+        <*> requiredField "health_expenses" "health insurance expenses"
+          .= inputHealthExpenses
+        <*> requiredField "total_health_expenses" "total health insurance expenses"
+          .= inputTotalHealthExpenses
 
 data AssetInput = AssetInput
   { assetInputAccountName :: !AccountName,
@@ -406,6 +424,29 @@ instance HasCodec InternetExpenseInput where
           .= inputInternetExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputInternetExpenseEvidence
+
+data HealthExpenseInput = HealthExpenseInput
+  { inputHealthExpenseDay :: !Day,
+    inputHealthExpenseDescription :: !Text,
+    inputHealthExpenseAmount :: !AmountWithCurrency,
+    inputHealthExpenseCHFAmount :: !FormattedAmount,
+    inputHealthExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec HealthExpenseInput where
+  codec =
+    object "HealthExpenseInput" $
+      HealthExpenseInput
+        <$> requiredField "day" "day of homeofficeexpense"
+          .= inputHealthExpenseDay
+        <*> requiredField "description" "description of homeofficeexpense"
+          .= inputHealthExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputHealthExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputHealthExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputHealthExpenseEvidence
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: FormattedAmount,

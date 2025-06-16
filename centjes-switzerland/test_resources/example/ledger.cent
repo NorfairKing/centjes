@@ -9,11 +9,11 @@ account assets:bank
 account expenses:bank
 account expenses:coffee
 account expenses:hardware
-account expenses:vat
+account expenses:VAT
 account income:domestic
 account income:exports
 account income:foreign
-account income:vat
+account income:VAT
 
 tag deductible
 tag not-deductible
@@ -27,7 +27,7 @@ tag not-deductible
   | Computer
   * assets:bank -5000 CHF
   * expenses:hardware 5000 CHF
-  ! expenses:vat 357.47 CHF ~ 7.7%
+  ! expenses:VAT 357.47 CHF ~ 7.7%
   + attach receipt-computer.txt
   + tag deductible
 
@@ -35,7 +35,7 @@ tag not-deductible
   | Coffee
   * assets:bank -5 CHF
   * expenses:coffee 5 CHF
-  ! expenses:vat 0.36 CHF ~ 7.7%
+  ! expenses:VAT 0.36 CHF ~ 7.7%
   + attach receipt-coffee.txt
   + tag not-deductible
 
@@ -50,7 +50,7 @@ tag not-deductible
   * assets:bank -5.5 CHF
   * expenses:bank 0.5 CHF
   * expenses:coffee 5 CHF
-  ! expenses:vat 0.37 CHF ~ 8.1%
+  ! expenses:VAT 0.37 CHF ~ 8.1%
   + attach receipt-coffee.txt
   + tag deductible
 
@@ -60,7 +60,7 @@ price 2024-01-07 USD 0.8589 CHF
   | Foobar Dec
   * assets:bank 1000 CHF
   * income:domestic -1000 CHF
-  ! income:vat -71.49 CHF ~ 7.7 %
+  ! income:VAT -71.49 CHF ~ 7.7 %
   + attach foobar-dec.txt
 
 2024-01-07
@@ -74,7 +74,7 @@ price 2024-01-07 USD 0.8589 CHF
   | Foobar Jan
   * assets:bank 1000 CHF
   * income:domestic -1000 CHF
-  ! income:vat -74.93 CHF ~ 8.1 %
+  ! income:VAT -74.93 CHF ~ 8.1 %
   + attach foobar-jan.txt
 
 2024-02-07
@@ -88,7 +88,7 @@ price 2024-01-07 USD 0.8589 CHF
   | Foobar Feb
   * assets:bank 1000 CHF
   * income:domestic -1000 CHF
-  ! income:vat -74.93 CHF ~ 8.1 %
+  ! income:VAT -74.93 CHF ~ 8.1 %
   + attach foobar-feb.txt
 
 2024-03-07

@@ -360,6 +360,34 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportTotalInternetExpenses <- requireSum $ map internetExpenseCHFAmount taxesReportInternetExpenses
 
+  taxesReportHealthExpenses <- fmap concat $
+    forM (V.toList ledgerTransactions) $
+      \(Located tl Transaction {..}) -> do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        if dayInYear taxesReportYear day
+          then fmap catMaybes $
+            forM (V.toList transactionPostings) $ \lp@(Located _ Posting {..}) -> do
+              let Located _ accountName = postingAccountName
+              if accountName == taxesInputHealthExpensesAccount
+                then withDeductibleTag taxesInput tl lp transactionTags $ do
+                  healthExpenseDescription <- requireDescription transactionDescription
+                  let Located al account = postingAccount
+                  healthExpenseAmount <- requireExpensePositive al account
+                  let healthExpenseTimestamp = timestamp
+                  let Located _ healthExpenseCurrency = postingCurrency
+                  healthExpenseCHFAmount <- convertDaily al dailyPriceGraphs day healthExpenseCurrency taxesReportCHF healthExpenseAmount
+                  ne <- requireNonEmptyEvidence tl transactionAttachments
+                  healthExpenseEvidence <- forM ne $ \rf -> do
+                    let fileInTarball = [reldir|expenses/health-insurance|] </> filename rf
+                    includeFile fileInTarball rf
+                    pure fileInTarball
+                  pure HealthExpense {..}
+                else pure Nothing
+          else pure []
+
+  taxesReportTotalHealthExpenses <- requireSum $ map healthExpenseCHFAmount taxesReportHealthExpenses
+
   pure TaxesReport {..}
 
 dayInYear :: Integer -> Day -> Bool

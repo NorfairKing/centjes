@@ -105,6 +105,18 @@
         [33m<string>[m
     default: [33m"not-tax-deductible"[m
     
+    [34mthe account to use for third pillar assets[m
+    config:
+      [37mthird-pillar-assets-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:third-pillar"[m
+    
+    [34mthe account to use for third pillar insurance expenses[m
+    config:
+      [37mthird-pillar-insurance-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:insurance:third-pillar"[m
+    
     [34mthe account to use for homeoffice expenses[m
     config:
       [37mhomeoffice-expenses-account[m: # [32mor null[m
@@ -134,6 +146,12 @@
       [37minternet-expenses-account[m: # [32mor null[m
         [33m<string>[m
     default: [33m"expenses:internet:homeoffice"[m
+    
+    [34mthe account to use for health insurance expenses[m
+    config:
+      [37mhealth-insurance-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health"[m
     
     [34mPath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
@@ -232,13 +250,13 @@
     config:
       [37mvat-income-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"income:vat"[m
+    default: [33m"income:VAT"[m
     
     [34mAccount name of your the VAT you've paid[m
     config:
       [37mvat-expenses-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:vat"[m
+    default: [33m"expenses:VAT"[m
     
     [34mpath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
@@ -363,6 +381,16 @@
   [37mtag-not-tax-deductible[m:
     # [32mor null[m
     [33m<string>[m
+  [34mthe account to use for third pillar assets[m
+  default: [33m"assets:third-pillar"[m
+  [37mthird-pillar-assets-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for third pillar insurance expenses[m
+  default: [33m"expenses:insurance:third-pillar"[m
+  [37mthird-pillar-insurance-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mthe account to use for homeoffice expenses[m
   default: [33m"expenses:rent:homeoffice"[m
   [37mhomeoffice-expenses-account[m:
@@ -386,6 +414,11 @@
   [34mthe account to use for internet expenses[m
   default: [33m"expenses:internet:homeoffice"[m
   [37minternet-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for health insurance expenses[m
+  default: [33m"expenses:health"[m
+  [37mhealth-insurance-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mPath to the zip file to create[m
@@ -459,12 +492,12 @@
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your the VAT you've charged[m
-  default: [33m"income:vat"[m
+  default: [33m"income:VAT"[m
   [37mvat-income-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mAccount name of your the VAT you've paid[m
-  default: [33m"expenses:vat"[m
+  default: [33m"expenses:VAT"[m
   [37mvat-expenses-account[m:
     # [32mor null[m
     [33m<string>[m

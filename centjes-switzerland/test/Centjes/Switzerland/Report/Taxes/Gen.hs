@@ -27,6 +27,10 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         pure $ tr {taxesReportTotalRevenues = totalRevenues}
                     )
       `suchThatMap` ( \tr -> do
+                        totalThirdPillarContributions <- Amount.sum (map thirdPillarContributionCHFAmount (taxesReportThirdPillarContributions tr))
+                        pure $ tr {taxesReportTotalThirdPillarContributions = totalThirdPillarContributions}
+                    )
+      `suchThatMap` ( \tr -> do
                         totalHomeofficeExpenses <- Amount.sum (map homeofficeExpenseAmount (taxesReportHomeofficeExpenses tr))
                         pure $ tr {taxesReportTotalHomeofficeExpenses = totalHomeofficeExpenses}
                     )
@@ -45,6 +49,10 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
       `suchThatMap` ( \tr -> do
                         totalInternetExpenses <- Amount.sum (map internetExpenseAmount (taxesReportInternetExpenses tr))
                         pure $ tr {taxesReportTotalInternetExpenses = totalInternetExpenses}
+                    )
+      `suchThatMap` ( \tr -> do
+                        totalHealthExpenses <- Amount.sum (map healthExpenseAmount (taxesReportHealthExpenses tr))
+                        pure $ tr {taxesReportTotalHealthExpenses = totalHealthExpenses}
                     )
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (AssetAccount ann) where
@@ -74,6 +82,17 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (Revenue ann) where
       r
         { revenueAmount = amount,
           revenueCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (ThirdPillarContribution ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { thirdPillarContributionCHFAmount = chfAmount
         }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (HomeofficeExpense ann) where
@@ -139,4 +158,17 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (InternetExpense ann) whe
       r
         { internetExpenseAmount = amount,
           internetExpenseCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (HealthExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { healthExpenseAmount = amount,
+          healthExpenseCHFAmount = chfAmount
         }

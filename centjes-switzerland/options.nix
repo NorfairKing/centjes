@@ -62,6 +62,11 @@
     description = "Account name of your foreign income";
     type = lib.types.nullOr lib.types.str;
   };
+  health-insurance-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for health insurance expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   homeoffice-expenses-account = lib.mkOption {
     default = null;
     description = "the account to use for homeoffice expenses";
@@ -158,6 +163,16 @@
         };
       };
     };
+  };
+  third-pillar-assets-account = lib.mkOption {
+    default = null;
+    description = "the account to use for third pillar assets";
+    type = lib.types.nullOr lib.types.str;
+  };
+  third-pillar-insurance-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for third pillar insurance expenses";
+    type = lib.types.nullOr lib.types.str;
   };
   travel-expenses-account = lib.mkOption {
     default = null;

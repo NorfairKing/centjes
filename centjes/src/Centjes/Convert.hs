@@ -137,7 +137,7 @@ lookupConversionRate ::
   Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
 lookupConversionRate al graph currencyTo currencyFrom = do
   case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
-    Nothing -> validationFailure $ ConvertErrorMissingPrice al currencyTo currencyFrom
+    Nothing -> validationFailure $ ConvertErrorMissingPrice al currencyFrom currencyTo
     Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
 
 type LatestPriceGraph = PriceGraph Day

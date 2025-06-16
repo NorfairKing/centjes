@@ -18,6 +18,7 @@ module Centjes.Switzerland.Report.Taxes.Types
     PhoneExpense (..),
     TravelExpense (..),
     InternetExpense (..),
+    HealthExpense (..),
     TaxesError (..),
   )
 where
@@ -68,7 +69,8 @@ data TaxesInput = TaxesInput
     taxesInputElectricityExpensesAccount :: !AccountName,
     taxesInputPhoneExpensesAccount :: !AccountName,
     taxesInputTravelExpensesAccount :: !AccountName,
-    taxesInputInternetExpensesAccount :: !AccountName
+    taxesInputInternetExpensesAccount :: !AccountName,
+    taxesInputHealthExpensesAccount :: !AccountName
   }
   deriving (Show, Generic)
 
@@ -192,6 +194,13 @@ parseTaxesInput = do
         conf "internet-expenses-account",
         value "expenses:internet:homeoffice"
       ]
+  taxesInputHealthExpensesAccount <-
+    setting
+      [ help "the account to use for health insurance expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "health-insurance-expenses-account",
+        value "expenses:health"
+      ]
   pure TaxesInput {..}
 
 -- | The information we need to produce Taxes reports like the pdfs, zip files,
@@ -218,7 +227,9 @@ data TaxesReport ann = TaxesReport
     taxesReportTravelExpenses :: ![TravelExpense ann],
     taxesReportTotalTravelExpenses :: !Money.Amount,
     taxesReportInternetExpenses :: ![InternetExpense ann],
-    taxesReportTotalInternetExpenses :: !Money.Amount
+    taxesReportTotalInternetExpenses :: !Money.Amount,
+    taxesReportHealthExpenses :: ![HealthExpense ann],
+    taxesReportTotalHealthExpenses :: !Money.Amount
   }
   deriving (Show, Generic)
 
@@ -241,7 +252,9 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
         declare "the travel costs sum to the total travel costs" $
           Amount.sum (map travelExpenseAmount taxesReportTravelExpenses) == Just taxesReportTotalTravelExpenses,
         declare "the internet costs sum to the total internet costs" $
-          Amount.sum (map internetExpenseAmount taxesReportInternetExpenses) == Just taxesReportTotalInternetExpenses
+          Amount.sum (map internetExpenseAmount taxesReportInternetExpenses) == Just taxesReportTotalInternetExpenses,
+        declare "the health insurance costs sum to the total health insurance costs" $
+          Amount.sum (map healthExpenseAmount taxesReportHealthExpenses) == Just taxesReportTotalHealthExpenses
       ]
 
 data AssetAccount ann = AssetAccount
@@ -253,6 +266,108 @@ data AssetAccount ann = AssetAccount
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (AssetAccount ann)
+
+data Revenue ann = Revenue
+  { revenueTimestamp :: !Timestamp,
+    revenueDescription :: !Description,
+    revenueAmount :: !Money.Amount,
+    revenueCurrency :: !(Currency ann),
+    revenueCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    revenueEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (Revenue ann)
+
+data ThirdPillarContribution ann = ThirdPillarContribution
+  { thirdPillarContributionTimestamp :: !Timestamp,
+    thirdPillarContributionDescription :: !Description,
+    thirdPillarContributionCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    thirdPillarContributionEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (ThirdPillarContribution ann)
+
+data HomeofficeExpense ann = HomeofficeExpense
+  { homeofficeExpenseTimestamp :: !Timestamp,
+    homeofficeExpenseDescription :: !Description,
+    homeofficeExpenseAmount :: !Money.Amount,
+    homeofficeExpenseCurrency :: !(Currency ann),
+    homeofficeExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    homeofficeExpenseEvidence :: ![Path Rel File]
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (HomeofficeExpense ann)
+
+data ElectricityExpense ann = ElectricityExpense
+  { electricityExpenseTimestamp :: !Timestamp,
+    electricityExpenseDescription :: !Description,
+    electricityExpenseAmount :: !Money.Amount,
+    electricityExpenseCurrency :: !(Currency ann),
+    electricityExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    electricityExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (ElectricityExpense ann)
+
+data PhoneExpense ann = PhoneExpense
+  { phoneExpenseTimestamp :: !Timestamp,
+    phoneExpenseDescription :: !Description,
+    phoneExpenseAmount :: !Money.Amount,
+    phoneExpenseCurrency :: !(Currency ann),
+    phoneExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    phoneExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (PhoneExpense ann)
+
+data TravelExpense ann = TravelExpense
+  { travelExpenseTimestamp :: !Timestamp,
+    travelExpenseDescription :: !Description,
+    travelExpenseAmount :: !Money.Amount,
+    travelExpenseCurrency :: !(Currency ann),
+    travelExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    travelExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (TravelExpense ann)
+
+data InternetExpense ann = InternetExpense
+  { internetExpenseTimestamp :: !Timestamp,
+    internetExpenseDescription :: !Description,
+    internetExpenseAmount :: !Money.Amount,
+    internetExpenseCurrency :: !(Currency ann),
+    internetExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    internetExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (InternetExpense ann)
+
+data HealthExpense ann = HealthExpense
+  { healthExpenseTimestamp :: !Timestamp,
+    healthExpenseDescription :: !Description,
+    healthExpenseAmount :: !Money.Amount,
+    healthExpenseCurrency :: !(Currency ann),
+    healthExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    healthExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (HealthExpense ann)
 
 data TaxesError ann
   = TaxesErrorNoCHF
@@ -403,92 +518,3 @@ instance ToReport (TaxesError SourceSpan) where
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
-
-data Revenue ann = Revenue
-  { revenueTimestamp :: !Timestamp,
-    revenueDescription :: !Description,
-    revenueAmount :: !Money.Amount,
-    revenueCurrency :: !(Currency ann),
-    revenueCHFAmount :: !Money.Amount,
-    -- | Evidence in tarball
-    revenueEvidence :: !(NonEmpty (Path Rel File))
-  }
-  deriving (Show, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (Revenue ann)
-
-data ThirdPillarContribution ann = ThirdPillarContribution
-  { thirdPillarContributionTimestamp :: !Timestamp,
-    thirdPillarContributionDescription :: !Description,
-    thirdPillarContributionCHFAmount :: !Money.Amount,
-    -- | Evidence in tarball
-    thirdPillarContributionEvidence :: !(NonEmpty (Path Rel File))
-  }
-  deriving (Show, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (ThirdPillarContribution ann)
-
-data HomeofficeExpense ann = HomeofficeExpense
-  { homeofficeExpenseTimestamp :: !Timestamp,
-    homeofficeExpenseDescription :: !Description,
-    homeofficeExpenseAmount :: !Money.Amount,
-    homeofficeExpenseCurrency :: !(Currency ann),
-    homeofficeExpenseCHFAmount :: !Money.Amount,
-    -- | Evidence in tarball
-    homeofficeExpenseEvidence :: ![Path Rel File]
-  }
-  deriving (Show, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (HomeofficeExpense ann)
-
-data ElectricityExpense ann = ElectricityExpense
-  { electricityExpenseTimestamp :: !Timestamp,
-    electricityExpenseDescription :: !Description,
-    electricityExpenseAmount :: !Money.Amount,
-    electricityExpenseCurrency :: !(Currency ann),
-    electricityExpenseCHFAmount :: !Money.Amount,
-    -- | Evidence in tarball
-    electricityExpenseEvidence :: !(NonEmpty (Path Rel File))
-  }
-  deriving (Show, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (ElectricityExpense ann)
-
-data PhoneExpense ann = PhoneExpense
-  { phoneExpenseTimestamp :: !Timestamp,
-    phoneExpenseDescription :: !Description,
-    phoneExpenseAmount :: !Money.Amount,
-    phoneExpenseCurrency :: !(Currency ann),
-    phoneExpenseCHFAmount :: !Money.Amount,
-    -- | Evidence in tarball
-    phoneExpenseEvidence :: !(NonEmpty (Path Rel File))
-  }
-  deriving (Show, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (PhoneExpense ann)
-
-data TravelExpense ann = TravelExpense
-  { travelExpenseTimestamp :: !Timestamp,
-    travelExpenseDescription :: !Description,
-    travelExpenseAmount :: !Money.Amount,
-    travelExpenseCurrency :: !(Currency ann),
-    travelExpenseCHFAmount :: !Money.Amount,
-    -- | Evidence in tarball
-    travelExpenseEvidence :: !(NonEmpty (Path Rel File))
-  }
-  deriving (Show, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (TravelExpense ann)
-
-data InternetExpense ann = InternetExpense
-  { internetExpenseTimestamp :: !Timestamp,
-    internetExpenseDescription :: !Description,
-    internetExpenseAmount :: !Money.Amount,
-    internetExpenseCurrency :: !(Currency ann),
-    internetExpenseCHFAmount :: !Money.Amount,
-    -- | Evidence in tarball
-    internetExpenseEvidence :: !(NonEmpty (Path Rel File))
-  }
-  deriving (Show, Generic)
-
-instance (Validity ann, Show ann, Ord ann) => Validity (InternetExpense ann)
