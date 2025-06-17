@@ -117,6 +117,18 @@
         [33m<string>[m
     default: [33m"expenses:insurance:third-pillar"[m
     
+    [34mthe account to use for accident insurance expenses[m
+    config:
+      [37maccident-insurance-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:insurance:accident"[m
+    
+    [34mthe account to use for daily allowance insurance expenses[m
+    config:
+      [37mdaily-allowance-insurance-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:insurance:daily-allowance"[m
+    
     [34mthe account to use for homeoffice expenses[m
     config:
       [37mhomeoffice-expenses-account[m: # [32mor null[m
@@ -389,6 +401,16 @@
   [34mthe account to use for third pillar insurance expenses[m
   default: [33m"expenses:insurance:third-pillar"[m
   [37mthird-pillar-insurance-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for accident insurance expenses[m
+  default: [33m"expenses:insurance:accident"[m
+  [37maccident-insurance-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for daily allowance insurance expenses[m
+  default: [33m"expenses:insurance:daily-allowance"[m
+  [37mdaily-allowance-insurance-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for homeoffice expenses[m

@@ -97,6 +97,10 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 === Self-employment expenses
 
+==== Insurance
+
+#amount_table(input.insurance_expenses, input.total_insurance_expenses)
+
 ==== Homeoffice
 
 #amount_table(input.homeoffice_expenses, input.total_homeoffice_expenses)

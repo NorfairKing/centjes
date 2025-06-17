@@ -13,6 +13,7 @@ module Centjes.Switzerland.Report.Taxes.Types
     AssetAccount (..),
     Revenue (..),
     ThirdPillarContribution (..),
+    InsuranceExpense (..),
     HomeofficeExpense (..),
     ElectricityExpense (..),
     PhoneExpense (..),
@@ -66,6 +67,8 @@ data TaxesInput = TaxesInput
     taxesInputThirdPillarAssetsAccount :: !AccountName,
     taxesInputThirdPillarInsuranceExpensesAccount :: !AccountName,
     taxesInputHomeofficeExpensesAccount :: !AccountName,
+    taxesInputAccidentInsuranceExpenseAccount :: !AccountName,
+    taxesInputDailyAllowanceInsuranceExpenseAccount :: !AccountName,
     taxesInputElectricityExpensesAccount :: !AccountName,
     taxesInputPhoneExpensesAccount :: !AccountName,
     taxesInputTravelExpensesAccount :: !AccountName,
@@ -159,6 +162,20 @@ parseTaxesInput = do
         conf "third-pillar-insurance-expenses-account",
         value "expenses:insurance:third-pillar"
       ]
+  taxesInputAccidentInsuranceExpenseAccount <-
+    setting
+      [ help "the account to use for accident insurance expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "accident-insurance-expenses-account",
+        value "expenses:insurance:accident"
+      ]
+  taxesInputDailyAllowanceInsuranceExpenseAccount <-
+    setting
+      [ help "the account to use for daily allowance insurance expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "daily-allowance-insurance-expenses-account",
+        value "expenses:insurance:daily-allowance"
+      ]
   taxesInputHomeofficeExpensesAccount <-
     setting
       [ help "the account to use for homeoffice expenses",
@@ -218,6 +235,8 @@ data TaxesReport ann = TaxesReport
     taxesReportTotalRevenues :: !Money.Amount,
     taxesReportThirdPillarContributions :: ![ThirdPillarContribution ann],
     taxesReportTotalThirdPillarContributions :: !Money.Amount,
+    taxesReportInsuranceExpenses :: ![InsuranceExpense ann],
+    taxesReportTotalInsuranceExpenses :: !Money.Amount,
     taxesReportHomeofficeExpenses :: ![HomeofficeExpense ann],
     taxesReportTotalHomeofficeExpenses :: !Money.Amount,
     taxesReportElectricityExpenses :: ![ElectricityExpense ann],
@@ -243,6 +262,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
           Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues,
         declare "the third pillar contributions sum to the total third pillar contributions" $
           Amount.sum (map thirdPillarContributionCHFAmount taxesReportThirdPillarContributions) == Just taxesReportTotalThirdPillarContributions,
+        declare "the insurance costs sum to the total insurance costs" $
+          Amount.sum (map insuranceExpenseAmount taxesReportInsuranceExpenses) == Just taxesReportTotalInsuranceExpenses,
         declare "the homeoffice costs sum to the total homeoffice costs" $
           Amount.sum (map homeofficeExpenseAmount taxesReportHomeofficeExpenses) == Just taxesReportTotalHomeofficeExpenses,
         declare "the electricity costs sum to the total electricity costs" $
@@ -290,6 +311,19 @@ data ThirdPillarContribution ann = ThirdPillarContribution
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (ThirdPillarContribution ann)
+
+data InsuranceExpense ann = InsuranceExpense
+  { insuranceExpenseTimestamp :: !Timestamp,
+    insuranceExpenseDescription :: !Description,
+    insuranceExpenseAmount :: !Money.Amount,
+    insuranceExpenseCurrency :: !(Currency ann),
+    insuranceExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    insuranceExpenseEvidence :: ![Path Rel File]
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (InsuranceExpense ann)
 
 data HomeofficeExpense ann = HomeofficeExpense
   { homeofficeExpenseTimestamp :: !Timestamp,

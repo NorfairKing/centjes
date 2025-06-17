@@ -235,6 +235,29 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
         withDeductibleTag taxesInput tl lp transactionTags $
           func lt lp
 
+  taxesReportInsuranceExpenses <- forAccountsPostings
+    ( S.fromList
+        [ taxesInputAccidentInsuranceExpenseAccount,
+          taxesInputDailyAllowanceInsuranceExpenseAccount
+        ]
+    )
+    $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) -> withDeductibleTag taxesInput tl lp transactionTags $ do
+      let Located _ timestamp = transactionTimestamp
+      let day = Timestamp.toDay timestamp
+      insuranceExpenseDescription <- requireDescription transactionDescription
+      let Located al account = postingAccount
+      insuranceExpenseAmount <- requireExpensePositive al account
+      let insuranceExpenseTimestamp = timestamp
+      let Located _ insuranceExpenseCurrency = postingCurrency
+      insuranceExpenseCHFAmount <- convertDaily al dailyPriceGraphs day insuranceExpenseCurrency taxesReportCHF insuranceExpenseAmount
+      insuranceExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+        let fileInTarball = [reldir|expenses/insurance|] </> filename rf
+        includeFile fileInTarball rf
+        pure fileInTarball
+      pure InsuranceExpense {..}
+
+  taxesReportTotalInsuranceExpenses <- requireSum $ map insuranceExpenseCHFAmount taxesReportInsuranceExpenses
+
   taxesReportHomeofficeExpenses <-
     forDeductableExpense taxesInputHomeofficeExpensesAccount $
       \(Located _ Transaction {..}) (Located _ Posting {..}) -> do

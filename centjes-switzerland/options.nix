@@ -1,5 +1,10 @@
 { lib }:
 {
+  accident-insurance-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for accident insurance expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   ahv-id = lib.mkOption {
     default = null;
     description = "The AHV identifier.";
@@ -14,6 +19,11 @@
     default = null;
     description = "Clean the packet directory";
     type = lib.types.nullOr lib.types.bool;
+  };
+  daily-allowance-insurance-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for daily allowance insurance expenses";
+    type = lib.types.nullOr lib.types.str;
   };
   domestic-income-account = lib.mkOption {
     default = null;

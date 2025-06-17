@@ -84,6 +84,18 @@ taxesReportInput TaxesReport {..} =
             inputThirdPillarContributionEvidence = thirdPillarContributionEvidence
          in ThirdPillarContributionInput {..}
       inputTotalThirdPillarContributions = formatChfAmount taxesReportTotalThirdPillarContributions
+      inputInsuranceExpenses = flip map taxesReportInsuranceExpenses $ \InsuranceExpense {..} ->
+        let inputInsuranceExpenseDay = Timestamp.toDay insuranceExpenseTimestamp
+            inputInsuranceExpenseDescription = Description.toText insuranceExpenseDescription
+            inputInsuranceExpenseAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount insuranceExpenseCurrency insuranceExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol insuranceExpenseCurrency
+                }
+            inputInsuranceExpenseCHFAmount = formatChfAmount insuranceExpenseCHFAmount
+            inputInsuranceExpenseEvidence = insuranceExpenseEvidence
+         in InsuranceExpenseInput {..}
+      inputTotalInsuranceExpenses = formatChfAmount taxesReportTotalInsuranceExpenses
       inputHomeofficeExpenses = flip map taxesReportHomeofficeExpenses $ \HomeofficeExpense {..} ->
         let inputHomeofficeExpenseDay = Timestamp.toDay homeofficeExpenseTimestamp
             inputHomeofficeExpenseDescription = Description.toText homeofficeExpenseDescription
@@ -171,6 +183,8 @@ data Input = Input
     inputTotalRevenues :: !FormattedAmount,
     inputThirdPillarContributions :: ![ThirdPillarContributionInput],
     inputTotalThirdPillarContributions :: !FormattedAmount,
+    inputInsuranceExpenses :: ![InsuranceExpenseInput],
+    inputTotalInsuranceExpenses :: !FormattedAmount,
     inputHomeofficeExpenses :: ![HomeofficeExpenseInput],
     inputTotalHomeofficeExpenses :: !FormattedAmount,
     inputElectricityExpenses :: ![ElectricityExpenseInput],
@@ -210,6 +224,10 @@ instance HasCodec Input where
           .= inputThirdPillarContributions
         <*> requiredField "total_third_pillar_contributions" "total third pillar contributions"
           .= inputTotalThirdPillarContributions
+        <*> requiredField "insurance_expenses" "insurance expenses"
+          .= inputInsuranceExpenses
+        <*> requiredField "total_insurance_expenses" "total insurance expenses"
+          .= inputTotalInsuranceExpenses
         <*> requiredField "homeoffice_expenses" "homeoffice expenses"
           .= inputHomeofficeExpenses
         <*> requiredField "total_homeoffice_expenses" "total homeoffice expenses"
@@ -301,14 +319,37 @@ instance HasCodec ThirdPillarContributionInput where
   codec =
     object "ThirdPillarContributionInput" $
       ThirdPillarContributionInput
-        <$> requiredField "day" "day of homeofficeexpense"
+        <$> requiredField "day" "day of contribution"
           .= inputThirdPillarContributionDay
-        <*> requiredField "description" "description of homeofficeexpense"
+        <*> requiredField "description" "description of contribution"
           .= inputThirdPillarContributionDescription
         <*> requiredField "amount_chf" "amount in chf"
           .= inputThirdPillarContributionCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputThirdPillarContributionEvidence
+
+data InsuranceExpenseInput = InsuranceExpenseInput
+  { inputInsuranceExpenseDay :: !Day,
+    inputInsuranceExpenseDescription :: !Text,
+    inputInsuranceExpenseAmount :: !AmountWithCurrency,
+    inputInsuranceExpenseCHFAmount :: !FormattedAmount,
+    inputInsuranceExpenseEvidence :: ![Path Rel File]
+  }
+
+instance HasCodec InsuranceExpenseInput where
+  codec =
+    object "InsuranceExpenseInput" $
+      InsuranceExpenseInput
+        <$> requiredField "day" "day of insurance expense"
+          .= inputInsuranceExpenseDay
+        <*> requiredField "description" "description of insurance expense"
+          .= inputInsuranceExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputInsuranceExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputInsuranceExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputInsuranceExpenseEvidence
 
 data HomeofficeExpenseInput = HomeofficeExpenseInput
   { inputHomeofficeExpenseDay :: !Day,
@@ -322,9 +363,9 @@ instance HasCodec HomeofficeExpenseInput where
   codec =
     object "HomeofficeExpenseInput" $
       HomeofficeExpenseInput
-        <$> requiredField "day" "day of homeofficeexpense"
+        <$> requiredField "day" "day of homeoffice expense"
           .= inputHomeofficeExpenseDay
-        <*> requiredField "description" "description of homeofficeexpense"
+        <*> requiredField "description" "description of homeoffice expense"
           .= inputHomeofficeExpenseDescription
         <*> requiredField "amount" "amount in original currency"
           .= inputHomeofficeExpenseAmount
@@ -345,9 +386,9 @@ instance HasCodec ElectricityExpenseInput where
   codec =
     object "ElectricityExpenseInput" $
       ElectricityExpenseInput
-        <$> requiredField "day" "day of homeofficeexpense"
+        <$> requiredField "day" "day of electricity expense"
           .= inputElectricityExpenseDay
-        <*> requiredField "description" "description of homeofficeexpense"
+        <*> requiredField "description" "description of electricity expense"
           .= inputElectricityExpenseDescription
         <*> requiredField "amount" "amount in original currency"
           .= inputElectricityExpenseAmount
@@ -368,9 +409,9 @@ instance HasCodec PhoneExpenseInput where
   codec =
     object "PhoneExpenseInput" $
       PhoneExpenseInput
-        <$> requiredField "day" "day of homeofficeexpense"
+        <$> requiredField "day" "day of phone expense"
           .= inputPhoneExpenseDay
-        <*> requiredField "description" "description of homeofficeexpense"
+        <*> requiredField "description" "description of phone expense"
           .= inputPhoneExpenseDescription
         <*> requiredField "amount" "amount in original currency"
           .= inputPhoneExpenseAmount
@@ -391,9 +432,9 @@ instance HasCodec TravelExpenseInput where
   codec =
     object "TravelExpenseInput" $
       TravelExpenseInput
-        <$> requiredField "day" "day of homeofficeexpense"
+        <$> requiredField "day" "day of travel expense"
           .= inputTravelExpenseDay
-        <*> requiredField "description" "description of homeofficeexpense"
+        <*> requiredField "description" "description of travel expense"
           .= inputTravelExpenseDescription
         <*> requiredField "amount" "amount in original currency"
           .= inputTravelExpenseAmount
@@ -414,9 +455,9 @@ instance HasCodec InternetExpenseInput where
   codec =
     object "InternetExpenseInput" $
       InternetExpenseInput
-        <$> requiredField "day" "day of homeofficeexpense"
+        <$> requiredField "day" "day of internet expense"
           .= inputInternetExpenseDay
-        <*> requiredField "description" "description of homeofficeexpense"
+        <*> requiredField "description" "description of internet expense"
           .= inputInternetExpenseDescription
         <*> requiredField "amount" "amount in original currency"
           .= inputInternetExpenseAmount
@@ -437,9 +478,9 @@ instance HasCodec HealthExpenseInput where
   codec =
     object "HealthExpenseInput" $
       HealthExpenseInput
-        <$> requiredField "day" "day of homeofficeexpense"
+        <$> requiredField "day" "day of health expense"
           .= inputHealthExpenseDay
-        <*> requiredField "description" "description of homeofficeexpense"
+        <*> requiredField "description" "description of health expense"
           .= inputHealthExpenseDescription
         <*> requiredField "amount" "amount in original currency"
           .= inputHealthExpenseAmount
