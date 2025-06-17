@@ -132,7 +132,7 @@ separately.
 == Assets
 
 #table(
-  stroke: 0.5pt, columns: (auto, auto), align: (
+  stroke: 0.5pt, columns: (1fr, auto), align: (
     left,
     right,
   ), ..input.assets.map(asset => (
@@ -157,18 +157,18 @@ separately.
 
     #table(
       stroke: 0.5pt, columns: (auto, auto, auto), align: (
-        left,
         right,
+        left,
         right,
       ), ..(
         asset.balances.pairs().map(((currency, balance)) => (
-          currency,
-          balance.original,
+          [ #balance.original ],
+          [ #currency],
           [ #balance.converted CHF ],
         )).flatten()
       ), ..(
-        [],
         [Total: ],
+        [],
         [#asset.balance CHF],
       ),
     )
