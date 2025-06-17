@@ -6,8 +6,14 @@
 
 #let amount_table(lines, total) = {
   // Determine if third column is needed
+  let line_amount = (
+    line => line.at(
+      "amount",
+      default: (symbol: "CHF", formatted: line.amount_chf),
+    )
+  )
   let is_chf = line => (
-    line.amount.symbol == "CHF" and line.amount.formatted == line.amount_chf
+    line_amount(line).symbol == "CHF" and line_amount(line).formatted == line.amount_chf
   )
   let show_original = lines.any(line => not is_chf(line))
 
@@ -40,8 +46,8 @@
           (
             ..common,
             if is_chf(line) [] else [
-              #line.amount.formatted
-              #line.amount.symbol
+              #line_amount(line).formatted
+              #line_amount(line).symbol
             ],
             [#line.amount_chf CHF],
           )
@@ -84,25 +90,9 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 === Third pillar
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto), align: (
-    left,
-    left,
-    right,
-  ), ..input.third_pillar_contributions.map(expense => (
-    expense.day,
-    [
-      #expense.description
-      #for evidence in expense.evidence [
-        #linebreak()
-        #link(evidence, evidence)
-      ]
-    ],
-    [ #expense.amount_chf CHF ],
-  )).flatten(), text(
-    weight: "bold",
-    [Total],
-  ), [], [#text(weight: "bold", input.total_third_pillar_contributions) CHF],
+#amount_table(
+  input.third_pillar_contributions,
+  input.total_third_pillar_contributions,
 )
 
 === Self-employment
