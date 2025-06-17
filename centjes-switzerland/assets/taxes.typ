@@ -6,7 +6,9 @@
 
 #let amount_table(lines, total) = {
   // Determine if third column is needed
-  let is_chf = line => line.amount.symbol == "CHF" and line.amount.formatted == line.amount_chf
+  let is_chf = line => (
+    line.amount.symbol == "CHF" and line.amount.formatted == line.amount_chf
+  )
   let show_original = lines.any(line => not is_chf(line))
 
   let columns = if show_original {
@@ -21,27 +23,44 @@
     (left, left, right)
   }
 
-  let rows = lines.map(
-    line => {
-      let common = (line.day, [ #{ line.description }
-        #for evidence in line.evidence [
-          #linebreak()
-          #link(evidence, evidence)
-        ] ])
-
-      if show_original {
-        (
-          ..common, if is_chf(line) [] else [#{ line.amount.formatted } #{ line.amount.symbol }], [#{ line.amount_chf } CHF],
+  let rows = lines
+    .map(
+      line => {
+        let common = (
+          line.day,
+          [ #line.description
+            #for evidence in line.evidence [
+              #linebreak()
+              #link(evidence, evidence)
+            ]
+          ],
         )
-      } else {
-        (..common, [#{ line.amount_chf } CHF],)
-      }
-    },
-  ).flatten()
+
+        if show_original {
+          (
+            ..common,
+            if is_chf(line) [] else [
+              #line.amount.formatted
+              #line.amount.symbol
+            ],
+            [#line.amount_chf CHF],
+          )
+        } else {
+          (
+            ..common,
+            [#line.amount_chf CHF],
+          )
+        }
+      },
+    )
+    .flatten()
 
   let last_row = if show_original {
     (
-      text(weight: "bold", [Total]), [], [], [#text(weight: "bold", total) CHF],
+      text(weight: "bold", [Total]),
+      [],
+      [],
+      [#text(weight: "bold", total) CHF],
     )
   } else {
     (text(weight: "bold", [Total]), [], [#text(weight: "bold", total) CHF])
@@ -52,7 +71,7 @@
 
 = Taxes #{ input.year }
 
-This document is the index of all the attachment for the tax declaration of #{ input.first_name } #{ input.last_name } for
+This document is the index of all the attachment for the tax declaration of #{ input.first_name } #input.last_name for
 the year #{ input.year }.
 
 == Income
@@ -66,14 +85,24 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 === Third pillar
 
 #table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto), align: (left, left, right), ..input.third_pillar_contributions.map(expense =>
-  (expense.day, [
-    #{ expense.description }
-    #for evidence in expense.evidence [
-      #linebreak()
-      #link(evidence, evidence)
-    ]
-  ], [ #{ expense.amount_chf } CHF ],)).flatten(), text(weight: "bold", [Total]), [], [#text(weight: "bold", input.total_third_pillar_contributions) CHF],
+  stroke: 0.5pt, columns: (auto, 1fr, auto), align: (
+    left,
+    left,
+    right,
+  ), ..input.third_pillar_contributions.map(expense => (
+    expense.day,
+    [
+      #expense.description
+      #for evidence in expense.evidence [
+        #linebreak()
+        #link(evidence, evidence)
+      ]
+    ],
+    [ #expense.amount_chf CHF ],
+  )).flatten(), text(
+    weight: "bold",
+    [Total],
+  ), [], [#text(weight: "bold", input.total_third_pillar_contributions) CHF],
 )
 
 === Self-employment
@@ -113,26 +142,45 @@ separately.
 == Assets
 
 #table(
-  stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..input.assets.map(asset =>
-  (asset.name, [ #{ asset.balance } CHF ])).flatten(), text(weight: "bold", [Total]), [#text(weight: "bold", input.total_assets) CHF],
+  stroke: 0.5pt, columns: (auto, auto), align: (
+    left,
+    right,
+  ), ..input.assets.map(asset => (
+    asset.name,
+    [ #asset.balance CHF ],
+  )).flatten(), text(
+    weight: "bold",
+    [Total],
+  ), [#text(weight: "bold", input.total_assets) CHF],
 )
 
 #for asset in input.assets [
-  === #{ asset.name }
+  === #asset.name
 
   #if asset.balances.len() == 1 and "CHF" in asset.balances [
 
-    Balance: #{ asset.balance } CHF
+    Balance: #asset.balance CHF
 
   ] else [
 
     Balances:
 
     #table(
-      stroke: 0.5pt, columns: (auto, auto, auto), align: (left, right, right), ..(
-        asset.balances.pairs().map(((currency, balance)) =>
-        (currency, balance.original, [ #{ balance.converted } CHF ],)).flatten()
-      ), ..([], [Total: ], [#{ asset.balance } CHF]),
+      stroke: 0.5pt, columns: (auto, auto, auto), align: (
+        left,
+        right,
+        right,
+      ), ..(
+        asset.balances.pairs().map(((currency, balance)) => (
+          currency,
+          balance.original,
+          [ #balance.converted CHF ],
+        )).flatten()
+      ), ..(
+        [],
+        [Total: ],
+        [#asset.balance CHF],
+      ),
     )
 
   ]
@@ -147,6 +195,10 @@ separately.
 These exchange rates are used for asset valuations on #datetime(year: input.year, month: 12, day: 31).display()
 
 #table(
-  stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..(input.rates.pairs().map(((currency, rate)) =>
-  (currency, [#{ rate } CHF])).flatten()),
+  stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..(
+    input.rates.pairs().map(((currency, rate)) => (
+      currency,
+      [#rate CHF],
+    )).flatten()
+  ),
 )

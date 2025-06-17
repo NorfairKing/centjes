@@ -111,11 +111,7 @@
             deadnix.enable = true;
             deadnix.excludes = [ ".*/default.nix" ];
             cabal2nix.enable = true;
-            typstfmt = {
-              enable = true;
-              files = "\\.typ$";
-              entry = "${pkgs.typstfmt}/bin/typstfmt";
-            };
+            typstyle.enable = true;
           };
         };
       };

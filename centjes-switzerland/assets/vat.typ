@@ -22,7 +22,15 @@ Alle Umsatzangaben sind netto
 ==== Entgelte
 
 #table(
-  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right,).at(x), ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(h, weight: "bold")), "200", "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)", "", input.total_revenue,
+  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (
+    left,
+    left,
+    right,
+    right,
+  ).at(x), ..("", "", "Umsatz CHF", "Umsatz CHF").map(h => text(
+    h,
+    weight: "bold",
+  )), "200", "Total der vereinbarten bzw. vereinnahmten Entgelte, inkl. optierte Leistungen, Entgelte aus Übertragungen im Meldeverfahren sowie aus Leistungen im Ausland (weltweiter Umsatz)", "", input.total_revenue,
 )
 
 ==== Abzüge
@@ -38,7 +46,13 @@ Alle Umsatzangaben sind netto
 ==== Steuerbarer Gesamtumsatz
 
 #table(
-  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "299", "Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)", "", input.total_domestic_revenue,
+  stroke: 0.5pt,
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
+  "299",
+  "Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)",
+  "",
+  input.total_domestic_revenue,
 )
 
 === Steuerberechnung
@@ -60,7 +74,13 @@ Alle Umsatzangaben sind netto
 ==== Total geschuldete Steuer
 
 #table(
-  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "399", "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)", "", input.total_vat_revenue,
+  stroke: 0.5pt,
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
+  "399",
+  "Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)",
+  "",
+  input.total_vat_revenue,
 )
 
 ==== Steueranrechnung
@@ -80,7 +100,11 @@ Alle Umsatzangaben sind netto
 ==== Zu bezahlender Betrag / Guthaben
 
 #table(
-  stroke: 0.5pt, columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), "500", "Zu bezahlender Betrag", "", input.payable, "510", "Guthaben der steuerpflichtigen Person", "", input.receivable,
+  stroke: 0.5pt,
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
+  "500", "Zu bezahlender Betrag", "", input.payable,
+  "510", "Guthaben der steuerpflichtigen Person", "", input.receivable,
 )
 
 === Andere Mittelflüsse (Art. 18 Abs. 2)
