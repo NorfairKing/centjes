@@ -95,27 +95,25 @@ All income is reported in CHF, using the exchange of the day of the transaction.
   input.total_third_pillar_contributions,
 )
 
-=== Self-employment
+=== Self-employment expenses
 
-==== Expenses
-
-===== Homeoffice
+==== Homeoffice
 
 #amount_table(input.homeoffice_expenses, input.total_homeoffice_expenses)
 
-===== Electricity
+==== Electricity
 
 #amount_table(input.electricity_expenses, input.total_electricity_expenses)
 
-===== Internet
+==== Internet
 
 #amount_table(input.internet_expenses, input.total_internet_expenses)
 
-===== Phone
+==== Phone
 
 #amount_table(input.phone_expenses, input.total_phone_expenses)
 
-===== Travel
+==== Travel
 
 #amount_table(input.travel_expenses, input.total_travel_expenses)
 
