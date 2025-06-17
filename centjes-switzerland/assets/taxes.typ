@@ -88,30 +88,11 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 == Deductions
 
-=== Third pillar
-
-#amount_table(
-  input.third_pillar_contributions,
-  input.total_third_pillar_contributions,
-)
-
 === Self-employment expenses
-
-==== Insurance
-
-#amount_table(input.insurance_expenses, input.total_insurance_expenses)
 
 ==== Homeoffice
 
 #amount_table(input.homeoffice_expenses, input.total_homeoffice_expenses)
-
-==== Electricity
-
-#amount_table(input.electricity_expenses, input.total_electricity_expenses)
-
-==== Internet
-
-#amount_table(input.internet_expenses, input.total_internet_expenses)
 
 ==== Phone
 
@@ -120,6 +101,30 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 ==== Travel
 
 #amount_table(input.travel_expenses, input.total_travel_expenses)
+
+==== Internet
+
+#amount_table(input.internet_expenses, input.total_internet_expenses)
+
+==== Electricity
+
+#amount_table(input.electricity_expenses, input.total_electricity_expenses)
+
+==== Insurance
+
+#amount_table(input.insurance_expenses, input.total_insurance_expenses)
+
+=== Third pillar
+
+These are declared according to the "tax extract" documents from the
+third-pillar providers.
+Here they are listed again, but the total may differ depending on the exact dates of
+the contributions.
+
+#amount_table(
+  input.third_pillar_contributions,
+  input.total_third_pillar_contributions,
+)
 
 === Health insurance and doctor costs
 
