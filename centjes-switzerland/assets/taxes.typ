@@ -4,6 +4,52 @@
 
 #set document(title: [Tax Packet #{ input.year }], date: none)
 
+#let amount_table(lines, total) = {
+  // Determine if third column is needed
+  let is_chf = line => line.amount.symbol == "CHF" and line.amount.formatted == line.amount_chf
+  let show_original = lines.any(line => not is_chf(line))
+
+  let columns = if show_original {
+    (auto, 1fr, auto, auto)
+  } else {
+    (auto, 1fr, auto)
+  }
+
+  let aligns = if show_original {
+    (left, left, right, right)
+  } else {
+    (left, left, right)
+  }
+
+  let rows = lines.map(
+    line => {
+      let common = (line.day, [ #{ line.description }
+        #for evidence in line.evidence [
+          #linebreak()
+          #link(evidence, evidence)
+        ] ])
+
+      if show_original {
+        (
+          ..common, if is_chf(line) [] else [#{ line.amount.formatted } #{ line.amount.symbol }], [#{ line.amount_chf } CHF],
+        )
+      } else {
+        (..common, [#{ line.amount_chf } CHF],)
+      }
+    },
+  ).flatten()
+
+  let last_row = if show_original {
+    (
+      text(weight: "bold", [Total]), [], [], [#text(weight: "bold", total) CHF],
+    )
+  } else {
+    (text(weight: "bold", [Total]), [], [#text(weight: "bold", total) CHF])
+  }
+
+  table(stroke: 0.5pt, columns: columns, align: aligns, ..rows, ..last_row)
+}
+
 = Taxes #{ input.year }
 
 This document is the index of all the attachment for the tax declaration of #{ input.first_name } #{ input.last_name } for
@@ -13,24 +59,7 @@ the year #{ input.year }.
 
 All income is reported in CHF, using the exchange of the day of the transaction.
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.revenues.map(
-    revenue =>
-    (
-      revenue.day, [ #{ revenue.description }
-        #linebreak()
-        #if revenue.evidence.len() == 1 [
-          #for evidence in revenue.evidence [
-            #link(evidence, evidence)
-          ]
-        ] else [
-          #for evidence in revenue.evidence [
-            - #link(evidence, evidence)
-          ]
-        ] ], [#{ revenue.amount.formatted } #{ revenue.amount.symbol }], [#{ revenue.amount_chf } CHF],
-    ),
-  ).flatten(), [], text(weight: "bold", [Total]), [], [#text(weight: "bold", input.total_revenues) CHF],
-)
+#amount_table(input.revenues, input.total_revenues)
 
 == Deductions
 
@@ -53,108 +82,23 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 ===== Homeoffice
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.homeoffice_expenses.map(
-    expense =>
-    (
-      expense.day, [ #{ expense.description }
-        #linebreak()
-        #if expense.evidence.len() == 1 [
-          #for evidence in expense.evidence [
-            #link(evidence, evidence)
-          ]
-        ] else [
-          #for evidence in expense.evidence [
-            - #link(evidence, evidence)
-          ]
-        ] ], [ #{ expense.amount.formatted } #{ expense.amount.symbol } ], [ #{ expense.amount_chf } CHF ],
-    ),
-  ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_homeoffice_expenses) CHF],
-)
+#amount_table(input.homeoffice_expenses, input.total_homeoffice_expenses)
 
 ===== Electricity
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.electricity_expenses.map(
-    expense =>
-    (
-      expense.day, [ #{ expense.description }
-        #linebreak()
-        #if expense.evidence.len() == 1 [
-          #for evidence in expense.evidence [
-            #link(evidence, evidence)
-          ]
-        ] else [
-          #for evidence in expense.evidence [
-            - #link(evidence, evidence)
-          ]
-        ] ], [ #{ expense.amount.formatted } #{ expense.amount.symbol } ], [ #{ expense.amount_chf } CHF ],
-    ),
-  ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_electricity_expenses) CHF],
-)
+#amount_table(input.electricity_expenses, input.total_electricity_expenses)
 
 ===== Internet
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.internet_expenses.map(
-    expense =>
-    (
-      expense.day, [ #{ expense.description }
-        #linebreak()
-        #if expense.evidence.len() == 1 [
-          #for evidence in expense.evidence [
-            #link(evidence, evidence)
-          ]
-        ] else [
-          #for evidence in expense.evidence [
-            - #link(evidence, evidence)
-          ]
-        ] ], [ #{ expense.amount.formatted } #{ expense.amount.symbol } ], [ #{ expense.amount_chf } CHF ],
-    ),
-  ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_internet_expenses) CHF],
-)
+#amount_table(input.internet_expenses, input.total_internet_expenses)
 
 ===== Phone
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.phone_expenses.map(
-    expense =>
-    (
-      expense.day, [ #{ expense.description }
-        #linebreak()
-        #if expense.evidence.len() == 1 [
-          #for evidence in expense.evidence [
-            #link(evidence, evidence)
-          ]
-        ] else [
-          #for evidence in expense.evidence [
-            - #link(evidence, evidence)
-          ]
-        ] ], [ #{ expense.amount.formatted } #{ expense.amount.symbol } ], [ #{ expense.amount_chf } CHF ],
-    ),
-  ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_phone_expenses) CHF],
-)
+#amount_table(input.phone_expenses, input.total_phone_expenses)
 
 ===== Travel
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.travel_expenses.map(
-    expense =>
-    (
-      expense.day, [ #{ expense.description }
-        #linebreak()
-        #if expense.evidence.len() == 1 [
-          #for evidence in expense.evidence [
-            #link(evidence, evidence)
-          ]
-        ] else [
-          #for evidence in expense.evidence [
-            - #link(evidence, evidence)
-          ]
-        ] ], [ #{ expense.amount.formatted } #{ expense.amount.symbol } ], [ #{ expense.amount_chf } CHF ],
-    ),
-  ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_travel_expenses) CHF],
-)
+#amount_table(input.travel_expenses, input.total_travel_expenses)
 
 === Health insurance and doctor costs
 
@@ -164,24 +108,7 @@ health insurance company.
 These are the uninsured doctor and dentist costs, which need to be declared
 separately.
 
-#table(
-  stroke: 0.5pt, columns: (auto, 1fr, auto, auto), align: (left, left, right, right), ..input.health_expenses.map(
-    expense =>
-    (
-      expense.day, [ #{ expense.description }
-        #linebreak()
-        #if expense.evidence.len() == 1 [
-          #for evidence in expense.evidence [
-            #link(evidence, evidence)
-          ]
-        ] else [
-          #for evidence in expense.evidence [
-            - #link(evidence, evidence)
-          ]
-        ] ], [ #{ expense.amount.formatted } #{ expense.amount.symbol } ], [ #{ expense.amount_chf } CHF ],
-    ),
-  ).flatten(), text(weight: "bold", [Total]), [], [], [#text(weight: "bold", input.total_health_expenses) CHF],
-)
+#amount_table(input.health_expenses, input.total_health_expenses)
 
 == Assets
 
