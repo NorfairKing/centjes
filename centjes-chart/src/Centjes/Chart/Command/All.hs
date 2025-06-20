@@ -20,6 +20,7 @@ import Centjes.Report.Register
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Conduit
+import Control.Arrow (second)
 import Control.Monad
 import Control.Monad.Logger
 import qualified Data.Aeson as JSON
@@ -39,6 +40,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import Data.Time
+import Data.Traversable
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Graphics.Rendering.Chart.Backend.Cairo as Chart
@@ -93,7 +95,7 @@ runCentjesChartAll Settings {..} =
     let fileOpts = def {_fo_format = SVG, _fo_size = (1920, 1080)}
     liftIO $
       void $
-        renderableToFile fileOpts "example.svg" $
+        renderableToFile fileOpts "assets.svg" $
           toRenderable $
             let stacks =
                   flip map (zip (cycle assetColors) tups) $ \(color, (an, trips)) ->
@@ -134,7 +136,7 @@ convertDayMap ::
   Validation (ConvertError ann) ConvertedDayMap
 convertDayMap dailyPriceGraphs currency = M.traverseWithKey $ \day accountBalances ->
   let (_, priceGraph) = fromJust $ M.lookupLE day dailyPriceGraphs
-   in flip traverse accountBalances $ \ma ->
+   in for accountBalances $ \ma ->
         convertMultiAccountToAccount Nothing priceGraph currency ma
 
 type StackMap = Map AccountName (Map Day Money.Account)
@@ -143,7 +145,7 @@ convertedToStackMap :: ConvertedDayMap -> StackMap
 convertedToStackMap = flipMap
 
 flipMap :: (Ord a, Ord b) => Map a (Map b c) -> Map b (Map a c)
-flipMap = M.fromListWith M.union . concatMap (\(a, m) -> map (\(b, c) -> (b, M.singleton a c)) $ M.toList m) . M.toList
+flipMap = M.fromListWith M.union . concatMap (\(a, m) -> map (second (M.singleton a)) (M.toList m)) . M.toList
 
 type DoubleMap = Map AccountName (Map Day Double)
 
