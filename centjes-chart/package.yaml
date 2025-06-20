@@ -1,0 +1,58 @@
+name: centjes-chart
+version: 0.0.0
+github: "NorfairKing/centjes"
+
+data-files:
+- assets/**/*
+
+dependencies:
+- base >= 4.7 && < 5
+
+
+library:
+  source-dirs: src
+  build-tools: autoexporter
+  dependencies:
+  - Chart
+  - Chart-cairo
+  - aeson
+  - aeson-pretty
+  - autodocodec
+  - bytestring
+  - centjes
+  - colour
+  - conduit
+  - containers
+  - containers
+  - diagnose
+  - http-client
+  - http-client-tls
+  - http-types
+  - monad-logger
+  - mtl
+  - opt-env-conf
+  - path
+  - path-io
+  - pretty-show
+  - really-safe-money
+  - text
+  - time
+  - typed-process
+  - unliftio
+  - validity
+  - validity-time
+  - vector
+  - xml-conduit
+  - zip
+
+executables:
+  centjes-chart:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - centjes-chart
+
