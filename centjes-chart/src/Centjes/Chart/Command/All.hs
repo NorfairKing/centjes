@@ -1,12 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Chart.Command.All (runCentjesChartAll) where
 
+import qualified Centjes.AccountName as AccountName
 import Centjes.Chart.OptParse
 import Centjes.Compile
+import Centjes.CurrencySymbol
+import Centjes.Filter
+import Centjes.Ledger
 import Centjes.Load
+import Centjes.Location
 import Centjes.Report.Check
+import Centjes.Report.Register
+import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Conduit
 import Control.Monad
@@ -28,8 +36,14 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.Lazy as LT
 import Data.Time
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 import Graphics.Rendering.Chart.Backend.Cairo as Chart
-import Graphics.Rendering.Chart.Easy as Chart
+import Graphics.Rendering.Chart.Easy as Chart hiding (Vector)
+import qualified Money.Account as Account
+import qualified Money.Account as Money (Account)
+import qualified Money.MultiAccount as Money (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 import Path
 import Path.IO
 import Paths_centjes_switzerland
@@ -39,30 +53,78 @@ import System.Process.Typed
 import Text.Show.Pretty
 import Text.XML as XML
 
-runCentjesChartAll :: Settings -> IO ()
-runCentjesChartAll Settings {..} = do
-  let stackMap =
-        fromTupTups
-          [ ("Assets", [(fromGregorian 2020 1 1, 100), (fromGregorian 2020 2 1, 110), (fromGregorian 2020 3 1, 120)]),
-            ("Equity", [(fromGregorian 2020 1 1, 50), (fromGregorian 2020 2 1, 50), (fromGregorian 2020 3 1, 50)])
-          ]
-  let fileOpts = def {_fo_format = SVG, _fo_size = (960, 540)} -- (1920, 1080)}
-  void $
-    renderableToFile fileOpts "example.svg" $
-      toRenderable $
-        let stacks =
-              flip map (zip (cycle assetColors) (accumulate stackMap)) $ \(color, (a, trips)) ->
-                def
-                  { _plot_fillbetween_values = flip map trips $ \(d, mv, v) -> (d, (fromMaybe 0 mv, v)),
-                    _plot_fillbetween_style = solidFillStyle color,
-                    _plot_fillbetween_title = T.unpack a
-                  }
-            layout =
-              layout_title .~ "Assets" $
-                layout_grid_last .~ True $
-                  layout_plots .~ map toPlot stacks $
+runCentjesChartAll :: Settings -> LoggingT IO ()
+runCentjesChartAll Settings {..} =
+  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+    let diagnostic = diagFromFileMap fileMap
+    ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
+    let symbol = CurrencySymbol "CHF"
+    register <-
+      liftIO $
+        checkValidation diagnostic $
+          produceRegister
+            (FilterSubstring "assets")
+            (Just symbol)
+            False
+            Nothing
+            Nothing
+            ledger
+    let currency = fromJust $ do
+          lqf <- M.lookup symbol $ ledgerCurrencies ledger
+          pure $ Currency symbol lqf
+    let stackMap = registerToStackMap currency register
+    let fileOpts = def {_fo_format = SVG, _fo_size = (960, 540)} -- (1920, 1080)}
+    liftIO $
+      void $
+        renderableToFile fileOpts "example.svg" $
+          toRenderable $
+            let stacks =
+                  flip map (zip (cycle assetColors) (accumulate stackMap)) $ \(color, (a, trips)) ->
                     def
-         in layout
+                      { _plot_fillbetween_values = flip map trips $ \(d, mv, v) -> (d, (fromMaybe 0 mv, v)),
+                        _plot_fillbetween_style = solidFillStyle color,
+                        _plot_fillbetween_title = T.unpack a
+                      }
+                layout =
+                  layout_title .~ "Assets" $
+                    layout_grid_last .~ True $
+                      layout_plots .~ map toPlot stacks $
+                        def
+             in layout
+
+registerToStackMap :: forall ann. (Ord ann) => Currency ann -> Register ann -> StackMap
+registerToStackMap currency = V.foldl' go M.empty . registerTransactions
+  where
+    Located _ qf = currencyQuantisationFactor currency
+    go ::
+      StackMap ->
+      ( GenLocated ann Timestamp,
+        Maybe (GenLocated ann Description),
+        Vector
+          ( GenLocated ann (Posting ann),
+            Money.MultiAccount (Currency ann)
+          )
+      ) ->
+      StackMap
+    go sm (Located _ timestamp, _, postings) =
+      let day = Timestamp.toDay timestamp
+       in foldl' (goPosting day) sm postings
+
+    goPosting ::
+      Day ->
+      StackMap ->
+      ( GenLocated ann (Posting ann),
+        Money.MultiAccount (Currency ann)
+      ) ->
+      StackMap
+    goPosting day sm (Located _ Posting {..}, ma) =
+      let Located _ accountName = postingAccountName
+          key :: Text
+          key = AccountName.toText accountName
+          double :: Double
+          double = Account.toDouble qf $ MultiAccount.lookupAccount currency ma
+          val = M.singleton day double
+       in M.insertWith M.union key val sm
 
 type StackMap = Map Text (Map Day Double)
 

@@ -11,6 +11,8 @@ module Centjes.Chart.OptParse
   )
 where
 
+import Centjes.OptParse ()
+import Control.Monad.Logger
 import Data.Time
 import OptEnvConf
 import Path
@@ -36,9 +38,9 @@ parseInstructions =
         <*> settingsParser
 
 data Settings = Settings
-  { settingBaseDir :: !(Path Abs Dir),
-    settingLedgerFile :: !(Path Rel File),
-    settingWatch :: !Bool
+  { settingLedgerFile :: !(Path Abs File),
+    settingWatch :: !Bool,
+    settingLogLevel :: !LogLevel
   }
 
 instance HasParser Settings where
@@ -47,24 +49,13 @@ instance HasParser Settings where
 {-# ANN parseSettings ("NOCOVER" :: String) #-}
 parseSettings :: Parser Settings
 parseSettings = do
-  settingBaseDir <-
-    choice
-      [ directoryPathSetting
-          [ help "base directory",
-            name "base-dir"
-          ],
-        runIO getCurrentDir
-      ]
   settingLedgerFile <-
-    mapIO parseRelFile $
-      setting
-        [ help "ledger file",
-          reader str,
-          short 'l',
-          name "ledger",
-          value "ledger.cent",
-          metavar "FILE_PATH"
-        ]
+    filePathSetting
+      [ help "ledger file",
+        short 'l',
+        name "ledger",
+        value "ledger.cent"
+      ]
   settingWatch <-
     setting
       [ help "Run centjes in a loop",
@@ -75,6 +66,7 @@ parseSettings = do
         reader exists,
         value False
       ]
+  settingLogLevel <- settingsParser
   pure Settings {..}
 
 data Dispatch
