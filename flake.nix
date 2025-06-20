@@ -127,6 +127,7 @@
           typst
           zlib
           graphviz
+          cairo
         ] ++ self.checks.${system}.pre-commit.enabledPackages;
         shellHook = self.checks.${system}.pre-commit.shellHook;
 
