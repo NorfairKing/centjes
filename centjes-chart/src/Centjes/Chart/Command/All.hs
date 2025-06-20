@@ -7,11 +7,14 @@ module Centjes.Chart.Command.All (runCentjesChartAll) where
 import qualified Centjes.AccountName as AccountName
 import Centjes.Chart.OptParse
 import Centjes.Compile
+import Centjes.Convert
+import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import Centjes.CurrencySymbol
 import Centjes.Filter
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
+import Centjes.Report.Balance
 import Centjes.Report.Check
 import Centjes.Report.Register
 import qualified Centjes.Timestamp as Timestamp
@@ -58,32 +61,46 @@ runCentjesChartAll Settings {..} =
   loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
-    let symbol = CurrencySymbol "CHF"
-    register <-
+    let symbol = CurrencySymbol "USD"
+    balancedLedger <-
       liftIO $
         checkValidation diagnostic $
-          produceRegister
-            (FilterSubstring "assets")
-            (Just symbol)
+          produceBalancedLedger
             False
-            Nothing
-            Nothing
             ledger
     let currency = fromJust $ do
           lqf <- M.lookup symbol $ ledgerCurrencies ledger
           pure $ Currency symbol lqf
-    let stackMap = registerToStackMap currency register
-    let fileOpts = def {_fo_format = SVG, _fo_size = (960, 540)} -- (1920, 1080)}
+
+    -- TODO Filter  by account type not name
+    -- or better yet by actual filter
+    let predicate = \an ->
+          and
+            [ "assets" `T.isInfixOf` AccountName.toText an,
+              not ("self-transfer" `T.isInfixOf` AccountName.toText an)
+            ]
+    let dayMap = M.map (M.filterWithKey (\an _ -> predicate an)) (balancedLedgerToDayMap balancedLedger)
+
+    let dailyPriceGraphs = pricesToDailyPriceGraphs (ledgerPrices ledger)
+    convertedDayMap <- liftIO $ checkValidation diagnostic $ convertDayMap dailyPriceGraphs currency dayMap
+
+    let stackMap = convertedToStackMap convertedDayMap
+
+    let doubleMap = stackToDoubleMap currency stackMap
+
+    let tups = accumulate doubleMap
+
+    let fileOpts = def {_fo_format = SVG, _fo_size = (1920, 1080)}
     liftIO $
       void $
         renderableToFile fileOpts "example.svg" $
           toRenderable $
             let stacks =
-                  flip map (zip (cycle assetColors) (accumulate stackMap)) $ \(color, (a, trips)) ->
+                  flip map (zip (cycle assetColors) tups) $ \(color, (an, trips)) ->
                     def
                       { _plot_fillbetween_values = flip map trips $ \(d, mv, v) -> (d, (fromMaybe 0 mv, v)),
                         _plot_fillbetween_style = solidFillStyle color,
-                        _plot_fillbetween_title = T.unpack a
+                        _plot_fillbetween_title = AccountName.toString an
                       }
                 layout =
                   layout_title .~ "Assets" $
@@ -92,54 +109,61 @@ runCentjesChartAll Settings {..} =
                         def
              in layout
 
-registerToStackMap :: forall ann. (Ord ann) => Currency ann -> Register ann -> StackMap
-registerToStackMap currency = V.foldl' go M.empty . registerTransactions
+type DayMap ann = Map Day (AccountBalances ann)
+
+balancedLedgerToDayMap :: forall ann. (Ord ann) => BalancedLedger ann -> DayMap ann
+balancedLedgerToDayMap = V.foldl' go M.empty . balancedLedgerTransactions
+  where
+    go ::
+      DayMap ann ->
+      (GenLocated ann (Transaction ann), AccountBalances ann) ->
+      DayMap ann
+    go dm (Located _ Transaction {..}, abs) =
+      let Located _ timestamp = transactionTimestamp
+          day = Timestamp.toDay timestamp
+       in -- Here we only keep the latest balances in a day.
+          M.insert day abs dm
+
+type ConvertedDayMap = Map Day (Map AccountName Money.Account)
+
+convertDayMap ::
+  (Ord ann) =>
+  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Currency ann ->
+  DayMap ann ->
+  Validation (ConvertError ann) ConvertedDayMap
+convertDayMap dailyPriceGraphs currency = M.traverseWithKey $ \day accountBalances ->
+  let (_, priceGraph) = fromJust $ M.lookupLE day dailyPriceGraphs
+   in flip traverse accountBalances $ \ma ->
+        convertMultiAccountToAccount Nothing priceGraph currency ma
+
+type StackMap = Map AccountName (Map Day Money.Account)
+
+convertedToStackMap :: ConvertedDayMap -> StackMap
+convertedToStackMap = flipMap
+
+flipMap :: (Ord a, Ord b) => Map a (Map b c) -> Map b (Map a c)
+flipMap = M.fromListWith M.union . concatMap (\(a, m) -> map (\(b, c) -> (b, M.singleton a c)) $ M.toList m) . M.toList
+
+type DoubleMap = Map AccountName (Map Day Double)
+
+stackToDoubleMap :: Currency ann -> StackMap -> DoubleMap
+stackToDoubleMap currency = M.map $ M.map $ Account.toDouble qf
   where
     Located _ qf = currencyQuantisationFactor currency
-    go ::
-      StackMap ->
-      ( GenLocated ann Timestamp,
-        Maybe (GenLocated ann Description),
-        Vector
-          ( GenLocated ann (Posting ann),
-            Money.MultiAccount (Currency ann)
-          )
-      ) ->
-      StackMap
-    go sm (Located _ timestamp, _, postings) =
-      let day = Timestamp.toDay timestamp
-       in foldl' (goPosting day) sm postings
 
-    goPosting ::
-      Day ->
-      StackMap ->
-      ( GenLocated ann (Posting ann),
-        Money.MultiAccount (Currency ann)
-      ) ->
-      StackMap
-    goPosting day sm (Located _ Posting {..}, ma) =
-      let Located _ accountName = postingAccountName
-          key :: Text
-          key = AccountName.toText accountName
-          double :: Double
-          double = Account.toDouble qf $ MultiAccount.lookupAccount currency ma
-          val = M.singleton day double
-       in M.insertWith M.union key val sm
-
-type StackMap = Map Text (Map Day Double)
-
-accumulate :: StackMap -> [(Text, [(Day, Maybe Double, Double)])]
-accumulate sm =
+accumulate :: DoubleMap -> [(AccountName, [(Day, Maybe Double, Double)])]
+accumulate dm =
   let begin = []
-   in foldl' go begin $ sortOn (volatility . snd) $ M.toList sm
+   in foldl' go begin $ sortOn (volatility . snd) $ M.toList dm
   where
     daysInRange =
-      let (db, de) = dayRange sm
+      let (db, de) = dayRange dm
        in [db .. de]
     go ::
-      [(Text, [(Day, Maybe Double, Double)])] ->
-      (Text, Map Day Double) ->
-      [(Text, [(Day, Maybe Double, Double)])]
+      [(AccountName, [(Day, Maybe Double, Double)])] ->
+      (AccountName, Map Day Double) ->
+      [(AccountName, [(Day, Maybe Double, Double)])]
     go [] (a, ds) = [(a, ls)]
       where
         ls :: [(Day, Maybe Double, Double)]
@@ -163,16 +187,16 @@ volatility = go . M.toList
         / ((fromIntegral :: Integer -> Double) (diffDays db da) * va)
         + go ((db, vb) : xs)
 
-fromTupTups :: [(Text, [(Day, Double)])] -> StackMap
-fromTupTups = foldl' (\m (a, vals) -> addValsToStackMap a vals m) emptyStackMap
+fromTupTups :: [(AccountName, [(Day, Double)])] -> DoubleMap
+fromTupTups = foldl' (\m (a, vals) -> addValsToDoubleMap a vals m) emptyDoubleMap
 
-emptyStackMap :: StackMap
-emptyStackMap = M.empty
+emptyDoubleMap :: DoubleMap
+emptyDoubleMap = M.empty
 
-addValsToStackMap :: Text -> [(Day, Double)] -> StackMap -> StackMap
-addValsToStackMap acc vals = M.insert acc $ M.fromList vals
+addValsToDoubleMap :: AccountName -> [(Day, Double)] -> DoubleMap -> DoubleMap
+addValsToDoubleMap acc vals = M.insert acc $ M.fromList vals
 
-dayRange :: StackMap -> (Day, Day)
+dayRange :: DoubleMap -> (Day, Day)
 dayRange = go . concatMap snd . M.toList . M.map (S.toList . M.keysSet)
   where
     go :: [Day] -> (Day, Day)

@@ -11,6 +11,9 @@ module Centjes.Report.Balance
     AccountBalances,
     BalanceError (..),
     produceBalanceReport,
+    BalancedLedger (..),
+    AccountBalances,
+    produceBalancedLedger,
     balanceTransaction,
   )
 where
