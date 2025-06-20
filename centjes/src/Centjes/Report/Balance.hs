@@ -12,6 +12,11 @@ module Centjes.Report.Balance
     -- Re-exports from EvaluatedLedger
     AccountBalances,
     BalanceError (..),
+    produceBalanceReport,
+    BalancedLedger (..),
+    AccountBalances,
+    produceBalancedLedger,
+    balanceTransaction,
   )
 where
 
