@@ -118,6 +118,7 @@
       - Centjes.Formatting.accountWidth
       - Centjes.Import.Cornercard
       - Centjes.Import.Neon
+      - Centjes.Chart.Command.All
       - Centjes.Timestamp
 
 - modules:
