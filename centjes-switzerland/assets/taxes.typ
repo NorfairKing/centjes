@@ -1,5 +1,17 @@
 #set text(font: "DejaVu Sans Mono", size: 8pt)
 
+#set page(numbering: (
+  (current, total) => align(
+    right,
+    {
+      "Page "
+      str(current)
+      " of "
+      str(total)
+    },
+  )
+))
+
 #let input = json("input.json")
 
 #set document(title: [Tax Packet #{ input.year }], date: none)
