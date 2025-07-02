@@ -47,8 +47,6 @@ vatReportInput VATReport {..} =
       inputTotalExportsRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalExportsRevenue
       inputTotalForeignRevenue = formatAmount vatReportCHF <$> orZero vatReportTotalForeignRevenue
       inputTotalForeignDeductions = formatAmount vatReportCHF vatReportTotalForeignDeductions
-      inputDomesticRevenue2023 = formatAmount vatReportCHF vatReportDomesticRevenue2023
-      input2023StandardRateVATRevenue = formatAmount vatReportCHF vatReport2023StandardRateVATRevenue
       inputDomesticRevenue2024 = formatAmount vatReportCHF vatReportDomesticRevenue2024
       input2024StandardRateVATRevenue = formatAmount vatReportCHF vatReport2024StandardRateVATRevenue
       inputTotalDomesticRevenue = formatAmount vatReportCHF vatReportTotalDomesticRevenue
@@ -93,11 +91,6 @@ data Input = Input
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
     inputTotalDomesticRevenue :: !FormattedAmount,
-    -- | 302
-    --
-    -- Leistungen zum Normalsatz 8.1%
-    inputDomesticRevenue2023 :: !FormattedAmount,
-    input2023StandardRateVATRevenue :: !FormattedAmount,
     -- | 303
     --
     -- Leistungen zum Normalsatz 8.1%
@@ -152,10 +145,6 @@ instance HasCodec Input where
           .= inputTotalForeignDeductions
         <*> requiredField "total_domestic_revenue" "total domestic revenue"
           .= inputTotalDomesticRevenue
-        <*> requiredField "domestic_revenue_2023" "domestic revenue from 2023"
-          .= inputDomesticRevenue2023
-        <*> requiredField "vat_revenue_standard_2023" "vat_standard"
-          .= input2023StandardRateVATRevenue
         <*> requiredField "domestic_revenue_2024" "domestic revenue from 2024"
           .= inputDomesticRevenue2024
         <*> requiredField "vat_revenue_standard_2024" "vat_standard"
@@ -209,11 +198,8 @@ vatInputDeductibleExpense DeductibleExpense {..} =
 
 formatVATRate :: VATRate -> String
 formatVATRate = \case
-  VATRate2023Standard -> "7.7 %"
   VATRate2024Standard -> "8.1 %"
-  VATRate2023Reduced -> "2.5 %"
   VATRate2024Reduced -> "2.6 %"
-  VATRate2023Hotel -> "3.7 %"
   VATRate2024Hotel -> "3.8 %"
 
 data InputRevenue = InputRevenue

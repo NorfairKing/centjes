@@ -90,15 +90,6 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
                         pure $ vr {vatReportTotalRevenue = totalRevenue}
                     )
       `suchThatMap` ( \vr -> do
-                        standardRate2023VATRevenue <-
-                          Amount.sum
-                            ( map
-                                domesticRevenueVATCHFAmount
-                                (filter ((== VATRate2023Standard) . domesticRevenueVATRate) (vatReportDomesticRevenues vr))
-                            )
-                        pure $ vr {vatReport2023StandardRateVATRevenue = standardRate2023VATRevenue}
-                    )
-      `suchThatMap` ( \vr -> do
                         standardRate2024VATRevenue <-
                           Amount.sum
                             ( map
@@ -110,8 +101,7 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
       `suchThatMap` ( \vr -> do
                         totalVATRevenue <-
                           Amount.sum
-                            [ vatReport2023StandardRateVATRevenue vr,
-                              vatReport2024StandardRateVATRevenue vr
+                            [ vatReport2024StandardRateVATRevenue vr
                             ]
                         pure $ vr {vatReportTotalVATRevenue = totalVATRevenue}
                     )

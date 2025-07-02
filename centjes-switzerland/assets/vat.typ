@@ -75,11 +75,11 @@ Alle Umsatzangaben sind netto
 ==== Leistungen ab 01.01.2018
 
 #table(
-  columns: (auto, 3fr, 1fr, 1fr), align: (x, y) => (left, left, right, right).at(x), ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")), "302", "Leistungen zum Normalsatz 7.7%", input.domestic_revenue_2023, input.vat_revenue_standard_2023, "303", "Leistungen zum Normalsatz 8.1%", input.domestic_revenue_2024, input.vat_revenue_standard_2024, "312", "Leistungen zum reduzierten Satz 2.5%", "", // TODO
-  "", // TODO
+  columns: (auto, 3fr, 1fr, 1fr),
+  align: (x, y) => (left, left, right, right).at(x),
+  ..("", "", "Leistungen CHF", "Steuer CHF").map(h => text(h, weight: "bold")),
+  "303", "Leistungen zum Normalsatz 8.1%", input.domestic_revenue_2024, input.vat_revenue_standard_2024,
   "313", "Leistungen zum reduzierten Satz 2.6%", "", // TODO
-  "", // TODO
-  "342", "Leistungen zum Beherbergungssatz 3.7%", "", // TODO
   "", // TODO
   "343", "Leistungen zum Beherbergungssatz Satz 3.8%", "", // TODO
   "", // TODO

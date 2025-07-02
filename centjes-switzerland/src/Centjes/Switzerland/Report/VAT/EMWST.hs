@@ -499,7 +499,6 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   -- TODO what is this?
   let turnoverComputationVariousDeduction = Nothing
   let xmlReportTurnoverComputation = TurnoverComputation {..}
-  standard2023TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2023
   standard2024TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2024
   -- TODO what is this?
   let effectiveReportingMethodGross = True
@@ -507,11 +506,6 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let effectiveReportingMethodOpted = Nothing
   let effectiveReportingMethodSupplies =
         [ TurnoverTaxRate
-            { -- TODO generate this decimal literal from the same TaxRate type that produced it
-              turnoverTaxRateRate = "7.7",
-              turnoverTaxRateTurnover = standard2023TurnoverLiteral
-            },
-          TurnoverTaxRate
             { -- TODO generate this decimal literal from the same TaxRate type that produced it
               turnoverTaxRateRate = "8.1",
               turnoverTaxRateTurnover = standard2024TurnoverLiteral

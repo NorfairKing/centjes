@@ -235,11 +235,6 @@ data VATReport ann = VATReport
     --
     -- Steuerbarer Gesamtumsatz (Ziff. 200 abzüglich Ziff. 289)
     vatReportTotalDomesticRevenue :: !Money.Amount,
-    -- | 302
-    --
-    -- Leistungen zum Normalsatz 7.7%
-    vatReportDomesticRevenue2023 :: !Money.Amount,
-    vatReport2023StandardRateVATRevenue :: !Money.Amount,
     -- | 303
     --
     -- Leistungen zum Normalsatz 8.1%
@@ -285,14 +280,11 @@ instance (Validity ann, Show ann, Ord ann) => Validity (VATReport ann) where
             vatReportTotalDomesticRevenue
             vatReportTotalForeignDeductions
             == Just vatReportTotalRevenue,
-        declare "The total 2023 standard rate VAT revenue is the total of VAT amounts of the revenues" $
-          Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2023Standard) . domesticRevenueVATRate) vatReportDomesticRevenues))
-            == Just vatReport2023StandardRateVATRevenue,
         declare "The total 2024 standard rate VAT revenue is the total of VAT amounts of the revenues" $
           Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2024Standard) . domesticRevenueVATRate) vatReportDomesticRevenues))
             == Just vatReport2024StandardRateVATRevenue,
         declare "The total vat is the sum of all the vat fields" $
-          Amount.sum [vatReport2023StandardRateVATRevenue, vatReport2024StandardRateVATRevenue] == Just vatReportTotalVATRevenue,
+          Amount.sum [vatReport2024StandardRateVATRevenue] == Just vatReportTotalVATRevenue,
         declare "The total vat deductions is the sum of all vat deductions" $
           Amount.sum [vatReportPaidVAT] == Just vatReportTotalVATDeductions,
         declare "The payable amount is the VAT revenue minus the paid VAT" $
@@ -318,16 +310,10 @@ instance (Validity ann, Show ann, Ord ann) => Validity (DomesticRevenue ann)
 
 -- TODO check that the rate is valid for the day?
 data VATRate
-  = -- | 7.7%
-    VATRate2023Standard
-  | -- | 8.1%
+  = -- | 8.1%
     VATRate2024Standard
-  | -- | 2.5%
-    VATRate2023Reduced
   | -- | 2.6%
     VATRate2024Reduced
-  | -- | 3.7%
-    VATRate2023Hotel
   | -- | 3.8%
     VATRate2024Hotel
   deriving (Show, Eq, Generic)
