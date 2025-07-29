@@ -4,7 +4,7 @@
 , genvalidity-vector, lib, monad-logger, mtl, opt-env-conf
 , opt-env-conf-test, path, path-io, QuickCheck, really-safe-money
 , really-safe-money-gen, safe-coloured-text, sydtest
-, sydtest-discover, text, vector, yaml
+, sydtest-discover, text, time, vector, yaml
 }:
 mkDerivation {
   pname = "centjes-gen";
@@ -20,7 +20,7 @@ mkDerivation {
     base bytestring centjes containers genvalidity-containers
     genvalidity-sydtest genvalidity-text monad-logger mtl opt-env-conf
     opt-env-conf-test path path-io QuickCheck really-safe-money
-    safe-coloured-text sydtest text yaml
+    safe-coloured-text sydtest text time yaml
   ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

@@ -107,7 +107,8 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
                                   S.member currency currenciesSet
                               ]
                     ],
-            declare "the prices are sorted" $ partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
+            declare "the prices are sorted" $
+              partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
             declare "the transactions are sorted" $
               partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
           ]

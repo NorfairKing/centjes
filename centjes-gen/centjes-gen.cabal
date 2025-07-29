@@ -367,5 +367,6 @@ test-suite centjes-test
     , safe-coloured-text
     , sydtest
     , text
+    , time
     , yaml
   default-language: Haskell2010
