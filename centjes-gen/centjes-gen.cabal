@@ -37,6 +37,8 @@ extra-source-files:
     test_resources/balance/balanced/conversion-two-paths.cent
     test_resources/balance/balanced/conversion-two-paths.config
     test_resources/balance/balanced/conversion-two-paths.txt
+    test_resources/balance/balanced/conversion-with-virtual.cent
+    test_resources/balance/balanced/conversion-with-virtual.txt
     test_resources/balance/balanced/conversion.cent
     test_resources/balance/balanced/conversion.txt
     test_resources/balance/balanced/empty-transaction.cent

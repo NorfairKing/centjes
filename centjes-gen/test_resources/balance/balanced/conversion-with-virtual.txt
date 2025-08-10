@@ -1,0 +1,7 @@
+[37massets[m         [32m  962.58[m [32mUSD[m
+[37mequity[m         [31m-1000.00[m [31mUSD[m
+[37mequity:opening[m [31m-1000.00[m [31mUSD[m
+[37mexpenses[m       [32m   29.76[m [32mCHF[m
+[37mexpenses:cloud[m [32m   29.76[m [32mCHF[m
+[34mTotal[m          [32m   29.76[m [32mCHF[m
+               [31m  -37.42[m [31mUSD[m

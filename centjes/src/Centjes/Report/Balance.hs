@@ -619,7 +619,7 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
                       else validationFailure $ BalanceErrorConversionImpossibleRate la lcost mActualRate
 
                 addAccountToBalances tl an pl convertedCurrency convertedAccount balancesForBalancing
-              else pure balancesForAssertions
+              else pure balancesForBalancing
 
           balancesForAssertions' <-
             if real

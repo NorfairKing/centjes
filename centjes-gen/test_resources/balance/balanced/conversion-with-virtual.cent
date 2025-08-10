@@ -1,0 +1,18 @@
+currency USD 0.01
+currency CHF 0.01
+
+account equity:opening
+account assets
+account expenses:VAT
+account expenses:cloud
+
+2025-08-02
+  | Opening Balance
+  * equity:opening -1000 USD
+  * assets         +1000 USD
+
+2025-08-02
+  | AWS                                                   
+  * assets         -37.42 USD @ 2976 / 3742 CHF
+  * expenses:cloud +29.76 CHF
+  ! expenses:VAT    +2.23 CHF ~ 8.1%
