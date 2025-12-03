@@ -51,7 +51,7 @@ import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import Path
 import Path.IO
-import Paths_centjes_switzerland
+import Paths_centjes_chart
 import System.Environment (getEnvironment)
 import System.Exit
 import System.Process.Typed
