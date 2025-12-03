@@ -8,7 +8,6 @@ module Centjes.Validation where
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Control.Monad.Trans
-import Data.Foldable
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Text (Text)

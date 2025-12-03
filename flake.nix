@@ -6,7 +6,7 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
     haskell-dependency-graph-nix.url = "github:NorfairKing/haskell-dependency-graph-nix";
     haskell-dependency-graph-nix.inputs.nixpkgs.follows = "nixpkgs";
@@ -74,9 +74,8 @@
         package = self.packages.${system}.default;
         shell = self.devShells.${system}.default;
         e2e-test = import ./nix/e2e-test.nix {
-          inherit (pkgs) nixosTest;
+          inherit (pkgs.testers) runNixOSTest;
           centjes-nixos-module = self.nixosModules.${system}.default;
-          inherit system;
         };
         example-switzerland-taxes = pkgs.centjesRelease.makeSwitzerlandTaxesPacket { src = ./centjes-switzerland/test_resources/example; };
         example-switzerland-vat = pkgs.centjesRelease.makeSwitzerlandVATPacket { src = ./centjes-switzerland/test_resources/example; };

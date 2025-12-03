@@ -1,18 +1,17 @@
-{ nixosTest
-, system
+{ runNixOSTest
 , centjes-nixos-module
 }:
 let
   docs-port = 8001;
 in
-nixosTest {
+runNixOSTest {
   name = "centjes-e2e-test";
   nodes = {
     docsserver = {
       imports = [
         centjes-nixos-module
       ];
-      system.stateVersion = "24.05";
+      system.stateVersion = "25.11";
       services.centjes.production = {
         enable = true;
         docs-site = {
@@ -24,7 +23,7 @@ nixosTest {
       };
     };
     client = {
-      system.stateVersion = "24.05";
+      system.stateVersion = "25.11";
     };
   };
   testScript = ''

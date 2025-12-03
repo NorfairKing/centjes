@@ -27,7 +27,6 @@ import Control.Monad.Except
 import Control.Monad.Logger
 import Control.Monad.State.Strict
 import qualified Data.ByteString as SB
-import Data.Foldable
 import Data.List (intercalate)
 import Data.Map (Map)
 import qualified Data.Map as M

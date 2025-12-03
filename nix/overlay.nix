@@ -214,12 +214,7 @@ with final.haskell.lib;
           };
         in
         {
-          diagnose = doJailbreak (self.callCabal2nix "diagnose"
-            (builtins.fetchGit {
-              url = "https://github.com/Mesabloo/diagnose";
-              rev = "0f17c071d0b00f56a5aabe06f756863d0baca13f";
-            })
-            { });
+          diagnose = unmarkBroken (doJailbreak super.diagnose);
           zip = dontCheck (enableCabalFlag (super.zip.override { bzlib-conduit = null; }) "disable-bzip2");
           inherit centjesPackages;
           inherit centjesRelease;

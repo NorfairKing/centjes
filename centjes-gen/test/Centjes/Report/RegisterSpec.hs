@@ -20,6 +20,7 @@ import qualified Data.Text as T
 import qualified Data.Yaml as Yaml
 import qualified OptEnvConf
 import qualified OptEnvConf.Args as Args
+import OptEnvConf.Capability (allCapabilities)
 import qualified OptEnvConf.EnvMap as EnvMap
 import qualified OptEnvConf.Error as OptEnvConf
 import Path
@@ -56,6 +57,7 @@ spec = do
                 else pure Nothing
             errOrSettings <-
               OptEnvConf.runParserOn
+                allCapabilities
                 Nothing
                 OptEnvConf.settingsParser
                 Args.emptyArgs

@@ -1,4 +1,4 @@
-resolver: lts-23.19
+resolver: lts-24.16
 packages:
 
 - centjes
@@ -68,11 +68,12 @@ extra-deps:
     - autodocodec-schema
     - autodocodec-yaml
 - github: NorfairKing/opt-env-conf
-  commit: f1a744f9497e0c0e017262dfa24b7aefe5250dd0
+  commit: 87865e39ddeefd1c5613d2e7df2c61d6cc27efab
   subdirs:
     - opt-env-conf
     - opt-env-conf-test
 
+allow-newer: true # For diagnose
 
 system-ghc: true
 nix:

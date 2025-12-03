@@ -25,7 +25,8 @@
     )
   )
   let is_chf = line => (
-    line_amount(line).symbol == "CHF" and line_amount(line).formatted == line.amount_chf
+    line_amount(line).symbol == "CHF"
+      and line_amount(line).formatted == line.amount_chf
   )
   let show_original = lines.any(line => not is_chf(line))
 
@@ -151,16 +152,24 @@ separately.
 == Assets
 
 #table(
-  stroke: 0.5pt, columns: (1fr, auto), align: (
+  stroke: 0.5pt,
+  columns: (1fr, auto),
+  align: (
     left,
     right,
-  ), ..input.assets.map(asset => (
-    asset.name,
-    [ #asset.balance CHF ],
-  )).flatten(), text(
+  ),
+  ..input
+    .assets
+    .map(asset => (
+      asset.name,
+      [ #asset.balance CHF ],
+    ))
+    .flatten(),
+  text(
     weight: "bold",
     [Total],
-  ), [#text(weight: "bold", input.total_assets) CHF],
+  ),
+  [#text(weight: "bold", input.total_assets) CHF],
 )
 
 #for asset in input.assets [
@@ -180,11 +189,15 @@ separately.
         left,
         right,
       ), ..(
-        asset.balances.pairs().map(((currency, balance)) => (
-          [ #balance.original ],
-          [ #currency],
-          [ #balance.converted CHF ],
-        )).flatten()
+        asset
+          .balances
+          .pairs()
+          .map(((currency, balance)) => (
+            [ #balance.original ],
+            [ #currency],
+            [ #balance.converted CHF ],
+          ))
+          .flatten()
       ), ..(
         [Total: ],
         [],
@@ -205,9 +218,13 @@ These exchange rates are used for asset valuations on #datetime(year: input.year
 
 #table(
   stroke: 0.5pt, columns: (auto, auto), align: (left, right), ..(
-    input.rates.pairs().map(((currency, rate)) => (
-      currency,
-      [#rate CHF],
-    )).flatten()
+    input
+      .rates
+      .pairs()
+      .map(((currency, rate)) => (
+        currency,
+        [#rate CHF],
+      ))
+      .flatten()
   ),
 )

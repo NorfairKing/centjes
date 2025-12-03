@@ -45,9 +45,6 @@ import Path
 import Text.Read (readMaybe)
 import Text.Show.Pretty
 
--- TODO upstream this to validity-time
-deriving instance Generic Quarter
-
 instance Validity Quarter
 
 -- | The settings we need to produce a 'VATReport'
