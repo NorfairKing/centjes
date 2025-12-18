@@ -81,6 +81,7 @@ with final.haskell.lib;
     let
       centjes-module = import ./nixos-module.nix
         {
+          inherit (final.haskellPackages) opt-env-conf;
           inherit (final.centjesReleasePackages) centjes-docs-site;
         }
         {

@@ -135,6 +135,7 @@
       };
       nixosModules.${system}.default = self.nixosModuleFactories.${system}.default { envname = "production"; };
       nixosModuleFactories.${system}.default = import ./nix/nixos-module.nix {
+        inherit (pkgs.haskellPackages) opt-env-conf;
         inherit (pkgs.centjesReleasePackages) centjes-docs-site;
       };
       nix-ci.cachix = {

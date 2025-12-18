@@ -1,4 +1,5 @@
-{ centjes-docs-site
+{ opt-env-conf
+, centjes-docs-site
 }:
 { envname
 }:
@@ -57,7 +58,7 @@ in
         optionalAttrs (cfg.docs-site.enable or false) {
           "centjes-docs-site-${envname}" =
             with cfg.docs-site;
-            {
+            opt-env-conf.addSettingsCheckToService { } {
               description = "Centjes docs site ${envname} Service";
               wantedBy = [ "multi-user.target" ];
               environment = {
