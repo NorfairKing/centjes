@@ -98,6 +98,9 @@ library
     , path
     , path-io
     , prettyprinter
+    , prometheus
+    , prometheus-ghc-stats
+    , prometheus-wai
     , safe-coloured-text
     , shakespeare
     , skylighting
@@ -120,7 +123,7 @@ executable centjes-docs-site
       Paths_centjes_docs_site
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-T
   build-depends:
       base >=4.7
     , centjes-docs-site

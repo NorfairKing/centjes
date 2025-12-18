@@ -267,6 +267,32 @@ packages:
   original:
     subdir: opt-env-conf-test
     url: https://github.com/NorfairKing/opt-env-conf/archive/87865e39ddeefd1c5613d2e7df2c61d6cc27efab.tar.gz
+- completed:
+    name: prometheus-wai
+    pantry-tree:
+      sha256: f173e0d365caeff0dd79979d8109760d0e3b405e9f12692b83b9f5f7e14dfb7d
+      size: 307
+    sha256: a54402017426732d5d53bf589c5fe6ec39968cee412831010bd1cebf3b383cda
+    size: 5718
+    subdir: prometheus-wai
+    url: https://github.com/NorfairKing/prometheus-wai/archive/6699a7241f8ecbb2ba551a542bfc4abba586d606.tar.gz
+    version: 0.2.0.0
+  original:
+    subdir: prometheus-wai
+    url: https://github.com/NorfairKing/prometheus-wai/archive/6699a7241f8ecbb2ba551a542bfc4abba586d606.tar.gz
+- completed:
+    name: prometheus-ghc-stats
+    pantry-tree:
+      sha256: 1c4ae948e645b99554e047f94362ba61643f8378cc9ff31b1e2f07b5aeefa20f
+      size: 307
+    sha256: 3eee83185cca2ce1f7a54c82257ab06253b43b6c9d999773b9ae417fcb1bc4ab
+    size: 4079
+    subdir: prometheus-ghc-stats
+    url: https://github.com/NorfairKing/prometheus-ghc-stats/archive/7cf4a8210c815f0573f67cb326cff6718e6962ad.tar.gz
+    version: 0.0.0.0
+  original:
+    subdir: prometheus-ghc-stats
+    url: https://github.com/NorfairKing/prometheus-ghc-stats/archive/7cf4a8210c815f0573f67cb326cff6718e6962ad.tar.gz
 snapshots:
 - completed:
     sha256: 309392e77af949aff34933aff53070c774d274b0f2f7e314df665c0d322c7715

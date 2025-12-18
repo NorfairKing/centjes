@@ -37,6 +37,9 @@ library:
   - path
   - path-io
   - prettyprinter
+  - prometheus
+  - prometheus-ghc-stats
+  - prometheus-wai
   - safe-coloured-text
   - shakespeare
   - skylighting
@@ -60,6 +63,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -with-rtsopts=-T # Enable GHC Stats
     dependencies:
     - centjes-docs-site
 

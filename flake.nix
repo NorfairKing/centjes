@@ -21,6 +21,10 @@
     yesod-autoreload.flake = false;
     yesod-static-remote.url = "github:NorfairKing/yesod-static-remote";
     yesod-static-remote.flake = false;
+    prometheus-wai.url = "github:NorfairKing/prometheus-wai";
+    prometheus-wai.flake = false;
+    prometheus-ghc-stats.url = "github:NorfairKing/prometheus-ghc-stats";
+    prometheus-ghc-stats.flake = false;
     template-haskell-reload.url = "github:NorfairKing/template-haskell-reload";
     template-haskell-reload.flake = false;
     dekking.url = "github:NorfairKing/dekking";
@@ -41,6 +45,8 @@
     , really-safe-money
     , yesod-autoreload
     , yesod-static-remote
+    , prometheus-wai
+    , prometheus-ghc-stats
     , template-haskell-reload
     , dekking
     , linkcheck
@@ -56,6 +62,8 @@
           (import (really-safe-money + "/nix/overlay.nix"))
           (import (yesod-autoreload + "/nix/overlay.nix"))
           (import (yesod-static-remote + "/nix/overlay.nix"))
+          (import (prometheus-wai + "/nix/overlay.nix"))
+          (import (prometheus-ghc-stats + "/nix/overlay.nix"))
           (import (template-haskell-reload + "/nix/overlay.nix"))
           (import (dekking + "/nix/overlay.nix"))
           (import (linkcheck + "/nix/overlay.nix"))

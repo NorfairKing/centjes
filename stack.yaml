@@ -72,6 +72,14 @@ extra-deps:
   subdirs:
     - opt-env-conf
     - opt-env-conf-test
+- github: NorfairKing/prometheus-wai
+  commit: 6699a7241f8ecbb2ba551a542bfc4abba586d606
+  subdirs:
+    - prometheus-wai
+- github: NorfairKing/prometheus-ghc-stats
+  commit: 7cf4a8210c815f0573f67cb326cff6718e6962ad
+  subdirs:
+    - prometheus-ghc-stats
 
 allow-newer: true # For diagnose
 
