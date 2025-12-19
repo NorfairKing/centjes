@@ -84,7 +84,7 @@ instance ToReport (CheckError SourceSpan) where
           (toDiagnosePosition fl, This "This file is missing")
         ]
         [ Hint $ intercalate "\n" $ "Perhaps it was a typo and you meant one of these files in the same directory:" : map fromRelFile fs
-          | not (null fs)
+        | not (null fs)
         ]
     CheckErrorUnusedCurrency (Located dl _) ->
       Err

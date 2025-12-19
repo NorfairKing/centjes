@@ -163,8 +163,8 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition al, This "Could not convert this amount")
         ]
         [ Hint $ "The closest valid rate is " <> DecimalLiteral.toString dl
-          | cr <- maybeToList mConversionRate,
-            dl <- maybeToList $ ConversionRate.toDecimalLiteral cr
+        | cr <- maybeToList mConversionRate,
+          dl <- maybeToList $ ConversionRate.toDecimalLiteral cr
         ]
     BalanceErrorUndeclaredAccount s an ->
       Err
@@ -246,8 +246,8 @@ instance ToReport (BalanceError SourceSpan) where
                                   }
                           ]
                     )
-                    | Located rl expectedRatio <- maybeToList mComputedRatio,
-                      dl <- maybeToList $ DecimalLiteral.fromRational (expectedRatio * 100)
+                  | Located rl expectedRatio <- maybeToList mComputedRatio,
+                    dl <- maybeToList $ DecimalLiteral.fromRational (expectedRatio * 100)
                   ],
                   [ ( toDiagnosePosition pal,
                       Maybe $
@@ -264,7 +264,7 @@ instance ToReport (BalanceError SourceSpan) where
                             Account.format qf computedCurrent
                           ]
                     )
-                    | Located al computedCurrent <- maybeToList mComputedCurrent
+                  | Located al computedCurrent <- maybeToList mComputedCurrent
                   ],
                   [ (toDiagnosePosition s, Where "While trying to balance this transaction"),
                     (toDiagnosePosition pl, Where "While checking the ratio in this posting"),
@@ -315,7 +315,7 @@ instance ToReport (BalanceError SourceSpan) where
                           ++ ( [ [ "Difference (calculated - asserted):",
                                    accountLine c difference
                                  ]
-                                 | difference <- maybeToList mDifference
+                               | difference <- maybeToList mDifference
                                ]
                              )
                 )
@@ -327,7 +327,7 @@ instance ToReport (BalanceError SourceSpan) where
                         "Maybe there is a mistake with the currency?"
                       ]
                 )
-                | not (M.member c (MultiAccount.unMultiAccount actual))
+              | not (M.member c (MultiAccount.unMultiAccount actual))
               ]
             ]
         )

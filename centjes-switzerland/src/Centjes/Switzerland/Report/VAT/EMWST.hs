@@ -108,7 +108,7 @@ instance ToElement XMLReport where
                 NodeElement $ ech0217Element "payableTax" [decimalLiteralNode xmlReportPayableTax]
               ],
               [ NodeElement $ toElement o
-                | o <- maybeToList xmlReportOtherFlowOfFunds
+              | o <- maybeToList xmlReportOtherFlowOfFunds
               ]
             ]
       }
@@ -269,22 +269,22 @@ instance ToElement TurnoverComputation where
       concat
         [ [NodeElement $ ech0217Element "totalConsideration" [decimalLiteralNode turnoverComputationTotalConsideration]],
           [ NodeElement $ ech0217Element "suppliesToForeignCountries" [decimalLiteralNode dl]
-            | dl <- maybeToList turnoverComputationSuppliesToForeignCountries
+          | dl <- maybeToList turnoverComputationSuppliesToForeignCountries
           ],
           [ NodeElement $ ech0217Element "suppliesAbroad" [decimalLiteralNode dl]
-            | dl <- maybeToList turnoverComputationSuppliesAbroad
+          | dl <- maybeToList turnoverComputationSuppliesAbroad
           ],
           [ NodeElement $ ech0217Element "transferNotificationProcedure" [decimalLiteralNode dl]
-            | dl <- maybeToList turnoverComputationTransferNotificationProcedure
+          | dl <- maybeToList turnoverComputationTransferNotificationProcedure
           ],
           [ NodeElement $ ech0217Element "suppliesExemptFromTax" [decimalLiteralNode dl]
-            | dl <- maybeToList turnoverComputationSuppliesExemptFromTax
+          | dl <- maybeToList turnoverComputationSuppliesExemptFromTax
           ],
           [ NodeElement $ ech0217Element "reductionOfConsideration" [decimalLiteralNode dl]
-            | dl <- maybeToList turnoverComputationReductionOfConsideration
+          | dl <- maybeToList turnoverComputationReductionOfConsideration
           ],
           [ NodeElement $ ech0217Element "variousDeduction" [decimalLiteralNode dl]
-            | dl <- maybeToList turnoverComputationVariousDeduction
+          | dl <- maybeToList turnoverComputationVariousDeduction
           ]
         ]
 

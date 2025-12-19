@@ -74,7 +74,7 @@ instance ToReport (ConvertError SourceSpan) where
                 (toDiagnosePosition toL, Where "to this currency")
               ],
               [ (toDiagnosePosition al, This "Failed to convert this amount")
-                | al <- maybeToList mAl
+              | al <- maybeToList mAl
               ]
             ]
         )

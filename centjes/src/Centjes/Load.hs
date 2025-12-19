@@ -202,7 +202,7 @@ instance ToReport LoadError' where
               [ ( Position beginTup endTup (fromRelFile rf),
                   This (T.unpack errPart)
                 )
-                | (errPart, beginTup, endTup) <- maybeToList maybePos
+              | (errPart, beginTup, endTup) <- maybeToList maybePos
               ]
             ]
         )

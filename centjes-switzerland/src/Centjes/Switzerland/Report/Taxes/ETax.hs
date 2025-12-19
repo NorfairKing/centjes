@@ -69,20 +69,20 @@ instance ToElement Header where
         [ map (NodeElement . toElement) headerAttachments,
           -- cantonExtension
           [ NodeElement $ ech0119Element "transactionNumber" [NodeContent tn]
-            | tn <- maybeToList headerTransactionNumber
+          | tn <- maybeToList headerTransactionNumber
           ],
           [ NodeElement $ ech0119Element "transactionDate" [NodeContent $ T.pack $ formatTime defaultTimeLocale "%FT%T" lt]
-            | lt <- maybeToList headerTransactionDate
+          | lt <- maybeToList headerTransactionDate
           ],
           [NodeElement $ ech0119Element "taxPeriod" [NodeContent $ T.pack $ show headerTaxPeriod]],
           [ NodeElement $ ech0119Element "periodFrom" [NodeContent $ T.pack $ formatTime defaultTimeLocale "%F" d]
-            | d <- maybeToList headerPeriodFrom
+          | d <- maybeToList headerPeriodFrom
           ],
           [ NodeElement $ ech0119Element "periodTo" [NodeContent $ T.pack $ formatTime defaultTimeLocale "%F" d]
-            | d <- maybeToList headerPeriodTo
+          | d <- maybeToList headerPeriodTo
           ],
           [ NodeElement $ ech0119Element "canton" [NodeContent $ renderCantonAbbreviation ca]
-            | ca <- maybeToList headerCanton
+          | ca <- maybeToList headerCanton
           ],
           [ NodeElement $ ech0119Element "source" [NodeContent "0"],
             NodeElement $ ech0119Element "sourceDescription" [NodeContent $ T.pack $ "centjes-switzerland-" <> showVersion CentjesSwitzerland.version]
@@ -125,7 +125,7 @@ instance ToElement Content where
   toElement Content {..} =
     ech0119Element "content" $
       [ NodeElement $ toElement mf
-        | mf <- maybeToList contentMainForm
+      | mf <- maybeToList contentMainForm
       ]
 
 data MainForm = MainForm
@@ -154,7 +154,7 @@ instance ToElement MainForm where
         [ [ NodeElement $ toElement mainFormPersonDataPartner1
           ],
           [ NodeElement $ toElement r
-            | r <- maybeToList mainFormRevenue
+          | r <- maybeToList mainFormRevenue
           ]
         ]
 
@@ -244,7 +244,7 @@ instance ToElement Revenue where
     ech0119Element
       "revenue"
       [ NodeElement $ ech0119Element "selfemployedMainRevenue" $ toNodes r
-        | r <- maybeToList revenueSelfemployedMainRevenue
+      | r <- maybeToList revenueSelfemployedMainRevenue
       ]
 
 data PartnerAmount = PartnerAmount

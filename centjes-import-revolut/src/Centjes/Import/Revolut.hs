@@ -200,7 +200,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
                       (noLoc assetsAccountName)
                       (noLoc bl)
                       (noLoc rowCurrency)
-          | bl <- maybeToList mbl
+        | bl <- maybeToList mbl
         ]
   pure
     [ DeclarationComment $ noLoc $ T.pack $ "Started date: " <> formatTime defaultTimeLocale "%F %T" rowStartedDate,

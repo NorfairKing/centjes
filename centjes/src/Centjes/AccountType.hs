@@ -71,7 +71,7 @@ assertion = \case
   AccountTypeEquity -> (<= Account.zero)
   AccountTypeExpenses -> (>= Account.zero)
   AccountTypeIncome -> (<= Account.zero)
-  AccountTypeOther -> (const True)
+  AccountTypeOther -> const True
 
 fromAccountName :: AccountName -> Maybe AccountType
 fromAccountName an =
