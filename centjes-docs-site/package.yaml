@@ -23,6 +23,7 @@ library:
   - blaze-html
   - bytestring
   - centjes
+  - centjes-cryptocurrencies
   - centjes-import-cornercard
   - centjes-import-neon
   - centjes-import-revolut

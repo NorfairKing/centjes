@@ -59,6 +59,18 @@
             Download Rates
 
   <p .menu-label>
+    Cryptocurrencies
+
+  <ul .menu-list>
+    <li>
+      <a href=@{CentjesCryptocurrenciesR}>
+        CLI
+      <ul .menu-list>
+        <li>
+          <a href=@{CentjesCryptocurrenciesCommandR "download-rates"}>
+            Download Rates
+
+  <p .menu-label>
     Contribution
 
   <ul .menu-list>
