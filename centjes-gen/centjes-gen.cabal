@@ -203,9 +203,15 @@ extra-source-files:
     test_resources/register/valid/example.txt
     test_resources/register/valid/gap.cent
     test_resources/register/valid/gap.txt
+    test_resources/register/valid/many-currencies.cent
+    test_resources/register/valid/many-currencies.config
+    test_resources/register/valid/many-currencies.txt
     test_resources/register/valid/monthly.cent
     test_resources/register/valid/monthly.config
     test_resources/register/valid/monthly.txt
+    test_resources/register/valid/multi-currency-prices.cent
+    test_resources/register/valid/multi-currency-prices.config
+    test_resources/register/valid/multi-currency-prices.txt
     test_resources/register/valid/one-year.cent
     test_resources/register/valid/one-year.config
     test_resources/register/valid/one-year.txt

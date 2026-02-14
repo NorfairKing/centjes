@@ -104,6 +104,8 @@ isTransactionEntry = \case
 -- | A revaluation entry representing gain/loss due to price changes
 data RegisterRevaluation ann = RegisterRevaluation
   { registerRevaluationTimestamp :: !(GenLocated ann Timestamp),
+    -- | The currency whose price changed
+    registerRevaluationCurrency :: !(GenLocated ann (Currency ann)),
     -- | The gain or loss amount
     registerRevaluationAmount :: !(Money.MultiAccount (Currency ann)),
     -- | Running total across blocks after this revaluation
@@ -164,7 +166,6 @@ instance ToReport (RegisterError SourceSpan) where
 data LedgerEvent ann
   = EventTransaction !(GenLocated ann (Transaction ann))
   | EventPrice !(GenLocated ann (Price ann))
-  deriving (Show, Generic)
 
 -- | Get the timestamp of a ledger event
 eventTimestamp :: LedgerEvent ann -> GenLocated ann Timestamp
@@ -487,15 +488,29 @@ tallyPriceEvent ::
 tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
   let Located _ ts = priceTimestamp
       day = Timestamp.toDay ts
+      -- A price declaration affects both currencies involved:
+      -- priceCurrency (e.g., USD in "price USD 2 CHF") and costCurrency (CHF)
+      -- We need to revalue holdings in both
+      Located _ pricedCurrency = priceCurrency
+      Located _ Cost {..} = priceCost
+      Located _ costCur = costCurrency
   -- Check if this price is within the date filter
   if not (dayPassesDayFilter mBegin mEnd day)
     then pure Nothing
     else do
       let rawBalances = rsRawBalances state
-      -- If we have no raw balances, no revaluation needed
-      if rawBalances == MultiAccount.zero
+      -- Look at balances in both currencies this price affects
+      let pricedBalance = MultiAccount.lookupAccount pricedCurrency rawBalances
+          costBalance = MultiAccount.lookupAccount costCur rawBalances
+      -- If we have no balance in either affected currency, no revaluation needed
+      if pricedBalance == Account.zero && costBalance == Account.zero
         then pure Nothing
         else do
+          -- Create a MultiAccount for just the affected currencies
+          let affectedRawBalance =
+                case MultiAccount.addAccount (MultiAccount.fromAccount pricedCurrency pricedBalance) costCur costBalance of
+                  Nothing -> MultiAccount.fromAccount pricedCurrency pricedBalance -- fallback, shouldn't happen
+                  Just ma -> ma
           -- Get the price graph BEFORE this price was added
           let oldPrices = case M.lookupLT day prices of
                 Nothing -> MemoisedPriceGraph.empty
@@ -504,18 +519,18 @@ tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
           let newPrices = case M.lookupLE day prices of
                 Nothing -> MemoisedPriceGraph.empty
                 Just (_, pg) -> pg
-          -- Try to convert raw balances with old prices
+          -- Try to convert the affected balances with old prices
           -- If conversion fails (missing price), treat old value as zero (first price establishment)
           let oldConvertedResult =
                 mapValidationFailure RegisterErrorConvertError $
-                  convertMultiAccount Nothing oldPrices currencyTo rawBalances
+                  convertMultiAccount Nothing oldPrices currencyTo affectedRawBalance
               oldConverted = case oldConvertedResult of
                 Failure _ -> MultiAccount.zero -- No price available before, treat as zero
                 Success v -> v
-          -- Convert raw balances with new prices
+          -- Convert the affected balances with new prices
           newConverted <-
             mapValidationFailure RegisterErrorConvertError $
-              convertMultiAccount Nothing newPrices currencyTo rawBalances
+              convertMultiAccount Nothing newPrices currencyTo affectedRawBalance
           -- Calculate the difference (revaluation amount)
           case MultiAccount.subtract newConverted oldConverted of
             Nothing -> validationFailure RegisterErrorAddError
@@ -534,6 +549,7 @@ tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
                           let reval =
                                 RegisterRevaluation
                                   { registerRevaluationTimestamp = priceTimestamp,
+                                    registerRevaluationCurrency = priceCurrency,
                                     registerRevaluationAmount = revaluationAmount,
                                     registerRevaluationRunningTotal = newRunning,
                                     registerRevaluationBlockRunningTotal = newBlockRunning

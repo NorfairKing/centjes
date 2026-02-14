@@ -143,13 +143,15 @@ renderRevaluation ::
   [[Chunk]]
 renderRevaluation maxWidth RegisterRevaluation {..} =
   let Located _ ts = registerRevaluationTimestamp
+      Located _ cur = registerRevaluationCurrency
       amountChunks = multiAccountChunksWithWidth (Just maxWidth) registerRevaluationAmount
       runningChunks = multiAccountChunksWithWidth (Just maxWidth) registerRevaluationBlockRunningTotal
       -- Pair up amount and running total lines
       renderLines = zipAmountAndRunning amountChunks runningChunks
+      descriptionText = "Price: " <> currencySymbolText (currencySymbol cur)
    in hCatTable
         [ [[timestampChunk ts]],
-          [[fore cyan $ chunk "Price change"]],
+          [[fore cyan $ chunk descriptionText]],
           renderLines
         ]
   where
