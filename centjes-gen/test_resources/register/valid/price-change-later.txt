@@ -1,0 +1,5 @@
+Block      Timestamp  Description      Account  Amount     Running     Total      Average    
+[37m2024-12-31[m [34m2024-12-31[m [33mOpening balances[m [37mexpenses[m [32m100.00[m [32mCHF[m [32m100.00[m  [32mCHF[m                       
+                                       [37mexpenses[m [32m100.00[m [32mCHF[m [32m200.00[m  [32mCHF[m [32m200.00[m [32mCHF[m [32m200.00[m  [32mCHF[m
+[37m2025-01-01[m [34m2025-01-01[m [36mPrice: USD[m                [32m100.00[m [32mCHF[m [32m100.00[m  [32mCHF[m                       
+           [34m2025-01-01[m [36mPrice: EUR[m                [32m 50.00[m [32mCHF[m [32m150.00[m  [32mCHF[m [32m350.00[m [32mCHF[m [32m350.00[m  [32mCHF[m

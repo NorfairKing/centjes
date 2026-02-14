@@ -1,0 +1,3 @@
+Block      Timestamp  Description                   Account  Amount     Running     Total      Average    
+[37m2024-03-07[m [34m2024-03-07[m [33mExpense in USD when rate is 1[m [37mexpenses[m [32m100.00[m [32mCHF[m [32m100.00[m  [32mCHF[m [32m100.00[m [32mCHF[m [32m100.00[m  [32mCHF[m
+[37m2024-03-10[m [34m2024-03-10[m [36mPrice: USD[m                             [32m100.00[m [32mCHF[m [32m100.00[m  [32mCHF[m [32m200.00[m [32mCHF[m [32m200.00[m  [32mCHF[m

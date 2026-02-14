@@ -1,0 +1,3 @@
+Block      Timestamp  Description      Account  Amount     Running     Total      Average    
+[37m2024-12-31[m [34m2024-12-31[m [33mOpening balances[m [37mexpenses[m [32m200.00[m [32mCHF[m [32m200.00[m  [32mCHF[m                       
+                                       [37mexpenses[m [32m150.00[m [32mCHF[m [32m350.00[m  [32mCHF[m [32m350.00[m [32mCHF[m [32m350.00[m  [32mCHF[m

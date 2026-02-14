@@ -10,6 +10,9 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
+    test_resources/balance/balanced/conversion-daily.cent
+    test_resources/balance/balanced/conversion-daily.config
+    test_resources/balance/balanced/conversion-daily.txt
     test_resources/balance/balanced/conversion-hop-prices.cent
     test_resources/balance/balanced/conversion-hop-prices.config
     test_resources/balance/balanced/conversion-hop-prices.txt
@@ -188,6 +191,9 @@ extra-source-files:
     test_resources/load/LE_IMPORT_DIR.err
     test_resources/register/error/block-amount-too-big.cent
     test_resources/register/error/block-amount-too-big.config
+    test_resources/register/valid/conversion-daily.cent
+    test_resources/register/valid/conversion-daily.config
+    test_resources/register/valid/conversion-daily.txt
     test_resources/register/valid/daily.cent
     test_resources/register/valid/daily.config
     test_resources/register/valid/daily.txt
@@ -197,21 +203,33 @@ extra-source-files:
     test_resources/register/valid/example.txt
     test_resources/register/valid/gap.cent
     test_resources/register/valid/gap.txt
+    test_resources/register/valid/many-currencies.cent
+    test_resources/register/valid/many-currencies.config
+    test_resources/register/valid/many-currencies.txt
     test_resources/register/valid/monthly.cent
     test_resources/register/valid/monthly.config
     test_resources/register/valid/monthly.txt
+    test_resources/register/valid/multi-currency-prices.cent
+    test_resources/register/valid/multi-currency-prices.config
+    test_resources/register/valid/multi-currency-prices.txt
     test_resources/register/valid/one-year.cent
     test_resources/register/valid/one-year.config
     test_resources/register/valid/one-year.txt
     test_resources/register/valid/open-ended.cent
     test_resources/register/valid/open-ended.config
     test_resources/register/valid/open-ended.txt
+    test_resources/register/valid/price-change-later.cent
+    test_resources/register/valid/price-change-later.config
+    test_resources/register/valid/price-change-later.txt
     test_resources/register/valid/quarterly.cent
     test_resources/register/valid/quarterly.config
     test_resources/register/valid/quarterly.txt
     test_resources/register/valid/rates.cent
     test_resources/register/valid/rates.config
     test_resources/register/valid/rates.txt
+    test_resources/register/valid/same-day-prices.cent
+    test_resources/register/valid/same-day-prices.config
+    test_resources/register/valid/same-day-prices.txt
     test_resources/register/valid/virtual.cent
     test_resources/register/valid/virtual.config
     test_resources/register/valid/virtual.txt

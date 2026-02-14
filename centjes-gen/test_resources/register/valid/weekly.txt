@@ -1,2 +1,4 @@
 Block    Timestamp  Description   Account  Amount     Running     Total     Average    
 [37m2025-W01[m [34m2025-01-01[m [33mTransaction 1[m [37mexpenses[m [32m 1.00[m  [32mUSD[m [32m 1.00[m   [32mUSD[m [32m1.00[m  [32mUSD[m [32m1.00[m    [32mUSD[m
+[37m2025-W36[m [34m2025-09-02[m [33mTransaction 2[m [37mexpenses[m [32m 1.00[m  [32mUSD[m [32m 1.00[m   [32mUSD[m [32m2.00[m  [32mUSD[m [32m1.00[m    [32mUSD[m
+[37m2025-W40[m [34m2025-10-01[m [33mTransaction 3[m [37mexpenses[m [32m 1.00[m  [32mUSD[m [32m 1.00[m   [32mUSD[m [32m3.00[m  [32mUSD[m [32m1.00[m    [32mUSD[m

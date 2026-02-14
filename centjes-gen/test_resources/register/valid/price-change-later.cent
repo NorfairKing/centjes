@@ -1,0 +1,19 @@
+currency USD 0.01
+currency EUR 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-12-30 USD 1 CHF
+price 2024-12-30 EUR 1 CHF
+
+2024-12-31
+  | Opening balances
+  * equity   -100 USD
+  * equity   -100 EUR
+  * expenses +100 USD
+  * expenses +100 EUR
+
+price 2025-01-01 USD 2 CHF
+price 2025-01-01 EUR 1.5 CHF
