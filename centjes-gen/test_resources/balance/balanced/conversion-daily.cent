@@ -1,0 +1,14 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-03-06 USD 1 CHF
+
+2024-03-07
+  | Expense in USD when rate is 1
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2024-03-10 USD 2 CHF
