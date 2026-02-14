@@ -178,24 +178,28 @@ eventDay :: LedgerEvent ann -> Day
 eventDay = Timestamp.toDay . locatedValue . eventTimestamp
 
 -- | Compare two events by timestamp, with a total ordering
--- When timestamps are ambiguous (partial ordering returns Nothing),
--- we compare by day first, then treat prices as coming before transactions
--- on the same day (so revaluations are computed before new transactions)
+-- When timestamps are equal or ambiguous (same day, no time info),
+-- we treat prices as coming before transactions on the same day
+-- (so revaluations are computed before new transactions)
 compareEvents :: LedgerEvent ann -> LedgerEvent ann -> Ordering
 compareEvents e1 e2 =
   let ts1 = locatedValue (eventTimestamp e1)
       ts2 = locatedValue (eventTimestamp e2)
    in case Timestamp.comparePartially ts1 ts2 of
+        Just EQ -> eventTypeTiebreaker e1 e2
         Just ord -> ord
         Nothing ->
           -- Same day but ambiguous time - compare days, then event type
-          -- Prices come before transactions on the same day
           case compare (eventDay e1) (eventDay e2) of
-            EQ -> case (e1, e2) of
-              (EventPrice _, EventTransaction _) -> LT
-              (EventTransaction _, EventPrice _) -> GT
-              _ -> EQ
+            EQ -> eventTypeTiebreaker e1 e2
             ord -> ord
+
+-- | Tiebreaker for events on the same day: prices come before transactions
+eventTypeTiebreaker :: LedgerEvent ann -> LedgerEvent ann -> Ordering
+eventTypeTiebreaker e1 e2 = case (e1, e2) of
+  (EventPrice _, EventTransaction _) -> LT
+  (EventTransaction _, EventPrice _) -> GT
+  _ -> EQ
 
 -- | Merge transactions and prices into a chronologically sorted list of events
 mergeEventsChronologically ::

@@ -1,9 +1,8 @@
 Block      Timestamp  Description Account  Amount     Running     Total     Average    
-[37m2024-03-08[m [34m2024-03-08[m [33mRate: 1[m     [37mexpenses[m [32m1.00[m   [32mCHF[m [32m1.00[m    [32mCHF[m                      
-           [34m2024-03-08[m [36mPrice: CHF[m           [32m1.00[m   [32mCHF[m [32m2.00[m    [32mCHF[m [32m2.00[m  [32mCHF[m [32m2.00[m    [32mCHF[m
-[37m2024-03-09[m [34m2024-03-09[m [33mRate: 2[m     [37mexpenses[m [32m2.00[m   [32mCHF[m [32m2.00[m    [32mCHF[m                      
-           [34m2024-03-09[m [36mPrice: USD[m           [32m1.00[m   [32mCHF[m [32m3.00[m    [32mCHF[m [32m5.00[m  [32mCHF[m [32m2.50[m    [32mCHF[m
-[37m2024-03-10[m [34m2024-03-10[m [33mRate: 3[m     [37mexpenses[m [32m3.00[m   [32mCHF[m [32m3.00[m    [32mCHF[m                      
-           [34m2024-03-10[m [36mPrice: USD[m           [32m1.00[m   [32mCHF[m [32m4.00[m    [32mCHF[m [32m9.00[m  [32mCHF[m [32m3.00[m    [32mCHF[m
-[37m2024-03-11[m [34m2024-03-11[m [36mPrice: CHF[m           [31m-2.75[m  [31mCHF[m [31m-2.75[m   [31mCHF[m [32m6.25[m  [32mCHF[m [32m2.05[m    [32mCHF[m
-[37m2024-03-12[m [34m2024-03-12[m [33mRate: 4[m     [37mexpenses[m [32m0.25[m   [32mCHF[m [32m0.25[m    [32mCHF[m [32m6.50[m  [32mCHF[m [32m1.60[m    [32mCHF[m
+[37m2024-03-08[m [34m2024-03-08[m [33mRate: 1[m     [37mexpenses[m [32m1.00[m   [32mCHF[m [32m1.00[m    [32mCHF[m [32m1.00[m  [32mCHF[m [32m1.00[m    [32mCHF[m
+[37m2024-03-09[m [34m2024-03-09[m [36mPrice: USD[m           [32m1.00[m   [32mCHF[m [32m1.00[m    [32mCHF[m                      
+           [34m2024-03-09[m [33mRate: 2[m     [37mexpenses[m [32m2.00[m   [32mCHF[m [32m3.00[m    [32mCHF[m [32m4.00[m  [32mCHF[m [32m2.00[m    [32mCHF[m
+[37m2024-03-10[m [34m2024-03-10[m [36mPrice: USD[m           [32m1.00[m   [32mCHF[m [32m1.00[m    [32mCHF[m                      
+           [34m2024-03-10[m [33mRate: 3[m     [37mexpenses[m [32m3.00[m   [32mCHF[m [32m4.00[m    [32mCHF[m [32m8.00[m  [32mCHF[m [32m2.65[m    [32mCHF[m
+[37m2024-03-11[m [34m2024-03-11[m [36mPrice: CHF[m           [31m-2.75[m  [31mCHF[m [31m-2.75[m   [31mCHF[m [32m5.25[m  [32mCHF[m [32m1.75[m    [32mCHF[m
+[37m2024-03-12[m [34m2024-03-12[m [33mRate: 4[m     [37mexpenses[m [32m0.25[m   [32mCHF[m [32m0.25[m    [32mCHF[m [32m5.50[m  [32mCHF[m [32m1.35[m    [32mCHF[m
