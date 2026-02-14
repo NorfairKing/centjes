@@ -10,6 +10,9 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
+    test_resources/balance/balanced/conversion-daily.cent
+    test_resources/balance/balanced/conversion-daily.config
+    test_resources/balance/balanced/conversion-daily.txt
     test_resources/balance/balanced/conversion-hop-prices.cent
     test_resources/balance/balanced/conversion-hop-prices.config
     test_resources/balance/balanced/conversion-hop-prices.txt
@@ -188,6 +191,9 @@ extra-source-files:
     test_resources/load/LE_IMPORT_DIR.err
     test_resources/register/error/block-amount-too-big.cent
     test_resources/register/error/block-amount-too-big.config
+    test_resources/register/valid/conversion-daily.cent
+    test_resources/register/valid/conversion-daily.config
+    test_resources/register/valid/conversion-daily.txt
     test_resources/register/valid/daily.cent
     test_resources/register/valid/daily.config
     test_resources/register/valid/daily.txt

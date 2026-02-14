@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -98,16 +99,7 @@ renderBlock ::
   [[Chunk]]
 renderBlock blockSize maxAccountWidth RegisterBlock {..} =
   let blockLines =
-        concatMap
-          ( \RegisterTransaction {..} ->
-              let Located _ ts = registerTransactionTimestamp
-               in renderTransaction
-                    maxAccountWidth
-                    ts
-                    (locatedValue <$> registerTransactionDescription)
-                    registerTransactionPostings
-          )
-          registerBlockTransactions
+        concatMap (renderEntry maxAccountWidth) (V.toList registerBlockEntries)
       totalLines =
         -- if registerBlockRunningTotal == MultiAccount.zero
         --   then [["0"], [" "]]
@@ -121,22 +113,71 @@ renderBlock blockSize maxAccountWidth RegisterBlock {..} =
         _ ->
           hCatTable
             [ [[fore white $ chunk $ renderBlockTitle registerBlockTitle]],
-              if null registerBlockTransactions
+              if V.null registerBlockEntries
                 then [replicate 7 (chunk " ")]
                 else blockLines,
               replicate (maxLines - length totalLines) [] ++ totalLines,
               replicate (maxLines - length averageLines) [] ++ averageLines
             ]
 
+-- | Render a register entry (transaction or revaluation)
+renderEntry ::
+  Max Word8 ->
+  RegisterEntry ann ->
+  [[Chunk]]
+renderEntry maxAccountWidth = \case
+  RegisterEntryTransaction RegisterTransaction {..} ->
+    let Located _ ts = registerTransactionTimestamp
+     in renderTransaction
+          maxAccountWidth
+          ts
+          (locatedValue <$> registerTransactionDescription)
+          registerTransactionPostings
+  RegisterEntryRevaluation reval ->
+    renderRevaluation maxAccountWidth reval
+
+-- | Render a revaluation entry
+renderRevaluation ::
+  Max Word8 ->
+  RegisterRevaluation ann ->
+  [[Chunk]]
+renderRevaluation maxWidth RegisterRevaluation {..} =
+  let Located _ ts = registerRevaluationTimestamp
+      amountChunks = multiAccountChunksWithWidth (Just maxWidth) registerRevaluationAmount
+      runningChunks = multiAccountChunksWithWidth (Just maxWidth) registerRevaluationBlockRunningTotal
+      -- Pair up amount and running total lines
+      renderLines = zipAmountAndRunning amountChunks runningChunks
+   in hCatTable
+        [ [[timestampChunk ts]],
+          [[fore cyan $ chunk "Price change"]],
+          renderLines
+        ]
+  where
+    -- Combine amount and running total chunks into posting-like lines
+    zipAmountAndRunning :: [[Chunk]] -> [[Chunk]] -> [[Chunk]]
+    zipAmountAndRunning [] [] = [[chunk " ", chunk " ", chunk " ", chunk " ", chunk " "]]
+    zipAmountAndRunning amts runs = go amts runs
+      where
+        go [] [] = []
+        go (a : as) (r : rs) = ([chunk " "] ++ a ++ r) : go as rs
+        go (a : as) [] = ([chunk " "] ++ a ++ [chunk " ", chunk " "]) : go as []
+        go [] (r : rs) = ([chunk " ", chunk " ", chunk " "] ++ r) : go [] rs
+
 registerMaxAccountWidth :: Register ann -> Max Word8
 registerMaxAccountWidth Register {..} = foldMap goB registerBlocks
   where
-    goB = foldMap goT . registerBlockTransactions
+    goB = foldMap goE . registerBlockEntries
+    goE = \case
+      RegisterEntryTransaction rt -> goT rt
+      RegisterEntryRevaluation rr -> goR rr
     goT = foldMap goP . registerTransactionPostings
     goP RegisterPosting {..} =
       let Located _ Posting {..} = registerPosting
           Located _ a = postingAccount
        in accountWidth a <> multiAccountMaxWidth registerPostingBlockRunningTotal
+    goR RegisterRevaluation {..} =
+      multiAccountMaxWidth registerRevaluationAmount
+        <> multiAccountMaxWidth registerRevaluationBlockRunningTotal
 
 renderTransaction ::
   Max Word8 ->

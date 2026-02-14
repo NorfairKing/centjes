@@ -1,0 +1,2 @@
+[37mexpenses[m [32m200.00[m [32mCHF[m
+[34mTotal[m    [32m200.00[m [32mCHF[m
