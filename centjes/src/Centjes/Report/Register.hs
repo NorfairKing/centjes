@@ -28,7 +28,6 @@ import Centjes.Ledger
 import Centjes.Location
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation (ToReport (..), Validation (..), mapValidationFailure, validationFailure)
-import Control.Monad
 import Data.List (sortBy)
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -94,12 +93,6 @@ registerEntryTotal :: (Ord ann) => RegisterEntry ann -> Maybe (Money.MultiAccoun
 registerEntryTotal = \case
   RegisterEntryTransaction rt -> registerTransactionTotal rt
   RegisterEntryRevaluation rr -> Just (registerRevaluationAmount rr)
-
--- | Check if an entry is a transaction (vs a revaluation)
-isTransactionEntry :: RegisterEntry ann -> Bool
-isTransactionEntry = \case
-  RegisterEntryTransaction _ -> True
-  RegisterEntryRevaluation _ -> False
 
 -- | A revaluation entry representing gain/loss due to price changes
 data RegisterRevaluation ann = RegisterRevaluation
@@ -211,21 +204,49 @@ mergeEventsChronologically transactions prices =
       priceEvents = map EventPrice (V.toList prices)
    in sortBy compareEvents (txEvents ++ priceEvents)
 
--- | Running state for register computation
--- Tracks both converted running totals and raw (unconverted) balances
-data RegisterState ann = RegisterState
-  { rsConvertedRunning :: !(Money.MultiAccount (Currency ann)),
-    rsConvertedBlockRunning :: !(Money.MultiAccount (Currency ann)),
-    rsRawBalances :: !(Money.MultiAccount (Currency ann))
+-- | Raw entry before block grouping (no block-scoped totals)
+data RawRegisteredEntry ann
+  = RawRegisteredEntryTransaction !(RawRegisteredTransaction ann)
+  | RawRegisteredEntryRevaluation !(RawRegisteredRevaluation ann)
+
+data RawRegisteredTransaction ann = RawRegisteredTransaction
+  { rawTransactionTimestamp :: !(GenLocated ann Timestamp),
+    rawTransactionDescription :: !(Maybe (GenLocated ann Description)),
+    rawTransactionPostings :: !(Vector (RawRegisteredPosting ann))
   }
 
-initialRegisterState :: RegisterState ann
-initialRegisterState =
-  RegisterState
-    { rsConvertedRunning = MultiAccount.zero,
-      rsConvertedBlockRunning = MultiAccount.zero,
-      rsRawBalances = MultiAccount.zero
+data RawRegisteredPosting ann = RawRegisteredPosting
+  { rawPosting :: !(GenLocated ann (Posting ann)),
+    -- | Running total across blocks (not block-scoped)
+    rawPostingRunningTotal :: !(Money.MultiAccount (Currency ann))
+  }
+
+data RawRegisteredRevaluation ann = RawRegisteredRevaluation
+  { rawRevaluationTimestamp :: !(GenLocated ann Timestamp),
+    rawRevaluationCurrency :: !(GenLocated ann (Currency ann)),
+    rawRevaluationAmount :: !(Money.MultiAccount (Currency ann)),
+    -- | Running total across blocks (not block-scoped)
+    rawRevaluationRunningTotal :: !(Money.MultiAccount (Currency ann))
+  }
+
+-- | Simplified state for Phase 1 (no block running totals)
+data RegisteringState ann = RegisteringState
+  { registeringStateConvertedRunning :: !(Money.MultiAccount (Currency ann)),
+    registeringStateRawBalances :: !(Money.MultiAccount (Currency ann))
+  }
+
+initialRegisteringState :: RegisteringState ann
+initialRegisteringState =
+  RegisteringState
+    { registeringStateConvertedRunning = MultiAccount.zero,
+      registeringStateRawBalances = MultiAccount.zero
     }
+
+-- | Output of Phase 1
+data RegisteredEntries ann = RegisteredEntries
+  { registeredEntries :: ![RawRegisteredEntry ann],
+    registeredTotal :: !(Money.MultiAccount (Currency ann))
+  }
 
 produceRegister ::
   forall ann.
@@ -239,217 +260,73 @@ produceRegister ::
   Ledger ann ->
   Validation (RegisterError ann) (Register ann)
 produceRegister f blockSize mCurrencySymbolTo showVirtual mBegin mEnd ledger = do
-  let registerBlockSize = blockSize
+  -- Phase 1: Register entries chronologically
+  entries <- registerEntries f mCurrencySymbolTo showVirtual mBegin mEnd ledger
+  -- Phase 2: Group into blocks
+  groupIntoBlocks blockSize mBegin mEnd entries
+
+-- | Phase 1: Process transactions and prices chronologically, tracking running balances
+registerEntries ::
+  forall ann.
+  (Ord ann) =>
+  Filter ->
+  Maybe CurrencySymbol ->
+  Bool ->
+  Maybe Day ->
+  Maybe Day ->
+  Ledger ann ->
+  Validation (RegisterError ann) (RegisteredEntries ann)
+registerEntries f mCurrencySymbolTo showVirtual mBegin mEnd ledger = do
   mCurrencyTo <-
     mapValidationFailure RegisterErrorConvertError $
       traverse (lookupConversionCurrency (ledgerCurrencies ledger)) mCurrencySymbolTo
   let prices = pricesToDailyPriceGraphs (ledgerPrices ledger)
-  let mBeginBlock = (\begin -> dayBlockTitle begin blockSize) <$> mBegin
-  let mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
   -- Merge transactions and prices into chronologically sorted events
   let events = mergeEventsChronologically (ledgerTransactions ledger) (ledgerPrices ledger)
-  let goBlocks ::
-        Maybe Block ->
-        Integer ->
-        RegisterState ann ->
+
+  let go ::
+        RegisteringState ann ->
         [LedgerEvent ann] ->
-        Validation
-          (RegisterError ann)
-          ( [RegisterBlock ann],
-            Money.MultiAccount (Currency ann)
-          )
-      goBlocks mCurrentBlock blockNum state evts = do
-        (mBlock, restEvents, newState) <-
-          tallyBlock
+        Validation (RegisterError ann) [RawRegisteredEntry ann]
+      go _ [] = pure []
+      go state (evt : evts) = do
+        mEntry <-
+          registerEvent
             f
             showVirtual
             mBegin
             mEnd
-            blockSize
-            mCurrentBlock
             mCurrencyTo
             prices
-            blockNum
             state
-            evts
-        case mBlock of
-          Nothing -> do
-            let done = pure ([], rsConvertedRunning state)
-            case mEndBlock of
-              Nothing -> done
-              Just endBlock -> case mCurrentBlock of
-                Nothing -> done
-                Just currentBlock ->
-                  if currentBlock >= endBlock
-                    then done
-                    else goBlocks (Just (nextBlock currentBlock)) blockNum state evts
-          Just block -> do
-            let currentBlock = registerBlockTitle block
-            let blockHasEntries = not (V.null (registerBlockEntries block))
-            -- Only count blocks with transactions for averaging purposes
-            let blockHasTransactions = V.any isTransactionEntry (registerBlockEntries block)
-            let done = pure ([block], rsConvertedRunning newState)
-                -- When continuing, only increment blockNum if the block has transactions
-                continue keepEmptyBlocks = do
-                  let nextBlockNum = if blockHasTransactions then succ blockNum else blockNum
-                  (restBlocks, total) <-
-                    goBlocks
-                      (Just (nextBlock currentBlock))
-                      nextBlockNum
-                      newState
-                      restEvents
-                  -- Keep empty blocks if we have an end block (date range specified)
-                  let includeBlock = blockHasEntries || keepEmptyBlocks
-                  pure (if includeBlock then block : restBlocks else restBlocks, total)
-             in case mEndBlock of
-                  Nothing ->
-                    -- Continue if the block has entries, or if there are remaining events to process
-                    -- Don't keep empty blocks when there's no end block
-                    if not blockHasEntries && null restEvents
-                      then pure ([], rsConvertedRunning state)
-                      else continue False
-                  Just endBlock ->
-                    if currentBlock >= endBlock
-                      then done
-                      -- Keep empty blocks when we have an end block (date range)
-                      else continue True
-  (blocks, registerTotal) <-
-    goBlocks
-      mBeginBlock
-      1
-      initialRegisterState
-      events
-  let registerBlocks = V.fromList blocks
-  pure Register {..}
+            evt
+        case mEntry of
+          Nothing -> go state evts
+          Just (entry, newState) -> do
+            rest <- go newState evts
+            pure (entry : rest)
 
-computeAverage :: Money.MultiAccount (Currency ann) -> Integer -> Money.MultiAccount (Currency ann)
-computeAverage (Money.MultiAccount m) blockNum =
-  Money.MultiAccount $ M.map go m
-  where
-    go a =
-      let (ma, _) = Account.fraction Money.RoundDown a (1 % blockNum)
-       in -- TODO technically this should fail instead of being zero, I think?
-          fromMaybe Account.zero ma
+  entries <- go initialRegisteringState events
+  let total = case entries of
+        [] -> MultiAccount.zero
+        _ -> rawEntryRunningTotal (last entries)
+  pure
+    RegisteredEntries
+      { registeredEntries = entries,
+        registeredTotal = total
+      }
 
-tallyBlock ::
-  forall ann.
-  (Ord ann) =>
-  Filter ->
-  Bool ->
-  Maybe Day ->
-  Maybe Day ->
-  BlockSize ->
-  Maybe Block ->
-  Maybe (Currency ann) ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
-  Integer ->
-  RegisterState ann ->
-  [LedgerEvent ann] ->
-  Validation
-    (RegisterError ann)
-    ( Maybe (RegisterBlock ann),
-      -- Rest of the events, the ones that are not in the block.
-      [LedgerEvent ann],
-      -- New state
-      RegisterState ann
-    )
-tallyBlock f showVirtual mBegin mEnd blockSize mCurrentBlock mCurrencyTo prices blockNum initialState events = do
-  let initialRunningTotal = rsConvertedRunning initialState
-  let makeEmptyBlock registerBlockTitle =
-        let registerBlockEntries = V.empty
-            registerBlockTotal = MultiAccount.zero
-            registerBlockRunningTotal = initialRunningTotal
-            registerBlockRunningAverage = computeAverage initialRunningTotal blockNum
-         in RegisterBlock {..}
-  let doEmptyBlock title = pure (Just (makeEmptyBlock title), events, initialState)
-  -- We need to find the first event that produces an entry to make the title
-  let goFirst :: RegisterState ann -> [LedgerEvent ann] -> Validation (RegisterError ann) (Maybe ((RegisterEntry ann, RegisterState ann), [LedgerEvent ann]))
-      goFirst state = \case
-        [] -> pure Nothing
-        (evt : evts) -> do
-          mEntry <-
-            tallyEvent
-              f
-              showVirtual
-              mBegin
-              mEnd
-              mCurrencyTo
-              prices
-              state
-              evt
-          case mEntry of
-            Nothing -> goFirst state evts
-            Just (entry, newState) -> pure $ Just ((entry, newState), evts)
-  mFirst <- goFirst (initialState {rsConvertedBlockRunning = MultiAccount.zero}) events
-  case mFirst of
-    Nothing -> case mCurrentBlock of
-      Just current -> doEmptyBlock current
-      Nothing -> pure (Nothing, events, initialState)
-    Just ((first, stateAfterFirst), tailEvents) -> do
-      let firstTimestamp = registerEntryTimestamp first
-          Located _ ts = firstTimestamp
-      let registerBlockTitle = timestampBlockTitle ts blockSize
-      let mEmpty = do
-            currentBlock <- mCurrentBlock
-            guard $ registerBlockTitle > currentBlock
-            pure currentBlock
-      case mEmpty of
-        Just title -> doEmptyBlock title
-        Nothing -> do
-          let goEvents ::
-                RegisterState ann ->
-                [LedgerEvent ann] ->
-                Validation
-                  (RegisterError ann)
-                  ( [RegisterEntry ann],
-                    [LedgerEvent ann],
-                    RegisterState ann
-                  )
-              goEvents state = \case
-                [] -> pure ([], [], state)
-                (evt : evts) -> do
-                  let evtDay = eventDay evt
-                  -- FIXME Comparing the title by text seems like a bad idea
-                  -- TODO it's also wrong because individual blocks all have an empty title.
-                  let title = dayBlockTitle evtDay blockSize
-                  if title == registerBlockTitle
-                    then do
-                      mEntry <-
-                        tallyEvent
-                          f
-                          showVirtual
-                          mBegin
-                          mEnd
-                          mCurrencyTo
-                          prices
-                          state
-                          evt
-                      case mEntry of
-                        Nothing -> goEvents state evts
-                        Just (entry, newState) -> do
-                          (entries, restEvents, finalState) <- goEvents newState evts
-                          pure (entry : entries, restEvents, finalState)
-                    else pure ([], evt : evts, state)
+-- | Get the running total from a raw entry
+rawEntryRunningTotal :: RawRegisteredEntry ann -> Money.MultiAccount (Currency ann)
+rawEntryRunningTotal = \case
+  RawRegisteredEntryTransaction rt ->
+    case V.toList (rawTransactionPostings rt) of
+      [] -> MultiAccount.zero
+      ps -> rawPostingRunningTotal (last ps)
+  RawRegisteredEntryRevaluation rr -> rawRevaluationRunningTotal rr
 
-          (talliedEntries, outOfBlockEvents, finalState) <-
-            goEvents stateAfterFirst tailEvents
-          let registerBlockRunningTotal = rsConvertedRunning finalState
-              registerBlockTotal = rsConvertedBlockRunning finalState
-              registerBlockEntries = V.fromList (first : talliedEntries)
-              -- Only count this block for averaging if it has transactions
-              hasTransactions = V.any isTransactionEntry registerBlockEntries
-              effectiveBlockNum = if hasTransactions then blockNum else max 1 (blockNum - 1)
-              registerBlockRunningAverage = computeAverage registerBlockRunningTotal effectiveBlockNum
-          pure (Just RegisterBlock {..}, outOfBlockEvents, finalState)
-
--- | Get the timestamp of a register entry
-registerEntryTimestamp :: RegisterEntry ann -> GenLocated ann Timestamp
-registerEntryTimestamp = \case
-  RegisterEntryTransaction rt -> registerTransactionTimestamp rt
-  RegisterEntryRevaluation rr -> registerRevaluationTimestamp rr
-
--- | Process a single ledger event (transaction or price) and produce a register entry if applicable
-tallyEvent ::
+-- | Process a single ledger event and produce a raw entry if applicable
+registerEvent ::
   forall ann.
   (Ord ann) =>
   Filter ->
@@ -458,43 +335,161 @@ tallyEvent ::
   Maybe Day ->
   Maybe (Currency ann) ->
   Map Day (MemoisedPriceGraph (Currency ann)) ->
-  RegisterState ann ->
+  RegisteringState ann ->
   LedgerEvent ann ->
   Validation
     (RegisterError ann)
-    (Maybe (RegisterEntry ann, RegisterState ann))
-tallyEvent f showVirtual mBegin mEnd mCurrencyTo prices state = \case
+    (Maybe (RawRegisteredEntry ann, RegisteringState ann))
+registerEvent f showVirtual mBegin mEnd mCurrencyTo prices state = \case
   EventTransaction tx -> do
-    mResult <- tallyTransaction f showVirtual mBegin mEnd mCurrencyTo prices state tx
+    mResult <- registerTransaction f showVirtual mBegin mEnd mCurrencyTo prices state tx
     pure $ case mResult of
       Nothing -> Nothing
-      Just (rt, newState) -> Just (RegisterEntryTransaction rt, newState)
+      Just (rt, newState) -> Just (RawRegisteredEntryTransaction rt, newState)
   EventPrice lp -> do
     -- Only process price events when we have a conversion currency
     case mCurrencyTo of
       Nothing -> pure Nothing
       Just currencyTo ->
-        tallyPriceEvent mBegin mEnd prices currencyTo state lp
+        registerPriceEvent mBegin mEnd prices currencyTo state lp
 
--- | Process a price event to potentially create a revaluation entry
-tallyPriceEvent ::
+-- | Process a transaction into a raw registered transaction
+registerTransaction ::
+  (Ord ann) =>
+  Filter ->
+  Bool ->
+  Maybe Day ->
+  Maybe Day ->
+  Maybe (Currency ann) ->
+  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  RegisteringState ann ->
+  GenLocated ann (Transaction ann) ->
+  Validation
+    (RegisterError ann)
+    (Maybe (RawRegisteredTransaction ann, RegisteringState ann))
+registerTransaction
+  f
+  showVirtual
+  mBegin
+  mEnd
+  mCurrencyTo
+  prices
+  state
+  (Located _ Transaction {..}) =
+    if timestampPassesDayFilter mBegin mEnd transactionTimestamp
+      then do
+        let runningTotal = registeringStateConvertedRunning state
+            rawBalances = registeringStateRawBalances state
+        let goPostings running rawBal = \case
+              [] -> pure ([], running, rawBal)
+              posting : rest -> do
+                let Located _ ts = transactionTimestamp
+                    day = Timestamp.toDay ts
+                    dayPrices = case M.lookupLE day prices of
+                      Nothing -> MemoisedPriceGraph.empty
+                      Just (_, pg) -> pg
+                mPosting <-
+                  processPosting
+                    f
+                    showVirtual
+                    mCurrencyTo
+                    dayPrices
+                    running
+                    posting
+                case mPosting of
+                  Nothing -> goPostings running rawBal rest
+                  Just (rawPosting, rawDelta) -> do
+                    -- Update raw balances with the unconverted amount
+                    newRawBal <- case MultiAccount.add rawBal rawDelta of
+                      Nothing -> validationFailure RegisterErrorAddError
+                      Just r -> pure r
+                    (ps, finalRunning, finalRawBal) <-
+                      goPostings
+                        (rawPostingRunningTotal rawPosting)
+                        newRawBal
+                        rest
+                    pure (rawPosting : ps, finalRunning, finalRawBal)
+        (registeredPostings, newRunningTotal, newRawBalances) <-
+          goPostings runningTotal rawBalances (V.toList transactionPostings)
+        let rawTx =
+              RawRegisteredTransaction
+                { rawTransactionTimestamp = transactionTimestamp,
+                  rawTransactionDescription = transactionDescription,
+                  rawTransactionPostings = V.fromList registeredPostings
+                }
+        pure $
+          if null registeredPostings
+            then Nothing
+            else
+              Just
+                ( rawTx,
+                  RegisteringState
+                    { registeringStateConvertedRunning = newRunningTotal,
+                      registeringStateRawBalances = newRawBalances
+                    }
+                )
+      else pure Nothing
+
+-- | Process a posting into a raw registered posting
+processPosting ::
+  (Ord ann) =>
+  Filter ->
+  Bool ->
+  Maybe (Currency ann) ->
+  MemoisedPriceGraph (Currency ann) ->
+  Money.MultiAccount (Currency ann) ->
+  GenLocated ann (Posting ann) ->
+  Validation
+    (RegisterError ann)
+    (Maybe (RawRegisteredPosting ann, Money.MultiAccount (Currency ann)))
+processPosting
+  f
+  showVirtual
+  mCurrencyTo
+  prices
+  runningTotal
+  originalPosting@(Located _ origP) = do
+    -- Get the raw (unconverted) amount from the original posting
+    let Located _ origCurrency = postingCurrency origP
+        Located _ origAccount = postingAccount origP
+        rawAmount = MultiAccount.fromAccount origCurrency origAccount
+    mPosting <- convertPosting f showVirtual mCurrencyTo prices originalPosting
+    case mPosting of
+      Nothing -> pure Nothing
+      Just lposting@(Located _ Posting {..}) -> do
+        let Located _ currency = postingCurrency
+        let Located _ account = postingAccount
+        let ma = MultiAccount.fromAccount currency account
+
+        case MultiAccount.add runningTotal ma of
+          Nothing -> validationFailure RegisterErrorAddError
+          Just rawPostingRunningTotal ->
+            pure $
+              Just
+                ( RawRegisteredPosting
+                    { rawPosting = lposting,
+                      rawPostingRunningTotal = rawPostingRunningTotal
+                    },
+                  rawAmount
+                )
+
+-- | Process a price event to potentially create a raw revaluation entry
+registerPriceEvent ::
   forall ann.
   (Ord ann) =>
   Maybe Day ->
   Maybe Day ->
   Map Day (MemoisedPriceGraph (Currency ann)) ->
   Currency ann ->
-  RegisterState ann ->
+  RegisteringState ann ->
   GenLocated ann (Price ann) ->
   Validation
     (RegisterError ann)
-    (Maybe (RegisterEntry ann, RegisterState ann))
-tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
+    (Maybe (RawRegisteredEntry ann, RegisteringState ann))
+registerPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
   let Located _ ts = priceTimestamp
       day = Timestamp.toDay ts
-      -- A price declaration affects both currencies involved:
-      -- priceCurrency (e.g., USD in "price USD 2 CHF") and costCurrency (CHF)
-      -- We need to revalue holdings in both
+      -- A price declaration affects both currencies involved
       Located _ pricedCurrency = priceCurrency
       Located _ Cost {..} = priceCost
       Located _ costCur = costCurrency
@@ -502,7 +497,7 @@ tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
   if not (dayPassesDayFilter mBegin mEnd day)
     then pure Nothing
     else do
-      let rawBalances = rsRawBalances state
+      let rawBalances = registeringStateRawBalances state
       -- Look at balances in both currencies this price affects
       let pricedBalance = MultiAccount.lookupAccount pricedCurrency rawBalances
           costBalance = MultiAccount.lookupAccount costCur rawBalances
@@ -513,7 +508,7 @@ tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
           -- Create a MultiAccount for just the affected currencies
           let affectedRawBalance =
                 case MultiAccount.addAccount (MultiAccount.fromAccount pricedCurrency pricedBalance) costCur costBalance of
-                  Nothing -> MultiAccount.fromAccount pricedCurrency pricedBalance -- fallback, shouldn't happen
+                  Nothing -> MultiAccount.fromAccount pricedCurrency pricedBalance
                   Just ma -> ma
           -- Get the price graph BEFORE this price was added
           let oldPrices = case M.lookupLT day prices of
@@ -524,12 +519,11 @@ tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
                 Nothing -> MemoisedPriceGraph.empty
                 Just (_, pg) -> pg
           -- Try to convert the affected balances with old prices
-          -- If conversion fails (missing price), treat old value as zero (first price establishment)
           let oldConvertedResult =
                 mapValidationFailure RegisterErrorConvertError $
                   convertMultiAccount Nothing oldPrices currencyTo affectedRawBalance
               oldConverted = case oldConvertedResult of
-                Failure _ -> MultiAccount.zero -- No price available before, treat as zero
+                Failure _ -> MultiAccount.zero
                 Success v -> v
           -- Convert the affected balances with new prices
           newConverted <-
@@ -543,27 +537,237 @@ tallyPriceEvent mBegin mEnd prices currencyTo state (Located _ Price {..}) = do
               if revaluationAmount == MultiAccount.zero
                 then pure Nothing
                 else do
-                  -- Update the running totals
-                  case MultiAccount.add (rsConvertedRunning state) revaluationAmount of
+                  -- Update the running total
+                  case MultiAccount.add (registeringStateConvertedRunning state) revaluationAmount of
                     Nothing -> validationFailure RegisterErrorAddError
-                    Just newRunning ->
-                      case MultiAccount.add (rsConvertedBlockRunning state) revaluationAmount of
-                        Nothing -> validationFailure RegisterErrorAddError
-                        Just newBlockRunning -> do
-                          let reval =
-                                RegisterRevaluation
-                                  { registerRevaluationTimestamp = priceTimestamp,
-                                    registerRevaluationCurrency = priceCurrency,
-                                    registerRevaluationAmount = revaluationAmount,
-                                    registerRevaluationRunningTotal = newRunning,
-                                    registerRevaluationBlockRunningTotal = newBlockRunning
-                                  }
-                          let newState =
-                                state
-                                  { rsConvertedRunning = newRunning,
-                                    rsConvertedBlockRunning = newBlockRunning
-                                  }
-                          pure $ Just (RegisterEntryRevaluation reval, newState)
+                    Just newRunning -> do
+                      let reval =
+                            RawRegisteredRevaluation
+                              { rawRevaluationTimestamp = priceTimestamp,
+                                rawRevaluationCurrency = priceCurrency,
+                                rawRevaluationAmount = revaluationAmount,
+                                rawRevaluationRunningTotal = newRunning
+                              }
+                      let newState =
+                            state
+                              { registeringStateConvertedRunning = newRunning
+                              }
+                      pure $ Just (RawRegisteredEntryRevaluation reval, newState)
+
+-- | Phase 2: Group entries into blocks, compute block totals and running averages
+groupIntoBlocks ::
+  forall ann.
+  (Ord ann) =>
+  BlockSize ->
+  Maybe Day ->
+  Maybe Day ->
+  RegisteredEntries ann ->
+  Validation (RegisterError ann) (Register ann)
+groupIntoBlocks blockSize mBegin mEnd RegisteredEntries {..} = do
+  let mBeginBlock = (\begin -> dayBlockTitle begin blockSize) <$> mBegin
+      mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
+
+  let -- Convert a raw entry to a register entry with block running totals
+      convertEntry ::
+        Money.MultiAccount (Currency ann) ->
+        RawRegisteredEntry ann ->
+        (RegisterEntry ann, Money.MultiAccount (Currency ann))
+      convertEntry blockRunning = \case
+        RawRegisteredEntryTransaction rt ->
+          let (postings, finalBlockRunning) = convertPostings blockRunning (V.toList (rawTransactionPostings rt))
+              regTx =
+                RegisterTransaction
+                  { registerTransactionTimestamp = rawTransactionTimestamp rt,
+                    registerTransactionDescription = rawTransactionDescription rt,
+                    registerTransactionPostings = V.fromList postings
+                  }
+           in (RegisterEntryTransaction regTx, finalBlockRunning)
+        RawRegisteredEntryRevaluation rr ->
+          case MultiAccount.add blockRunning (rawRevaluationAmount rr) of
+            Nothing -> (RegisterEntryRevaluation (convertReval blockRunning rr), blockRunning)
+            Just newBlockRunning ->
+              (RegisterEntryRevaluation (convertReval newBlockRunning rr), newBlockRunning)
+
+      convertReval ::
+        Money.MultiAccount (Currency ann) ->
+        RawRegisteredRevaluation ann ->
+        RegisterRevaluation ann
+      convertReval blockRunning rr =
+        RegisterRevaluation
+          { registerRevaluationTimestamp = rawRevaluationTimestamp rr,
+            registerRevaluationCurrency = rawRevaluationCurrency rr,
+            registerRevaluationAmount = rawRevaluationAmount rr,
+            registerRevaluationRunningTotal = rawRevaluationRunningTotal rr,
+            registerRevaluationBlockRunningTotal = blockRunning
+          }
+
+      convertPostings ::
+        Money.MultiAccount (Currency ann) ->
+        [RawRegisteredPosting ann] ->
+        ([RegisterPosting ann], Money.MultiAccount (Currency ann))
+      convertPostings blockRunning [] = ([], blockRunning)
+      convertPostings blockRunning (rp : rps) =
+        let Located _ Posting {..} = rawPosting rp
+            Located _ currency = postingCurrency
+            Located _ account = postingAccount
+            ma = MultiAccount.fromAccount currency account
+            newBlockRunning = fromMaybe blockRunning (MultiAccount.add blockRunning ma)
+            regPosting =
+              RegisterPosting
+                { registerPosting = rawPosting rp,
+                  registerPostingRunningTotal = rawPostingRunningTotal rp,
+                  registerPostingBlockRunningTotal = newBlockRunning
+                }
+            (rest, finalBlockRunning) = convertPostings newBlockRunning rps
+         in (regPosting : rest, finalBlockRunning)
+
+  let -- Get timestamp of a raw entry
+      rawEntryTimestamp :: RawRegisteredEntry ann -> GenLocated ann Timestamp
+      rawEntryTimestamp = \case
+        RawRegisteredEntryTransaction rt -> rawTransactionTimestamp rt
+        RawRegisteredEntryRevaluation rr -> rawRevaluationTimestamp rr
+
+      -- Get block title for a raw entry
+      rawEntryBlockTitle :: RawRegisteredEntry ann -> Block
+      rawEntryBlockTitle entry =
+        let Located _ ts = rawEntryTimestamp entry
+         in timestampBlockTitle ts blockSize
+
+  let -- Build blocks from entries
+      goBlocks ::
+        Maybe Block ->
+        Integer ->
+        Money.MultiAccount (Currency ann) ->
+        [RawRegisteredEntry ann] ->
+        [RegisterBlock ann]
+      goBlocks mCurrentBlock blockNum runningTotal entries =
+        case findNextBlock mCurrentBlock entries of
+          Nothing ->
+            -- No more entries - generate empty blocks if we have an end block
+            case (mCurrentBlock, mEndBlock) of
+              (Just current, Just endBlock)
+                | current <= endBlock ->
+                    let emptyBlock = makeEmptyBlock current runningTotal blockNum
+                     in emptyBlock : goBlocks (Just (nextBlock current)) blockNum runningTotal []
+              _ -> []
+          Just (blockTitle, blockEntries, restEntries) ->
+            -- Only generate empty blocks when we have an end block
+            let emptyBlocks = case (mCurrentBlock, mEndBlock) of
+                  (Just current, Just _)
+                    | current < blockTitle ->
+                        generateEmptyBlocks current blockTitle runningTotal blockNum
+                  _ -> []
+                numEmpty = toInteger (length emptyBlocks)
+                -- Convert entries with block running totals
+                (convertedEntries, blockTotal) =
+                  convertEntriesForBlock blockEntries
+                newRunningTotal = case entries of
+                  [] -> runningTotal
+                  _ -> rawEntryRunningTotal (last blockEntries)
+                hasTransactions = any isRawTransactionEntry blockEntries
+                effectiveBlockNum = blockNum + numEmpty
+                nextBlockNum = if hasTransactions then effectiveBlockNum + 1 else effectiveBlockNum
+                block =
+                  RegisterBlock
+                    { registerBlockTitle = blockTitle,
+                      registerBlockEntries = V.fromList convertedEntries,
+                      registerBlockTotal = blockTotal,
+                      registerBlockRunningTotal = newRunningTotal,
+                      registerBlockRunningAverage =
+                        computeAverage newRunningTotal (if hasTransactions then effectiveBlockNum else max 1 (effectiveBlockNum - 1))
+                    }
+                -- Check if we should continue
+                shouldContinue = case mEndBlock of
+                  Nothing -> not (null restEntries)
+                  Just endBlock -> blockTitle < endBlock
+             in if shouldContinue
+                  then emptyBlocks ++ [block] ++ goBlocks (Just (nextBlock blockTitle)) nextBlockNum newRunningTotal restEntries
+                  else emptyBlocks ++ [block]
+
+      -- Find the next block from entries
+      findNextBlock ::
+        Maybe Block ->
+        [RawRegisteredEntry ann] ->
+        Maybe (Block, [RawRegisteredEntry ann], [RawRegisteredEntry ann])
+      findNextBlock mCurrentBlock entries = case entries of
+        [] -> Nothing
+        (e : _) ->
+          let blockTitle = rawEntryBlockTitle e
+              -- Check if we need to skip to this block or generate empty blocks
+              shouldProcess = case mCurrentBlock of
+                Nothing -> True
+                Just current -> blockTitle >= current
+           in if shouldProcess
+                then
+                  let (blockEntries, rest) = span (\entry -> rawEntryBlockTitle entry == blockTitle) entries
+                   in Just (blockTitle, blockEntries, rest)
+                else -- Skip entries before the current block
+                  findNextBlock mCurrentBlock (dropWhile (\entry -> rawEntryBlockTitle entry < fromMaybe blockTitle mCurrentBlock) entries)
+
+      -- Generate empty blocks between two blocks
+      generateEmptyBlocks ::
+        Block ->
+        Block ->
+        Money.MultiAccount (Currency ann) ->
+        Integer ->
+        [RegisterBlock ann]
+      generateEmptyBlocks current target runningTotal blockNum
+        | current >= target = []
+        | otherwise =
+            let emptyBlock = makeEmptyBlock current runningTotal blockNum
+             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal blockNum
+
+      -- Make an empty block
+      makeEmptyBlock ::
+        Block ->
+        Money.MultiAccount (Currency ann) ->
+        Integer ->
+        RegisterBlock ann
+      makeEmptyBlock title runningTotal blockNum =
+        RegisterBlock
+          { registerBlockTitle = title,
+            registerBlockEntries = V.empty,
+            registerBlockTotal = MultiAccount.zero,
+            registerBlockRunningTotal = runningTotal,
+            registerBlockRunningAverage = computeAverage runningTotal blockNum
+          }
+
+      -- Convert entries for a block, computing block running totals
+      convertEntriesForBlock ::
+        [RawRegisteredEntry ann] ->
+        ([RegisterEntry ann], Money.MultiAccount (Currency ann))
+      convertEntriesForBlock entries =
+        let go _ [] = ([], MultiAccount.zero)
+            go blockRunning (e : es) =
+              let (converted, newBlockRunning) = convertEntry blockRunning e
+                  (rest, restTotal) = go newBlockRunning es
+                  entryTotal = fromMaybe MultiAccount.zero (registerEntryTotal converted)
+                  combinedTotal = fromMaybe entryTotal (MultiAccount.add entryTotal restTotal)
+               in (converted : rest, combinedTotal)
+         in go MultiAccount.zero entries
+
+      -- Check if entry is a transaction (for averaging)
+      isRawTransactionEntry :: RawRegisteredEntry ann -> Bool
+      isRawTransactionEntry = \case
+        RawRegisteredEntryTransaction _ -> True
+        RawRegisteredEntryRevaluation _ -> False
+
+  let blocks = goBlocks mBeginBlock 1 MultiAccount.zero registeredEntries
+  pure
+    Register
+      { registerBlockSize = blockSize,
+        registerBlocks = V.fromList blocks,
+        registerTotal = registeredTotal
+      }
+
+computeAverage :: Money.MultiAccount (Currency ann) -> Integer -> Money.MultiAccount (Currency ann)
+computeAverage (Money.MultiAccount m) blockNum =
+  Money.MultiAccount $ M.map go m
+  where
+    go a =
+      let (ma, _) = Account.fraction Money.RoundDown a (1 % blockNum)
+       in -- TODO technically this should fail instead of being zero, I think?
+          fromMaybe Account.zero ma
 
 dayPassesDayFilter :: Maybe Day -> Maybe Day -> Day -> Bool
 dayPassesDayFilter mBegin mEnd day =
@@ -576,83 +780,6 @@ dayPassesDayFilter mBegin mEnd day =
         Just end -> day <= end
     ]
 
-tallyTransaction ::
-  (Ord ann) =>
-  Filter ->
-  Bool ->
-  Maybe Day ->
-  Maybe Day ->
-  Maybe (Currency ann) ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
-  RegisterState ann ->
-  GenLocated ann (Transaction ann) ->
-  Validation
-    (RegisterError ann)
-    (Maybe (RegisterTransaction ann, RegisterState ann))
-tallyTransaction
-  f
-  showVirtual
-  mBegin
-  mEnd
-  mCurrencyTo
-  prices
-  state
-  (Located _ Transaction {..}) =
-    if timestampPassesDayFilter mBegin mEnd transactionTimestamp
-      then do
-        let runningTotal = rsConvertedRunning state
-            blockRunningTotal = rsConvertedBlockRunning state
-            rawBalances = rsRawBalances state
-        let goPostings running blockRunning rawBal = \case
-              [] -> pure ([], running, blockRunning, rawBal)
-              posting : rest -> do
-                let Located _ ts = transactionTimestamp
-                    day = Timestamp.toDay ts
-                    dayPrices = case M.lookupLE day prices of
-                      Nothing -> MemoisedPriceGraph.empty
-                      Just (_, pg) -> pg
-                mPosting <-
-                  tallyPosting
-                    f
-                    showVirtual
-                    mCurrencyTo
-                    dayPrices
-                    running
-                    blockRunning
-                    posting
-                case mPosting of
-                  Nothing -> goPostings running blockRunning rawBal rest
-                  Just (blockPosting, rawDelta) -> do
-                    -- Update raw balances with the unconverted amount
-                    newRawBal <- case MultiAccount.add rawBal rawDelta of
-                      Nothing -> validationFailure RegisterErrorAddError
-                      Just r -> pure r
-                    (ps, finalRunning, finalBlockRunning, finalRawBal) <-
-                      goPostings
-                        (registerPostingRunningTotal blockPosting)
-                        (registerPostingBlockRunningTotal blockPosting)
-                        newRawBal
-                        rest
-                    pure (blockPosting : ps, finalRunning, finalBlockRunning, finalRawBal)
-        (talliedPostings, newRunningTotal, newBlockRunningTotal, newRawBalances) <-
-          goPostings runningTotal blockRunningTotal rawBalances (V.toList transactionPostings)
-        let registerTransactionTimestamp = transactionTimestamp
-            registerTransactionDescription = transactionDescription
-            registerTransactionPostings = V.fromList talliedPostings
-        pure $
-          if null talliedPostings
-            then Nothing
-            else
-              Just
-                ( RegisterTransaction {..},
-                  RegisterState
-                    { rsConvertedRunning = newRunningTotal,
-                      rsConvertedBlockRunning = newBlockRunningTotal,
-                      rsRawBalances = newRawBalances
-                    }
-                )
-      else pure Nothing
-
 timestampPassesDayFilter :: Maybe Day -> Maybe Day -> GenLocated ann Timestamp -> Bool
 timestampPassesDayFilter mBegin mEnd (Located _ ts) =
   and
@@ -664,45 +791,7 @@ timestampPassesDayFilter mBegin mEnd (Located _ ts) =
         Just end -> Timestamp.toDay ts <= end
     ]
 
-tallyPosting ::
-  (Ord ann) =>
-  Filter ->
-  Bool ->
-  Maybe (Currency ann) ->
-  MemoisedPriceGraph (Currency ann) ->
-  Money.MultiAccount (Currency ann) ->
-  Money.MultiAccount (Currency ann) ->
-  GenLocated ann (Posting ann) ->
-  Validation
-    (RegisterError ann)
-    (Maybe (RegisterPosting ann, Money.MultiAccount (Currency ann)))
-tallyPosting
-  f
-  showVirtual
-  mCurrencyTo
-  prices
-  runningTotal
-  blockRunning
-  originalPosting@(Located _ origP) = do
-    -- Get the raw (unconverted) amount from the original posting
-    let Located _ origCurrency = postingCurrency origP
-        Located _ origAccount = postingAccount origP
-        rawAmount = MultiAccount.fromAccount origCurrency origAccount
-    mPosting <- registerBlockPosting f showVirtual mCurrencyTo prices originalPosting
-    case mPosting of
-      Nothing -> pure Nothing
-      Just registerPosting@(Located _ Posting {..}) -> do
-        let Located _ currency = postingCurrency
-        let Located _ account = postingAccount
-        let ma = MultiAccount.fromAccount currency account
-
-        case MultiAccount.add runningTotal ma of
-          Nothing -> validationFailure RegisterErrorAddError -- TODO helpful location
-          Just registerPostingRunningTotal -> case MultiAccount.add blockRunning ma of
-            Nothing -> validationFailure RegisterErrorAddError -- TODO helpful location
-            Just registerPostingBlockRunningTotal -> pure $ Just (RegisterPosting {..}, rawAmount)
-
-registerBlockPosting ::
+convertPosting ::
   (Ord ann) =>
   Filter ->
   Bool ->
@@ -710,7 +799,7 @@ registerBlockPosting ::
   MemoisedPriceGraph (Currency ann) ->
   GenLocated ann (Posting ann) ->
   Validation (RegisterError ann) (Maybe (GenLocated ann (Posting ann)))
-registerBlockPosting f showVirtual mCurrencyTo prices lp@(Located pl p@Posting {..}) = do
+convertPosting f showVirtual mCurrencyTo prices lp@(Located pl p@Posting {..}) = do
   let Located _ an = postingAccountName
   let includedByFilter = Filter.predicate f an
   -- Don't show virtual postings by default
