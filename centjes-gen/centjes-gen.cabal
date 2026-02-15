@@ -55,6 +55,9 @@ extra-source-files:
     test_resources/balance/balanced/filter-account.txt
     test_resources/balance/balanced/inclusive-ratio-explicit.cent
     test_resources/balance/balanced/inclusive-ratio-explicit.txt
+    test_resources/balance/balanced/many-prices.cent
+    test_resources/balance/balanced/many-prices.config
+    test_resources/balance/balanced/many-prices.txt
     test_resources/balance/balanced/multiple-currencies-balance.cent
     test_resources/balance/balanced/multiple-currencies-balance.txt
     test_resources/balance/balanced/percentage.cent
@@ -248,6 +251,9 @@ extra-source-files:
     test_resources/register/valid/many-currencies.cent
     test_resources/register/valid/many-currencies.config
     test_resources/register/valid/many-currencies.txt
+    test_resources/register/valid/many-prices.cent
+    test_resources/register/valid/many-prices.config
+    test_resources/register/valid/many-prices.txt
     test_resources/register/valid/mixed-currencies-some-native.cent
     test_resources/register/valid/mixed-currencies-some-native.config
     test_resources/register/valid/mixed-currencies-some-native.txt

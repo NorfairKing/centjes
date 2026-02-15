@@ -1,0 +1,9 @@
+Timestamp  Description      Account Amount     Running    
+[34m2024-01-15[m [33mOpening balances[m [37massets[m  [32m 50.00[m [32mCHF[m [32m 50.00[m  [32mCHF[m
+                            [37massets[m  [32m 50.00[m [32mCHF[m [32m100.00[m  [32mCHF[m
+[34m2024-02-01[m [36mPrice: USD[m               [32m 50.00[m [32mCHF[m [32m150.00[m  [32mCHF[m
+[34m2024-03-01[m [36mPrice: USD[m               [32m 50.00[m [32mCHF[m [32m200.00[m  [32mCHF[m
+[34m2024-04-01[m [36mPrice: USD[m               [32m 50.00[m [32mCHF[m [32m250.00[m  [32mCHF[m
+[34m2024-05-01[m [36mPrice: USD[m               [32m 50.00[m [32mCHF[m [32m300.00[m  [32mCHF[m
+[34m2024-06-01[m [36mPrice: USD[m               [32m 50.00[m [32mCHF[m [32m350.00[m  [32mCHF[m
+[34m2024-07-01[m [36mPrice: USD[m               [32m 50.00[m [32mCHF[m [32m400.00[m  [32mCHF[m
