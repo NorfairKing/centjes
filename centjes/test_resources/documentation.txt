@@ -99,6 +99,12 @@
     [34mBalance at the end of last year[m
     switch: [37m--last-year[m
     
+    [34mBegin date (inclusive), in YYYY-MM-DD format[m
+    option: [37m--begin[m[36m|[m[37m-b[m [33mDATE[m
+    
+    [34mEnd date (inclusive), in YYYY-MM-DD format[m
+    option: [37m--end[m[36m|[m[37m-e[m [33mDATE[m
+    
     [34mfilter[m
     argument: [33mFILTER[m
     
@@ -150,6 +156,9 @@
     [34mBalance at the end of last year[m
     switch: [37m--last-year[m
     
+    [34mEnd date (inclusive), in YYYY-MM-DD format[m
+    option: [37m--end[m[36m|[m[37m-e[m [33mDATE[m
+    
     [34mfilter[m
     argument: [33mFILTER[m
     
@@ -185,20 +194,22 @@
   [37m--config-file[m [34mPath to the configuration file[m
   [35mcheck[m [34mperform an internal consistency check[m
   [35mregister[m [34mregister report[m
-      [37m--convert[m      [34mCurrency to convert to[m                                             
-      [37m--individually[m [34mAll transactions in one block[m                                      
-      [37m--daily[m        [34mGroup transactions by day[m                                          
-      [37m--weekly[m       [34mGroup transactions by week[m                                         
-      [37m--monthly[m      [34mGroup transactions by month[m                                        
-      [37m--quarterly[m    [34mGroup transactions by quarter[m                                      
-      [37m--yearly[m       [34mGroup transactions by year[m                                         
-      [37m--block[m        [34mGroup transactions[m                     default: [33mBlockSizeIndividual[m
-      [37m--virtual[m      [34mShow virtual postings too[m              default: [33mFalse[m              
-      [37m--year[m         [34mBalance at the end of the given year[m                               
-      [37m--this-year[m    [34mBalance at the end of the current year[m                             
-      [37m--last-year[m    [34mBalance at the end of last year[m                                    
-      [33mFILTER[m         [34mfilter[m                                                             
-      [33mFILTER[m         [34mfilter[m                                                             
+      [37m--convert[m      [34mCurrency to convert to[m                                                   
+      [37m--individually[m [34mAll transactions in one block[m                                            
+      [37m--daily[m        [34mGroup transactions by day[m                                                
+      [37m--weekly[m       [34mGroup transactions by week[m                                               
+      [37m--monthly[m      [34mGroup transactions by month[m                                              
+      [37m--quarterly[m    [34mGroup transactions by quarter[m                                            
+      [37m--yearly[m       [34mGroup transactions by year[m                                               
+      [37m--block[m        [34mGroup transactions[m                           default: [33mBlockSizeIndividual[m
+      [37m--virtual[m      [34mShow virtual postings too[m                    default: [33mFalse[m              
+      [37m--year[m         [34mBalance at the end of the given year[m                                     
+      [37m--this-year[m    [34mBalance at the end of the current year[m                                   
+      [37m--last-year[m    [34mBalance at the end of last year[m                                          
+      [37m--begin[m[36m|[m[37m-b[m     [34mBegin date (inclusive), in YYYY-MM-DD format[m                             
+      [37m--end[m[36m|[m[37m-e[m       [34mEnd date (inclusive), in YYYY-MM-DD format[m                               
+      [33mFILTER[m         [34mfilter[m                                                                   
+      [33mFILTER[m         [34mfilter[m                                                                   
   [35mbalance[m [34mbalance report[m
       [37m--convert[m    [34mCurrency to convert to[m                                            
       [37m--show-empty[m [34mShow empty balances instead of hiding them[m default: [33mDoNotShowEmpty[m
@@ -206,6 +217,7 @@
       [37m--year[m       [34mBalance at the end of the given year[m                              
       [37m--this-year[m  [34mBalance at the end of the current year[m                            
       [37m--last-year[m  [34mBalance at the end of last year[m                                   
+      [37m--end[m[36m|[m[37m-e[m     [34mEnd date (inclusive), in YYYY-MM-DD format[m                        
       [33mFILTER[m       [34mfilter[m                                                            
       [33mFILTER[m       [34mfilter[m                                                            
   [35mformat[m [34mformat files[m

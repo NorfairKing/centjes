@@ -215,10 +215,11 @@ parseBalanceSettings = subConfig_ "balance" $ do
         conf "virtual",
         value False
       ]
-  balanceSettingEnd <- snd <$> timeFilterParser
+  balanceSettingEnd <- endFilterParser
   balanceSettingFilter <- settingsParser
   pure BalanceSettings {..}
 
+-- | Parser for time filtering with both begin and end dates (for register)
 timeFilterParser :: Parser (Maybe Day, Maybe Day)
 timeFilterParser =
   let getCurrentYear = do
@@ -231,29 +232,103 @@ timeFilterParser =
               Nothing -> (Nothing, Nothing)
               Just (b, e) -> (Just b, Just e)
           )
-   in distributeMaybe $
+      yearParser =
+        distributeMaybe $
+          optional $
+            choice
+              [ yearTuple
+                  <$> setting
+                    [ help "Balance at the end of the given year",
+                      name "year",
+                      reader auto,
+                      metavar "YEAR"
+                    ],
+                mapIO (\() -> yearTuple <$> getCurrentYear) $
+                  setting
+                    [ help "Balance at the end of the current year",
+                      switch (),
+                      long "this-year"
+                    ],
+                mapIO (\() -> yearTuple . (\y -> y - 1) <$> getCurrentYear) $
+                  setting
+                    [ help "Balance at the end of last year",
+                      switch (),
+                      long "last-year"
+                    ]
+              ]
+      dayParser =
+        (,)
+          <$> optional
+            ( setting
+                [ help "Begin date (inclusive), in YYYY-MM-DD format",
+                  option,
+                  long "begin",
+                  short 'b',
+                  reader auto,
+                  metavar "DATE"
+                ]
+            )
+          <*> optional
+            ( setting
+                [ help "End date (inclusive), in YYYY-MM-DD format",
+                  option,
+                  long "end",
+                  short 'e',
+                  reader auto,
+                  metavar "DATE"
+                ]
+            )
+      -- Combine year-based and day-based parsers
+      -- If a year filter is set, it provides default begin/end dates
+      -- Explicit --begin/--end override the year-based dates
+      combineFilters (yearBegin, yearEnd) (dayBegin, dayEnd) =
+        (dayBegin <|> yearBegin, dayEnd <|> yearEnd)
+   in combineFilters <$> yearParser <*> dayParser
+
+-- | Parser for end-date filtering only (for balance)
+endFilterParser :: Parser (Maybe Day)
+endFilterParser =
+  let getCurrentYear = do
+        (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
+        pure y
+      yearEnd = (periodLastDay :: Year -> Day)
+      yearParser =
         optional $
           choice
-            [ yearTuple
+            [ yearEnd
                 <$> setting
                   [ help "Balance at the end of the given year",
                     name "year",
                     reader auto,
                     metavar "YEAR"
                   ],
-              mapIO (\() -> yearTuple <$> getCurrentYear) $
+              mapIO (\() -> yearEnd <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of the current year",
                     switch (),
                     long "this-year"
                   ],
-              mapIO (\() -> yearTuple . (\y -> y - 1) <$> getCurrentYear) $
+              mapIO (\() -> yearEnd . (\y -> y - 1) <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of last year",
                     switch (),
                     long "last-year"
                   ]
             ]
+      dayParser =
+        optional $
+          setting
+            [ help "End date (inclusive), in YYYY-MM-DD format",
+              option,
+              long "end",
+              short 'e',
+              reader auto,
+              metavar "DATE"
+            ]
+      -- Combine year-based and day-based parsers
+      -- Explicit --end overrides the year-based date
+      combineFilters yearEnd' dayEnd = dayEnd <|> yearEnd'
+   in combineFilters <$> yearParser <*> dayParser
 
 data ShowEmpty
   = ShowEmpty
