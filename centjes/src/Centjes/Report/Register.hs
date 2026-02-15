@@ -136,8 +136,6 @@ data FlatRegister ann = FlatRegister
     flatRegisterTotal :: !(Money.MultiAccount (Currency ann))
   }
 
-deriving instance (Show ann) => Show (FlatRegister ann)
-
 -- | A flat entry: a transaction with its postings, price graph, and running total.
 data FlatEntry ann = FlatEntry
   { flatEntryTimestamp :: !(GenLocated ann Timestamp),
@@ -149,16 +147,12 @@ data FlatEntry ann = FlatEntry
     flatEntryRunningTotal :: !(Money.MultiAccount (Currency ann))
   }
 
-deriving instance (Show ann) => Show (FlatEntry ann)
-
 -- | A flat posting with its amount and running total.
 data FlatPosting ann = FlatPosting
   { flatPosting :: !(GenLocated ann (Posting ann)),
     flatPostingAmount :: !(Money.MultiAccount (Currency ann)),
     flatPostingRunningTotal :: !(Money.MultiAccount (Currency ann))
   }
-
-deriving instance (Show ann) => Show (FlatPosting ann)
 
 -- Converted flat register types (Stage 2 output)
 
@@ -170,14 +164,10 @@ data ConvertedFlatRegister ann = ConvertedFlatRegister
     convertedFlatRegisterTotal :: !Money.Account
   }
 
-deriving instance (Show ann) => Show (ConvertedFlatRegister ann)
-
 -- | A converted flat entry: either a transaction or a revaluation.
 data ConvertedFlatEntry ann
   = ConvertedFlatEntryTransaction !(ConvertedFlatTransaction ann)
   | ConvertedFlatEntryRevaluation !(ConvertedFlatRevaluation ann)
-
-deriving instance (Show ann) => Show (ConvertedFlatEntry ann)
 
 -- | A converted transaction with single-currency amounts.
 data ConvertedFlatTransaction ann = ConvertedFlatTransaction
@@ -187,16 +177,12 @@ data ConvertedFlatTransaction ann = ConvertedFlatTransaction
     convertedFlatTransactionRunningTotal :: !Money.Account
   }
 
-deriving instance (Show ann) => Show (ConvertedFlatTransaction ann)
-
 -- | A converted posting with single-currency amount.
 data ConvertedFlatPosting ann = ConvertedFlatPosting
   { convertedFlatPosting :: !(GenLocated ann (Posting ann)),
     convertedFlatPostingAmount :: !Money.Account,
     convertedFlatPostingRunningTotal :: !Money.Account
   }
-
-deriving instance (Show ann) => Show (ConvertedFlatPosting ann)
 
 -- | A revaluation entry from price changes.
 data ConvertedFlatRevaluation ann = ConvertedFlatRevaluation
@@ -205,8 +191,6 @@ data ConvertedFlatRevaluation ann = ConvertedFlatRevaluation
     convertedFlatRevaluationAmount :: !Money.Account,
     convertedFlatRevaluationRunningTotal :: !Money.Account
   }
-
-deriving instance (Show ann) => Show (ConvertedFlatRevaluation ann)
 
 -- Block-grouped register types (Stage 3 output)
 
@@ -1253,21 +1237,6 @@ computeSingleAverage acc blockNum =
    in fromMaybe Account.zero ma
 
 -- Helpers
-
-dayPassesDayFilter ::
-  Maybe Day ->
-  Maybe Day ->
-  Day ->
-  Bool
-dayPassesDayFilter mBegin mEnd day =
-  and
-    [ case mBegin of
-        Nothing -> True
-        Just begin -> day >= begin,
-      case mEnd of
-        Nothing -> True
-        Just end -> day <= end
-    ]
 
 timestampPassesDayFilter ::
   Maybe Day ->

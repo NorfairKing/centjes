@@ -15,7 +15,6 @@ module Centjes.Report.Check
 where
 
 import Centjes.Compile
-import Centjes.Filter (Filter (..))
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Module as Module

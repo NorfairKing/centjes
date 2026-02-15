@@ -15,7 +15,7 @@ price 2024-01-01 USD 0.90 CHF
 2024-01-07
   | Using explicit rate
   * assets   -100 USD @ 0.95 CHF
-  * expenses +95 CHF
+  * expenses  +95 CHF
 
 2024-01-10
   | Using different explicit rate

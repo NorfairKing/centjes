@@ -9,7 +9,6 @@ module Centjes.OptParse where
 
 import Autodocodec
 import Centjes.CurrencySymbol as CurrencySymbol
-import Centjes.Filter (Filter)
 import Centjes.Report.Register
 import Control.Applicative
 import Control.Monad.Logger

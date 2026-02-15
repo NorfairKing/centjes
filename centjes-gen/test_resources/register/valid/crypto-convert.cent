@@ -11,9 +11,9 @@ price 2024-01-01 ETH 2200 CHF
 2024-01-05
   | Crypto purchases
   * equity   -0.5 BTC
-  * equity   -2 ETH
+  * equity   -2   ETH
   * expenses +0.5 BTC
-  * expenses +2 ETH
+  * expenses +2   ETH
 
 price 2024-01-10 BTC 45000 CHF
 price 2024-01-10 ETH 2400 CHF
@@ -21,9 +21,9 @@ price 2024-01-10 ETH 2400 CHF
 2024-01-15
   | More crypto
   * equity   -0.25 BTC
-  * equity   -1 ETH
+  * equity   -1    ETH
   * expenses +0.25 BTC
-  * expenses +1 ETH
+  * expenses +1    ETH
 
 price 2024-01-20 BTC 40000 CHF
 price 2024-01-20 ETH 2100 CHF
