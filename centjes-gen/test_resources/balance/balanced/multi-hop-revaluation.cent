@@ -1,0 +1,16 @@
+currency CHF 0.01
+currency GBP 0.01
+currency SWDA 0.0001
+
+account assets
+account equity
+
+price 2024-01-01 GBP 1.00 CHF
+price 2024-01-01 SWDA 100.00 GBP
+
+2024-01-15
+  | Buy SWDA
+  * equity -1 SWDA
+  * assets +1 SWDA
+
+price 2024-02-01 GBP 1.10 CHF

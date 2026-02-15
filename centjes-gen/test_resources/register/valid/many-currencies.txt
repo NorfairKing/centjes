@@ -1,7 +1,5 @@
-Block      Timestamp  Description        Account  Amount        Running       Total        Average     
-[37m2024-03-05[m [34m2024-03-05[m [33mBuy various assets[m [37mexpenses[m [32m   100.00[m [32mCHF[m [32m   100.00[m [32mCHF[m                          
-                                         [37mexpenses[m [32m   100.00[m [32mCHF[m [32m   200.00[m [32mCHF[m                          
-                                         [37mexpenses[m [32m 50000.00[m [32mCHF[m [32m 50200.00[m [32mCHF[m [32m50200.00[m [32mCHF[m [32m50200.00[m [32mCHF[m
-[37m2024-03-10[m [34m2024-03-10[m [36mPrice: USD[m                  [32m   100.00[m [32mCHF[m [32m   100.00[m [32mCHF[m                          
-           [34m2024-03-10[m [36mPrice: EUR[m                  [32m    50.00[m [32mCHF[m [32m   150.00[m [32mCHF[m                          
-           [34m2024-03-10[m [36mPrice: BTC[m                  [32m 10000.00[m [32mCHF[m [32m 10150.00[m [32mCHF[m [32m60350.00[m [32mCHF[m [32m60350.00[m [32mCHF[m
+Block      Timestamp  Description          Account  Amount        Running       Total        Average     
+[37m2024-03-05[m [34m2024-03-05[m [33mBuy various assets[m   [37mexpenses[m [32m   100.00[m [32mCHF[m [32m   100.00[m [32mCHF[m                          
+                                           [37mexpenses[m [32m   100.00[m [32mCHF[m [32m   200.00[m [32mCHF[m                          
+                                           [37mexpenses[m [32m 50000.00[m [32mCHF[m [32m 50200.00[m [32mCHF[m [32m50200.00[m [32mCHF[m [32m50200.00[m [32mCHF[m
+[37m2024-03-10[m [34m2024-03-10[m [36mPrice: USD, EUR, BTC[m          [32m 10150.00[m [32mCHF[m [32m 10150.00[m [32mCHF[m [32m60350.00[m [32mCHF[m [32m60350.00[m [32mCHF[m

@@ -58,6 +58,9 @@ extra-source-files:
     test_resources/balance/balanced/many-prices.cent
     test_resources/balance/balanced/many-prices.config
     test_resources/balance/balanced/many-prices.txt
+    test_resources/balance/balanced/multi-hop-revaluation.cent
+    test_resources/balance/balanced/multi-hop-revaluation.config
+    test_resources/balance/balanced/multi-hop-revaluation.txt
     test_resources/balance/balanced/multiple-currencies-balance.cent
     test_resources/balance/balanced/multiple-currencies-balance.txt
     test_resources/balance/balanced/percentage.cent
@@ -67,6 +70,9 @@ extra-source-files:
     test_resources/balance/balanced/rates.txt
     test_resources/balance/balanced/ratio.cent
     test_resources/balance/balanced/ratio.txt
+    test_resources/balance/balanced/rounding-differs.cent
+    test_resources/balance/balanced/rounding-differs.config
+    test_resources/balance/balanced/rounding-differs.txt
     test_resources/balance/balanced/show-empty.cent
     test_resources/balance/balanced/show-empty.config
     test_resources/balance/balanced/show-empty.txt
@@ -204,8 +210,18 @@ extra-source-files:
     test_resources/load/LE_IMPORT.err
     test_resources/load/LE_IMPORT_DIR.cent
     test_resources/load/LE_IMPORT_DIR.err
-    test_resources/register/error/block-amount-too-big.cent
-    test_resources/register/error/block-amount-too-big.config
+    test_resources/register/error/CONVERT_ERROR_INVALID_SUM.cent
+    test_resources/register/error/CONVERT_ERROR_INVALID_SUM.config
+    test_resources/register/error/CONVERT_ERROR_INVALID_SUM.err
+    test_resources/register/error/CONVERT_ERROR_MISSING_PRICE.cent
+    test_resources/register/error/CONVERT_ERROR_MISSING_PRICE.config
+    test_resources/register/error/CONVERT_ERROR_MISSING_PRICE.err
+    test_resources/register/error/CONVERT_ERROR_UNKNOWN_TARGET.cent
+    test_resources/register/error/CONVERT_ERROR_UNKNOWN_TARGET.config
+    test_resources/register/error/CONVERT_ERROR_UNKNOWN_TARGET.err
+    test_resources/register/error/RE_ADD_ERROR.cent
+    test_resources/register/error/RE_ADD_ERROR.config
+    test_resources/register/error/RE_ADD_ERROR.err
     test_resources/register/valid/conversion-daily.cent
     test_resources/register/valid/conversion-daily.config
     test_resources/register/valid/conversion-daily.txt
@@ -263,6 +279,9 @@ extra-source-files:
     test_resources/register/valid/multi-currency-prices.cent
     test_resources/register/valid/multi-currency-prices.config
     test_resources/register/valid/multi-currency-prices.txt
+    test_resources/register/valid/multi-hop-revaluation.cent
+    test_resources/register/valid/multi-hop-revaluation.config
+    test_resources/register/valid/multi-hop-revaluation.txt
     test_resources/register/valid/multiple-accounts-convert.cent
     test_resources/register/valid/multiple-accounts-convert.config
     test_resources/register/valid/multiple-accounts-convert.txt
@@ -329,6 +348,9 @@ extra-source-files:
     test_resources/register/valid/rates.cent
     test_resources/register/valid/rates.config
     test_resources/register/valid/rates.txt
+    test_resources/register/valid/rounding-differs.cent
+    test_resources/register/valid/rounding-differs.config
+    test_resources/register/valid/rounding-differs.txt
     test_resources/register/valid/same-currency-convert.cent
     test_resources/register/valid/same-currency-convert.config
     test_resources/register/valid/same-currency-convert.txt

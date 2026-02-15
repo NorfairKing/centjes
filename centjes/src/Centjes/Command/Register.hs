@@ -25,7 +25,9 @@ import Centjes.Timing
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import qualified Data.List.NonEmpty as NE
 import Data.Semigroup
+import qualified Data.Text as T
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Data.Word
@@ -273,11 +275,11 @@ renderRevaluation ::
   [[Chunk]]
 renderRevaluation currency maxWidth RegisterRevaluation {..} =
   let Located _ ts = registerRevaluationTimestamp
-      Located _ cur = registerRevaluationCurrency
+      currencySymbols = NE.map (\(Located _ cur) -> currencySymbolText (currencySymbol cur)) registerRevaluationCurrencies
       amountChunks = singleAccountChunksWithWidth currency (Just maxWidth) registerRevaluationAmount
       runningChunks = singleAccountChunksWithWidth currency (Just maxWidth) registerRevaluationBlockRunningTotal
       renderLines = zipAmountAndRunning amountChunks runningChunks
-      descriptionText = "Price: " <> currencySymbolText (currencySymbol cur)
+      descriptionText = "Price: " <> T.intercalate ", " (NE.toList currencySymbols)
    in hCatTable
         [ [[timestampChunk ts]],
           [[fore cyan $ chunk descriptionText]],

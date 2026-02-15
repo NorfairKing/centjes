@@ -2,6 +2,4 @@ Block      Timestamp  Description            Account  Amount     Running     Tot
 [37m2024-01-05[m [34m2024-01-05[m [33mMulti-currency expense[m [37mexpenses[m [32m 88.00[m [32mCHF[m [32m 88.00[m  [32mCHF[m                       
                                              [37mexpenses[m [32m 95.00[m [32mCHF[m [32m183.00[m  [32mCHF[m                       
                                              [37mexpenses[m [32m112.00[m [32mCHF[m [32m295.00[m  [32mCHF[m [32m295.00[m [32mCHF[m [32m295.00[m  [32mCHF[m
-[37m2024-01-10[m [34m2024-01-10[m [36mPrice: USD[m                      [32m  2.00[m [32mCHF[m [32m  2.00[m  [32mCHF[m                       
-           [34m2024-01-10[m [36mPrice: EUR[m                      [32m  2.00[m [32mCHF[m [32m  4.00[m  [32mCHF[m                       
-           [34m2024-01-10[m [36mPrice: GBP[m                      [32m  3.00[m [32mCHF[m [32m  7.00[m  [32mCHF[m [32m302.00[m [32mCHF[m [32m302.00[m  [32mCHF[m
+[37m2024-01-10[m [34m2024-01-10[m [36mPrice: USD, EUR, GBP[m            [32m  7.00[m [32mCHF[m [32m  7.00[m  [32mCHF[m [32m302.00[m [32mCHF[m [32m302.00[m  [32mCHF[m

@@ -95,6 +95,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (BalanceError ann)
 
 instance ToReport (BalanceError SourceSpan) where
   toReport = \case
+    -- [tag:BE_RUNNING_BALANCE] At least one test per error: test_resources/balance/error/BE_RUNNING_BALANCE.cent
     BalanceErrorCouldNotAddTransaction s an subtotal current ->
       Err
         (Just "BE_RUNNING_BALANCE")
@@ -115,6 +116,7 @@ instance ToReport (BalanceError SourceSpan) where
           )
         ]
         []
+    -- [tag:BE_ACCOUNT_TOTAL] At least one test per error: test_resources/balance/error/BE_ACCOUNT_TOTAL.cent
     BalanceErrorCouldNotAddPostings st an sp runningTotal c a ->
       Err
         (Just "BE_ACCOUNT_TOTAL")
@@ -138,6 +140,7 @@ instance ToReport (BalanceError SourceSpan) where
           )
         ]
         []
+    -- [tag:BE_TRANSACTION_SUM] At least one test per error: test_resources/balance/error/BE_TRANSACTION_SUM.cent
     BalanceErrorCouldNotSumPostings s mas ->
       Err
         (Just "BE_TRANSACTION_SUM")
@@ -147,6 +150,7 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition s, Where $ unlines' $ concatMap multiAccountLines mas)
         ]
         []
+    -- [tag:BE_CONVERSION_TOO_BIG] At least one test per error: test_resources/balance/error/BE_CONVERSION_TOO_BIG.cent
     BalanceErrorConversionTooBig (Located al _) (Located cl _) ->
       Err
         (Just "BE_CONVERSION_TOO_BIG")
@@ -155,6 +159,7 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition al, This "Could not convert this amount")
         ]
         []
+    -- [tag:BE_CONVERSION_IMPOSSIBLE_RATE] At least one test per error: test_resources/balance/error/conversion-impossible-rate.cent
     BalanceErrorConversionImpossibleRate (Located al _) (Located cl _) mConversionRate ->
       Err
         (Just "BE_CONVERSION_IMPOSSIBLE_RATE")
@@ -166,12 +171,14 @@ instance ToReport (BalanceError SourceSpan) where
         | cr <- maybeToList mConversionRate,
           dl <- maybeToList $ ConversionRate.toDecimalLiteral cr
         ]
+    -- [tag:BE_UNDECLARED_ACCOUNT] Internal error, should never trigger past compilation
     BalanceErrorUndeclaredAccount s an ->
       Err
         (Just "BE_UNDECLARED_ACCOUNT")
         (unwords ["This account has not been declared:", AccountName.toString an])
         [(toDiagnosePosition s, Where "While trying to balance this transaction")]
         [Note "This is an internal exception and should never trigger past compilation"]
+    -- [tag:BE_OFF_BALANCE] At least one test per error: test_resources/balance/error/BE_OFF_BALANCE-*.cent
     BalanceErrorTransactionOffBalance s ma postings ->
       Err
         (Just "BE_OFF_BALANCE")
@@ -184,6 +191,7 @@ instance ToReport (BalanceError SourceSpan) where
               postings
         )
         []
+    -- [tag:BE_AMOUNT_RATIO_NO_PREVIOUS] At least one test per error: test_resources/balance/error/BE_PERCENTAGE_NO_PREVIOUS.cent
     BalanceErrorAmountRatioNoPrevious s pctl ->
       Err
         (Just "BE_AMOUNT_RATIO_NO_PREVIOUS")
@@ -192,6 +200,7 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition pctl, This "This ratio requires a previous posting")
         ]
         []
+    -- [tag:BE_AMOUNT_RATIO_CURRENCY] At least one test per error: test_resources/balance/error/BE_PERCENTAGE_CURRENCY.cent
     BalanceErrorAmountRatioCurrency s pcl cl ->
       Err
         (Just "BE_AMOUNT_RATIO_CURRENCY")
@@ -201,6 +210,7 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition cl, This "... from this currency")
         ]
         []
+    -- [tag:BE_AMOUNT_RATIO_FRACTION] At least one test per error: test_resources/balance/error/BE_PERCENTAGE_FRACTION.cent
     BalanceErrorAmountRatioFraction s al rl isInverse ->
       Err
         (Just "BE_AMOUNT_RATIO_FRACTION")
@@ -210,6 +220,7 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition rl, This "... by this ratio because the amount would get too big.")
         ]
         []
+    -- [tag:BE_AMOUNT_RATIO_FRACTION'] At least one test per error: test_resources/balance/error/BE_PERCENTAGE-zero.cent
     BalanceErrorAmountRatioFraction' s al ratio ->
       Err
         (Just "BE_AMOUNT_RATIO_FRACTION")
@@ -225,6 +236,7 @@ instance ToReport (BalanceError SourceSpan) where
           )
         ]
         []
+    -- [tag:BE_AMOUNT_RATIO] At least one test per error: test_resources/balance/error/BE_PERCENTAGE-exclusive.cent, BE_PERCENTAGE-inclusive.cent
     BalanceErrorAmountRatio s pl ppl pctl currency (Located pal computedPrevious) mComputedCurrent mComputedRatio ->
       let Located _ qf = currencyQuantisationFactor currency
        in Err
@@ -273,6 +285,7 @@ instance ToReport (BalanceError SourceSpan) where
                 ]
             )
             [Hint "Make sure to double-check the signs of the suggested and actual amounts."]
+    -- [tag:BE_ACCOUNT_TYPE_ASSERTION] At least one test per error: test_resources/balance/error/BE_ACCOUNT_TYPE_ASSERTION.cent
     BalanceErrorAccountTypeAssertion s adl at bal ->
       Err
         (Just "BE_ACCOUNT_TYPE_ASSERTION")
@@ -297,6 +310,7 @@ instance ToReport (BalanceError SourceSpan) where
           (toDiagnosePosition s, This $ unlines' ("The balance was" : multiAccountLines bal))
         ]
         []
+    -- [tag:BE_ASSERTION] At least one test per error: test_resources/balance/error/BE_ASSERTION.cent, BE_ASSERTION-wrong-currency.cent
     BalanceErrorAssertion s (Located al (AssertionEquals _ (Located _ asserted) (Located _ c))) actual mDifference ->
       Err
         (Just "BE_ASSERTION")
@@ -332,13 +346,16 @@ instance ToReport (BalanceError SourceSpan) where
             ]
         )
         []
+    -- [tag:BE_CONVERT_ERROR] At least one test per error: test_resources/balance/error/CONVERT_ERROR_*.cent
     BalanceErrorConvertError ce -> toReport ce
+    -- [tag:BE_FILL] At least one test per error: test_resources/balance/error/BE_FILL.cent
     BalanceErrorCouldNotFill ->
       Err
         (Just "BE_FILL")
         "Could not fill accounts hierarchically because the result got too big."
         []
         []
+    -- [tag:BE_TOTAL] At least one test per error: test_resources/balance/error/BE_FILL.cent (triggers both BE_FILL and BE_TOTAL)
     BalanceErrorCouldNotSumTotal _ ->
       Err
         (Just "BE_TOTAL")

@@ -2,3 +2,4 @@ Block      Timestamp  Description               Account  Amount     Running     
 [37m2024-01-05[m [34m2024-01-05[m [33mSmall expense[m             [37mexpenses[m [32m0.00[m   [32mCHF[m [32m0.00[m    [32mCHF[m [32m0.00[m  [32mCHF[m [32m0.00[m    [32mCHF[m
 [37m2024-01-06[m [34m2024-01-06[m [33mAnother small expense[m     [37mexpenses[m [32m0.05[m   [32mCHF[m [32m0.05[m    [32mCHF[m [32m0.05[m  [32mCHF[m [32m0.00[m    [32mCHF[m
 [37m2024-01-07[m [34m2024-01-07[m [33mYet another small expense[m [37mexpenses[m [32m0.10[m   [32mCHF[m [32m0.10[m    [32mCHF[m [32m0.15[m  [32mCHF[m [32m0.05[m    [32mCHF[m
+[37m2024-01-10[m [34m2024-01-10[m [36mPrice: USD[m                         [32m0.00[m   [32mCHF[m [32m0.00[m    [32mCHF[m [32m0.15[m  [32mCHF[m [32m0.05[m    [32mCHF[m

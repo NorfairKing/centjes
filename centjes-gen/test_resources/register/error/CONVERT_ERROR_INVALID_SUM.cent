@@ -1,0 +1,11 @@
+currency USD 0.01
+currency CHF 0.05
+
+account assets
+account income
+
+price 2023-12-16 USD 1000000000000000000 CHF
+
+2023-12-15
+  * assets +1.00 USD
+  * income -1.00 USD

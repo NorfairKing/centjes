@@ -52,12 +52,18 @@ instance (Validity ann) => Validity (ConvertError ann)
 
 instance ToReport (ConvertError SourceSpan) where
   toReport = \case
+    -- [tag:CONVERT_ERROR_UNKNOWN_TARGET] At least one test per error:
+    --   test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.cent
+    --   test_resources/register/error/CONVERT_ERROR_UNKNOWN_TARGET.cent
     ConvertErrorUnknownTarget cs ->
       Err
         (Just "CONVERT_ERROR_UNKNOWN_TARGET")
         ("Unknown currency to convert to: " <> CurrencySymbol.toString cs)
         []
         []
+    -- [tag:CONVERT_ERROR_MISSING_PRICE] At least one test per error:
+    --   test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE.cent
+    --   test_resources/register/error/CONVERT_ERROR_MISSING_PRICE.cent
     ConvertErrorMissingPrice mAl (Currency fromSymbol (Located fromL _)) (Currency toSymbol (Located toL _)) ->
       Err
         (Just "CONVERT_ERROR_MISSING_PRICE")
@@ -79,6 +85,9 @@ instance ToReport (ConvertError SourceSpan) where
             ]
         )
         []
+    -- [tag:CONVERT_ERROR_INVALID_SUM] At least one test per error:
+    --   test_resources/balance/error/CONVERT_ERROR_INVALID_SUM.cent
+    --   test_resources/register/error/CONVERT_ERROR_INVALID_SUM.cent
     ConvertErrorInvalidSum (Currency _ (Located cl _)) ->
       Err
         (Just "CONVERT_ERROR_INVALID_SUM")

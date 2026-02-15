@@ -1,0 +1,3 @@
+Block      Timestamp  Description Account Amount      Running     Total      Average    
+[37m2024-01-15[m [34m2024-01-15[m [33mBuy SWDA[m    [37massets[m  [32m 100.00[m [32mCHF[m [32m 100.00[m [32mCHF[m [32m100.00[m [32mCHF[m [32m100.00[m  [32mCHF[m
+[37m2024-02-01[m [34m2024-02-01[m [36mPrice: GBP[m          [32m  10.00[m [32mCHF[m [32m  10.00[m [32mCHF[m [32m110.00[m [32mCHF[m [32m110.00[m  [32mCHF[m

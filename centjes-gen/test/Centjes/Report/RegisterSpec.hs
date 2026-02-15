@@ -13,6 +13,7 @@ import Centjes.Ledger.Gen ()
 import Centjes.Load
 import Centjes.OptParse
 import Centjes.Report.Register
+import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
 import Control.Monad.Logger
@@ -87,4 +88,43 @@ spec = do
 
                 pure $ renderChunksText termCaps $ renderAnyRegister rr
 
--- TODO error tests too.
+    scenarioDir "test_resources/register/error" $ \fp -> do
+      af <- liftIO $ resolveFile' fp
+      when (fileExtension af == Just ".cent") $ do
+        resultFile <- liftIO $ replaceExtension ".err" af
+        configFile <- liftIO $ replaceExtension ".config" af
+        it "fails to produce a register for this module the same way" $
+          goldenTextFile (fromAbsFile resultFile) $ do
+            mConfig <- do
+              exists <- doesFileExist configFile
+              if exists
+                then Just <$> Yaml.decodeFileThrow (fromAbsFile configFile)
+                else pure Nothing
+            errOrSettings <-
+              OptEnvConf.runParserOn
+                allCapabilities
+                Nothing
+                OptEnvConf.settingsParser
+                Args.emptyArgs
+                EnvMap.empty
+                mConfig
+            let termCaps = With24BitColours
+            case errOrSettings of
+              Left errs -> expectationFailure $ T.unpack $ renderChunksText termCaps $ OptEnvConf.renderErrors errs
+              Right RegisterSettings {..} -> do
+                -- Load the module
+                (ds, diag) <- runNoLoggingT $ loadModules af
+                -- Compile to a ledger
+                ledger <- shouldValidate diag $ compileDeclarations ds
+                errs <-
+                  shouldFailToValidate $
+                    produceRegister
+                      registerSettingFilter
+                      registerSettingBlockSize
+                      registerSettingCurrency
+                      registerSettingShowVirtual
+                      registerSettingBegin
+                      registerSettingEnd
+                      ledger
+
+                pure $ renderValidationErrors diag errs

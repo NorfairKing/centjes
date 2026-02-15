@@ -105,6 +105,7 @@ import Centjes.Ledger
 import Centjes.Location (GenLocated (..), SourceSpan)
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation (ToReport (..), Validation (..), mapValidationFailure, validationFailure)
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
@@ -113,6 +114,7 @@ import Data.Time
 import Data.Validity (Validity (..), declare)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account, Rounding (..))
@@ -187,7 +189,8 @@ data ConvertedFlatPosting ann = ConvertedFlatPosting
 -- | A revaluation entry from price changes.
 data ConvertedFlatRevaluation ann = ConvertedFlatRevaluation
   { convertedFlatRevaluationTimestamp :: !(GenLocated ann Timestamp),
-    convertedFlatRevaluationCurrency :: !(GenLocated ann (Currency ann)),
+    -- | The currencies whose prices changed (may be multiple for same-day prices)
+    convertedFlatRevaluationCurrencies :: !(NonEmpty (GenLocated ann (Currency ann))),
     convertedFlatRevaluationAmount :: !Money.Account,
     convertedFlatRevaluationRunningTotal :: !Money.Account
   }
@@ -250,10 +253,10 @@ instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'SingleCur
   validate RegisterBlock {..} =
     mconcat
       [ validate registerBlockTitle,
-        foldMap validate registerBlockEntries,
-        declare "The total of the block matches the sum of the entries" $
-          foldl (\macc e -> macc >>= Account.add (registerEntryTotalSingle e)) (Just Account.zero) registerBlockEntries
-            == Just registerBlockTotal
+        foldMap validate registerBlockEntries
+        -- Note: We don't validate that blockTotal == sum of entries because
+        -- entries use individually-rounded amounts while blockTotal uses
+        -- bulk-converted running total differences for consistency with balance.
       ]
 
 -- | A register entry is either a transaction or a revaluation
@@ -283,20 +286,12 @@ registerEntryTotalMulti ::
   Maybe (Money.MultiAccount (Currency ann))
 registerEntryTotalMulti (RegisterEntryTransaction rt) = registerTransactionTotalMulti rt
 
--- | Get the total amount for a single-currency register entry
-registerEntryTotalSingle ::
-  RegisterEntry 'SingleCurrency ann ->
-  Money.Account
-registerEntryTotalSingle = \case
-  RegisterEntryTransaction rt -> registerTransactionTotalSingle rt
-  RegisterEntryRevaluation rr -> registerRevaluationAmount rr
-
 -- | A revaluation entry representing gain/loss due to price changes
 -- Always uses single-currency amounts
 data RegisterRevaluation ann = RegisterRevaluation
   { registerRevaluationTimestamp :: !(GenLocated ann Timestamp),
-    -- | The currency whose price changed
-    registerRevaluationCurrency :: !(GenLocated ann (Currency ann)),
+    -- | The currencies whose prices changed (may be multiple for same-day prices)
+    registerRevaluationCurrencies :: !(NonEmpty (GenLocated ann (Currency ann))),
     -- | The gain or loss amount
     registerRevaluationAmount :: !Money.Account,
     -- | Running total across blocks after this revaluation
@@ -337,15 +332,6 @@ registerTransactionTotalMulti =
       RegisterPosting 'MultiCurrency ann ->
       Money.MultiAccount (Currency ann)
     registerPostingAmountMulti RegisterPosting {..} = registerPostingAmount
-
-registerTransactionTotalSingle ::
-  RegisterTransaction 'SingleCurrency ann ->
-  Money.Account
-registerTransactionTotalSingle RegisterTransaction {..} =
-  foldl
-    (\acc p -> fromMaybe acc (Account.add acc (registerPostingAmount p)))
-    Account.zero
-    registerTransactionPostings
 
 data RegisterPosting (mode :: AmountMode) ann = RegisterPosting
   { registerPosting :: !(GenLocated ann (Posting ann)),
@@ -396,7 +382,14 @@ instance (Validity ann, Show ann, Ord ann) => Validity (RegisterError ann)
 
 instance ToReport (RegisterError SourceSpan) where
   toReport = \case
-    RegisterErrorAddError -> undefined
+    -- [tag:RE_ADD_ERROR] At least one test per error: test_resources/register/error/RE_ADD_ERROR.cent
+    RegisterErrorAddError ->
+      Err
+        (Just "RE_ADD_ERROR")
+        "Could not add amounts together because the result got too big."
+        []
+        []
+    -- [tag:RE_CONVERT_ERROR] At least one test per error: test_resources/register/error/CONVERT_ERROR_*.cent
     RegisterErrorConvertError ce -> toReport ce
 
 -- | Produce a register from a ledger, dispatching to either multi-currency
@@ -629,12 +622,12 @@ convertFlatRegister currencyTo mEnd pricesVec FlatRegister {..} = do
         Maybe Day ->
         [FlatEntry ann] ->
         Validation (RegisterError ann) [ConvertedFlatEntry ann]
-      go convertedRunning rawBalances mLastDay [] =
+      go _convertedRunning rawBalances mLastDay [] =
         case (mLastDay, effectiveLastPriceDay) of
           (Just lastEntryDay, Just lastPDay)
             | lastEntryDay < lastPDay ->
                 map ConvertedFlatEntryRevaluation
-                  <$> computeRevaluations lastEntryDay lastPDay prices pricesVec currencyTo rawBalances convertedRunning
+                  <$> computeRevaluations lastEntryDay lastPDay prices pricesVec currencyTo rawBalances
           _ -> pure []
       go convertedRunning rawBalances mLastDay (entry : rest) = do
         let Located _ ts = flatEntryTimestamp entry
@@ -645,7 +638,7 @@ convertFlatRegister currencyTo mEnd pricesVec FlatRegister {..} = do
           Nothing -> pure []
           Just lastDay ->
             if lastDay < day
-              then computeRevaluations lastDay day prices pricesVec currencyTo rawBalances convertedRunning
+              then computeRevaluations lastDay day prices pricesVec currencyTo rawBalances
               else pure []
 
         let convertedAfterRevals = case revalEntries of
@@ -687,22 +680,26 @@ convertFlatEntry ::
   Validation
     (RegisterError ann)
     (ConvertedFlatTransaction ann, Money.Account, Money.MultiAccount (Currency ann))
-convertFlatEntry currencyTo priceGraph convertedRunning rawBalances FlatEntry {..} = do
+convertFlatEntry currencyTo priceGraph _convertedRunning rawBalances FlatEntry {..} = do
   let goPostings ::
-        Money.Account ->
         Money.MultiAccount (Currency ann) ->
         [FlatPosting ann] ->
         Validation
           (RegisterError ann)
-          ([ConvertedFlatPosting ann], Money.Account, Money.MultiAccount (Currency ann))
-      goPostings running rawBal [] = pure ([], running, rawBal)
-      goPostings running rawBal (fp : fps) = do
-        (converted, newRunning, newRawBal) <- convertFlatPosting currencyTo priceGraph running rawBal fp
-        (rest, finalRunning, finalRawBal) <- goPostings newRunning newRawBal fps
-        pure (converted : rest, finalRunning, finalRawBal)
+          ([ConvertedFlatPosting ann], Money.MultiAccount (Currency ann))
+      goPostings rawBal [] = pure ([], rawBal)
+      goPostings rawBal (fp : fps) = do
+        (converted, newRawBal) <- convertFlatPosting currencyTo priceGraph rawBal fp
+        (rest, finalRawBal) <- goPostings newRawBal fps
+        pure (converted : rest, finalRawBal)
 
-  (postings, newConvertedRunning, newRawBalances) <-
-    goPostings convertedRunning rawBalances (V.toList flatEntryPostings)
+  (postings, newRawBalances) <-
+    goPostings rawBalances (V.toList flatEntryPostings)
+
+  -- Get the final converted running total from the last posting
+  let newConvertedRunning = case postings of
+        [] -> Account.zero
+        _ -> convertedFlatPostingRunningTotal (last postings)
 
   pure
     ( ConvertedFlatTransaction
@@ -719,13 +716,12 @@ convertFlatPosting ::
   (Ord ann) =>
   Currency ann ->
   MemoisedPriceGraph (Currency ann) ->
-  Money.Account ->
   Money.MultiAccount (Currency ann) ->
   FlatPosting ann ->
   Validation
     (RegisterError ann)
-    (ConvertedFlatPosting ann, Money.Account, Money.MultiAccount (Currency ann))
-convertFlatPosting currencyTo priceGraph convertedRunning rawBalances FlatPosting {..} = do
+    (ConvertedFlatPosting ann, Money.MultiAccount (Currency ann))
+convertFlatPosting currencyTo priceGraph rawBalances FlatPosting {..} = do
   let Located pl Posting {..} = flatPosting
       Located al _ = postingAccount
 
@@ -734,14 +730,16 @@ convertFlatPosting currencyTo priceGraph convertedRunning rawBalances FlatPostin
     mapValidationFailure RegisterErrorConvertError $
       convertMultiAccountToAccount (Just al) priceGraph currencyTo flatPostingAmount
 
-  -- Update running totals
-  newConvertedRunning <- case Account.add convertedRunning converted of
-    Nothing -> validationFailure RegisterErrorAddError
-    Just r -> pure r
-
+  -- Update raw balances
   newRawBalances <- case MultiAccount.add rawBalances flatPostingAmount of
     Nothing -> validationFailure RegisterErrorAddError
     Just r -> pure r
+
+  -- Convert the entire raw balance to get the running total.
+  -- This avoids accumulating rounding errors from individual conversions.
+  newConvertedRunning <-
+    mapValidationFailure RegisterErrorConvertError $
+      convertMultiAccountToAccount Nothing priceGraph currencyTo newRawBalances
 
   -- Create converted posting with converted currency/account
   let convertedPosting =
@@ -762,7 +760,6 @@ convertFlatPosting currencyTo priceGraph convertedRunning rawBalances FlatPostin
           convertedFlatPostingAmount = converted,
           convertedFlatPostingRunningTotal = newConvertedRunning
         },
-      newConvertedRunning,
       newRawBalances
     )
 
@@ -775,9 +772,8 @@ computeRevaluations ::
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
   Money.MultiAccount (Currency ann) ->
-  Money.Account ->
   Validation (RegisterError ann) [ConvertedFlatRevaluation ann]
-computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalances initialConvertedRunning = do
+computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalances = do
   let relevantPrices =
         V.toList $
           V.filter
@@ -788,72 +784,78 @@ computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalan
             )
             allPrices
 
-  goRevals initialConvertedRunning relevantPrices
+  -- Compute initial converted total using the graph from before this period
+  let initialPG = case M.lookupLE lastDay priceGraphs of
+        Nothing -> MemoisedPriceGraph.empty
+        Just (_, pg) -> pg
+  initialConvertedTotal <-
+    mapValidationFailure RegisterErrorConvertError $
+      convertMultiAccountToAccount Nothing initialPG currencyTo rawBalances
+
+  goRevals initialConvertedTotal relevantPrices
   where
     goRevals ::
       Money.Account ->
       [GenLocated ann (Price ann)] ->
       Validation (RegisterError ann) [ConvertedFlatRevaluation ann]
     goRevals _ [] = pure []
-    goRevals running (Located _ Price {..} : rest) = do
-      let Located _ ts = priceTimestamp
+    goRevals prevConvertedTotal (Located _ firstPrice : rest) = do
+      let Located _ ts = priceTimestamp firstPrice
           priceDay = Timestamp.toDay ts
-          oldPG = case M.lookupLT priceDay priceGraphs of
-            Nothing -> MemoisedPriceGraph.empty
-            Just (_, pg) -> pg
           newPG = case M.lookupLE priceDay priceGraphs of
             Nothing -> MemoisedPriceGraph.empty
             Just (_, pg) -> pg
 
-      let Located _ fromCur = priceCurrency
-          Located _ Cost {..} = priceCost
-          Located _ toCur = costCurrency
-          Money.MultiAccount balanceMap = rawBalances
-          affectedCurrencies = [fromCur, toCur]
-          affectedBalances =
-            [ (cur, bal)
-            | cur <- affectedCurrencies,
-              Just bal <- [M.lookup cur balanceMap],
-              bal /= Account.zero,
-              cur /= currencyTo
-            ]
+      -- Re-convert all balances with the new price graph and compare to previous total.
+      -- This correctly handles multi-hop conversions (e.g., SWDA -> GBP -> CHF).
+      newConvertedTotal <-
+        mapValidationFailure RegisterErrorConvertError $
+          convertMultiAccountToAccount Nothing newPG currencyTo rawBalances
 
-      case affectedBalances of
-        [] -> goRevals running rest
-        _ -> do
-          let computeForCurrency (cur, bal) = do
-                let singleBalance = MultiAccount.fromAccount cur bal
-                let oldConvertedResult =
-                      mapValidationFailure RegisterErrorConvertError $
-                        convertMultiAccountToAccount Nothing oldPG currencyTo singleBalance
-                    oldConverted = case oldConvertedResult of
-                      Failure _ -> Account.zero
-                      Success v -> v
-                newConverted <-
-                  mapValidationFailure RegisterErrorConvertError $
-                    convertMultiAccountToAccount Nothing newPG currencyTo singleBalance
-                case Account.subtract newConverted oldConverted of
-                  Nothing -> validationFailure RegisterErrorAddError
-                  Just amt -> pure amt
+      case Account.subtract newConvertedTotal prevConvertedTotal of
+        Nothing -> validationFailure RegisterErrorAddError
+        Just totalRevalAmount -> do
+          -- The revaluation amount shown is the difference between converted totals.
+          -- However, for the running total we use newConvertedTotal directly, not
+          -- running + totalRevalAmount, to avoid accumulating rounding errors from
+          -- individual posting conversions.
+          let newRunning = newConvertedTotal
+          -- Collect any following same-day prices that have zero difference
+          -- (they share the same price graph, so their totals are identical)
+          let (zeroCurrencies, restPrices) = collectZeroSameDayPrices priceDay newConvertedTotal rest
+              allCurrencies = priceCurrency firstPrice :| zeroCurrencies
+          let reval =
+                ConvertedFlatRevaluation
+                  { convertedFlatRevaluationTimestamp = priceTimestamp firstPrice,
+                    convertedFlatRevaluationCurrencies = allCurrencies,
+                    convertedFlatRevaluationAmount = totalRevalAmount,
+                    convertedFlatRevaluationRunningTotal = newRunning
+                  }
+          restRevals <- goRevals newConvertedTotal restPrices
+          pure (reval : restRevals)
 
-          revalAmounts <- traverse computeForCurrency affectedBalances
-          let totalRevalAmount = foldl (\acc a -> fromMaybe acc (Account.add acc a)) Account.zero revalAmounts
-
-          if totalRevalAmount == Account.zero
-            then goRevals running rest
-            else do
-              newRunning <- case Account.add running totalRevalAmount of
-                Nothing -> validationFailure RegisterErrorAddError
-                Just r -> pure r
-              let reval =
-                    ConvertedFlatRevaluation
-                      { convertedFlatRevaluationTimestamp = priceTimestamp,
-                        convertedFlatRevaluationCurrency = priceCurrency,
-                        convertedFlatRevaluationAmount = totalRevalAmount,
-                        convertedFlatRevaluationRunningTotal = newRunning
-                      }
-              restRevals <- goRevals newRunning rest
-              pure (reval : restRevals)
+    -- Collect same-day prices that would have zero revaluation amount
+    collectZeroSameDayPrices ::
+      Day ->
+      Money.Account ->
+      [GenLocated ann (Price ann)] ->
+      ([GenLocated ann (Currency ann)], [GenLocated ann (Price ann)])
+    collectZeroSameDayPrices _ _ [] = ([], [])
+    collectZeroSameDayPrices day currentTotal prices@(Located _ nextPrice : rest)
+      | Timestamp.toDay (locatedValue (priceTimestamp nextPrice)) /= day = ([], prices)
+      | otherwise =
+          -- Same day - check if the price graph gives the same total
+          let nextPG = case M.lookupLE day priceGraphs of
+                Nothing -> MemoisedPriceGraph.empty
+                Just (_, pg) -> pg
+           in case convertMultiAccountToAccount Nothing nextPG currencyTo rawBalances of
+                Failure _ -> ([], prices) -- On error, don't group
+                Success nextTotal
+                  | nextTotal == currentTotal ->
+                      -- Zero difference, include this currency and continue
+                      let (moreCurrencies, remaining) = collectZeroSameDayPrices day currentTotal rest
+                       in (priceCurrency nextPrice : moreCurrencies, remaining)
+                  | otherwise -> ([], prices) -- Non-zero difference, don't group
 
 -- | Group a flat register into blocks (Stage 3, multi-currency).
 --
@@ -1068,32 +1070,36 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         (RegisterEntry 'SingleCurrency ann, Money.Account)
       convertEntry blockRunning = \case
         ConvertedFlatEntryTransaction t ->
-          let (postings, finalBlockRunning) = convertPostings blockRunning (V.toList (convertedFlatTransactionPostings t))
+          let (postings, newBlockRunning) = convertPostings blockRunning (V.toList (convertedFlatTransactionPostings t))
               regTx =
                 RegisterTransaction
                   { registerTransactionTimestamp = convertedFlatTransactionTimestamp t,
                     registerTransactionDescription = convertedFlatTransactionDescription t,
                     registerTransactionPostings = V.fromList postings
                   }
-           in (RegisterEntryTransaction regTx, finalBlockRunning)
+           in (RegisterEntryTransaction regTx, newBlockRunning)
         ConvertedFlatEntryRevaluation r ->
-          case Account.add blockRunning (convertedFlatRevaluationAmount r) of
-            Nothing -> (RegisterEntryRevaluation (convertReval blockRunning r), blockRunning)
-            Just newBlockRunning ->
-              (RegisterEntryRevaluation (convertReval newBlockRunning r), newBlockRunning)
+          let revalAmount = convertedFlatRevaluationAmount r
+              newBlockRunning = fromMaybe blockRunning (Account.add blockRunning revalAmount)
+           in (RegisterEntryRevaluation (convertReval newBlockRunning r), newBlockRunning)
 
       convertReval ::
         Money.Account ->
         ConvertedFlatRevaluation ann ->
         RegisterRevaluation ann
       convertReval blockRunning r =
-        RegisterRevaluation
-          { registerRevaluationTimestamp = convertedFlatRevaluationTimestamp r,
-            registerRevaluationCurrency = convertedFlatRevaluationCurrency r,
-            registerRevaluationAmount = convertedFlatRevaluationAmount r,
-            registerRevaluationRunningTotal = convertedFlatRevaluationRunningTotal r,
-            registerRevaluationBlockRunningTotal = blockRunning
-          }
+        let globalRunningTotal = convertedFlatRevaluationRunningTotal r
+            -- For BlockSizeIndividual, use global running total (no separate "Total" column)
+            displayedBlockRunning = case blockSize of
+              BlockSizeIndividual -> globalRunningTotal
+              _ -> blockRunning
+         in RegisterRevaluation
+              { registerRevaluationTimestamp = convertedFlatRevaluationTimestamp r,
+                registerRevaluationCurrencies = convertedFlatRevaluationCurrencies r,
+                registerRevaluationAmount = convertedFlatRevaluationAmount r,
+                registerRevaluationRunningTotal = globalRunningTotal,
+                registerRevaluationBlockRunningTotal = displayedBlockRunning
+              }
 
       convertPostings ::
         Money.Account ->
@@ -1101,13 +1107,21 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         ([RegisterPosting 'SingleCurrency ann], Money.Account)
       convertPostings blockRunning [] = ([], blockRunning)
       convertPostings blockRunning (cp : cps) =
-        let newBlockRunning = fromMaybe blockRunning (Account.add blockRunning (convertedFlatPostingAmount cp))
+        let -- Within-block running total: sum of individual amounts (for display within block)
+            newBlockRunning = fromMaybe blockRunning (Account.add blockRunning (convertedFlatPostingAmount cp))
+            -- Global running total: bulk-converted value (for final totals matching balance)
+            globalRunningTotal = convertedFlatPostingRunningTotal cp
+            -- For BlockSizeIndividual, use global running total (no separate "Total" column)
+            -- For other block sizes, use within-block running total (separate "Total" column shows global)
+            displayedBlockRunning = case blockSize of
+              BlockSizeIndividual -> globalRunningTotal
+              _ -> newBlockRunning
             regPosting =
               RegisterPosting
                 { registerPosting = convertedFlatPosting cp,
                   registerPostingAmount = convertedFlatPostingAmount cp,
-                  registerPostingRunningTotal = convertedFlatPostingRunningTotal cp,
-                  registerPostingBlockRunningTotal = newBlockRunning
+                  registerPostingRunningTotal = globalRunningTotal,
+                  registerPostingBlockRunningTotal = displayedBlockRunning
                 }
             (rest, finalBlockRunning) = convertPostings newBlockRunning cps
          in (regPosting : rest, finalBlockRunning)
@@ -1134,10 +1148,13 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
                         generateEmptyBlocks current blockTitle runningTotal blockNum
                   _ -> []
                 numEmpty = toInteger (length emptyBlocks)
-                (convertedEntries, blockTotal) = convertEntriesForBlock blockEntries
+                convertedEntries = convertEntriesForBlock blockEntries
                 newRunningTotal = case blockEntries of
                   [] -> runningTotal
                   _ -> convertedFlatEntryRunningTotal (last blockEntries)
+                -- Block total is the difference in running totals, not the sum of individual amounts.
+                -- This avoids accumulating rounding errors from individual conversions.
+                blockTotal = fromMaybe Account.zero (Account.subtract newRunningTotal runningTotal)
                 hasTransactions = any isTransactionEntry blockEntries
                 effectiveBlockNum = blockNum + numEmpty
                 nextBlockNum = if hasTransactions then effectiveBlockNum + 1 else effectiveBlockNum
@@ -1202,15 +1219,12 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
 
       convertEntriesForBlock ::
         [ConvertedFlatEntry ann] ->
-        ([RegisterEntry 'SingleCurrency ann], Money.Account)
+        [RegisterEntry 'SingleCurrency ann]
       convertEntriesForBlock entries =
-        let go _ [] = ([], Account.zero)
+        let go _ [] = []
             go blockRunning (e : es) =
               let (converted, newBlockRunning) = convertEntry blockRunning e
-                  (rest, restTotal) = go newBlockRunning es
-                  entryTotal = registerEntryTotalSingle converted
-                  combinedTotal = fromMaybe entryTotal (Account.add entryTotal restTotal)
-               in (converted : rest, combinedTotal)
+               in converted : go newBlockRunning es
          in go Account.zero entries
 
       isTransactionEntry ::

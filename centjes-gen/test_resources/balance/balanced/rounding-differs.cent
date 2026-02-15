@@ -1,0 +1,22 @@
+currency CHF 0.01
+currency USD 0.0001
+
+account assets
+account equity
+
+price 2024-01-01 USD 1.00 CHF
+
+2024-01-10
+  | First
+  * equity -0.333 USD
+  * assets +0.333 USD
+
+2024-01-11
+  | Second
+  * equity -0.333 USD
+  * assets +0.333 USD
+
+2024-01-12
+  | Third
+  * equity -0.333 USD
+  * assets +0.333 USD

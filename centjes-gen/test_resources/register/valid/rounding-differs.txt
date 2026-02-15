@@ -1,0 +1,4 @@
+Timestamp  Description Account Amount     Running    
+[34m2024-01-10[m [33mFirst[m       [37massets[m  [32m 0.33[m  [32mCHF[m [32m 0.33[m   [32mCHF[m
+[34m2024-01-11[m [33mSecond[m      [37massets[m  [32m 0.33[m  [32mCHF[m [32m 0.67[m   [32mCHF[m
+[34m2024-01-12[m [33mThird[m       [37massets[m  [32m 0.33[m  [32mCHF[m [32m 1.00[m   [32mCHF[m
