@@ -1,0 +1,15 @@
+currency USD 0.01
+
+account equity
+account assets
+account expenses
+
+2024-01-01
+  | Opening
+  * equity -100 USD
+  * assets +100 USD
+
+2024-01-02
+  | Spend all
+  * assets   -100 USD
+  * expenses +100 USD

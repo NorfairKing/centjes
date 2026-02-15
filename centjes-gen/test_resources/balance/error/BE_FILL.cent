@@ -1,0 +1,16 @@
+currency USD 0.01
+
+account equity:first
+account equity:second
+account assets:first
+account assets:second
+
+2024-01-01
+  | Transaction 1
+  * equity:first -184467440737095516.15 USD
+  * assets:first +184467440737095516.15 USD
+
+2024-01-02
+  | Transaction 2
+  * equity:second -184467440737095516.15 USD
+  * assets:second +184467440737095516.15 USD

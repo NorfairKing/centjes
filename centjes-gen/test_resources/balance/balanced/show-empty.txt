@@ -1,0 +1,4 @@
+[37massets[m              
+[37mequity[m   [31m-100.00[m [31mUSD[m
+[37mexpenses[m [32m 100.00[m [32mUSD[m
+[34mTotal[m               

@@ -50,6 +50,13 @@ extra-source-files:
     test_resources/balance/balanced/empty.txt
     test_resources/balance/balanced/example.cent
     test_resources/balance/balanced/example.txt
+    test_resources/balance/balanced/filter-account.cent
+    test_resources/balance/balanced/filter-account.config
+    test_resources/balance/balanced/filter-account.txt
+    test_resources/balance/balanced/inclusive-ratio-explicit.cent
+    test_resources/balance/balanced/inclusive-ratio-explicit.txt
+    test_resources/balance/balanced/multiple-currencies-balance.cent
+    test_resources/balance/balanced/multiple-currencies-balance.txt
     test_resources/balance/balanced/percentage.cent
     test_resources/balance/balanced/percentage.txt
     test_resources/balance/balanced/rates.cent
@@ -57,6 +64,9 @@ extra-source-files:
     test_resources/balance/balanced/rates.txt
     test_resources/balance/balanced/ratio.cent
     test_resources/balance/balanced/ratio.txt
+    test_resources/balance/balanced/show-empty.cent
+    test_resources/balance/balanced/show-empty.config
+    test_resources/balance/balanced/show-empty.txt
     test_resources/balance/balanced/taxes.cent
     test_resources/balance/balanced/taxes.txt
     test_resources/balance/balanced/total-bigger.cent
@@ -79,6 +89,8 @@ extra-source-files:
     test_resources/balance/error/BE_ASSERTION.err
     test_resources/balance/error/BE_CONVERSION_TOO_BIG.cent
     test_resources/balance/error/BE_CONVERSION_TOO_BIG.err
+    test_resources/balance/error/BE_FILL.cent
+    test_resources/balance/error/BE_FILL.err
     test_resources/balance/error/BE_OFF_BALANCE-simple.cent
     test_resources/balance/error/BE_OFF_BALANCE-simple.err
     test_resources/balance/error/BE_OFF_BALANCE-two-currencies.cent

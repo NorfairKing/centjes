@@ -1,0 +1,3 @@
+[0;91;1m[error BE_FILL][0m: Could not fill accounts hierarchically because the result got too big.
+
+[0;91;1m[error BE_TOTAL][0m: Could not sum all amounts together because the result got too big.
