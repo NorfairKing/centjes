@@ -1,0 +1,21 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-01-01 USD 0.88 CHF
+
+2024-01-05
+  | Large expense
+  * equity   -1000000.00 USD
+  * expenses +1000000.00 USD
+
+price 2024-01-10 USD 0.92 CHF
+
+2024-01-15
+  | Another large expense
+  * equity   -500000.00 USD
+  * expenses +500000.00 USD
+
+price 2024-01-20 USD 0.95 CHF

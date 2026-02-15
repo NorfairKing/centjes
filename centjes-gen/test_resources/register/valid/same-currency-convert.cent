@@ -1,0 +1,14 @@
+currency CHF 0.05
+
+account equity
+account expenses
+
+2024-01-05
+  | Expense in target currency
+  * equity   -100 CHF
+  * expenses +100 CHF
+
+2024-01-10
+  | Another expense
+  * equity   -50 CHF
+  * expenses +50 CHF

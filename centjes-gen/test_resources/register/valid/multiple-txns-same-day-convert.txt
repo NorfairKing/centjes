@@ -1,0 +1,5 @@
+Block      Timestamp  Description       Account  Amount     Running     Total      Average    
+[37m2024-01-05[m [34m2024-01-05[m [33mMorning expense[m   [37mexpenses[m [32m 45.00[m [32mCHF[m [32m 45.00[m  [32mCHF[m                       
+           [34m2024-01-05[m [33mAfternoon expense[m [37mexpenses[m [32m 67.50[m [32mCHF[m [32m112.50[m  [32mCHF[m                       
+           [34m2024-01-05[m [33mEvening expense[m   [37mexpenses[m [32m 22.50[m [32mCHF[m [32m135.00[m  [32mCHF[m [32m135.00[m [32mCHF[m [32m135.00[m  [32mCHF[m
+[37m2024-01-10[m [34m2024-01-10[m [36mPrice: USD[m                 [32m 15.00[m [32mCHF[m [32m 15.00[m  [32mCHF[m [32m150.00[m [32mCHF[m [32m150.00[m  [32mCHF[m

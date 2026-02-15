@@ -1,0 +1,28 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-01-01 USD 1.00 CHF
+
+2024-01-05
+  | Before begin date
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2024-01-10 USD 1.10 CHF
+
+2024-01-15
+  | After begin date
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2024-01-20 USD 1.20 CHF
+
+2024-01-25
+  | Later expense
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2024-01-30 USD 1.15 CHF

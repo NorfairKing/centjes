@@ -1,0 +1,3 @@
+Block      Timestamp  Description    Account  Amount     Running     Total     Average    
+[37m2024-01-15[m [34m2024-01-15[m [33mFirst purchase[m [37mexpenses[m [32m42.50[m  [32mCHF[m [32m42.50[m   [32mCHF[m [32m42.50[m [32mCHF[m [32m42.50[m   [32mCHF[m
+[37m2024-01-20[m [34m2024-01-20[m [36mPrice: USD[m              [32m 2.50[m  [32mCHF[m [32m 2.50[m   [32mCHF[m [32m45.00[m [32mCHF[m [32m45.00[m   [32mCHF[m

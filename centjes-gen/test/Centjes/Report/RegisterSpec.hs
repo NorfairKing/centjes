@@ -6,7 +6,7 @@
 module Centjes.Report.RegisterSpec (spec) where
 
 import Centjes.Block.Gen ()
-import Centjes.Command.Register (renderRegister)
+import Centjes.Command.Register (renderAnyRegister)
 import Centjes.Compile
 import Centjes.Filter.Gen ()
 import Centjes.Ledger.Gen ()
@@ -85,6 +85,6 @@ spec = do
 
                 shouldBeValid rr
 
-                pure $ renderChunksText termCaps $ renderRegister rr
+                pure $ renderChunksText termCaps $ renderAnyRegister rr
 
 -- TODO error tests too.

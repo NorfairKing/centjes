@@ -101,9 +101,17 @@
     
     [34mBegin date (inclusive), in YYYY-MM-DD format[m
     option: [37m--begin[m[36m|[m[37m-b[m [33mDATE[m
+    config:
+      [37mregister.begin[m: # [32mor null[m
+        # Day
+        [33m<string>[m
     
     [34mEnd date (inclusive), in YYYY-MM-DD format[m
     option: [37m--end[m[36m|[m[37m-e[m [33mDATE[m
+    config:
+      [37mregister.end[m: # [32mor null[m
+        # Day
+        [33m<string>[m
     
     [34mfilter[m
     argument: [33mFILTER[m
@@ -255,6 +263,16 @@
   [37mregister.year[m:
     # [32mor null[m
     [33m<integer>[m
+  [34mBegin date (inclusive), in YYYY-MM-DD format[m
+  [37mregister.begin[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
+  [34mEnd date (inclusive), in YYYY-MM-DD format[m
+  [37mregister.end[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
   [34mfilter[m
   [37mregister.filter[m:
     # [32mor null[m

@@ -1,0 +1,13 @@
+Block   Timestamp  Description     Account  Amount     Running     Total      Average    
+[37m2024-01[m                                                            [32m0.00[m   [32mCHF[m [32m0.00[m    [32mCHF[m
+[37m2024-02[m                                                            [32m0.00[m   [32mCHF[m [32m0.00[m    [32mCHF[m
+[37m2024-03[m [34m2024-03-15[m [33mQ1 2024 expense[m [37mexpenses[m [32m100.00[m [32mCHF[m [32m100.00[m  [32mCHF[m [32m100.00[m [32mCHF[m [32m33.30[m   [32mCHF[m
+[37m2024-04[m                                                            [32m100.00[m [32mCHF[m [32m25.00[m   [32mCHF[m
+[37m2024-05[m                                                            [32m100.00[m [32mCHF[m [32m25.00[m   [32mCHF[m
+[37m2024-06[m                                                            [32m100.00[m [32mCHF[m [32m25.00[m   [32mCHF[m
+[37m2024-07[m [34m2024-07-01[m [36mPrice: USD[m               [32m 10.00[m [32mCHF[m [32m 10.00[m  [32mCHF[m [32m110.00[m [32mCHF[m [32m18.30[m   [32mCHF[m
+[37m2024-08[m                                                            [32m110.00[m [32mCHF[m [32m15.70[m   [32mCHF[m
+[37m2024-09[m [34m2024-09-15[m [33mQ3 2024 expense[m [37mexpenses[m [32m110.00[m [32mCHF[m [32m110.00[m  [32mCHF[m [32m220.00[m [32mCHF[m [32m27.50[m   [32mCHF[m
+[37m2024-10[m                                                            [32m220.00[m [32mCHF[m [32m24.40[m   [32mCHF[m
+[37m2024-11[m                                                            [32m220.00[m [32mCHF[m [32m24.40[m   [32mCHF[m
+[37m2024-12[m                                                            [32m220.00[m [32mCHF[m [32m24.40[m   [32mCHF[m

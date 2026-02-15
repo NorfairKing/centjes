@@ -1,0 +1,24 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+account budget assets
+
+price 2024-01-01 USD 0.90 CHF
+
+2024-01-05
+  | Expense with virtual
+  * equity   -100 USD
+  * expenses +100 USD
+  ! budget   -100 USD
+
+price 2024-01-10 USD 1.00 CHF
+
+2024-01-15
+  | Another expense
+  * equity   -50 USD
+  * expenses +50 USD
+  ! budget   -50 USD
+
+price 2024-01-20 USD 1.05 CHF

@@ -1,0 +1,30 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account assets
+account expenses
+
+price 2024-01-01 USD 0.90 CHF
+
+2024-01-05
+  | Using market rate
+  * assets   -100 USD
+  * expenses +100 USD
+
+2024-01-07
+  | Using explicit rate
+  * assets   -100 USD @ 0.95 CHF
+  * expenses +95 CHF
+
+2024-01-10
+  | Using different explicit rate
+  * assets   -100 USD @ 1.05 CHF
+  * expenses +105 CHF
+
+price 2024-01-15 USD 1.00 CHF
+
+2024-01-17
+  | Back to market rate
+  * assets   -100 USD
+  * expenses +100 USD

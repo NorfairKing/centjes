@@ -1,0 +1,14 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-01-01 USD 0.87654321 CHF
+
+2024-01-05
+  | Expense with fractional rate
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2024-01-10 USD 0.12345678 CHF

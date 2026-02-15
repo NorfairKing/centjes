@@ -51,6 +51,11 @@
     default = { };
     type = lib.types.submodule {
       options = {
+        begin = lib.mkOption {
+          default = null;
+          description = "Begin date (inclusive), in YYYY-MM-DD format";
+          type = lib.types.nullOr lib.types.str;
+        };
         block = lib.mkOption {
           default = null;
           description = "Group transactions";
@@ -59,6 +64,11 @@
         convert = lib.mkOption {
           default = null;
           description = "Currency to convert to";
+          type = lib.types.nullOr lib.types.str;
+        };
+        end = lib.mkOption {
+          default = null;
+          description = "End date (inclusive), in YYYY-MM-DD format";
           type = lib.types.nullOr lib.types.str;
         };
         filter = lib.mkOption {

@@ -264,6 +264,7 @@ timeFilterParser =
                   option,
                   long "begin",
                   short 'b',
+                  conf "begin",
                   reader auto,
                   metavar "DATE"
                 ]
@@ -274,6 +275,7 @@ timeFilterParser =
                   option,
                   long "end",
                   short 'e',
+                  conf "end",
                   reader auto,
                   metavar "DATE"
                 ]

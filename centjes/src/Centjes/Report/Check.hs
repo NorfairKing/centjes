@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
@@ -48,7 +49,7 @@ doCompleteCheck ::
     SourceSpan
     ( Ledger SourceSpan,
       BalanceReport SourceSpan,
-      Register SourceSpan
+      Register 'MultiCurrency SourceSpan
     )
 doCompleteCheck declarations = do
   () <- withLoggedDuration "Check declarations" $ checkLDeclarations declarations
@@ -309,7 +310,7 @@ checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located
 checkLedger ::
   (Ord ann) =>
   Ledger ann ->
-  Checker ann (BalanceReport ann, Register ann)
+  Checker ann (BalanceReport ann, Register 'MultiCurrency ann)
 checkLedger l = do
   balanceReport <-
     mapValidationFailure CheckErrorBalanceError $
@@ -321,10 +322,9 @@ checkLedger l = do
         l
   register <-
     mapValidationFailure CheckErrorRegisterError $
-      produceRegister
+      produceMultiCurrencyRegister
         FilterAny
         BlockSizeIndividual
-        Nothing
         False
         Nothing
         Nothing

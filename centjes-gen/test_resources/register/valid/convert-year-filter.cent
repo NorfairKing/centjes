@@ -1,0 +1,33 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2023-01-01 USD 0.90 CHF
+
+2023-06-15
+  | 2023 expense
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2024-01-01 USD 1.00 CHF
+
+2024-03-15
+  | Q1 2024 expense
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2024-07-01 USD 1.10 CHF
+
+2024-09-15
+  | Q3 2024 expense
+  * equity   -100 USD
+  * expenses +100 USD
+
+price 2025-01-01 USD 1.05 CHF
+
+2025-03-15
+  | 2025 expense
+  * equity   -100 USD
+  * expenses +100 USD

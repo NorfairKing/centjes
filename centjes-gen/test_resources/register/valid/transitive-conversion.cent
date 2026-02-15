@@ -1,0 +1,15 @@
+currency USD 0.01
+currency EUR 0.01
+currency GBP 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-01-01 USD 0.92 EUR
+price 2024-01-01 EUR 1.08 CHF
+
+2024-01-05
+  | USD expense via EUR to CHF
+  * equity   -100 USD
+  * expenses +100 USD

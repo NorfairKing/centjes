@@ -194,42 +194,141 @@ extra-source-files:
     test_resources/register/valid/conversion-daily.cent
     test_resources/register/valid/conversion-daily.config
     test_resources/register/valid/conversion-daily.txt
+    test_resources/register/valid/convert-with-begin-date.cent
+    test_resources/register/valid/convert-with-begin-date.config
+    test_resources/register/valid/convert-with-begin-date.txt
+    test_resources/register/valid/convert-with-date-range.cent
+    test_resources/register/valid/convert-with-date-range.config
+    test_resources/register/valid/convert-with-date-range.txt
+    test_resources/register/valid/convert-with-end-date.cent
+    test_resources/register/valid/convert-with-end-date.config
+    test_resources/register/valid/convert-with-end-date.txt
+    test_resources/register/valid/convert-year-filter.cent
+    test_resources/register/valid/convert-year-filter.config
+    test_resources/register/valid/convert-year-filter.txt
+    test_resources/register/valid/crypto-convert.cent
+    test_resources/register/valid/crypto-convert.config
+    test_resources/register/valid/crypto-convert.txt
     test_resources/register/valid/daily.cent
     test_resources/register/valid/daily.config
     test_resources/register/valid/daily.txt
+    test_resources/register/valid/direct-and-inverse-rates.cent
+    test_resources/register/valid/direct-and-inverse-rates.config
+    test_resources/register/valid/direct-and-inverse-rates.txt
     test_resources/register/valid/empty.cent
     test_resources/register/valid/empty.txt
+    test_resources/register/valid/end-date-price-change.cent
+    test_resources/register/valid/end-date-price-change.config
+    test_resources/register/valid/end-date-price-change.txt
     test_resources/register/valid/example.cent
     test_resources/register/valid/example.txt
+    test_resources/register/valid/fractional-rate.cent
+    test_resources/register/valid/fractional-rate.config
+    test_resources/register/valid/fractional-rate.txt
     test_resources/register/valid/gap.cent
     test_resources/register/valid/gap.txt
+    test_resources/register/valid/inverse-rate.cent
+    test_resources/register/valid/inverse-rate.config
+    test_resources/register/valid/inverse-rate.txt
+    test_resources/register/valid/large-amounts-convert.cent
+    test_resources/register/valid/large-amounts-convert.config
+    test_resources/register/valid/large-amounts-convert.txt
     test_resources/register/valid/many-currencies.cent
     test_resources/register/valid/many-currencies.config
     test_resources/register/valid/many-currencies.txt
+    test_resources/register/valid/mixed-currencies-some-native.cent
+    test_resources/register/valid/mixed-currencies-some-native.config
+    test_resources/register/valid/mixed-currencies-some-native.txt
     test_resources/register/valid/monthly.cent
     test_resources/register/valid/monthly.config
     test_resources/register/valid/monthly.txt
     test_resources/register/valid/multi-currency-prices.cent
     test_resources/register/valid/multi-currency-prices.config
     test_resources/register/valid/multi-currency-prices.txt
+    test_resources/register/valid/multiple-accounts-convert.cent
+    test_resources/register/valid/multiple-accounts-convert.config
+    test_resources/register/valid/multiple-accounts-convert.txt
+    test_resources/register/valid/multiple-price-changes.cent
+    test_resources/register/valid/multiple-price-changes.config
+    test_resources/register/valid/multiple-price-changes.txt
+    test_resources/register/valid/multiple-txns-same-day-convert.cent
+    test_resources/register/valid/multiple-txns-same-day-convert.config
+    test_resources/register/valid/multiple-txns-same-day-convert.txt
+    test_resources/register/valid/negative-amounts-convert.cent
+    test_resources/register/valid/negative-amounts-convert.config
+    test_resources/register/valid/negative-amounts-convert.txt
     test_resources/register/valid/one-year.cent
     test_resources/register/valid/one-year.config
     test_resources/register/valid/one-year.txt
     test_resources/register/valid/open-ended.cent
     test_resources/register/valid/open-ended.config
     test_resources/register/valid/open-ended.txt
+    test_resources/register/valid/price-after-txn.cent
+    test_resources/register/valid/price-after-txn.config
+    test_resources/register/valid/price-after-txn.txt
+    test_resources/register/valid/price-before-and-after-txn.cent
+    test_resources/register/valid/price-before-and-after-txn.config
+    test_resources/register/valid/price-before-and-after-txn.txt
+    test_resources/register/valid/price-before-txn.cent
+    test_resources/register/valid/price-before-txn.config
+    test_resources/register/valid/price-before-txn.txt
     test_resources/register/valid/price-change-later.cent
     test_resources/register/valid/price-change-later.config
     test_resources/register/valid/price-change-later.txt
+    test_resources/register/valid/price-decrease.cent
+    test_resources/register/valid/price-decrease.config
+    test_resources/register/valid/price-decrease.txt
+    test_resources/register/valid/price-monthly-block.cent
+    test_resources/register/valid/price-monthly-block.config
+    test_resources/register/valid/price-monthly-block.txt
+    test_resources/register/valid/price-oscillation.cent
+    test_resources/register/valid/price-oscillation.config
+    test_resources/register/valid/price-oscillation.txt
+    test_resources/register/valid/price-quarterly-block.cent
+    test_resources/register/valid/price-quarterly-block.config
+    test_resources/register/valid/price-quarterly-block.txt
+    test_resources/register/valid/price-same-day-as-txn.cent
+    test_resources/register/valid/price-same-day-as-txn.config
+    test_resources/register/valid/price-same-day-as-txn.txt
+    test_resources/register/valid/price-weekly-block.cent
+    test_resources/register/valid/price-weekly-block.config
+    test_resources/register/valid/price-weekly-block.txt
+    test_resources/register/valid/price-yearly-block.cent
+    test_resources/register/valid/price-yearly-block.config
+    test_resources/register/valid/price-yearly-block.txt
+    test_resources/register/valid/prices-no-transactions-convert.cent
+    test_resources/register/valid/prices-no-transactions-convert.config
+    test_resources/register/valid/prices-no-transactions-convert.txt
     test_resources/register/valid/quarterly.cent
     test_resources/register/valid/quarterly.config
     test_resources/register/valid/quarterly.txt
+    test_resources/register/valid/rate-greater-than-one.cent
+    test_resources/register/valid/rate-greater-than-one.config
+    test_resources/register/valid/rate-greater-than-one.txt
+    test_resources/register/valid/rate-with-explicit-txn.cent
+    test_resources/register/valid/rate-with-explicit-txn.config
+    test_resources/register/valid/rate-with-explicit-txn.txt
     test_resources/register/valid/rates.cent
     test_resources/register/valid/rates.config
     test_resources/register/valid/rates.txt
+    test_resources/register/valid/same-currency-convert.cent
+    test_resources/register/valid/same-currency-convert.config
+    test_resources/register/valid/same-currency-convert.txt
     test_resources/register/valid/same-day-prices.cent
     test_resources/register/valid/same-day-prices.config
     test_resources/register/valid/same-day-prices.txt
+    test_resources/register/valid/small-amounts-convert.cent
+    test_resources/register/valid/small-amounts-convert.config
+    test_resources/register/valid/small-amounts-convert.txt
+    test_resources/register/valid/three-currencies-convert.cent
+    test_resources/register/valid/three-currencies-convert.config
+    test_resources/register/valid/three-currencies-convert.txt
+    test_resources/register/valid/transitive-conversion.cent
+    test_resources/register/valid/transitive-conversion.config
+    test_resources/register/valid/transitive-conversion.txt
+    test_resources/register/valid/virtual-with-convert.cent
+    test_resources/register/valid/virtual-with-convert.config
+    test_resources/register/valid/virtual-with-convert.txt
     test_resources/register/valid/virtual.cent
     test_resources/register/valid/virtual.config
     test_resources/register/valid/virtual.txt
@@ -239,6 +338,9 @@ extra-source-files:
     test_resources/register/valid/yearly.cent
     test_resources/register/valid/yearly.config
     test_resources/register/valid/yearly.txt
+    test_resources/register/valid/zero-amount-convert.cent
+    test_resources/register/valid/zero-amount-convert.config
+    test_resources/register/valid/zero-amount-convert.txt
     test_resources/syntax/declaration/formatted/account-with-assertions.cent
     test_resources/syntax/declaration/formatted/account-with-attachment.cent
     test_resources/syntax/declaration/formatted/account-with-tag.cent

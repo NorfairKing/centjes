@@ -1,0 +1,14 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-01-01 USD 0.85 CHF
+
+2024-01-15
+  | First purchase
+  * equity   -50 USD
+  * expenses +50 USD
+
+price 2024-01-20 USD 0.90 CHF

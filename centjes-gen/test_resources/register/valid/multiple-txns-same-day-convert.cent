@@ -1,0 +1,24 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+
+price 2024-01-01 USD 0.90 CHF
+
+2024-01-05
+  | Morning expense
+  * equity   -50 USD
+  * expenses +50 USD
+
+2024-01-05
+  | Afternoon expense
+  * equity   -75 USD
+  * expenses +75 USD
+
+2024-01-05
+  | Evening expense
+  * equity   -25 USD
+  * expenses +25 USD
+
+price 2024-01-10 USD 1.00 CHF

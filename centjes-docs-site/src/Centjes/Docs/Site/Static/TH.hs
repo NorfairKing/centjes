@@ -11,7 +11,7 @@ module Centjes.Docs.Site.Static.TH where
 
 import CMark as MD
 import Centjes.Command.Balance (renderBalanceReport)
-import Centjes.Command.Register (renderRegister)
+import Centjes.Command.Register (renderAnyRegister)
 import Centjes.Compile
 import Centjes.Filter
 import Centjes.Format
@@ -202,7 +202,7 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                                       ledger
                              in mconcat
                                   [ renderHtmlDoc $ moduleDoc lmodule,
-                                    renderChunksHtml $ renderRegister register
+                                    renderChunksHtml $ renderAnyRegister register
                                   ]
                           c -> error $ unlines ["Unknown centjes command: " <> show c]
           _ ->

@@ -1,0 +1,27 @@
+currency USD 0.01
+currency CHF 0.05
+
+account equity
+account expenses
+account income
+
+price 2024-01-01 USD 0.90 CHF
+
+2024-01-05
+  | Expense
+  * equity   -100 USD
+  * expenses +100 USD
+
+2024-01-10
+  | Refund
+  * equity   +50 USD
+  * expenses -50 USD
+
+price 2024-01-15 USD 1.00 CHF
+
+2024-01-20
+  | Another expense
+  * equity   -75 USD
+  * expenses +75 USD
+
+price 2024-01-25 USD 1.05 CHF

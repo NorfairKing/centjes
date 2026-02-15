@@ -1,3 +1,4 @@
+# Weeder configuration
 unused-types = true
 type-class-roots = false
 roots = [
@@ -19,4 +20,5 @@ root-instances = [
   { instance = "Lift NixValue", module = "Centjes.Docs.Site.ModuleDocs.TH" },
   { instance = "IsString Tag", module = "Centjes.Tag" },
   { instance = "Show HappyAction", module = "Centjes.Parse.Happy" },
+  { instance = "Show RegisterRevaluation", module = "Centjes.Report.Register" },
 ]

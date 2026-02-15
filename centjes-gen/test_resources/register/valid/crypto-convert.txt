@@ -1,0 +1,9 @@
+Block      Timestamp  Description      Account  Amount       Running      Total        Average     
+[37m2024-01-05[m [34m2024-01-05[m [33mCrypto purchases[m [37mexpenses[m [32m21000.00[m [32mCHF[m [32m21000.00[m [32mCHF[m                          
+                                       [37mexpenses[m [32m 4400.00[m [32mCHF[m [32m25400.00[m [32mCHF[m [32m25400.00[m [32mCHF[m [32m25400.00[m [32mCHF[m
+[37m2024-01-10[m [34m2024-01-10[m [36mPrice: BTC[m                [32m 1500.00[m [32mCHF[m [32m 1500.00[m [32mCHF[m                          
+           [34m2024-01-10[m [36mPrice: ETH[m                [32m  400.00[m [32mCHF[m [32m 1900.00[m [32mCHF[m [32m27300.00[m [32mCHF[m [32m27300.00[m [32mCHF[m
+[37m2024-01-15[m [34m2024-01-15[m [33mMore crypto[m      [37mexpenses[m [32m11250.00[m [32mCHF[m [32m11250.00[m [32mCHF[m                          
+                                       [37mexpenses[m [32m 2400.00[m [32mCHF[m [32m13650.00[m [32mCHF[m [32m40950.00[m [32mCHF[m [32m20475.00[m [32mCHF[m
+[37m2024-01-20[m [34m2024-01-20[m [36mPrice: BTC[m                [31m-3750.00[m [31mCHF[m [31m-3750.00[m [31mCHF[m                          
+           [34m2024-01-20[m [36mPrice: ETH[m                [31m -900.00[m [31mCHF[m [31m-4650.00[m [31mCHF[m [32m36300.00[m [32mCHF[m [32m18150.00[m [32mCHF[m

@@ -1,0 +1,2 @@
+Block      Timestamp  Description                Account  Amount     Running     Total     Average    
+[37m2024-01-05[m [34m2024-01-05[m [33mUSD expense via EUR to CHF[m [37mexpenses[m [32m 99.35[m [32mCHF[m [32m 99.35[m  [32mCHF[m [32m99.35[m [32mCHF[m [32m99.35[m   [32mCHF[m
