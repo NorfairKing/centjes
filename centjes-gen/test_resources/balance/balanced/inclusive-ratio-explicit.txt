@@ -1,8 +1,8 @@
-                  [37mBalance[m     [37mTotal[m      
-[37massets[m                        [32m107.15[m  [32mCHF[m
-[37massets:cash[m       [32m107.15[m  [32mCHF[m [32m107.15[m  [32mCHF[m
-[37mincome[m                        [31m-100.00[m [31mCHF[m
-[37mincome:work[m       [31m-100.00[m [31mCHF[m [31m-100.00[m [31mCHF[m
-[37mliabilities[m                   [31m -7.15[m  [31mCHF[m
-[37mliabilities:taxes[m [31m -7.15[m  [31mCHF[m [31m -7.15[m  [31mCHF[m
-[34mTotal[m                                    
+            [37mBalance[m     [37mTotal[m      
+[37massets[m                  [32m107.15[m  [32mCHF[m
+[37m└─ cash[m     [32m107.15[m  [32mCHF[m [32m107.15[m  [32mCHF[m
+[37mincome[m                  [31m-100.00[m [31mCHF[m
+[37m└─ work[m     [31m-100.00[m [31mCHF[m [31m-100.00[m [31mCHF[m
+[37mliabilities[m             [31m -7.15[m  [31mCHF[m
+[37m└─ taxes[m    [31m -7.15[m  [31mCHF[m [31m -7.15[m  [31mCHF[m
+[34mTotal[m                              

@@ -2,7 +2,7 @@
 
 Plaintext double-entry accounting for the paranoid.
 
-Status: Ready to play around with.
+Status: Does all my tax returns.
 
 ## Goals
 

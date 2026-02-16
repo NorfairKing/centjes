@@ -27,7 +27,17 @@ stack build <package>
 
 # Test
 stack test <package>
+
+# Start golden output
+stack test --test-arguments "--golden-start"
+
+# Reset golden output
+stack test --test-arguments "--golden-reset"
 ```
+
+## Claude-specific
+
+* Don't use abbreviations if possible. Especially in field name prefixes.
 
 ## CLI Commands
 
