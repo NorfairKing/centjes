@@ -1,5 +1,6 @@
-[37massets[m      [32m 10.00[m [32mCHF[m
-[37massets:cash[m [32m 10.00[m [32mCHF[m
-[37mincome[m      [31m-10.00[m [31mCHF[m
-[37mincome:work[m [31m-10.00[m [31mCHF[m
-[34mTotal[m                 
+            [37mBalance[m     [37mTotal[m     
+[37massets[m                  [32m 10.00[m [32mCHF[m
+[37massets:cash[m [32m 10.00[m  [32mCHF[m [32m 10.00[m [32mCHF[m
+[37mincome[m                  [31m-10.00[m [31mCHF[m
+[37mincome:work[m [31m-10.00[m  [31mCHF[m [31m-10.00[m [31mCHF[m
+[34mTotal[m                             

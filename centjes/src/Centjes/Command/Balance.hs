@@ -20,7 +20,6 @@ import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
 import qualified Data.Map as M
-import Data.Map.Strict (Map)
 import Data.Semigroup
 import Data.Word
 import qualified Money.MultiAccount as Money (MultiAccount)
@@ -53,8 +52,15 @@ renderBalanceReport se br =
 renderBalanceReportTable :: ShowEmpty -> BalanceReport ann -> [[Chunk]]
 renderBalanceReportTable se br@BalanceReport {..} =
   let width = balanceReportMaxWidth br
-   in renderBalances se width balanceReportFilledBalances
-        ++ amountLines (fore blue (accountNameChunk "Total")) (multiAccountChunksWithWidth (Just width) balanceReportTotal)
+      accounts = M.toList balanceReportFilledBalances
+      filtered = case se of
+        ShowEmpty -> accounts
+        DoNotShowEmpty -> filter (not . null . MultiAccount.unMultiAccount . snd) accounts
+      -- Header row: each column needs two cells (amount position + currency position) to align with data rows
+      headerRow = hCatTable [[[chunk ""]], [[fore white $ chunk "Balance", chunk ""]], [[fore white $ chunk "Total", chunk ""]]]
+   in headerRow
+        ++ concatMap (renderAccountRow width balanceReportBalances) filtered
+        ++ totalLines width balanceReportTotal
 
 balanceReportMaxWidth :: BalanceReport ann -> Max Word8
 balanceReportMaxWidth BalanceReport {..} =
@@ -65,19 +71,26 @@ balanceReportMaxWidth BalanceReport {..} =
 accountBalancesMaxWidth :: AccountBalances ann -> Max Word8
 accountBalancesMaxWidth = foldMap multiAccountMaxWidth
 
-renderBalances ::
-  ShowEmpty ->
+renderAccountRow ::
   Max Word8 ->
-  Map AccountName (Money.MultiAccount (Currency ann)) ->
+  AccountBalances ann ->
+  (AccountName, Money.MultiAccount (Currency ann)) ->
   [[Chunk]]
-renderBalances se width =
-  concatMap
-    (\(an, acc) -> amountLines (accountNameChunk an) $ multiAccountChunksWithWidth (Just width) acc)
-    . ( case se of
-          ShowEmpty -> id
-          DoNotShowEmpty -> filter (not . null . MultiAccount.unMultiAccount . snd) -- Don't show account with empty balances
-      )
-    . M.toList
+renderAccountRow width actualBalances (an, filledAmount) =
+  let mActualAmount = M.lookup an actualBalances
+      filledChunks = multiAccountChunksWithWidth (Just width) filledAmount
+      -- Show blank if no direct transactions, otherwise show the actual balance
+      -- We need placeholder chunks to maintain column alignment
+      actualChunks = case mActualAmount of
+        Nothing -> blankChunks filledChunks
+        Just amt -> multiAccountChunksWithWidth (Just width) amt
+   in hCatTable [[[accountNameChunk an]], actualChunks, filledChunks]
 
-amountLines :: Chunk -> [[Chunk]] -> [[Chunk]]
-amountLines header cs = hCatTable [[[header]], cs]
+-- | Create blank placeholder chunks matching the structure of the given chunks
+blankChunks :: [[Chunk]] -> [[Chunk]]
+blankChunks cs = replicate (length cs) [chunk "", chunk ""]
+
+totalLines :: Max Word8 -> Money.MultiAccount (Currency ann) -> [[Chunk]]
+totalLines width total =
+  let totalChunks = multiAccountChunksWithWidth (Just width) total
+   in hCatTable [[[fore blue $ accountNameChunk "Total"]], blankChunks totalChunks, totalChunks]

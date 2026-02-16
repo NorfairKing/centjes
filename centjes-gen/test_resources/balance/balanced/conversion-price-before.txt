@@ -1,4 +1,5 @@
-[37massets[m      [32m 50.00[m  [32mCHF[m
-[37mequity[m      [31m-100.00[m [31mCHF[m
-[37minvestments[m [32m 50.00[m  [32mCHF[m
-[34mTotal[m                  
+            [37mBalance[m     [37mTotal[m      
+[37massets[m      [32m 50.00[m  [32mCHF[m [32m 50.00[m  [32mCHF[m
+[37mequity[m      [31m-100.00[m [31mCHF[m [31m-100.00[m [31mCHF[m
+[37minvestments[m [32m 50.00[m  [32mCHF[m [32m 50.00[m  [32mCHF[m
+[34mTotal[m                              
