@@ -378,6 +378,8 @@ parseFormatSettings = do
   pure FormatSettings {..}
 
 data RatesGraphSettings = RatesGraphSettings
+  { ratesGraphSettingOutputFile :: !(Maybe (Path Abs File))
+  }
   deriving (Show)
 
 instance HasParser RatesGraphSettings where
@@ -385,4 +387,13 @@ instance HasParser RatesGraphSettings where
 
 {-# ANN parseRatesGraphSettings ("NOCOVER" :: String) #-}
 parseRatesGraphSettings :: Parser RatesGraphSettings
-parseRatesGraphSettings = pure RatesGraphSettings
+parseRatesGraphSettings = do
+  ratesGraphSettingOutputFile <-
+    optional $
+      filePathSetting
+        [ help "Output file (default: stdout)",
+          option,
+          short 'o',
+          long "output"
+        ]
+  pure RatesGraphSettings {..}

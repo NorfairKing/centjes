@@ -194,6 +194,9 @@
   
   [34mgraph exchange rates[m
   command: [35mrates-graph[m
+    [34mOutput file (default: stdout)[m
+    option: [37m-o[m[36m|[m[37m--output[m [33mFILE_PATH[m
+    
   
 
 [36mOptions[m:
@@ -232,6 +235,7 @@
       [37m-f[m[36m|[m[37m--file[m      [34mFile to format[m     
       [37m-d[m[36m|[m[37m--directory[m [34mDirectory to format[m
   [35mrates-graph[m [34mgraph exchange rates[m
+      [37m-o[m[36m|[m[37m--output[m [34mOutput file (default: stdout)[m
   [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
   [37m--watch[m[36m|[m[37m-w[m [34mRun centjes in a loop[m default: [33mFalse[m
   [37m--log-level[m [34mMinimal severity of log messages[m default: [33mLevelInfo[m example: [33mInfo[m
