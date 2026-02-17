@@ -1,0 +1,39 @@
+name: centjes-stocks
+version: 0.0.0.0
+github: "NorfairKing/centjes"
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  dependencies:
+  - aeson
+  - autodocodec
+  - bytestring
+  - centjes
+  - conduit
+  - containers
+  - http-client
+  - http-client-tls
+  - http-types
+  - monad-logger
+  - opt-env-conf
+  - path
+  - path-io
+  - really-safe-money
+  - scientific
+  - text
+  - time
+  - vector
+
+executables:
+  centjes-stocks:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - centjes-stocks

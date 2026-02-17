@@ -71,6 +71,18 @@
             Download Rates
 
   <p .menu-label>
+    Stocks
+
+  <ul .menu-list>
+    <li>
+      <a href=@{CentjesStocksR}>
+        CLI
+      <ul .menu-list>
+        <li>
+          <a href=@{CentjesStocksCommandR "download-rates"}>
+            Download Rates
+
+  <p .menu-label>
     Contribution
 
   <ul .menu-list>
