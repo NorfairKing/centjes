@@ -56,7 +56,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
   -- Check that all requested symbols are declared as currencies in the ledger
   let undeclaredSymbols = filter (\sym -> not $ M.member sym currencies) symbols
   unless (null undeclaredSymbols) $ do
-    logErrorN $ "The following symbols are not declared as currencies in the ledger:"
+    logErrorN "The following symbols are not declared as currencies in the ledger:"
     forM_ undeclaredSymbols $ \sym ->
       logErrorN $ "  - " <> CurrencySymbol.toText sym
     logErrorN "Please add currency declarations for these symbols (e.g., 'currency AAPL 0.01')"
@@ -66,7 +66,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
   let targetCurrencies = map stockConfigCurrency stocks
   let undeclaredTargets = filter (\cur -> not $ M.member cur currencies) targetCurrencies
   unless (null undeclaredTargets) $ do
-    logErrorN $ "The following target currencies are not declared in the ledger:"
+    logErrorN "The following target currencies are not declared in the ledger:"
     forM_ (S.toList $ S.fromList undeclaredTargets) $ \cur ->
       logErrorN $ "  - " <> CurrencySymbol.toText cur
     liftIO exitFailure
@@ -89,7 +89,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
   -- Check for failed downloads
   let failedTickers = [ticker | (ticker, Nothing) <- fetchResults]
   unless (null failedTickers) $ do
-    logErrorN $ "Failed to download data for the following tickers:"
+    logErrorN "Failed to download data for the following tickers:"
     forM_ failedTickers $ \ticker ->
       logErrorN $ "  - " <> ticker
     liftIO exitFailure
@@ -111,7 +111,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
           T.toUpper baseCur /= T.toUpper (CurrencySymbol.toText configCur)
         ]
   unless (null currencyMismatches) $ do
-    logErrorN $ "Currency mismatch between API and configuration:"
+    logErrorN "Currency mismatch between API and configuration:"
     forM_ currencyMismatches $ \(ticker, apiCur, configCur) -> do
       let (_, baseCur) = currencyInfo apiCur
       logErrorN $ "  - " <> ticker <> ": API returns " <> apiCur <> " (base: " <> baseCur <> "), but configured as " <> CurrencySymbol.toText configCur
@@ -133,7 +133,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
   let symbolsWithData = S.fromList [sym | (sym, _, _) <- priceData]
   let symbolsWithoutData = filter (\sym -> not $ S.member sym symbolsWithData) symbols
   unless (null symbolsWithoutData) $ do
-    logErrorN $ "No price data found for the following symbols in the requested date range:"
+    logErrorN "No price data found for the following symbols in the requested date range:"
     forM_ symbolsWithoutData $ \sym ->
       logErrorN $ "  - " <> CurrencySymbol.toText sym
     liftIO exitFailure
@@ -178,11 +178,8 @@ instance FromJSON YahooChartResponse where
       (r : _) -> pure $ YahooChartResponse r
 
 -- | Yahoo Finance chart result with currency info and price data
-data YahooChartResult = YahooChartResult
-  { yahooResultCurrency :: !T.Text,
-    yahooResultTimestamps :: !(V.Vector Integer),
-    yahooResultClosePrices :: !(V.Vector (Maybe Scientific))
-  }
+-- Fields: currency, timestamps, close prices
+data YahooChartResult = YahooChartResult !T.Text !(V.Vector Integer) !(V.Vector (Maybe Scientific))
 
 instance FromJSON YahooChartResult where
   parseJSON = withObject "YahooChartResult" $ \o -> do
@@ -266,7 +263,7 @@ dayToUnixTimestamp day =
 -- | Convert Unix timestamp to Day
 unixTimestampToDay :: Integer -> Day
 unixTimestampToDay ts =
-  let utcTime = posixSecondsToUTCTime (fromIntegral ts)
+  let utcTime = posixSecondsToUTCTime (fromInteger ts)
    in utctDay utcTime
 
 -- | Parse Yahoo Finance JSON response into stock history data

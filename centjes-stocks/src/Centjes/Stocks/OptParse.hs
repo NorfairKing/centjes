@@ -69,7 +69,6 @@ data StockConfig = StockConfig
     stockConfigTicker :: !(Maybe Text),
     stockConfigCurrency :: !CurrencySymbol
   }
-  deriving (Show, Eq)
 
 -- | Get the ticker to use for API requests (defaults to symbol text if not specified)
 stockConfigEffectiveTicker :: StockConfig -> Text
@@ -85,29 +84,6 @@ instance HasCodec StockConfig where
         <$> requiredField "symbol" "Stock symbol as declared in the ledger (e.g., AAPL)" .= stockConfigSymbol
         <*> optionalField "ticker" "Ticker symbol for Yahoo Finance API (defaults to symbol, e.g., SWDA.L, BRK-B)" .= stockConfigTicker
         <*> requiredField "currency" "Currency the stock is priced in (e.g., USD)" .= stockConfigCurrency
-
-instance HasParser StockConfig where
-  settingsParser = parseStockConfig
-
-parseStockConfig :: Parser StockConfig
-parseStockConfig = do
-  stockConfigSymbol <-
-    setting
-      [ help "Stock symbol as declared in the ledger (e.g., AAPL)",
-        conf "symbol"
-      ]
-  stockConfigTicker <-
-    optional $
-      setting
-        [ help "Ticker symbol for Yahoo Finance API (defaults to symbol, e.g., SWDA.L, BRK-B)",
-          conf "ticker"
-        ]
-  stockConfigCurrency <-
-    setting
-      [ help "Currency the stock is priced in (e.g., USD)",
-        conf "currency"
-      ]
-  pure StockConfig {..}
 
 data DownloadRatesSettings = DownloadRatesSettings
   { downloadRatesSettingStocks :: !(NonEmpty StockConfig),
