@@ -1,0 +1,58 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.38.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           centjes-stocks
+version:        0.0.0.0
+homepage:       https://github.com/NorfairKing/centjes#readme
+bug-reports:    https://github.com/NorfairKing/centjes/issues
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/NorfairKing/centjes
+
+library
+  exposed-modules:
+      Centjes.Stocks
+      Centjes.Stocks.Command.DownloadRates
+      Centjes.Stocks.OptParse
+  other-modules:
+      Paths_centjes_stocks
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , autodocodec
+    , base >=4.7 && <5
+    , bytestring
+    , centjes
+    , conduit
+    , containers
+    , http-client
+    , http-client-tls
+    , http-types
+    , monad-logger
+    , opt-env-conf
+    , path
+    , path-io
+    , really-safe-money
+    , scientific
+    , text
+    , time
+    , vector
+  default-language: Haskell2010
+
+executable centjes-stocks
+  main-is: Main.hs
+  other-modules:
+      Paths_centjes_stocks
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , centjes-stocks
+  default-language: Haskell2010

@@ -24,6 +24,7 @@ library:
   - bytestring
   - centjes
   - centjes-cryptocurrencies
+  - centjes-stocks
   - centjes-import-cornercard
   - centjes-import-neon
   - centjes-import-revolut

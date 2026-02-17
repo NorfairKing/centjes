@@ -6,6 +6,9 @@
 /centjes-cryptocurrencies CentjesCryptocurrenciesR GET
 /centjes-cryptocurrencies/#Text CentjesCryptocurrenciesCommandR GET
 
+/centjes-stocks CentjesStocksR GET
+/centjes-stocks/#Text CentjesStocksCommandR GET
+
 /centjes-import-cornercard CentjesImportCornercardR GET
 /centjes-import-neon CentjesImportNeonR GET
 /centjes-import-revolut CentjesImportRevolutR GET

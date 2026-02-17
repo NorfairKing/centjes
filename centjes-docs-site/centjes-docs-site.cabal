@@ -19,6 +19,8 @@ extra-source-files:
     content/pages/centjes-import-cornercard.markdown
     content/pages/centjes-import-neon.markdown
     content/pages/centjes-import-revolut.markdown
+    content/pages/centjes-stocks.markdown
+    content/pages/centjes-stocks/download-rates.markdown
     content/pages/centjes-switzerland.markdown
     content/pages/centjes-switzerland/download-rates.markdown
     content/pages/centjes-switzerland/taxes.markdown
@@ -61,6 +63,7 @@ library
       Centjes.Docs.Site.Handler.CentjesImportCornercard
       Centjes.Docs.Site.Handler.CentjesImportNeon
       Centjes.Docs.Site.Handler.CentjesImportRevolut
+      Centjes.Docs.Site.Handler.CentjesStocks
       Centjes.Docs.Site.Handler.CentjesSwitzerland
       Centjes.Docs.Site.Handler.DependencyGraph
       Centjes.Docs.Site.Handler.Import
@@ -91,6 +94,7 @@ library
     , centjes-import-cornercard
     , centjes-import-neon
     , centjes-import-revolut
+    , centjes-stocks
     , centjes-switzerland
     , cmark
     , containers

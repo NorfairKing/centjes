@@ -1,0 +1,134 @@
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+
+module Centjes.Stocks.OptParse
+  ( getSettings,
+    Settings (..),
+    Command (..),
+    DownloadRatesSettings (..),
+    StockSettings (..),
+    stockSettingsEffectiveTicker,
+  )
+where
+
+import Autodocodec
+import Centjes.CurrencySymbol (CurrencySymbol)
+import qualified Centjes.CurrencySymbol as CurrencySymbol
+import Data.List.NonEmpty (NonEmpty)
+import Data.Text (Text)
+import Data.Time
+import OptEnvConf hiding (Command)
+import Path
+import Path.IO
+import Paths_centjes_stocks (version)
+
+getSettings :: IO Settings
+getSettings = runSettingsParser version "stock price downloader for centjes"
+
+data Settings = Settings
+  { settingLedgerFile :: !(Path Abs File),
+    settingCommand :: !Command
+  }
+
+instance HasParser Settings where
+  settingsParser = parseSettings
+
+{-# ANN parseSettings ("NOCOVER" :: String) #-}
+parseSettings :: Parser Settings
+parseSettings =
+  subEnv_ "centjes-stocks" $
+    withConfigurableYamlConfig (runIO $ resolveFile' "stocks.yaml") $ do
+      settingLedgerFile <-
+        filePathSetting
+          [ help "ledger file",
+            short 'l',
+            name "ledger",
+            value "ledger.cent",
+            metavar "FILE_PATH"
+          ]
+      settingCommand <- settingsCommandParser
+      pure Settings {..}
+
+newtype Command
+  = CommandDownloadRates DownloadRatesSettings
+
+settingsCommandParser :: Parser Command
+settingsCommandParser =
+  commands
+    [ command "download-rates" "Download stock prices" $
+        CommandDownloadRates <$> parseDownloadRatesSettings
+    ]
+
+-- | Configuration for a single stock symbol
+data StockSettings = StockSettings
+  { stockSettingsSymbol :: !CurrencySymbol,
+    -- | The ticker symbol to use for the Yahoo Finance API (may differ from the currency symbol)
+    -- This is Text to allow characters like '.' and '-' that are valid in Yahoo Finance tickers
+    stockSettingsTicker :: !(Maybe Text),
+    stockSettingsCurrency :: !CurrencySymbol
+  }
+
+-- | Get the ticker to use for API requests (defaults to symbol text if not specified)
+stockSettingsEffectiveTicker :: StockSettings -> Text
+stockSettingsEffectiveTicker StockSettings {..} =
+  case stockSettingsTicker of
+    Just t -> t
+    Nothing -> CurrencySymbol.toText stockSettingsSymbol
+
+instance HasCodec StockSettings where
+  codec =
+    object "StockSettings" $
+      StockSettings
+        <$> requiredField "symbol" "Stock symbol as declared in the ledger (e.g., AAPL)" .= stockSettingsSymbol
+        <*> optionalField "ticker" "Ticker symbol for Yahoo Finance API (defaults to symbol, e.g., SWDA.L, BRK-B)" .= stockSettingsTicker
+        <*> requiredField "currency" "Currency the stock is priced in (e.g., USD)" .= stockSettingsCurrency
+
+data DownloadRatesSettings = DownloadRatesSettings
+  { downloadRatesSettingStocks :: !(NonEmpty StockSettings),
+    downloadRatesSettingBegin :: !Day,
+    downloadRatesSettingEnd :: !Day,
+    downloadRatesSettingOutput :: !(Maybe (Path Abs File))
+  }
+
+{-# ANN parseDownloadRatesSettings ("NOCOVER" :: String) #-}
+parseDownloadRatesSettings :: Parser DownloadRatesSettings
+parseDownloadRatesSettings = subConfig_ "download-rates" $ do
+  downloadRatesSettingStocks <-
+    setting
+      [ help "Stock configurations with symbol and currency",
+        conf "stocks"
+      ]
+  downloadRatesSettingBegin <-
+    choice
+      [ setting
+          [ help "The begin date (inclusive), default: Start of the year",
+            reader auto,
+            name "begin",
+            metavar "YYYY-MM-DD"
+          ],
+        runIO $ do
+          today <- utctDay <$> getCurrentTime
+          let (y, _, _) = toGregorian today
+          pure $ fromGregorian y 1 1
+      ]
+  downloadRatesSettingEnd <-
+    choice
+      [ setting
+          [ help "The final date (inclusive), default: Yesterday",
+            reader auto,
+            name "end",
+            metavar "YYYY-MM-DD"
+          ],
+        runIO $ addDays (-1) . utctDay <$> getCurrentTime
+      ]
+  downloadRatesSettingOutput <-
+    optional $
+      filePathSetting
+        [ help "Output file path (default: stdout)",
+          short 'o',
+          name "output",
+          metavar "FILE"
+        ]
+  pure DownloadRatesSettings {..}
