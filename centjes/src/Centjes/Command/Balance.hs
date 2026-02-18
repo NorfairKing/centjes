@@ -16,6 +16,7 @@ import Centjes.Ledger
 import Centjes.Load
 import Centjes.OptParse
 import Centjes.Report.Balance
+import Centjes.Report.EvaluatedLedger
 import Centjes.Timing
 import Centjes.Validation
 import Control.Monad.IO.Class
@@ -36,16 +37,21 @@ runCentjesBalance Settings {..} BalanceSettings {..} =
   loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
+    evaluatedLedger <-
+      withLoggedDuration "Evaluated ledger" $
+        liftIO $
+          checkValidation diagnostic $
+            produceEvaluatedLedger ledger
     br <-
       withLoggedDuration "Balance report" $
         liftIO $
           checkValidation diagnostic $
-            produceBalanceReport
+            produceBalanceReportFromEvaluatedLedger
               balanceSettingFilter
               balanceSettingEnd
               balanceSettingCurrency
               balanceSettingShowVirtual
-              ledger
+              evaluatedLedger
     liftIO $ putChunksLocaleWith settingTerminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
 
 renderBalanceReport :: ShowEmpty -> BalanceReport ann -> [Chunk]

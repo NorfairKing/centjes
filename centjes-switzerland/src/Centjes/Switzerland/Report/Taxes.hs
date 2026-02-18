@@ -30,6 +30,7 @@ import Centjes.Filter
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Report.Balance
+import Centjes.Report.EvaluatedLedger
 import Centjes.Switzerland.Report.Common
 import Centjes.Switzerland.Report.Taxes.ETax
 import Centjes.Switzerland.Report.Taxes.Types
@@ -107,10 +108,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
             )
           $ M.toList currenciesInPrices
 
+  evaluatedLedger <-
+    liftValidation $
+      mapValidationFailure TaxesErrorEvaluatedLedger $
+        produceEvaluatedLedger ledger
   balanceReport <-
     liftValidation $
       mapValidationFailure TaxesErrorBalanceError $
-        produceBalanceReport FilterAny (Just endOfYear) Nothing False ledger
+        produceBalanceReportFromEvaluatedLedger FilterAny (Just endOfYear) Nothing False evaluatedLedger
 
   taxesReportAssetAccounts <- fmap catMaybes $ for (M.toList ledgerAccounts) $ \(an, Located al Account {..}) -> do
     let mUndeclaredTag = M.lookup taxesInputTagUndeclared accountTags

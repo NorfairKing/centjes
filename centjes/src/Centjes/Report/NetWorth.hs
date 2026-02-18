@@ -10,12 +10,13 @@ module Centjes.Report.NetWorth
   )
 where
 
+import Centjes.AccountType
 import Centjes.Convert
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import Centjes.Ledger
 import Centjes.Location
-import Centjes.Report.Balance
+import Centjes.Report.EvaluatedLedger
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Data.Map.Strict (Map)
@@ -35,14 +36,14 @@ data NetWorthReport ann = NetWorthReport
   deriving (Show)
 
 data NetWorthError ann
-  = NetWorthErrorBalance !(BalanceError ann)
+  = NetWorthErrorEvaluatedLedger !(EvaluatedLedgerError ann)
   | NetWorthErrorConvert !(ConvertError ann)
   | NetWorthErrorCouldNotSum !Day
 
 instance ToReport (NetWorthError SourceSpan) where
   toReport = \case
-    NetWorthErrorBalance be -> toReport be
-    NetWorthErrorConvert ce -> toReport ce
+    NetWorthErrorEvaluatedLedger evaluatedLedgerError -> toReport evaluatedLedgerError
+    NetWorthErrorConvert convertError -> toReport convertError
     NetWorthErrorCouldNotSum day ->
       Err
         (Just "NW_SUM")
@@ -64,35 +65,43 @@ produceNetWorthReport currencySymbolTo mBegin mEnd ledger = do
     mapValidationFailure NetWorthErrorConvert $
       lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
 
-  -- Produce balanced ledger (no virtual postings)
-  balancedLedger <-
-    mapValidationFailure NetWorthErrorBalance $
-      produceBalancedLedger False ledger
+  -- Produce evaluated ledger
+  evaluatedLedger <-
+    mapValidationFailure NetWorthErrorEvaluatedLedger $
+      produceEvaluatedLedger ledger
 
-  let transactions = balancedLedgerTransactions balancedLedger
+  produceNetWorthReportFromEvaluatedLedger netWorthReportCurrency mBegin mEnd evaluatedLedger
 
-  if V.null transactions
+produceNetWorthReportFromEvaluatedLedger ::
+  forall ann.
+  (Ord ann) =>
+  Currency ann ->
+  Maybe Day ->
+  Maybe Day ->
+  EvaluatedLedger ann ->
+  Validation (NetWorthError ann) (NetWorthReport ann)
+produceNetWorthReportFromEvaluatedLedger netWorthReportCurrency mBegin mEnd evaluatedLedger = do
+  let ledger = evaluatedLedgerSource evaluatedLedger
+      entries = evaluatedLedgerEntries evaluatedLedger
+
+  -- Build day-boundary snapshots of (balances, priceGraph) from entries
+  let daySnapshots = buildDaySnapshots (ledgerAccounts ledger) entries
+
+  if M.null daySnapshots
     then pure $ NetWorthReport {netWorthReportEntries = V.empty, ..}
     else do
-      -- Determine date range from transactions
-      let firstDay = transactionDay (fst (V.head transactions))
-      let lastDay = transactionDay (fst (V.last transactions))
+      -- Determine date range
+      let firstDay = fst (M.findMin daySnapshots)
+      let lastDay = fst (M.findMax daySnapshots)
       let beginDay = fromMaybe firstDay mBegin
       let endDay = fromMaybe lastDay mEnd
-
-      -- Build daily price graphs
-      let dailyPriceGraphs = pricesToDailyPriceGraphs (ledgerPrices ledger)
-
-      -- Build daily account balances (only assets and liabilities)
-      let dayBalances = buildDayBalances (ledgerAccounts ledger) transactions
 
       -- Generate entries for each day in the range
       netWorthReportEntries <-
         V.fromList
           <$> traverse
             ( \day -> do
-                let balances = fromMaybe M.empty $ lookupLE day dayBalances
-                let priceGraph = fromMaybe MemoisedPriceGraph.empty $ lookupLE day dailyPriceGraphs
+                let (balances, priceGraph) = fromMaybe (M.empty, MemoisedPriceGraph.empty) $ lookupLE day daySnapshots
                 account <- computeDayNetWorth day priceGraph netWorthReportCurrency balances
                 pure (day, account)
             )
@@ -100,22 +109,28 @@ produceNetWorthReport currencySymbolTo mBegin mEnd ledger = do
 
       pure NetWorthReport {..}
 
-transactionDay :: GenLocated ann (Transaction ann) -> Day
-transactionDay (Located _ t) =
-  let Located _ ts = transactionTimestamp t
-   in Timestamp.toDay ts
-
--- | Build a map from Day to the cumulative balances of asset and liability accounts as of that day.
-buildDayBalances ::
+-- | Build a map from Day to (asset+liability balances, price graph) snapshots.
+--
+-- Only transaction entries create snapshots (determining the date range).
+-- Price-only days are not included as they don't change balances.
+-- The price graph used is the one from the transaction's evaluated state,
+-- which already incorporates all prices declared on or before that day.
+buildDaySnapshots ::
   Map AccountName (GenLocated ann (Account ann)) ->
-  Vector (GenLocated ann (Transaction ann), AccountBalances ann) ->
-  Map Day (AccountBalances ann)
-buildDayBalances accounts = V.foldl' go M.empty
+  Vector (EvaluatedEntry ann) ->
+  Map Day (AccountBalances ann, MemoisedPriceGraph (Currency ann))
+buildDaySnapshots accounts = V.foldl' go M.empty
   where
-    go m (lt, balances) =
-      let day = transactionDay lt
-          filtered = M.filterWithKey isAssetOrLiability balances
-       in M.insert day filtered m
+    go m = \case
+      EvaluatedEntryTransaction evaluatedTransaction ->
+        let Located _ t = evaluatedTransactionLocated evaluatedTransaction
+            Located _ ts = transactionTimestamp t
+            day = Timestamp.toDay ts
+            balances = evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction
+            priceGraph = evaluatedTransactionPriceGraph evaluatedTransaction
+            filtered = M.filterWithKey isAssetOrLiability balances
+         in M.insert day (filtered, priceGraph) m
+      EvaluatedEntryPrice _ -> m
     isAssetOrLiability an _ = case M.lookup an accounts of
       Nothing -> False
       Just (Located _ acc) -> case accountType acc of

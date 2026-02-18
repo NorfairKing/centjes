@@ -19,6 +19,7 @@ import Centjes.Ledger
 import Centjes.Location
 import Centjes.Module as Module
 import Centjes.Report.Balance
+import Centjes.Report.EvaluatedLedger
 import Centjes.Report.Register
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Timing
@@ -63,6 +64,7 @@ data CheckError ann
   | CheckErrorUnusedAccount !(GenLocated ann (AccountDeclaration ann))
   | CheckErrorUnusedTag !(GenLocated ann (TagDeclaration ann))
   | CheckErrorCompileError !(CompileError ann)
+  | CheckErrorEvaluatedLedgerError !(EvaluatedLedgerError ann)
   | CheckErrorBalanceError !(BalanceError ann)
   | CheckErrorRegisterError !(RegisterError ann)
 
@@ -104,9 +106,10 @@ instance ToReport (CheckError SourceSpan) where
         "This tag has been declared but is never used."
         [(toDiagnosePosition dl, This "This tag is declared here but is never used.")]
         [Hint "Either use it or delete this declaration."]
-    CheckErrorCompileError ce -> toReport ce
-    CheckErrorBalanceError be -> toReport be
-    CheckErrorRegisterError re -> toReport re
+    CheckErrorCompileError compileError -> toReport compileError
+    CheckErrorEvaluatedLedgerError evaluatedLedgerError -> toReport evaluatedLedgerError
+    CheckErrorBalanceError balanceError -> toReport balanceError
+    CheckErrorRegisterError registerError -> toReport registerError
 
 checkLDeclarations :: [LDeclaration] -> CheckerT SourceSpan ()
 checkLDeclarations = checkDeclarations . map locatedValue
@@ -310,15 +313,22 @@ checkLedger ::
   (Ord ann) =>
   Ledger ann ->
   Checker ann (BalanceReport ann, Register 'MultiCurrency ann)
-checkLedger l = do
+checkLedger ledger = do
+  -- Produce the evaluated ledger once, shared by both reports
+  evaluatedLedger <-
+    mapValidationFailure CheckErrorEvaluatedLedgerError $
+      produceEvaluatedLedger ledger
+  -- Run assertion checks (account type assertions and explicit assertions)
+  mapValidationFailure CheckErrorEvaluatedLedgerError $
+    checkEvaluatedLedgerAssertions evaluatedLedger
   balanceReport <-
     mapValidationFailure CheckErrorBalanceError $
-      produceBalanceReport
+      produceBalanceReportFromEvaluatedLedger
         FilterAny
         Nothing
         Nothing
         False
-        l
+        evaluatedLedger
   register <-
     mapValidationFailure CheckErrorRegisterError $
       produceMultiCurrencyRegister
@@ -327,5 +337,5 @@ checkLedger l = do
         False
         Nothing
         Nothing
-        l
+        evaluatedLedger
   pure (balanceReport, register)

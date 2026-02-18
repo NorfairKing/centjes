@@ -32,6 +32,7 @@ import Centjes.Ledger as Ledger
 import Centjes.Location
 import Centjes.Module
 import Centjes.Report.Balance
+import Centjes.Report.EvaluatedLedger
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
 import Data.List
@@ -408,6 +409,7 @@ data TaxesError ann
   | TaxesErrorSum
   | TaxesErrorWrongCHF !(GenLocated ann Money.QuantisationFactor)
   | TaxesErrorConvertError !(ConvertError ann)
+  | TaxesErrorEvaluatedLedger !(EvaluatedLedgerError ann)
   | TaxesErrorBalanceError !(BalanceError ann)
   | TaxesErrorNoDescription
   | TaxesErrorNoEvidence !ann
@@ -435,6 +437,7 @@ instance ToReport (TaxesError SourceSpan) where
         [(toDiagnosePosition cdl, This "This currency declaration must use 0.01")]
         []
     TaxesErrorConvertError ce -> toReport ce
+    TaxesErrorEvaluatedLedger ele -> toReport ele
     TaxesErrorBalanceError be -> toReport be
     TaxesErrorNoDescription -> Err Nothing "no description" [] []
     TaxesErrorNoEvidence tl ->

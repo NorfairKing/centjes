@@ -20,6 +20,7 @@ import Centjes.Module
 import Centjes.OptParse
 import Centjes.Parse
 import Centjes.Report.Balance
+import Centjes.Report.EvaluatedLedger
 import Centjes.Report.Register
 import Centjes.Validation
 import Data.Data
@@ -177,14 +178,17 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                      in case T.unwords rest of
                           "" -> renderHtmlDoc $ moduleDoc lmodule
                           "balance" ->
-                            let balanceReport =
+                            let evaluatedLedger =
                                   assertValidates $
-                                    produceBalanceReport
+                                    produceEvaluatedLedger ledger
+                                balanceReport =
+                                  assertValidates $
+                                    produceBalanceReportFromEvaluatedLedger
                                       FilterAny
                                       Nothing
                                       Nothing
                                       False
-                                      ledger
+                                      evaluatedLedger
                              in mconcat
                                   [ renderHtmlDoc $ moduleDoc lmodule,
                                     renderChunksHtml $ renderBalanceReport DoNotShowEmpty balanceReport

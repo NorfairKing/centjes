@@ -103,6 +103,7 @@ import Centjes.Filter (Filter (..))
 import qualified Centjes.Filter as Filter
 import Centjes.Ledger
 import Centjes.Location (GenLocated (..), SourceSpan)
+import Centjes.Report.EvaluatedLedger
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation (ToReport (..), Validation (..), mapValidationFailure, validationFailure)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -376,6 +377,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (AnyRegister ann) where
 data RegisterError ann
   = RegisterErrorAddError
   | RegisterErrorConvertError !(ConvertError ann)
+  | RegisterErrorEvaluatedLedger !(EvaluatedLedgerError ann)
   deriving stock (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (RegisterError ann)
@@ -390,7 +392,8 @@ instance ToReport (RegisterError SourceSpan) where
         []
         []
     -- [tag:RE_CONVERT_ERROR] At least one test per error: test_resources/register/error/CONVERT_ERROR_*.cent
-    RegisterErrorConvertError ce -> toReport ce
+    RegisterErrorConvertError convertError -> toReport convertError
+    RegisterErrorEvaluatedLedger evaluatedLedgerError -> toReport evaluatedLedgerError
 
 -- | Produce a register from a ledger, dispatching to either multi-currency
 -- or converted mode based on whether a target currency is specified.
@@ -412,13 +415,14 @@ produceRegister ::
   -- | Source ledger
   Ledger ann ->
   Validation (RegisterError ann) (AnyRegister ann)
-produceRegister f blockSize mCurrencySymbolTo showVirtual mBegin mEnd ledger =
+produceRegister f blockSize mCurrencySymbolTo showVirtual mBegin mEnd ledger = do
+  evaluatedLedger <- mapValidationFailure RegisterErrorEvaluatedLedger $ produceEvaluatedLedger ledger
   case mCurrencySymbolTo of
     Nothing -> do
-      r <- produceMultiCurrencyRegister f blockSize showVirtual mBegin mEnd ledger
+      r <- produceMultiCurrencyRegister f blockSize showVirtual mBegin mEnd evaluatedLedger
       pure (AnyMultiCurrency r)
     Just currencySymbolTo -> do
-      r <- produceConvertedRegister f blockSize currencySymbolTo showVirtual mBegin mEnd ledger
+      r <- produceConvertedRegister f blockSize currencySymbolTo showVirtual mBegin mEnd evaluatedLedger
       pure (AnyConverted r)
 
 -- | Produce a multi-currency register (no conversion).
@@ -435,11 +439,11 @@ produceMultiCurrencyRegister ::
   Maybe Day ->
   -- | End date filter (inclusive)
   Maybe Day ->
-  -- | Source ledger
-  Ledger ann ->
+  -- | Evaluated ledger
+  EvaluatedLedger ann ->
   Validation (RegisterError ann) (Register 'MultiCurrency ann)
-produceMultiCurrencyRegister f blockSize showVirtual mBegin mEnd ledger = do
-  flatRegister <- produceFlatRegister f showVirtual mBegin mEnd ledger
+produceMultiCurrencyRegister f blockSize showVirtual mBegin mEnd evaluatedLedger = do
+  flatRegister <- produceFlatRegister f showVirtual mBegin mEnd evaluatedLedger
   groupMultiIntoBlocks blockSize mBegin mEnd flatRegister
 
 -- | Produce a register with all amounts converted to a single currency.
@@ -459,15 +463,17 @@ produceConvertedRegister ::
   Maybe Day ->
   -- | End date filter (inclusive)
   Maybe Day ->
-  -- | Source ledger
-  Ledger ann ->
+  -- | Evaluated ledger
+  EvaluatedLedger ann ->
   Validation (RegisterError ann) (ConvertedRegister ann)
-produceConvertedRegister f blockSize currencySymbolTo showVirtual mBegin mEnd ledger = do
+produceConvertedRegister f blockSize currencySymbolTo showVirtual mBegin mEnd evaluatedLedger = do
+  let ledger = evaluatedLedgerSource evaluatedLedger
   currencyTo <-
     mapValidationFailure RegisterErrorConvertError $
       lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
-  flatRegister <- produceFlatRegister f showVirtual mBegin mEnd ledger
-  convertedFlat <- convertFlatRegister currencyTo mEnd (ledgerPrices ledger) flatRegister
+  flatRegister <- produceFlatRegister f showVirtual mBegin mEnd evaluatedLedger
+  let dailyPriceGraphs = buildDailyPriceGraphsFromEntries (evaluatedLedgerEntries evaluatedLedger)
+  convertedFlat <- convertFlatRegister currencyTo mEnd dailyPriceGraphs (ledgerPrices ledger) flatRegister
   register <- groupSingleIntoBlocks blockSize mBegin mEnd convertedFlat
   pure
     ConvertedRegister
@@ -475,7 +481,7 @@ produceConvertedRegister f blockSize currencySymbolTo showVirtual mBegin mEnd le
         convertedRegister = register
       }
 
--- | Produce a flat register from a ledger (Stage 1).
+-- | Produce a flat register from an evaluated ledger (Stage 1).
 --
 -- Each entry contains the price graph at that point in time, which is used
 -- for later conversion to a single currency.
@@ -490,33 +496,27 @@ produceFlatRegister ::
   Maybe Day ->
   -- | End date filter (inclusive)
   Maybe Day ->
-  -- | Source ledger
-  Ledger ann ->
+  -- | Evaluated ledger
+  EvaluatedLedger ann ->
   Validation (RegisterError ann) (FlatRegister ann)
-produceFlatRegister f showVirtual mBegin mEnd ledger = do
-  let prices = pricesToDailyPriceGraphs (ledgerPrices ledger)
-
+produceFlatRegister f showVirtual mBegin mEnd evaluatedLedger = do
   let go ::
         Money.MultiAccount (Currency ann) ->
-        [GenLocated ann (Transaction ann)] ->
+        [EvaluatedEntry ann] ->
         Validation (RegisterError ann) [FlatEntry ann]
       go _ [] = pure []
-      go runningTotal (ltx : rest) = do
-        let Located _ tx = ltx
-            Located _ ts = transactionTimestamp tx
-            day = Timestamp.toDay ts
-            dayPrices = case M.lookupLE day prices of
-              Nothing -> MemoisedPriceGraph.empty
-              Just (_, pg) -> pg
-        mEntry <- processFlatTransaction f showVirtual mBegin mEnd dayPrices runningTotal ltx
-        case mEntry of
-          Nothing -> go runningTotal rest
-          Just entry -> do
-            let newRunningTotal = flatEntryRunningTotal entry
-            entries <- go newRunningTotal rest
-            pure (entry : entries)
+      go runningTotal (entry : rest) = case entry of
+        EvaluatedEntryPrice _ -> go runningTotal rest
+        EvaluatedEntryTransaction evaluatedTransaction -> do
+          mFlatEntry <- processFlatTransaction f showVirtual mBegin mEnd runningTotal evaluatedTransaction
+          case mFlatEntry of
+            Nothing -> go runningTotal rest
+            Just flatEntry -> do
+              let newRunningTotal = flatEntryRunningTotal flatEntry
+              entries <- go newRunningTotal rest
+              pure (flatEntry : entries)
 
-  entries <- go MultiAccount.zero (V.toList (ledgerTransactions ledger))
+  entries <- go MultiAccount.zero (V.toList (evaluatedLedgerEntries evaluatedLedger))
   let total = case entries of
         [] -> MultiAccount.zero
         _ -> flatEntryRunningTotal (last entries)
@@ -532,52 +532,52 @@ processFlatTransaction ::
   Bool ->
   Maybe Day ->
   Maybe Day ->
-  MemoisedPriceGraph (Currency ann) ->
   Money.MultiAccount (Currency ann) ->
-  GenLocated ann (Transaction ann) ->
+  EvaluatedTransaction ann ->
   Validation (RegisterError ann) (Maybe (FlatEntry ann))
-processFlatTransaction f showVirtual mBegin mEnd priceGraph runningTotal (Located _ Transaction {..}) =
-  if timestampPassesDayFilter mBegin mEnd transactionTimestamp
-    then do
-      let goPostings running = \case
-            [] -> pure ([], running)
-            posting : rest -> do
-              mPosting <- processFlatPosting f showVirtual running posting
-              case mPosting of
-                Nothing -> goPostings running rest
-                Just flatPosting -> do
-                  (ps, finalRunning) <- goPostings (flatPostingRunningTotal flatPosting) rest
-                  pure (flatPosting : ps, finalRunning)
-      (postings, newRunningTotal) <- goPostings runningTotal (V.toList transactionPostings)
-      pure $
-        if null postings
-          then Nothing
-          else
-            Just
-              FlatEntry
-                { flatEntryTimestamp = transactionTimestamp,
-                  flatEntryDescription = transactionDescription,
-                  flatEntryPostings = V.fromList postings,
-                  flatEntryPriceGraph = priceGraph,
-                  flatEntryRunningTotal = newRunningTotal
-                }
-    else pure Nothing
+processFlatTransaction f showVirtual mBegin mEnd runningTotal evaluatedTransaction =
+  let Located _ Transaction {..} = evaluatedTransactionLocated evaluatedTransaction
+      priceGraph = evaluatedTransactionPriceGraph evaluatedTransaction
+   in if timestampPassesDayFilter mBegin mEnd transactionTimestamp
+        then do
+          let goPostings running = \case
+                [] -> pure ([], running)
+                evaluatedPosting : rest -> do
+                  mPosting <- processFlatPosting f showVirtual running evaluatedPosting
+                  case mPosting of
+                    Nothing -> goPostings running rest
+                    Just flatPosting -> do
+                      (ps, finalRunning) <- goPostings (flatPostingRunningTotal flatPosting) rest
+                      pure (flatPosting : ps, finalRunning)
+          (postings, newRunningTotal) <- goPostings runningTotal (V.toList (evaluatedTransactionPostings evaluatedTransaction))
+          pure $
+            if null postings
+              then Nothing
+              else
+                Just
+                  FlatEntry
+                    { flatEntryTimestamp = transactionTimestamp,
+                      flatEntryDescription = transactionDescription,
+                      flatEntryPostings = V.fromList postings,
+                      flatEntryPriceGraph = priceGraph,
+                      flatEntryRunningTotal = newRunningTotal
+                    }
+        else pure Nothing
 
 processFlatPosting ::
   (Ord ann) =>
   Filter ->
   Bool ->
   Money.MultiAccount (Currency ann) ->
-  GenLocated ann (Posting ann) ->
+  EvaluatedPosting ann ->
   Validation (RegisterError ann) (Maybe (FlatPosting ann))
-processFlatPosting f showVirtual runningTotal lp@(Located _ Posting {..}) = do
+processFlatPosting f showVirtual runningTotal evaluatedPosting = do
+  let lp@(Located _ Posting {..}) = evaluatedPostingLocated evaluatedPosting
   let Located _ an = postingAccountName
   let includedByFilter = Filter.predicate f an
   if (postingReal || (not postingReal && showVirtual)) && includedByFilter
     then do
-      let Located _ currency = postingCurrency
-          Located _ account = postingAccount
-          amount = MultiAccount.fromAccount currency account
+      let amount = evaluatedPostingAmount evaluatedPosting
       case MultiAccount.add runningTotal amount of
         Nothing -> validationFailure RegisterErrorAddError
         Just newRunning ->
@@ -600,14 +600,15 @@ convertFlatRegister ::
   Currency ann ->
   -- | End date filter (inclusive)
   Maybe Day ->
+  -- | Daily price graphs (pre-computed from evaluated ledger)
+  Map Day (MemoisedPriceGraph (Currency ann)) ->
   -- | Price declarations from the ledger
   Vector (GenLocated ann (Price ann)) ->
   -- | Flat register to convert
   FlatRegister ann ->
   Validation (RegisterError ann) (ConvertedFlatRegister ann)
-convertFlatRegister currencyTo mEnd pricesVec FlatRegister {..} = do
-  let prices = pricesToDailyPriceGraphs pricesVec
-      lastPriceDay = case M.lookupMax prices of
+convertFlatRegister currencyTo mEnd prices pricesVec FlatRegister {..} = do
+  let lastPriceDay = case M.lookupMax prices of
         Nothing -> Nothing
         Just (day, _) -> Just day
       -- Limit trailing revaluations to the end date filter
@@ -1266,3 +1267,18 @@ timestampPassesDayFilter mBegin mEnd (Located _ ts) =
         Nothing -> True
         Just end -> Timestamp.toDay ts <= end
     ]
+
+-- | Build a map from Day to the cumulative price graph at that day,
+-- extracted from the evaluated ledger's price entries.
+buildDailyPriceGraphsFromEntries ::
+  Vector (EvaluatedEntry ann) ->
+  Map Day (MemoisedPriceGraph (Currency ann))
+buildDailyPriceGraphsFromEntries = V.foldl' go M.empty
+  where
+    go m = \case
+      EvaluatedEntryPrice evaluatedPrice ->
+        let Located _ p = evaluatedPriceLocated evaluatedPrice
+            Located _ ts = priceTimestamp p
+            day = Timestamp.toDay ts
+         in M.insert day (evaluatedPricePriceGraph evaluatedPrice) m
+      EvaluatedEntryTransaction _ -> m

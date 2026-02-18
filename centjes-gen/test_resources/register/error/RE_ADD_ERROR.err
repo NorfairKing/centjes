@@ -1,1 +1,15 @@
-[0;91;1m[error RE_ADD_ERROR][0m: Could not add amounts together because the result got too big.
+[0;91;1m[error EVAL_RUNNING_BALANCE][0m: Could not add transaction to the running total balance
+     [0;90;1m╭──▶[0m [0;32;1mRE_ADD_ERROR.cent@10:1-12:21[0m
+     [0;90;1m│[0m
+[0;90;1m  10 │[0m [0;34m╭[0m[0;34m┤[0m [0;34;1m2[0m[0;34;1m0[0m[0;34;1m2[0m[0;34;1m3[0m[0;34;1m-[0m[0;34;1m1[0m[0;34;1m2[0m[0;34;1m-[0m[0;34;1m1[0m[0;34;1m6[0m
+[0;90;1m  11 │[0m [0;34m│  [0m[0;34;1m [0m[0;34;1m [0m[0;34;1m*[0m[0;34;1m [0m[0;34;1ma[0m[0;34;1ms[0m[0;34;1ms[0m[0;34;1me[0m[0;34;1mt[0m[0;34;1ms[0m[0;34;1m [0m[0;34;1m+[0m[0;34;1m1[0m[0;34;1m.[0m[0;34;1m0[0m[0;34;1m0[0m[0;34;1m [0m[0;34;1mU[0m[0;34;1mS[0m[0;34;1mD[0m
+[0;90;1m  12 │[0m [0;34m├[0m[0;34m┤[0m [0;34;1m [0m[0;34;1m [0m[0;34;1m*[0m[0;34;1m [0m[0;34;1mi[0m[0;34;1mn[0m[0;34;1mc[0m[0;34;1mo[0m[0;34;1mm[0m[0;34;1me[0m[0;34;1m [0m[0;34;1m-[0m[0;34;1m1[0m[0;34;1m.[0m[0;34;1m0[0m[0;34;1m0[0m[0;34;1m [0m[0;34;1mU[0m[0;34;1mS[0m[0;34;1mD[0m
+     [0;90;1m•[0m [0;34m│ [0m
+     [0;90;1m•[0m [0;34m├╸ While trying to incorporate this transaction into the running balance[0m
+     [0;90;1m•[0m [0;91m├╸ Could not add the balance of this transaction to the running total.[0m
+     [0;90;1m•[0m [0;34m╰╸ Account:  assets
+     [0;90;1m•[0;34m    Running total:
+     [0;90;1m•[0;34m    184467440737095520.00 USD
+     [0;90;1m•[0;34m    Balance to add:
+     [0;90;1m•[0;34m    1.00 USD[0m
+[0;90;1m─────╯[0m

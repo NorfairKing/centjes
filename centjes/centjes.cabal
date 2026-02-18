@@ -49,6 +49,7 @@ library
       Centjes.Parse.Happy
       Centjes.Report.Balance
       Centjes.Report.Check
+      Centjes.Report.EvaluatedLedger
       Centjes.Report.NetWorth
       Centjes.Report.Register
       Centjes.Tag

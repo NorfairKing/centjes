@@ -12,6 +12,7 @@ import Centjes.Ledger.Gen ()
 import Centjes.Load
 import Centjes.OptParse
 import Centjes.Report.Balance
+import Centjes.Report.EvaluatedLedger
 import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
@@ -31,19 +32,17 @@ import Text.Colour
 
 spec :: Spec
 spec = do
-  describe "balanceTransaction" $ do
-    it "produces valid balances" $
-      producesValid2 $
-        balanceTransaction @()
-
-  describe "produceBalanceReport" $ do
+  describe "produceBalanceReportFromEvaluatedLedger" $ do
     it "produces valid reports" $
       forAllValid $ \f ->
         forAllValid $ \mY ->
           forAllValid $ \mCur ->
             forAllValid $ \showVirtual ->
               forAllValid $ \ledger ->
-                shouldBeValid $ produceBalanceReport @() f mY mCur showVirtual ledger
+                case produceEvaluatedLedger @() ledger of
+                  Failure _ -> pure () -- EvaluatedLedger may legitimately fail on generated ledgers
+                  Success evaluatedLedger ->
+                    shouldBeValid $ produceBalanceReportFromEvaluatedLedger @() f mY mCur showVirtual evaluatedLedger
 
     scenarioDirRecur "test_resources/balance/balanced" $ \fp -> do
       af <- liftIO $ resolveFile' fp
@@ -74,14 +73,18 @@ spec = do
                 -- Compile to a ledger
                 ledger <- shouldValidate diag $ compileDeclarations ds
 
+                evaluatedLedger <-
+                  shouldValidate diag $
+                    produceEvaluatedLedger ledger
+
                 br <-
                   shouldValidate diag $
-                    produceBalanceReport
+                    produceBalanceReportFromEvaluatedLedger
                       balanceSettingFilter
                       balanceSettingEnd
                       balanceSettingCurrency
                       balanceSettingShowVirtual
-                      ledger
+                      evaluatedLedger
 
                 shouldBeValid br
                 pure $ renderChunksText termCaps $ renderBalanceReport balanceSettingShowEmpty br
@@ -114,13 +117,24 @@ spec = do
                 (ds, diag) <- runNoLoggingT $ loadModules af
                 -- Compile to a ledger
                 ledger <- shouldValidate diag $ compileDeclarations ds
-                errs <-
-                  shouldFailToValidate $
-                    produceBalanceReport
-                      balanceSettingFilter
-                      balanceSettingEnd
-                      balanceSettingCurrency
-                      balanceSettingShowVirtual
-                      ledger
 
-                pure $ renderValidationErrors diag errs
+                -- Try producing the evaluated ledger first
+                case produceEvaluatedLedger ledger of
+                  Failure evaluatedLedgerErrors ->
+                    pure $ renderValidationErrors diag evaluatedLedgerErrors
+                  Success evaluatedLedger ->
+                    -- Check assertions (account type and explicit assertions)
+                    case checkEvaluatedLedgerAssertions evaluatedLedger of
+                      Failure assertionErrors ->
+                        pure $ renderValidationErrors diag assertionErrors
+                      Success () -> do
+                        errs <-
+                          shouldFailToValidate $
+                            produceBalanceReportFromEvaluatedLedger
+                              balanceSettingFilter
+                              balanceSettingEnd
+                              balanceSettingCurrency
+                              balanceSettingShowVirtual
+                              evaluatedLedger
+
+                        pure $ renderValidationErrors diag errs

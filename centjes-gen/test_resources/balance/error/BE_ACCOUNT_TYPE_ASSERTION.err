@@ -1,4 +1,4 @@
-[0;91;1m[error BE_ACCOUNT_TYPE_ASSERTION][0m: Balance of an account did not match its type
+[0;91;1m[error EVAL_ACCOUNT_TYPE_ASSERTION][0m: Balance of an account did not match its type
      [0;90;1m╭──▶[0m [0;32;1mBE_ACCOUNT_TYPE_ASSERTION.cent@6:1-9:18[0m
      [0;90;1m│[0m
 [0;90;1m   3 │[0m    [0;34;1ma[0m[0;34;1mc[0m[0;34;1mc[0m[0;34;1mo[0m[0;34;1mu[0m[0;34;1mn[0m[0;34;1mt[0m[0;34;1m [0m[0;34;1ma[0m[0;34;1ms[0m[0;34;1ms[0m[0;34;1me[0m[0;34;1mt[0m[0;34;1ms[0m
@@ -16,7 +16,7 @@
      [0;90;1m•[0;91m    -1.00 USD[0m
 [0;90;1m─────╯[0m
 
-[0;91;1m[error BE_ACCOUNT_TYPE_ASSERTION][0m: Balance of an account did not match its type
+[0;91;1m[error EVAL_ACCOUNT_TYPE_ASSERTION][0m: Balance of an account did not match its type
      [0;90;1m╭──▶[0m [0;32;1mBE_ACCOUNT_TYPE_ASSERTION.cent@6:1-9:18[0m
      [0;90;1m│[0m
 [0;90;1m   4 │[0m    [0;34;1ma[0m[0;34;1mc[0m[0;34;1mc[0m[0;34;1mo[0m[0;34;1mu[0m[0;34;1mn[0m[0;34;1mt[0m[0;34;1m [0m[0;34;1mi[0m[0;34;1mn[0m[0;34;1mc[0m[0;34;1mo[0m[0;34;1mm[0m[0;34;1me[0m
