@@ -112,6 +112,7 @@ entryBeforeOrOnDay end = \case
 -- For a transaction entry, uses the last posting's balances.
 -- For a price entry, uses the price's balances.
 lastEntryState ::
+  (Ord ann) =>
   Bool ->
   Vector (EvaluatedEntry ann) ->
   Maybe (AccountBalances ann, MemoisedPriceGraph (Currency ann))
@@ -125,12 +126,11 @@ lastEntryState showVirtual entries
               if V.null postings
                 then if showVirtual then evaluatedTransactionBalancesWithVirtual evaluatedTransaction else evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction
                 else pickBalance (V.last postings)
-            priceGraph =
+            rawPriceGraph =
               if V.null postings
                 then evaluatedTransactionPriceGraph evaluatedTransaction
                 else evaluatedPostingPriceGraph (V.last postings)
-         in (balance, priceGraph)
+         in (balance, MemoisedPriceGraph.fromPriceGraph rawPriceGraph)
       EvaluatedEntryPrice evaluatedPrice ->
         let balance = if showVirtual then evaluatedPriceBalancesWithVirtual evaluatedPrice else evaluatedPriceBalancesWithoutVirtual evaluatedPrice
-            priceGraph = evaluatedPricePriceGraph evaluatedPrice
-         in (balance, priceGraph)
+         in (balance, MemoisedPriceGraph.fromPriceGraph (evaluatedPricePriceGraph evaluatedPrice))

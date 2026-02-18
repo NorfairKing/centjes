@@ -27,7 +27,6 @@ import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
 import Centjes.Convert
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
-import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import Centjes.Convert.PriceGraph (PriceGraph)
 import qualified Centjes.Convert.PriceGraph as PriceGraph
 import Centjes.CurrencySymbol as CurrencySymbol
@@ -81,8 +80,11 @@ data EvaluatedTransaction ann = EvaluatedTransaction
     -- | Cumulative account balances (all accounts) excluding virtual postings,
     -- right after this transaction has been incorporated
     evaluatedTransactionBalancesWithoutVirtual :: !(AccountBalances ann),
-    -- | The cumulative price graph at the time of this transaction
-    evaluatedTransactionPriceGraph :: !(MemoisedPriceGraph (Currency ann))
+    -- | The cumulative price graph at the time of this transaction.
+    -- Consumers should call 'MemoisedPriceGraph.fromPriceGraph' when they
+    -- need conversion lookups; this avoids creating intermediate memoised
+    -- graphs that may never be used.
+    evaluatedTransactionPriceGraph :: !(PriceGraph Day (Currency ann))
   }
 
 data EvaluatedPosting ann = EvaluatedPosting
@@ -96,7 +98,7 @@ data EvaluatedPosting ann = EvaluatedPosting
     -- right after this posting has been incorporated
     evaluatedPostingBalancesWithoutVirtual :: !(AccountBalances ann),
     -- | The cumulative price graph at the time of this posting
-    evaluatedPostingPriceGraph :: !(MemoisedPriceGraph (Currency ann))
+    evaluatedPostingPriceGraph :: !(PriceGraph Day (Currency ann))
   }
 
 data EvaluatedPrice ann = EvaluatedPrice
@@ -106,7 +108,7 @@ data EvaluatedPrice ann = EvaluatedPrice
     evaluatedPriceBalancesWithVirtual :: !(AccountBalances ann),
     evaluatedPriceBalancesWithoutVirtual :: !(AccountBalances ann),
     -- | The cumulative price graph right after this price declaration
-    evaluatedPricePriceGraph :: !(MemoisedPriceGraph (Currency ann))
+    evaluatedPricePriceGraph :: !(PriceGraph Day (Currency ann))
   }
 
 data EvaluatedLedgerError ann
@@ -894,8 +896,7 @@ mergeEntries transactions prices =
 data ProcessState ann = ProcessState
   { processStateBalancesWithVirtual :: !(AccountBalances ann),
     processStateBalancesWithoutVirtual :: !(AccountBalances ann),
-    processStatePriceGraph :: !(PriceGraph Day (Currency ann)),
-    processStateMemoisedPriceGraph :: !(MemoisedPriceGraph (Currency ann))
+    processStatePriceGraph :: !(PriceGraph Day (Currency ann))
   }
 
 processEntries ::
@@ -909,26 +910,24 @@ processEntries ledger mergedEntries = do
         ProcessState
           { processStateBalancesWithVirtual = M.empty,
             processStateBalancesWithoutVirtual = M.empty,
-            processStatePriceGraph = PriceGraph.empty,
-            processStateMemoisedPriceGraph = MemoisedPriceGraph.empty
+            processStatePriceGraph = PriceGraph.empty
           }
 
-  let go ::
-        ProcessState ann ->
-        [MergedEntry ann] ->
-        Validation (EvaluatedLedgerError ann) [EvaluatedEntry ann]
-      go _ [] = pure []
-      go state (entry : rest) = do
-        (evaluatedEntry, newState) <- processEntry state entry
-        restEntries <- go newState rest
-        pure (evaluatedEntry : restEntries)
-
-  entries <- go initialState mergedEntries
+  (finalState, acc) <- foldM go (initialState, id) mergedEntries
+  let _ = finalState -- suppress unused warning
   pure
     EvaluatedLedger
       { evaluatedLedgerSource = ledger,
-        evaluatedLedgerEntries = V.fromList entries
+        evaluatedLedgerEntries = V.fromList (acc [])
       }
+  where
+    go ::
+      (ProcessState ann, [EvaluatedEntry ann] -> [EvaluatedEntry ann]) ->
+      MergedEntry ann ->
+      Validation (EvaluatedLedgerError ann) (ProcessState ann, [EvaluatedEntry ann] -> [EvaluatedEntry ann])
+    go (state, acc) entry = do
+      (evaluatedEntry, newState) <- processEntry state entry
+      pure (newState, acc . (evaluatedEntry :))
 
 processEntry ::
   forall ann.
@@ -944,18 +943,16 @@ processEntry state (MergedPrice lp@(Located _ Price {..})) =
       Located _ timestamp = priceTimestamp
       priority = Timestamp.toDay timestamp
       newPriceGraph = PriceGraph.insert currencyFrom currencyTo rate priority (processStatePriceGraph state)
-      newMemoisedPriceGraph = MemoisedPriceGraph.fromPriceGraph newPriceGraph
       newState =
         state
-          { processStatePriceGraph = newPriceGraph,
-            processStateMemoisedPriceGraph = newMemoisedPriceGraph
+          { processStatePriceGraph = newPriceGraph
           }
       evaluatedPrice =
         EvaluatedPrice
           { evaluatedPriceLocated = lp,
             evaluatedPriceBalancesWithVirtual = processStateBalancesWithVirtual state,
             evaluatedPriceBalancesWithoutVirtual = processStateBalancesWithoutVirtual state,
-            evaluatedPricePriceGraph = newMemoisedPriceGraph
+            evaluatedPricePriceGraph = newPriceGraph
           }
    in pure (EvaluatedEntryPrice evaluatedPrice, newState)
 processEntry state (MergedTransaction lt@(Located tl t) (Located _ sumForAssertions, Located _ sumForVirtual)) = do
@@ -966,7 +963,7 @@ processEntry state (MergedTransaction lt@(Located tl t) (Located _ sumForAsserti
   newBalancesWithVirtual <- incorporateAccounts tl (processStateBalancesWithVirtual state) sumForVirtual
 
   -- Build per-posting evaluated postings
-  let currentPriceGraph = processStateMemoisedPriceGraph state
+  let currentPriceGraph = processStatePriceGraph state
   evaluatedPostings <- buildEvaluatedPostings tl (processStateBalancesWithVirtual state) (processStateBalancesWithoutVirtual state) currentPriceGraph (transactionPostings t)
 
   let evaluatedTransaction =
@@ -991,7 +988,7 @@ incorporateAccounts ::
   AccountBalances ann ->
   Validation (EvaluatedLedgerError ann) (AccountBalances ann)
 incorporateAccounts l totals currents =
-  foldlM (incorporateAccount l) totals (M.toList currents)
+  foldM (incorporateAccount l) totals (M.toList currents)
 
 incorporateAccount ::
   (Ord ann) =>
@@ -1039,23 +1036,13 @@ checkAssertion tl runningTotal a@(Located _ (AssertionEquals lan la lcs)) = do
     then pure ()
     else validationFailure $ EvaluatedLedgerErrorAssertion tl a actualMulti (Account.subtract actual expected)
 
--- | Strict left fold over a list in a monadic context
-foldlM ::
-  (Monad m) =>
-  (b -> a -> m b) ->
-  b ->
-  [a] ->
-  m b
-foldlM _ z [] = pure z
-foldlM f z (x : xs) = f z x >>= \z' -> foldlM f z' xs
-
 buildEvaluatedPostings ::
   forall ann.
   (Ord ann) =>
   ann ->
   AccountBalances ann ->
   AccountBalances ann ->
-  MemoisedPriceGraph (Currency ann) ->
+  PriceGraph Day (Currency ann) ->
   Vector (GenLocated ann (Posting ann)) ->
   Validation (EvaluatedLedgerError ann) (Vector (EvaluatedPosting ann))
 buildEvaluatedPostings tl initialWithVirtual initialWithoutVirtual priceGraph postings =

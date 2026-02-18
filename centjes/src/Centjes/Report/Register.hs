@@ -537,7 +537,7 @@ processFlatTransaction ::
   Validation (RegisterError ann) (Maybe (FlatEntry ann))
 processFlatTransaction f showVirtual mBegin mEnd runningTotal evaluatedTransaction =
   let Located _ Transaction {..} = evaluatedTransactionLocated evaluatedTransaction
-      priceGraph = evaluatedTransactionPriceGraph evaluatedTransaction
+      priceGraph = MemoisedPriceGraph.fromPriceGraph (evaluatedTransactionPriceGraph evaluatedTransaction)
    in if timestampPassesDayFilter mBegin mEnd transactionTimestamp
         then do
           let goPostings running = \case
@@ -1271,9 +1271,10 @@ timestampPassesDayFilter mBegin mEnd (Located _ ts) =
 -- | Build a map from Day to the cumulative price graph at that day,
 -- extracted from the evaluated ledger's price entries.
 buildDailyPriceGraphsFromEntries ::
+  (Ord ann) =>
   Vector (EvaluatedEntry ann) ->
   Map Day (MemoisedPriceGraph (Currency ann))
-buildDailyPriceGraphsFromEntries = V.foldl' go M.empty
+buildDailyPriceGraphsFromEntries = M.map MemoisedPriceGraph.fromPriceGraph . V.foldl' go M.empty
   where
     go m = \case
       EvaluatedEntryPrice evaluatedPrice ->

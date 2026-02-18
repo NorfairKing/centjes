@@ -173,7 +173,7 @@ pricesToDailyPriceGraphs ::
   (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
   Map Day (MemoisedPriceGraph (Currency ann))
-pricesToDailyPriceGraphs = fst . V.foldl go (M.empty, PriceGraph.empty)
+pricesToDailyPriceGraphs = M.map MemoisedPriceGraph.fromPriceGraph . fst . V.foldl go (M.empty, PriceGraph.empty)
   where
     go (m, pg) (Located _ Price {..}) =
       let Located _ currencyFrom = priceCurrency
@@ -183,5 +183,5 @@ pricesToDailyPriceGraphs = fst . V.foldl go (M.empty, PriceGraph.empty)
           Located _ timestamp = priceTimestamp
           priority = Timestamp.toDay timestamp
           pg' = PriceGraph.insert currencyFrom currencyTo rate priority pg
-          m' = M.insert (Timestamp.toDay timestamp) (MemoisedPriceGraph.fromPriceGraph pg') m
+          m' = M.insert (Timestamp.toDay timestamp) pg' m
        in (m', pg')

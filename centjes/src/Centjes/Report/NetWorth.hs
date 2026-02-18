@@ -116,6 +116,7 @@ produceNetWorthReportFromEvaluatedLedger netWorthReportCurrency mBegin mEnd eval
 -- The price graph used is the one from the transaction's evaluated state,
 -- which already incorporates all prices declared on or before that day.
 buildDaySnapshots ::
+  (Ord ann) =>
   Map AccountName (GenLocated ann (Account ann)) ->
   Vector (EvaluatedEntry ann) ->
   Map Day (AccountBalances ann, MemoisedPriceGraph (Currency ann))
@@ -127,7 +128,7 @@ buildDaySnapshots accounts = V.foldl' go M.empty
             Located _ ts = transactionTimestamp t
             day = Timestamp.toDay ts
             balances = evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction
-            priceGraph = evaluatedTransactionPriceGraph evaluatedTransaction
+            priceGraph = MemoisedPriceGraph.fromPriceGraph (evaluatedTransactionPriceGraph evaluatedTransaction)
             filtered = M.filterWithKey isAssetOrLiability balances
          in M.insert day (filtered, priceGraph) m
       EvaluatedEntryPrice _ -> m

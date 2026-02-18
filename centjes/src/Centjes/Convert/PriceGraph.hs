@@ -12,6 +12,7 @@ module Centjes.Convert.PriceGraph
     fromList,
     lookup,
     lookup',
+    lookupAllTo,
   )
 where
 
@@ -136,27 +137,35 @@ dijkstra ::
   node ->
   -- Reverse path from goal to start
   Maybe (Path node edge, cost)
-dijkstra
+dijkstra getEdges buildCost combineCost start goal =
+  M.lookup goal (dijkstraAll getEdges buildCost combineCost start)
+
+-- | Run Dijkstra from a single source, returning all reachable nodes with
+-- their shortest paths and costs. The start node itself is excluded from the
+-- result (it has no path cost).
+dijkstraAll ::
+  forall node edge priority cost.
+  (Ord node, Ord cost) =>
+  (node -> Map node (edge, priority)) ->
+  (priority -> cost) ->
+  (cost -> cost -> cost) ->
+  node ->
+  Map node (Path node edge, cost)
+dijkstraAll
   getEdges
   buildCost
   combineCost
-  start
-  goal = do
-    (path, mCost) <-
-      go
-        (M.singleton start (PathStart start, Nothing))
-        (PSQ.singleton start Nothing ())
-    cost <- mCost
-    pure (path, cost)
+  start =
+    M.mapMaybe
+      (\(path, mCost) -> (,) path <$> mCost)
+      (go (M.singleton start (PathStart start, Nothing)) (PSQ.singleton start Nothing ()))
     where
       go ::
         Map node (Path node edge, Maybe cost) ->
         OrdPSQ node (Maybe cost) () ->
-        Maybe (Path node edge, Maybe cost)
+        Map node (Path node edge, Maybe cost)
       go visited queue = case PSQ.minView queue of
-        -- If the queue is empty, the visited map now has the shortest path
-        -- from any node to the start.
-        Nothing -> M.lookup goal visited
+        Nothing -> visited
         Just (currentNode, _, (), restQueue) ->
           let (newVisited, newQueue) =
                 foldl'
@@ -197,6 +206,26 @@ dijkstra
                         if Just costToNode < bestCostSoFar
                           then foundNewBetterCost
                           else ignoreThisEdge
+
+-- | Run Dijkstra from 'to' (target), return Map of (source -> rate source to target)
+-- by inverting each path's composed rate.
+lookupAllTo ::
+  forall priority cur.
+  (Show priority, Ord priority, Ord cur) =>
+  PriceGraph priority cur ->
+  cur ->
+  Map cur Money.ConversionRate
+lookupAllTo (PriceGraph m) target =
+  M.map (ConversionRate.invert . composePath) results
+  where
+    results = dijkstraAll edgesFrom buildWorstPriorityCost (<>) target
+    edgesFrom :: cur -> Map cur (Money.ConversionRate, priority)
+    edgesFrom n = M.map unDirection $ fromMaybe M.empty $ M.lookup n m
+    composePath :: (Path cur Money.ConversionRate, WorstPriorityCost priority) -> Money.ConversionRate
+    composePath (path, _) = go ConversionRate.oneToOne path
+    go r = \case
+      PathStart _ -> r
+      PathFrom _ r' p -> go (ConversionRate.compose r r') p
 
 -- Path from start to goal
 data Path node edge
