@@ -63,7 +63,7 @@ runCentjesChartAll Settings {..} =
   loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
-    let symbol = CurrencySymbol "USD"
+    let symbol = CurrencySymbol "CHF"
     balancedLedger <-
       liftIO $
         checkValidation diagnostic $
