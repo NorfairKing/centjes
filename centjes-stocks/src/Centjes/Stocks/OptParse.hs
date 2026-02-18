@@ -8,8 +8,8 @@ module Centjes.Stocks.OptParse
     Settings (..),
     Command (..),
     DownloadRatesSettings (..),
-    StockConfig (..),
-    stockConfigEffectiveTicker,
+    StockSettings (..),
+    stockSettingsEffectiveTicker,
   )
 where
 
@@ -62,31 +62,31 @@ settingsCommandParser =
     ]
 
 -- | Configuration for a single stock symbol
-data StockConfig = StockConfig
-  { stockConfigSymbol :: !CurrencySymbol,
+data StockSettings = StockSettings
+  { stockSettingsSymbol :: !CurrencySymbol,
     -- | The ticker symbol to use for the Yahoo Finance API (may differ from the currency symbol)
     -- This is Text to allow characters like '.' and '-' that are valid in Yahoo Finance tickers
-    stockConfigTicker :: !(Maybe Text),
-    stockConfigCurrency :: !CurrencySymbol
+    stockSettingsTicker :: !(Maybe Text),
+    stockSettingsCurrency :: !CurrencySymbol
   }
 
 -- | Get the ticker to use for API requests (defaults to symbol text if not specified)
-stockConfigEffectiveTicker :: StockConfig -> Text
-stockConfigEffectiveTicker StockConfig {..} =
-  case stockConfigTicker of
+stockSettingsEffectiveTicker :: StockSettings -> Text
+stockSettingsEffectiveTicker StockSettings {..} =
+  case stockSettingsTicker of
     Just t -> t
-    Nothing -> CurrencySymbol.toText stockConfigSymbol
+    Nothing -> CurrencySymbol.toText stockSettingsSymbol
 
-instance HasCodec StockConfig where
+instance HasCodec StockSettings where
   codec =
-    object "StockConfig" $
-      StockConfig
-        <$> requiredField "symbol" "Stock symbol as declared in the ledger (e.g., AAPL)" .= stockConfigSymbol
-        <*> optionalField "ticker" "Ticker symbol for Yahoo Finance API (defaults to symbol, e.g., SWDA.L, BRK-B)" .= stockConfigTicker
-        <*> requiredField "currency" "Currency the stock is priced in (e.g., USD)" .= stockConfigCurrency
+    object "StockSettings" $
+      StockSettings
+        <$> requiredField "symbol" "Stock symbol as declared in the ledger (e.g., AAPL)" .= stockSettingsSymbol
+        <*> optionalField "ticker" "Ticker symbol for Yahoo Finance API (defaults to symbol, e.g., SWDA.L, BRK-B)" .= stockSettingsTicker
+        <*> requiredField "currency" "Currency the stock is priced in (e.g., USD)" .= stockSettingsCurrency
 
 data DownloadRatesSettings = DownloadRatesSettings
-  { downloadRatesSettingStocks :: !(NonEmpty StockConfig),
+  { downloadRatesSettingStocks :: !(NonEmpty StockSettings),
     downloadRatesSettingBegin :: !Day,
     downloadRatesSettingEnd :: !Day,
     downloadRatesSettingOutput :: !(Maybe (Path Abs File))

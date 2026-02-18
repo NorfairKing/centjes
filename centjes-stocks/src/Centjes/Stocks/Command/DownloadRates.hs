@@ -49,117 +49,45 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
   currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
 
   let stocks = NE.toList downloadRatesSettingStocks
-  let symbols = map stockConfigSymbol stocks
-  let tickerToSymbol = M.fromList [(stockConfigEffectiveTicker sc, stockConfigSymbol sc) | sc <- stocks]
-  let symbolToCurrency = M.fromList [(stockConfigSymbol sc, stockConfigCurrency sc) | sc <- stocks]
-
-  -- Check that all requested symbols are declared as currencies in the ledger
-  let undeclaredSymbols = filter (\sym -> not $ M.member sym currencies) symbols
-  unless (null undeclaredSymbols) $ do
-    logErrorN "The following symbols are not declared as currencies in the ledger:"
-    forM_ undeclaredSymbols $ \sym ->
-      logErrorN $ "  - " <> CurrencySymbol.toText sym
-    logErrorN "Please add currency declarations for these symbols (e.g., 'currency AAPL 0.01')"
-    liftIO exitFailure
-
-  -- Check that all target currencies are declared in the ledger
-  let targetCurrencies = map stockConfigCurrency stocks
-  let undeclaredTargets = filter (\cur -> not $ M.member cur currencies) targetCurrencies
-  unless (null undeclaredTargets) $ do
-    logErrorN "The following target currencies are not declared in the ledger:"
-    forM_ (S.toList $ S.fromList undeclaredTargets) $ \cur ->
-      logErrorN $ "  - " <> CurrencySymbol.toText cur
-    liftIO exitFailure
 
   man <- liftIO newTlsManager
 
-  -- Get the list of tickers to fetch (may differ from symbols)
-  let tickers = map stockConfigEffectiveTicker stocks
-
-  -- Fetch data for all tickers, tracking which ones succeed
-  fetchResults <-
+  -- Single unified conduit pipeline
+  generatedDeclarations <-
     runConduit $
-      yieldMany tickers
-        -- Gentle delay between requests (500ms per ticker)
-        .| C.mapM (\ticker -> liftIO (threadDelay 500_000) >> pure ticker)
-        -- Fetch historical data for each ticker (one request per ticker returns all dates)
-        .| C.mapM (\ticker -> (ticker,) <$> fetchStockHistory man ticker downloadRatesSettingBegin downloadRatesSettingEnd)
-        .| C.sinkList
-
-  -- Check for failed downloads
-  let failedTickers = [ticker | (ticker, Nothing) <- fetchResults]
-  unless (null failedTickers) $ do
-    logErrorN "Failed to download data for the following tickers:"
-    forM_ failedTickers $ \ticker ->
-      logErrorN $ "  - " <> ticker
-    liftIO exitFailure
-
-  -- Extract successful results and map back to symbols
-  let lookupSymbol ticker = case M.lookup ticker tickerToSymbol of
-        Just sym -> sym
-        Nothing -> error $ "Internal error: ticker not found in map: " <> T.unpack ticker
-  let successfulResults = [(lookupSymbol ticker, history) | (ticker, Just history) <- fetchResults]
-
-  -- Validate that the API currency matches the configured currency
-  let tickerToConfiguredCurrency = M.fromList [(stockConfigEffectiveTicker sc, stockConfigCurrency sc) | sc <- stocks]
-  let currencyMismatches =
-        [ (ticker, apiCur, configCur)
-        | (ticker, Just history) <- fetchResults,
-          let apiCur = stockHistoryApiCurrency history,
-          let (_, baseCur) = currencyInfo apiCur,
-          let configCur = M.findWithDefault (CurrencySymbol.CurrencySymbol "USD") ticker tickerToConfiguredCurrency,
-          T.toUpper baseCur /= T.toUpper (CurrencySymbol.toText configCur)
-        ]
-  unless (null currencyMismatches) $ do
-    logErrorN "Currency mismatch between API and configuration:"
-    forM_ currencyMismatches $ \(ticker, apiCur, configCur) -> do
-      let (_, baseCur) = currencyInfo apiCur
-      logErrorN $ "  - " <> ticker <> ": API returns " <> apiCur <> " (base: " <> baseCur <> "), but configured as " <> CurrencySymbol.toText configCur
-    liftIO exitFailure
-
-  -- Collect all (symbol, day, rateExpression) tuples
-  priceData <-
-    runConduit $
-      yieldMany successfulResults
-        -- Expand to (symbol, day, price) for each data point
-        .| C.concatMap (\(sym, history) -> expandToDaily sym (stockHistoryTimeSeries history))
+      yieldMany stocks
+        -- Validate symbol and target currency are declared in ledger
+        .| C.mapM (validateCurrenciesDeclared currencies)
+        -- Throttle requests (500ms between each)
+        .| C.mapM (\sc -> liftIO (threadDelay 500_000) >> pure sc)
+        -- Fetch and validate immediately (fail-fast on error)
+        .| C.mapM (fetchAndValidate man downloadRatesSettingBegin downloadRatesSettingEnd)
+        -- Validate data exists in date range
+        .| C.mapM (validateHasData downloadRatesSettingBegin downloadRatesSettingEnd)
+        -- Expand to (symbol, targetCurrency, day, price) for each data point
+        .| C.concatMap (\(sym, targetCur, history) -> [(sym, targetCur, day, price) | (day, price) <- stockHistoryTimeSeries history])
         -- Filter to requested date range
-        .| C.filter (\(_, day, _) -> day >= downloadRatesSettingBegin && day <= downloadRatesSettingEnd)
-        -- Calculate the rate expression
-        .| C.concatMap (\(sym, day, price) -> (sym,day,) <$> priceToRateExpression price)
-        .| C.sinkList
-
-  -- Check that we got data for all symbols within the date range
-  let symbolsWithData = S.fromList [sym | (sym, _, _) <- priceData]
-  let symbolsWithoutData = filter (\sym -> not $ S.member sym symbolsWithData) symbols
-  unless (null symbolsWithoutData) $ do
-    logErrorN "No price data found for the following symbols in the requested date range:"
-    forM_ symbolsWithoutData $ \sym ->
-      logErrorN $ "  - " <> CurrencySymbol.toText sym
-    liftIO exitFailure
-
-  -- Sort by date to ensure chronological order (required by centjes)
-  let sortedPriceData = sortOn (\(_, day, _) -> day) priceData
-
-  -- Produce price declarations, looking up the target currency for each symbol
-  let generatedDeclarations =
-        map
-          ( \(sym, day, rateExpression) ->
-              let targetCurrency = M.findWithDefault (CurrencySymbol.CurrencySymbol "USD") sym symbolToCurrency
-               in noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day sym rateExpression targetCurrency
+        .| C.filter (\(_, _, day, _) -> day >= downloadRatesSettingBegin && day <= downloadRatesSettingEnd)
+        -- Convert to rate expressions
+        .| C.concatMap (\(sym, targetCur, day, price) -> (sym,targetCur,day,) <$> priceToRateExpression price)
+        -- Generate price declarations
+        .| C.map
+          ( \(sym, targetCurrency, day, rateExpression) ->
+              (day, noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day sym rateExpression targetCurrency)
           )
-          sortedPriceData
+        .| C.sinkList
 
   when (null generatedDeclarations) $ do
     logErrorN "No price declarations were generated"
     liftIO exitFailure
 
+  -- Sort by date to ensure chronological order (required by centjes)
   let output =
         TE.encodeUtf8 $
           formatModule $
             Module
               { moduleImports = [],
-                moduleDeclarations = generatedDeclarations
+                moduleDeclarations = map snd $ sortOn fst generatedDeclarations
               }
 
   liftIO $ case downloadRatesSettingOutput of
@@ -254,6 +182,60 @@ fetchStockHistory man ticker begin end = do
           pure Nothing
         else pure $ parseYahooResponse (responseBody response)
 
+-- | Validate that symbol and target currency are declared in the ledger
+validateCurrenciesDeclared ::
+  M.Map CurrencySymbol a ->
+  StockSettings ->
+  LoggingT IO StockSettings
+validateCurrenciesDeclared currencies sc = do
+  let sym = stockSettingsSymbol sc
+  unless (M.member sym currencies) $ do
+    logErrorN $ "Symbol " <> CurrencySymbol.toText sym <> " is not declared as a currency in the ledger"
+    logErrorN $ "Please add a currency declaration (e.g., 'currency " <> CurrencySymbol.toText sym <> " 0.01')"
+    liftIO exitFailure
+  let targetCurrency = stockSettingsCurrency sc
+  unless (M.member targetCurrency currencies) $ do
+    logErrorN $ "Target currency " <> CurrencySymbol.toText targetCurrency <> " is not declared in the ledger"
+    liftIO exitFailure
+  pure sc
+
+-- | Fetch and validate stock history for a stock config (fail-fast on error)
+fetchAndValidate ::
+  Manager ->
+  Day ->
+  Day ->
+  StockSettings ->
+  LoggingT IO (CurrencySymbol, CurrencySymbol, StockHistory)
+fetchAndValidate man begin end sc = do
+  let ticker = stockSettingsEffectiveTicker sc
+  let sym = stockSettingsSymbol sc
+  let configuredCurrency = stockSettingsCurrency sc
+  mHistory <- fetchStockHistory man ticker begin end
+  case mHistory of
+    Nothing -> do
+      logErrorN $ "Failed to download data for ticker: " <> ticker
+      liftIO exitFailure
+    Just history -> do
+      let apiCurrency = stockHistoryApiCurrency history
+      let (_, baseCurrency) = currencyInfo apiCurrency
+      when (T.toUpper baseCurrency /= T.toUpper (CurrencySymbol.toText configuredCurrency)) $ do
+        logErrorN $ "Currency mismatch for " <> ticker <> ": API returns " <> apiCurrency <> " (base: " <> baseCurrency <> "), but configured as " <> CurrencySymbol.toText configuredCurrency
+        liftIO exitFailure
+      pure (sym, configuredCurrency, history)
+
+-- | Validate that history has data in the requested date range
+validateHasData ::
+  Day ->
+  Day ->
+  (CurrencySymbol, CurrencySymbol, StockHistory) ->
+  LoggingT IO (CurrencySymbol, CurrencySymbol, StockHistory)
+validateHasData begin end (sym, targetCurrency, history) = do
+  let hasDataInRange = any (\(day, _) -> day >= begin && day <= end) (stockHistoryTimeSeries history)
+  unless hasDataInRange $ do
+    logErrorN $ "No price data found for " <> CurrencySymbol.toText sym <> " in the requested date range"
+    liftIO exitFailure
+  pure (sym, targetCurrency, history)
+
 -- | Convert a Day to Unix timestamp (seconds since epoch)
 dayToUnixTimestamp :: Day -> Integer
 dayToUnixTimestamp day =
@@ -277,10 +259,6 @@ parseYahooResponse body = do
       pricePairs = zip timestampList priceList
       timeSeries = [(unixTimestampToDay ts, price / divisor) | (ts, Just price) <- pricePairs]
   pure $ StockHistory apiCurrency timeSeries
-
--- | Expand time series to individual (symbol, day, price) tuples
-expandToDaily :: CurrencySymbol -> [(Day, Scientific)] -> [(CurrencySymbol, Day, Scientific)]
-expandToDaily sym timeSeries = [(sym, day, price) | (day, price) <- timeSeries]
 
 -- | Convert a stock price to a rate expression
 -- The price is directly the value in the target currency (e.g., USD)
