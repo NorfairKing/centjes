@@ -6,6 +6,7 @@
 module Centjes.Ledger
   ( Ledger (..),
     Account (..),
+    VirtualPostingPolicy (..),
     Timestamp (..),
     CurrencySymbol (..),
     Price (..),
@@ -132,11 +133,20 @@ data Account ann = Account
     -- Nothing means "any"
     -- Just S.empty "none"
     accountCurrencies :: !(Maybe (Set (Currency ann))),
+    accountVirtualPostingPolicy :: !VirtualPostingPolicy,
     accountTags :: !(Map Tag ann)
   }
   deriving stock (Show, Eq, Generic)
 
 instance (Validity ann, Ord ann) => Validity (Account ann)
+
+data VirtualPostingPolicy
+  = VirtualPostingPolicyForbidden
+  | VirtualPostingPolicyAllowed
+  | VirtualPostingPolicyOnly
+  deriving stock (Show, Eq, Generic)
+
+instance Validity VirtualPostingPolicy
 
 data Price ann = Price
   { priceTimestamp :: !(GenLocated ann Timestamp),

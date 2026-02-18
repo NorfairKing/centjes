@@ -3,6 +3,7 @@ currency CHF 0.05
 account income:work
 account assets:cash
 account liabilities:taxes
+  + assert virtual-only
 
 2024-07-13
   | Work

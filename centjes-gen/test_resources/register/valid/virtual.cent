@@ -4,6 +4,7 @@ account equity
 account assets
 account expenses
 account expenses:VAT
+  + assert virtual-only
 
 2023-12-21
   | opening

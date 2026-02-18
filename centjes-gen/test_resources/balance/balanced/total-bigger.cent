@@ -3,7 +3,9 @@ currency USD 0.01
 account assets
 account equity
 account vat-one expenses
+  + assert virtual-only
 account vat-two expenses
+  + assert virtual-only
 
 2024-01-10
   | Opening

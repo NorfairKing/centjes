@@ -3,7 +3,9 @@ currency CHF 0.01
 account income:work
 account assets:cash
 account liabilities:taxes:federal
+  + assert virtual-only
 account liabilities:taxes:cantonal
+  + assert virtual-only
 
 2024-07-12
   | Starting

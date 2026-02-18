@@ -191,6 +191,15 @@ accountAssertionDoc = \case
     annotate SyntaxKeyword "assert"
       <+> annotate SyntaxKeyword "currency"
       <+> lCurrencySymbolDoc currencySymbol
+  AccountAssertionVirtual (Located _ virtual) ->
+    annotate SyntaxKeyword "assert"
+      <+> annotate
+        SyntaxKeyword
+        ( case virtual of
+            AccountAssertionNoVirtual -> "no-virtual"
+            AccountAssertionVirtualAllowed -> "virtual-allowed"
+            AccountAssertionVirtualOnly -> "virtual-only"
+        )
 
 lAccountTypeDoc :: GenLocated l AccountType -> Doc SyntaxElement
 lAccountTypeDoc (Located _ at) = pretty $ AccountType.toText at

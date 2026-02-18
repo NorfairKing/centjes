@@ -1,0 +1,10 @@
+currency CHF 0.05
+
+account assets
+account expenses
+  + assert virtual-only
+
+2025-01-01
+  | Test
+  * assets   -10 CHF
+  * expenses +10 CHF

@@ -10,10 +10,12 @@ account expenses:bank
 account expenses:coffee
 account expenses:hardware
 account expenses:VAT
+  + assert virtual-only
 account income:domestic
 account income:exports
 account income:foreign
 account income:VAT
+  + assert virtual-only
 
 tag deductible
 tag not-deductible

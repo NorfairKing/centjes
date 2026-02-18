@@ -2,6 +2,7 @@ currency CHF 0.01
 
 account assets
 account expenses
+  + assert virtual-allowed
 account equity
 
 2024-12-16

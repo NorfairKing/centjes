@@ -3,6 +3,7 @@ currency CHF 0.05
 account assets:cash
 account expenses:coffee
 account expenses:vat
+  + assert virtual-only
 
 2024-01-02
   | Invalid percentage

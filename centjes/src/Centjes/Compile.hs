@@ -73,6 +73,9 @@ data CompileError ann
   | CompileErrorInvalidRatio !ann !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidRational !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
+  | CompileErrorVirtualPostingNotAllowed !ann !ann !ann !ann !(GenLocated ann AccountName)
+  | CompileErrorRealPostingNotAllowed !ann !ann !ann !ann
+  | CompileErrorAccountVirtualDeclaredTwice !ann !ann
   deriving (Show, Generic)
 
 instance (Validity ann, Ord ann) => Validity (CompileError ann)
@@ -323,6 +326,52 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition cl, Where "based on this currency declaration")
         ]
         []
+    CompileErrorVirtualPostingNotAllowed tl pl al adl (Located _ an) ->
+      Err
+        (Just "CE_VIRTUAL_POSTING_NOT_ALLOWED")
+        "Virtual posting not allowed for this account"
+        [ (toDiagnosePosition adl, Where "Based on this account declaration"),
+          (toDiagnosePosition al, This "this account does not allow virtual postings"),
+          (toDiagnosePosition pl, Where "While trying to compile this posting"),
+          (toDiagnosePosition tl, Where "In this transaction")
+        ]
+        [ Hint $
+            unlines'
+              [ "You can allow virtual postings by adding a virtual-allowed assertion to the account declaration:",
+                T.unpack $
+                  T.strip $
+                    formatDeclaration $
+                      DeclarationAccount $
+                        noLoc $
+                          AccountDeclaration
+                            { accountDeclarationName = noLoc an,
+                              accountDeclarationType = case AccountType.fromAccountName an of
+                                Nothing -> Just $ noLoc AccountTypeAssets
+                                Just _ -> Nothing,
+                              accountDeclarationExtras =
+                                [ noLoc $ AccountExtraAssertion $ noLoc $ AccountAssertionVirtual $ noLoc AccountAssertionVirtualAllowed
+                                ]
+                            }
+              ]
+        ]
+    CompileErrorRealPostingNotAllowed tl pl al adl ->
+      Err
+        (Just "CE_REAL_POSTING_NOT_ALLOWED")
+        "Real posting not allowed for this account"
+        [ (toDiagnosePosition adl, Where "Based on this account declaration"),
+          (toDiagnosePosition al, This "this account only allows virtual postings"),
+          (toDiagnosePosition pl, Where "While trying to compile this posting"),
+          (toDiagnosePosition tl, Where "In this transaction")
+        ]
+        []
+    CompileErrorAccountVirtualDeclaredTwice l1 l2 ->
+      Err
+        (Just "CE_DUPLICATE_ACCOUNT_VIRTUAL")
+        "Account has duplicate virtual posting policy assertion"
+        [ (toDiagnosePosition l1, Where "This virtual posting policy has been asserted here first"),
+          (toDiagnosePosition l2, This "This virtual posting policy has been asserted twice")
+        ]
+        []
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"
@@ -468,6 +517,14 @@ compileAccountDeclaration currencies tags (Located dl AccountDeclaration {..}) =
     if null currencyAssertions
       then pure Nothing
       else Just . M.keysSet <$> foldM goCurrency M.empty currencyAssertions
+  let virtualAssertions = DList.toList accountExtraVirtual
+  accountVirtualPostingPolicy <- case virtualAssertions of
+    [] -> pure VirtualPostingPolicyForbidden
+    [Located _ AccountAssertionNoVirtual] -> pure VirtualPostingPolicyForbidden
+    [Located _ AccountAssertionVirtualAllowed] -> pure VirtualPostingPolicyAllowed
+    [Located _ AccountAssertionVirtualOnly] -> pure VirtualPostingPolicyOnly
+    (Located l1 _ : Located l2 _ : _) ->
+      validationFailure $ CompileErrorAccountVirtualDeclaredTwice l1 l2
   pure (name, Located dl Account {..})
   where
     goCurrency ::
@@ -494,9 +551,11 @@ compileAccountExtra ::
 compileAccountExtra currencies tags (Located l e) = case e of
   AccountExtraAttachment (Located _ (ExtraAttachment a)) ->
     pure $ mempty {accountExtraAttachments = DList.singleton a}
-  AccountExtraAssertion aas ->
+  AccountExtraAssertion (Located _ (AccountAssertionCurrency lcs)) ->
     (\lc -> mempty {accountExtraCurrencies = DList.singleton lc})
-      <$> compileAccountAssertionCurrency currencies aas
+      <$> compileAccountAssertionCurrency currencies l lcs
+  AccountExtraAssertion (Located _ (AccountAssertionVirtual lv)) ->
+    pure $ mempty {accountExtraVirtual = DList.singleton lv}
   AccountExtraTag et ->
     (\ct -> mempty {accountExtraTags = uncurry M.singleton ct})
       <$> compileTag tags l et
@@ -504,6 +563,7 @@ compileAccountExtra currencies tags (Located l e) = case e of
 data AccountExtras ann = AccountExtras
   { accountExtraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
     accountExtraCurrencies :: !(DList (GenLocated ann (Currency ann))),
+    accountExtraVirtual :: !(DList (GenLocated ann AccountAssertionVirtual)),
     accountExtraTags :: !(Map Tag ann)
   }
 
@@ -513,6 +573,7 @@ instance Semigroup (AccountExtras ann) where
     AccountExtras
       { accountExtraAttachments = accountExtraAttachments e1 <> accountExtraAttachments e2,
         accountExtraCurrencies = accountExtraCurrencies e1 <> accountExtraCurrencies e2,
+        accountExtraVirtual = accountExtraVirtual e1 <> accountExtraVirtual e2,
         accountExtraTags = M.union (accountExtraTags e1) (accountExtraTags e2)
       }
 
@@ -521,15 +582,17 @@ instance Monoid (AccountExtras ann) where
     AccountExtras
       { accountExtraAttachments = mempty,
         accountExtraCurrencies = mempty,
+        accountExtraVirtual = mempty,
         accountExtraTags = mempty
       }
   mappend = (<>)
 
 compileAccountAssertionCurrency ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
-  GenLocated ann (AccountAssertion ann) ->
+  ann ->
+  GenLocated ann CurrencySymbol ->
   Validation (CompileError ann) (GenLocated ann (Currency ann))
-compileAccountAssertionCurrency currencies (Located al (AccountAssertionCurrency lcs)) = do
+compileAccountAssertionCurrency currencies al lcs = do
   Located _ cur <- compileCurrencySymbol currencies al lcs
   pure $ Located al cur
 
@@ -753,6 +816,7 @@ compilePosting currencies accounts tl (Located l mp) = do
 
   postingCurrency <- compileCurrencySymbol currencies tl (Module.postingCurrencySymbol mp)
   checkAccountCurrencyAssertion tl l al account postingCurrency
+  checkAccountVirtualAssertion tl l al account postingAccountName postingReal
 
   let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
@@ -795,6 +859,26 @@ checkAccountCurrencyAssertion tl pl al (Located adl Account {..}) lcur@(Located 
       if S.member cur allowedCurrencies
         then pure ()
         else validationFailure $ CompileErrorInvalidAccountCurrency tl pl al adl lcur allowedCurrencies
+
+checkAccountVirtualAssertion ::
+  ann ->
+  ann ->
+  ann ->
+  GenLocated ann (Account ann) ->
+  GenLocated ann AccountName ->
+  Bool ->
+  Validation (CompileError ann) ()
+checkAccountVirtualAssertion tl pl al (Located adl Account {..}) lan isReal =
+  case accountVirtualPostingPolicy of
+    VirtualPostingPolicyForbidden ->
+      unless isReal $
+        validationFailure $
+          CompileErrorVirtualPostingNotAllowed tl pl al adl lan
+    VirtualPostingPolicyAllowed -> pure ()
+    VirtualPostingPolicyOnly ->
+      when isReal $
+        validationFailure $
+          CompileErrorRealPostingNotAllowed tl pl al adl
 
 compileTransactionAssertion ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

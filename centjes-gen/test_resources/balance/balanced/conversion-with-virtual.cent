@@ -4,6 +4,7 @@ currency CHF 0.01
 account equity:opening
 account assets
 account expenses:VAT
+  + assert virtual-only
 account expenses:cloud
 
 2025-08-02

@@ -164,6 +164,11 @@ tokens :-
 <currency_assertion> @var     { lexVar }
 <currency_assertion> @newline { begin 0 }
 
+-- Virtual assertions
+<assertion> "no-virtual"       { lex' TokenNoVirtual `andBegin` 0 }
+<assertion> "virtual-allowed"  { lex' TokenVirtualAllowed `andBegin` 0 }
+<assertion> "virtual-only"     { lex' TokenVirtualOnly `andBegin` 0 }
+
 -- Transaction assertions
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
@@ -258,6 +263,9 @@ data TokenClass
   | TokenCurrency
   | TokenAccount
   | TokenImport
+  | TokenNoVirtual
+  | TokenVirtualAllowed
+  | TokenVirtualOnly
   | TokenEOF
   deriving ( Show, Eq )
 

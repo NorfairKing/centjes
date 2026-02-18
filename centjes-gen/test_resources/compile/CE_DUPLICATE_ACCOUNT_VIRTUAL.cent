@@ -1,0 +1,5 @@
+currency CHF 0.05
+
+account assets
+  + assert virtual-allowed
+  + assert virtual-only

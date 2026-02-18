@@ -75,6 +75,9 @@ import qualified Data.Text as T
       tok_percent         { Located _ TokenPercent }
       tok_currency        { Located _ TokenCurrency}
       tok_account         { Located _ TokenAccount }
+      tok_no_virtual      { Located _ TokenNoVirtual }
+      tok_virtual_allowed { Located _ TokenVirtualAllowed }
+      tok_virtual_only    { Located _ TokenVirtualOnly }
 
 
 %%
@@ -130,6 +133,9 @@ account_extra
 extra_account_assertion
   :: { LAccountAssertion }
   : tok_assert tok_currency currency_symbol { sBE $1 $3 $ AccountAssertionCurrency $3 }
+  | tok_assert tok_no_virtual { sBE $1 $2 $ AccountAssertionVirtual (sL1 $2 AccountAssertionNoVirtual) }
+  | tok_assert tok_virtual_allowed { sBE $1 $2 $ AccountAssertionVirtual (sL1 $2 AccountAssertionVirtualAllowed) }
+  | tok_assert tok_virtual_only { sBE $1 $2 $ AccountAssertionVirtual (sL1 $2 AccountAssertionVirtualOnly) }
 
 account_type
   :: { Located AccountType }

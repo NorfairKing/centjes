@@ -166,6 +166,8 @@ extra-source-files:
     test_resources/compile/CE_DUPLICATE_ACCOUNT.err
     test_resources/compile/CE_DUPLICATE_ACCOUNT_CURRENCY.cent
     test_resources/compile/CE_DUPLICATE_ACCOUNT_CURRENCY.err
+    test_resources/compile/CE_DUPLICATE_ACCOUNT_VIRTUAL.cent
+    test_resources/compile/CE_DUPLICATE_ACCOUNT_VIRTUAL.err
     test_resources/compile/CE_DUPLICATE_CURRENCY.cent
     test_resources/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/compile/CE_DUPLICATE_TAG.cent
@@ -188,6 +190,8 @@ extra-source-files:
     test_resources/compile/CE_INVALID_RATIONAL-zero.err
     test_resources/compile/CE_PRICE_SAME_CURRENCY.cent
     test_resources/compile/CE_PRICE_SAME_CURRENCY.err
+    test_resources/compile/CE_REAL_POSTING_NOT_ALLOWED.cent
+    test_resources/compile/CE_REAL_POSTING_NOT_ALLOWED.err
     test_resources/compile/CE_TAG_TOO_SIMILAR.cent
     test_resources/compile/CE_TAG_TOO_SIMILAR.err
     test_resources/compile/CE_UNDECLARED_ACCOUNT.cent
@@ -200,6 +204,8 @@ extra-source-files:
     test_resources/compile/CE_UNDECLARED_TAG-account.err
     test_resources/compile/CE_UNDECLARED_TAG.cent
     test_resources/compile/CE_UNDECLARED_TAG.err
+    test_resources/compile/CE_VIRTUAL_POSTING_NOT_ALLOWED.cent
+    test_resources/compile/CE_VIRTUAL_POSTING_NOT_ALLOWED.err
     test_resources/errors/compile/CE_DUPLICATE_CURRENCY.err
     test_resources/errors/compile/CE_INVALID_AMOUNT.err
     test_resources/errors/compile/CE_INVALID_PRICE.err
@@ -383,8 +389,11 @@ extra-source-files:
     test_resources/register/valid/zero-amount-convert.txt
     test_resources/syntax/declaration/formatted/account-with-assertions.cent
     test_resources/syntax/declaration/formatted/account-with-attachment.cent
+    test_resources/syntax/declaration/formatted/account-with-no-virtual-assertion.cent
     test_resources/syntax/declaration/formatted/account-with-tag.cent
     test_resources/syntax/declaration/formatted/account-with-type.cent
+    test_resources/syntax/declaration/formatted/account-with-virtual-allowed-assertion.cent
+    test_resources/syntax/declaration/formatted/account-with-virtual-only-assertion.cent
     test_resources/syntax/declaration/formatted/account.cent
     test_resources/syntax/declaration/formatted/comment.cent
     test_resources/syntax/declaration/formatted/currency.cent
@@ -394,8 +403,11 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/transaction.cent
     test_resources/syntax/declaration/valid/account-with-assertions.cent
     test_resources/syntax/declaration/valid/account-with-attachment.cent
+    test_resources/syntax/declaration/valid/account-with-no-virtual-assertion.cent
     test_resources/syntax/declaration/valid/account-with-tag.cent
     test_resources/syntax/declaration/valid/account-with-type.cent
+    test_resources/syntax/declaration/valid/account-with-virtual-allowed-assertion.cent
+    test_resources/syntax/declaration/valid/account-with-virtual-only-assertion.cent
     test_resources/syntax/declaration/valid/account.cent
     test_resources/syntax/declaration/valid/comment.cent
     test_resources/syntax/declaration/valid/currency.cent

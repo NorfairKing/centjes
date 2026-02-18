@@ -21,6 +21,7 @@ module Centjes.Module
     AccountExtra (..),
     LAccountAssertion,
     AccountAssertion (..),
+    AccountAssertionVirtual (..),
     AccountType (..),
     LTagDeclaration,
     TagDeclaration (..),
@@ -230,9 +231,18 @@ type LAccountAssertion = LLocated AccountAssertion
 
 data AccountAssertion ann
   = AccountAssertionCurrency !(GenLocated ann CurrencySymbol)
+  | AccountAssertionVirtual !(GenLocated ann AccountAssertionVirtual)
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (AccountAssertion ann)
+
+data AccountAssertionVirtual
+  = AccountAssertionNoVirtual
+  | AccountAssertionVirtualAllowed
+  | AccountAssertionVirtualOnly
+  deriving stock (Show, Generic)
+
+instance Validity AccountAssertionVirtual
 
 type LTagDeclaration = LLocated TagDeclaration
 

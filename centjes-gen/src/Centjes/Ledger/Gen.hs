@@ -83,6 +83,8 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
 
 instance (Ord ann, GenValid ann) => GenValid (Account ann)
 
+instance GenValid VirtualPostingPolicy
+
 instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
 
 -- Map must not be empty

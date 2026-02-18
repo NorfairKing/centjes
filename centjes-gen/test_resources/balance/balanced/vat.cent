@@ -4,6 +4,7 @@ account equity:starting
 account assets:cash
 account expenses:coffee
 account expenses:vat
+  + assert virtual-only
 
 2023-12-20
   | Starting
