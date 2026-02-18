@@ -78,19 +78,14 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
           ( \(sym, targetCurrency, day, rateExpression) ->
               (day, noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day sym rateExpression targetCurrency)
           )
-        .| C.sinkList
+        .| (map snd . sortOn fst <$> C.sinkList)
 
-  when (null generatedDeclarations) $ do
-    logErrorN "No price declarations were generated"
-    liftIO exitFailure
-
-  -- Sort by date to ensure chronological order (required by centjes)
   let output =
         TE.encodeUtf8 $
           formatModule $
             Module
               { moduleImports = [],
-                moduleDeclarations = map snd $ sortOn fst generatedDeclarations
+                moduleDeclarations = generatedDeclarations
               }
 
   liftIO $ case downloadRatesSettingOutput of
