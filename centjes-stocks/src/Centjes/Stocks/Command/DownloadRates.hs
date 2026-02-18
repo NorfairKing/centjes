@@ -9,7 +9,7 @@ module Centjes.Stocks.Command.DownloadRates (runCentjesStocksDownloadRates) wher
 
 import Centjes.Compile
 import qualified Centjes.CurrencySymbol as CurrencySymbol
-import Centjes.Format (formatModule)
+import Centjes.Format (formatCurrencyDeclaration, formatModule)
 import Centjes.Load
 import Centjes.Location
 import Centjes.Module
@@ -18,7 +18,7 @@ import Centjes.Validation
 import Conduit
 import Control.Concurrent (threadDelay)
 import Control.Exception (try)
-import Control.Monad (forM_, guard, unless, when)
+import Control.Monad (guard, unless, when)
 import Control.Monad.Logger
 import Data.Aeson
 import qualified Data.ByteString as SB
@@ -26,9 +26,10 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.Conduit.Combinators as C
 import Data.List (sortOn)
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Map as M
+import Data.Map (Map)
+import qualified Data.Map as Map
 import Data.Scientific (Scientific, toRealFloat)
-import qualified Data.Set as S
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
@@ -56,12 +57,14 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
   generatedDeclarations <-
     runConduit $
       yieldMany stocks
-        -- Validate symbol and target currency are declared in ledger
-        .| C.mapM (validateCurrenciesDeclared currencies)
+        -- Parse and validate stock settings against ledger
+        .| C.mapM (parseStockSettings currencies)
         -- Throttle requests (500ms between each)
-        .| C.mapM (\sc -> liftIO (threadDelay 500_000) >> pure sc)
-        -- Fetch and validate immediately (fail-fast on error)
-        .| C.mapM (fetchAndValidate man downloadRatesSettingBegin downloadRatesSettingEnd)
+        .| C.mapM (\x -> liftIO (threadDelay 500_000) >> pure x)
+        -- Fetch stock history
+        .| C.mapM (fetchHistory man downloadRatesSettingBegin downloadRatesSettingEnd)
+        -- Validate API currency matches configured currency
+        .| C.mapM validateApiCurrency
         -- Validate data exists in date range
         .| C.mapM (validateHasData downloadRatesSettingBegin downloadRatesSettingEnd)
         -- Expand to (symbol, targetCurrency, day, price) for each data point
@@ -107,7 +110,7 @@ instance FromJSON YahooChartResponse where
 
 -- | Yahoo Finance chart result with currency info and price data
 -- Fields: currency, timestamps, close prices
-data YahooChartResult = YahooChartResult !T.Text !(V.Vector Integer) !(V.Vector (Maybe Scientific))
+data YahooChartResult = YahooChartResult !Text !(V.Vector Integer) !(V.Vector (Maybe Scientific))
 
 instance FromJSON YahooChartResult where
   parseJSON = withObject "YahooChartResult" $ \o -> do
@@ -124,30 +127,26 @@ instance FromJSON YahooChartResult where
 
 -- | Stock history data with the actual currency from the API
 data StockHistory = StockHistory
-  { stockHistoryApiCurrency :: !T.Text, -- The currency code from Yahoo Finance (e.g., "GBp", "USD")
+  { stockHistoryApiCurrency :: !Text, -- The currency code from Yahoo Finance (e.g., "GBp", "USD")
     stockHistoryTimeSeries :: ![(Day, Scientific)] -- Prices converted to base currency
   }
 
 -- | Get the divisor and base currency for a currency code returned by Yahoo Finance
 -- Some exchanges quote prices in minor currency units (e.g., pence instead of pounds)
 -- Returns (divisor, baseCurrency)
-currencyInfo :: T.Text -> (Scientific, T.Text)
-currencyInfo currency
-  -- Yahoo Finance uses lowercase 'p' suffix for pence (e.g., "GBp" for British pence)
-  | T.length currency == 3 && T.last currency == 'p' =
-      let base = T.toUpper (T.init currency) <> "P"
-       in (100, base)
-  | otherwise = case T.toLower currency of
-      "gbp" -> (1, "GBP") -- British Pounds
-      "gbx" -> (100, "GBP") -- British Pence (100 pence = 1 GBP)
-      "ila" -> (100, "ILS") -- Israeli Agorot (100 agorot = 1 ILS)
-      "zac" -> (100, "ZAR") -- South African Cents (100 cents = 1 ZAR)
-      _ -> (1, T.toUpper currency)
+currencyInfo :: Text -> (Scientific, Text)
+currencyInfo = \case
+  "GBP" -> (1, "GBP")
+  "GBp" -> (100, "GBP") -- British Pence
+  "GBX" -> (100, "GBP") -- British Pence
+  "ILA" -> (100, "ILS") -- Israeli Agorot
+  "ZAC" -> (100, "ZAR") -- South African Cents
+  currency -> (1, currency)
 
 -- | Fetch historical stock prices from Yahoo Finance
 -- Takes a ticker (Text) which may contain special characters like '.' or '-'
 -- Returns the stock history including the API currency for validation
-fetchStockHistory :: Manager -> T.Text -> Day -> Day -> LoggingT IO (Maybe StockHistory)
+fetchStockHistory :: Manager -> Text -> Day -> Day -> LoggingT IO (Maybe StockHistory)
 fetchStockHistory man ticker begin end = do
   let period1 = dayToUnixTimestamp begin
   let period2 = dayToUnixTimestamp (addDays 1 end) -- Add 1 day to make end inclusive
@@ -182,46 +181,62 @@ fetchStockHistory man ticker begin end = do
           pure Nothing
         else pure $ parseYahooResponse (responseBody response)
 
--- | Validate that symbol and target currency are declared in the ledger
-validateCurrenciesDeclared ::
-  M.Map CurrencySymbol a ->
+-- | Parse and validate stock settings against the ledger currencies
+-- Returns (symbol, targetCurrency, ticker)
+parseStockSettings ::
+  Map CurrencySymbol a ->
   StockSettings ->
-  LoggingT IO StockSettings
-validateCurrenciesDeclared currencies sc = do
+  LoggingT IO (CurrencySymbol, CurrencySymbol, Text)
+parseStockSettings currencies sc = do
   let sym = stockSettingsSymbol sc
-  unless (M.member sym currencies) $ do
+  unless (Map.member sym currencies) $ do
     logErrorN $ "Symbol " <> CurrencySymbol.toText sym <> " is not declared as a currency in the ledger"
-    logErrorN $ "Please add a currency declaration (e.g., 'currency " <> CurrencySymbol.toText sym <> " 0.01')"
+    logErrorN $ "Please add a currency declaration: " <> formatCurrencyDeclaration (mkExampleCurrencyDeclaration sym)
     liftIO exitFailure
   let targetCurrency = stockSettingsCurrency sc
-  unless (M.member targetCurrency currencies) $ do
+  unless (Map.member targetCurrency currencies) $ do
     logErrorN $ "Target currency " <> CurrencySymbol.toText targetCurrency <> " is not declared in the ledger"
+    logErrorN $ "Please add a currency declaration: " <> formatCurrencyDeclaration (mkExampleCurrencyDeclaration targetCurrency)
     liftIO exitFailure
-  pure sc
+  pure (sym, targetCurrency, stockSettingsEffectiveTicker sc)
 
--- | Fetch and validate stock history for a stock config (fail-fast on error)
-fetchAndValidate ::
+-- | Create an example currency declaration for error messages
+mkExampleCurrencyDeclaration :: CurrencySymbol -> CurrencyDeclaration ()
+mkExampleCurrencyDeclaration sym =
+  let quantisationFactor = case DecimalLiteral.fromString "0.01" of
+        Nothing -> error "Internal error: failed to parse 0.01 as DecimalLiteral"
+        Just dl -> dl
+   in CurrencyDeclaration
+        { currencyDeclarationSymbol = noLoc sym,
+          currencyDeclarationQuantisationFactor = noLoc quantisationFactor
+        }
+
+-- | Fetch stock history (fail-fast on error)
+fetchHistory ::
   Manager ->
   Day ->
   Day ->
-  StockSettings ->
-  LoggingT IO (CurrencySymbol, CurrencySymbol, StockHistory)
-fetchAndValidate man begin end sc = do
-  let ticker = stockSettingsEffectiveTicker sc
-  let sym = stockSettingsSymbol sc
-  let configuredCurrency = stockSettingsCurrency sc
+  (CurrencySymbol, CurrencySymbol, Text) ->
+  LoggingT IO (CurrencySymbol, CurrencySymbol, Text, StockHistory)
+fetchHistory man begin end (sym, targetCurrency, ticker) = do
   mHistory <- fetchStockHistory man ticker begin end
   case mHistory of
     Nothing -> do
       logErrorN $ "Failed to download data for ticker: " <> ticker
       liftIO exitFailure
-    Just history -> do
-      let apiCurrency = stockHistoryApiCurrency history
-      let (_, baseCurrency) = currencyInfo apiCurrency
-      when (T.toUpper baseCurrency /= T.toUpper (CurrencySymbol.toText configuredCurrency)) $ do
-        logErrorN $ "Currency mismatch for " <> ticker <> ": API returns " <> apiCurrency <> " (base: " <> baseCurrency <> "), but configured as " <> CurrencySymbol.toText configuredCurrency
-        liftIO exitFailure
-      pure (sym, configuredCurrency, history)
+    Just history -> pure (sym, targetCurrency, ticker, history)
+
+-- | Validate that the API currency matches the configured currency
+validateApiCurrency ::
+  (CurrencySymbol, CurrencySymbol, Text, StockHistory) ->
+  LoggingT IO (CurrencySymbol, CurrencySymbol, StockHistory)
+validateApiCurrency (sym, targetCurrency, ticker, history) = do
+  let apiCurrency = stockHistoryApiCurrency history
+  let (_, baseCurrency) = currencyInfo apiCurrency
+  when (T.toUpper baseCurrency /= T.toUpper (CurrencySymbol.toText targetCurrency)) $ do
+    logErrorN $ "Currency mismatch for " <> ticker <> ": API returns " <> apiCurrency <> " (base: " <> baseCurrency <> "), but configured as " <> CurrencySymbol.toText targetCurrency
+    liftIO exitFailure
+  pure (sym, targetCurrency, history)
 
 -- | Validate that history has data in the requested date range
 validateHasData ::
