@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 module Centjes.Stocks.Command.DownloadRates (runCentjesStocksDownloadRates) where
 
@@ -28,18 +27,21 @@ import Data.List (sortOn)
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Maybe (maybeToList)
 import Data.Scientific (Scientific, toRealFloat)
 import Data.Text (Text)
-import qualified Data.Text as T
+import qualified Data.Text as Text
 import qualified Data.Text.Encoding as TE
 import Data.Time
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
 import qualified Data.Vector as V
+import Data.Version
 import Network.HTTP.Client as HTTP
 import Network.HTTP.Client.TLS as HTTP
 import Network.HTTP.Types as HTTP
 import qualified Numeric.DecimalLiteral as DecimalLiteral
 import Path
+import Paths_centjes_stocks (version)
 import System.Exit (exitFailure)
 import Text.Printf (printf)
 
@@ -72,7 +74,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
         -- Filter to requested date range
         .| C.filter (\(_, _, day, _) -> day >= downloadRatesSettingBegin && day <= downloadRatesSettingEnd)
         -- Convert to rate expressions
-        .| C.concatMap (\(sym, targetCur, day, price) -> (sym,targetCur,day,) <$> priceToRateExpression price)
+        .| C.concatMap (\(sym, targetCur, day, price) -> [(sym, targetCur, day, rateExpr) | rateExpr <- maybeToList (priceToRateExpression price)])
         -- Generate price declarations
         .| C.map
           ( \(sym, targetCurrency, day, rateExpression) ->
@@ -147,32 +149,32 @@ fetchStockHistory man ticker begin end = do
   let period2 = dayToUnixTimestamp (addDays 1 end) -- Add 1 day to make end inclusive
   let url =
         "https://query1.finance.yahoo.com/v8/finance/chart/"
-          <> T.unpack ticker
+          <> Text.unpack ticker
           <> "?period1="
           <> show period1
           <> "&period2="
           <> show period2
           <> "&interval=1d"
 
-  logDebugN $ "Fetching " <> T.pack url
+  logDebugN $ Text.pack $ unwords ["Fetching", url]
   result <- liftIO $ try $ do
     request <- HTTP.parseRequest url
     let requestWithHeaders =
           request
             { requestHeaders =
-                [ ("User-Agent", "Mozilla/5.0 (compatible; centjes-stocks/1.0)")
+                [ ("User-Agent", TE.encodeUtf8 $ Text.pack $ "centjes-stocks-" <> showVersion version)
                 ]
             }
     HTTP.httpLbs requestWithHeaders man
 
   case result of
     Left (e :: HTTP.HttpException) -> do
-      logWarnN $ "HTTP request failed for " <> ticker <> ": " <> T.pack (show e)
+      logWarnN $ Text.pack $ unwords ["HTTP request failed for", Text.unpack ticker <> ":", show e]
       pure Nothing
     Right response ->
       if HTTP.statusCode (responseStatus response) /= 200
         then do
-          logWarnN $ "HTTP request for " <> ticker <> " returned status " <> T.pack (show (HTTP.statusCode (responseStatus response)))
+          logWarnN $ Text.pack $ unwords ["HTTP request for", Text.unpack ticker, "returned status", show (HTTP.statusCode (responseStatus response))]
           pure Nothing
         else pure $ parseYahooResponse (responseBody response)
 
@@ -185,13 +187,13 @@ parseStockSettings ::
 parseStockSettings currencies sc = do
   let sym = stockSettingsSymbol sc
   unless (Map.member sym currencies) $ do
-    logErrorN $ "Symbol " <> CurrencySymbol.toText sym <> " is not declared as a currency in the ledger"
-    logErrorN $ "Please add a currency declaration: " <> formatCurrencyDeclaration (mkExampleCurrencyDeclaration sym)
+    logErrorN $ Text.pack $ unwords ["Symbol", Text.unpack (CurrencySymbol.toText sym), "is not declared as a currency in the ledger"]
+    logErrorN $ Text.pack $ unwords ["Please add a currency declaration:", Text.unpack (formatCurrencyDeclaration (mkExampleCurrencyDeclaration sym))]
     liftIO exitFailure
   let targetCurrency = stockSettingsCurrency sc
   unless (Map.member targetCurrency currencies) $ do
-    logErrorN $ "Target currency " <> CurrencySymbol.toText targetCurrency <> " is not declared in the ledger"
-    logErrorN $ "Please add a currency declaration: " <> formatCurrencyDeclaration (mkExampleCurrencyDeclaration targetCurrency)
+    logErrorN $ Text.pack $ unwords ["Target currency", Text.unpack (CurrencySymbol.toText targetCurrency), "is not declared in the ledger"]
+    logErrorN $ Text.pack $ unwords ["Please add a currency declaration:", Text.unpack (formatCurrencyDeclaration (mkExampleCurrencyDeclaration targetCurrency))]
     liftIO exitFailure
   pure (sym, targetCurrency, stockSettingsEffectiveTicker sc)
 
@@ -217,7 +219,7 @@ fetchHistory man begin end (sym, targetCurrency, ticker) = do
   mHistory <- fetchStockHistory man ticker begin end
   case mHistory of
     Nothing -> do
-      logErrorN $ "Failed to download data for ticker: " <> ticker
+      logErrorN $ Text.pack $ unwords ["Failed to download data for ticker:", Text.unpack ticker]
       liftIO exitFailure
     Just history -> pure (sym, targetCurrency, ticker, history)
 
@@ -228,8 +230,8 @@ validateApiCurrency ::
 validateApiCurrency (sym, targetCurrency, ticker, history) = do
   let apiCurrency = stockHistoryApiCurrency history
   let (_, baseCurrency) = currencyInfo apiCurrency
-  when (T.toUpper baseCurrency /= T.toUpper (CurrencySymbol.toText targetCurrency)) $ do
-    logErrorN $ "Currency mismatch for " <> ticker <> ": API returns " <> apiCurrency <> " (base: " <> baseCurrency <> "), but configured as " <> CurrencySymbol.toText targetCurrency
+  when (Text.toUpper baseCurrency /= Text.toUpper (CurrencySymbol.toText targetCurrency)) $ do
+    logErrorN $ Text.pack $ unwords ["Currency mismatch for", Text.unpack ticker <> ":", "API returns", Text.unpack apiCurrency, "(base:", Text.unpack baseCurrency <> "),", "but configured as", Text.unpack (CurrencySymbol.toText targetCurrency)]
     liftIO exitFailure
   pure (sym, targetCurrency, history)
 
@@ -242,7 +244,7 @@ validateHasData ::
 validateHasData begin end (sym, targetCurrency, history) = do
   let hasDataInRange = any (\(day, _) -> day >= begin && day <= end) (stockHistoryTimeSeries history)
   unless hasDataInRange $ do
-    logErrorN $ "No price data found for " <> CurrencySymbol.toText sym <> " in the requested date range"
+    logErrorN $ Text.pack $ unwords ["No price data found for", Text.unpack (CurrencySymbol.toText sym), "in the requested date range"]
     liftIO exitFailure
   pure (sym, targetCurrency, history)
 
