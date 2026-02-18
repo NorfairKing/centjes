@@ -183,6 +183,46 @@
         ]
     
   
+  [34mnet worth report[m
+  command: [35mnet-worth[m
+    [34mCurrency to convert to[m
+    option: [37m--convert[m [33mCURRENCY[m
+    config:
+      [37mnet-worth.convert[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mOutput as CSV[m
+    switch: [37m--csv[m
+    default: [33mOutputFormatTerminal[m
+    
+    [34mBalance at the end of the given year[m
+    option: [37m--year[m [33mYEAR[m
+    env: [37mCENTJES_YEAR[m [33mYEAR[m
+    config:
+      [37mnet-worth.year[m: # [32mor null[m
+        [33m<integer>[m
+  
+    [34mBalance at the end of the current year[m
+    switch: [37m--this-year[m
+  
+    [34mBalance at the end of last year[m
+    switch: [37m--last-year[m
+    
+    [34mBegin date (inclusive), in YYYY-MM-DD format[m
+    option: [37m--begin[m[36m|[m[37m-b[m [33mDATE[m
+    config:
+      [37mnet-worth.begin[m: # [32mor null[m
+        # Day
+        [33m<string>[m
+    
+    [34mEnd date (inclusive), in YYYY-MM-DD format[m
+    option: [37m--end[m[36m|[m[37m-e[m [33mDATE[m
+    config:
+      [37mnet-worth.end[m: # [32mor null[m
+        # Day
+        [33m<string>[m
+    
+  
   [34mformat files[m
   command: [35mformat[m
     [34mFile to format[m
@@ -231,6 +271,14 @@
       [37m--end[m[36m|[m[37m-e[m     [34mEnd date (inclusive), in YYYY-MM-DD format[m                        
       [33mFILTER[m       [34mfilter[m                                                            
       [33mFILTER[m       [34mfilter[m                                                            
+  [35mnet-worth[m [34mnet worth report[m
+      [37m--convert[m   [34mCurrency to convert to[m                                                    
+      [37m--csv[m       [34mOutput as CSV[m                                default: [33mOutputFormatTerminal[m
+      [37m--year[m      [34mBalance at the end of the given year[m                                      
+      [37m--this-year[m [34mBalance at the end of the current year[m                                    
+      [37m--last-year[m [34mBalance at the end of last year[m                                           
+      [37m--begin[m[36m|[m[37m-b[m  [34mBegin date (inclusive), in YYYY-MM-DD format[m                              
+      [37m--end[m[36m|[m[37m-e[m    [34mEnd date (inclusive), in YYYY-MM-DD format[m                                
   [35mformat[m [34mformat files[m
       [37m-f[m[36m|[m[37m--file[m      [34mFile to format[m     
       [37m-d[m[36m|[m[37m--directory[m [34mDirectory to format[m
@@ -242,6 +290,7 @@
 
 [36mEnvironment Variables[m:
   [37mCENTJES_CONFIG_FILE[m [33mFILE_PATH[m   [34mPath to the configuration file[m                                               
+  [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_LEDGER[m [33mFILE_PATH[m        [34mledger file[m                            default: [33m"ledger.cent"[m                
@@ -311,6 +360,24 @@
     [ [33m<string>[m
     , - [36mref: Filter[m
     ]
+  [34mCurrency to convert to[m
+  [37mnet-worth.convert[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mBalance at the end of the given year[m
+  [37mnet-worth.year[m:
+    # [32mor null[m
+    [33m<integer>[m
+  [34mBegin date (inclusive), in YYYY-MM-DD format[m
+  [37mnet-worth.begin[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
+  [34mEnd date (inclusive), in YYYY-MM-DD format[m
+  [37mnet-worth.end[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
   [34mledger file[m
   default: [33m"ledger.cent"[m
   [37mledger[m:

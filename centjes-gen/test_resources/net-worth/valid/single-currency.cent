@@ -1,0 +1,15 @@
+currency USD 0.01
+
+account assets
+account equity
+account expenses
+
+2024-01-01
+  | Opening
+  * assets +100 USD
+  * equity -100 USD
+
+2024-01-03
+  | Coffee
+  * assets   -5 USD
+  * expenses +5 USD

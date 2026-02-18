@@ -7,9 +7,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Report.Balance
-  ( BalanceReport (..),
+  ( BalancedLedger (..),
+    BalanceReport (..),
     AccountBalances,
     BalanceError (..),
+    produceBalancedLedger,
     produceBalanceReport,
     balanceTransaction,
   )

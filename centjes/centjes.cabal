@@ -27,6 +27,7 @@ library
       Centjes.Command.Balance
       Centjes.Command.Check
       Centjes.Command.Format
+      Centjes.Command.NetWorth
       Centjes.Command.RatesGraph
       Centjes.Command.Register
       Centjes.Compile
@@ -48,6 +49,7 @@ library
       Centjes.Parse.Happy
       Centjes.Report.Balance
       Centjes.Report.Check
+      Centjes.Report.NetWorth
       Centjes.Report.Register
       Centjes.Tag
       Centjes.Timestamp

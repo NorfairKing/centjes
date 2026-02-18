@@ -102,10 +102,16 @@ instance HasCodec LogLevel where
         (LevelError, "Error")
       ]
 
+data OutputFormat
+  = OutputFormatTerminal
+  | OutputFormatCSV
+  deriving (Show)
+
 data Dispatch
   = DispatchCheck !CheckSettings
   | DispatchRegister !RegisterSettings
   | DispatchBalance !BalanceSettings
+  | DispatchNetWorth !NetWorthSettings
   | DispatchFormat !FormatSettings
   | DispatchRatesGraph !RatesGraphSettings
   deriving (Show)
@@ -120,6 +126,7 @@ parseDispatch =
     [ command "check" "perform an internal consistency check" $ DispatchCheck <$> settingsParser,
       command "register" "register report" $ DispatchRegister <$> settingsParser,
       command "balance" "balance report" $ DispatchBalance <$> settingsParser,
+      command "net-worth" "net worth report" $ DispatchNetWorth <$> settingsParser,
       command "format" "format files" $ DispatchFormat <$> settingsParser,
       command "rates-graph" "graph exchange rates" $ DispatchRatesGraph <$> settingsParser
     ]
@@ -217,6 +224,39 @@ parseBalanceSettings = subConfig_ "balance" $ do
   balanceSettingEnd <- endFilterParser
   balanceSettingFilter <- settingsParser
   pure BalanceSettings {..}
+
+data NetWorthSettings = NetWorthSettings
+  { netWorthSettingCurrency :: !CurrencySymbol,
+    netWorthSettingBegin :: !(Maybe Day),
+    netWorthSettingEnd :: !(Maybe Day),
+    netWorthSettingOutputFormat :: !OutputFormat
+  }
+  deriving (Show)
+
+instance HasParser NetWorthSettings where
+  settingsParser = parseNetWorthSettings
+
+{-# ANN parseNetWorthSettings ("NOCOVER" :: String) #-}
+parseNetWorthSettings :: Parser NetWorthSettings
+parseNetWorthSettings = subConfig_ "net-worth" $ do
+  netWorthSettingCurrency <-
+    setting
+      [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+        help "Currency to convert to",
+        option,
+        long "convert",
+        conf "convert",
+        metavar "CURRENCY"
+      ]
+  netWorthSettingOutputFormat <-
+    setting
+      [ help "Output as CSV",
+        switch OutputFormatCSV,
+        long "csv",
+        value OutputFormatTerminal
+      ]
+  ~(netWorthSettingBegin, netWorthSettingEnd) <- timeFilterParser
+  pure NetWorthSettings {..}
 
 -- | Parser for time filtering with both begin and end dates (for register)
 timeFilterParser :: Parser (Maybe Day, Maybe Day)

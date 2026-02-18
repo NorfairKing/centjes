@@ -1,0 +1,21 @@
+currency CHF 0.01
+
+account assets
+account liabilities
+account equity
+account expenses
+
+2024-01-01
+  | Opening
+  * assets +200 CHF
+  * equity -200 CHF
+
+2024-01-02
+  | Took a loan
+  * assets      +500 CHF
+  * liabilities -500 CHF
+
+2024-01-03
+  | Spent money
+  * assets   -50 CHF
+  * expenses +50 CHF

@@ -1,0 +1,23 @@
+currency USD 0.01
+currency CHF 0.01
+
+account assets
+account equity
+account expenses
+
+price 2024-01-01 USD 1.15 CHF
+
+2024-01-01
+  | Opening in USD
+  * assets +100 USD
+  * equity -100 USD
+
+2024-01-02
+  | Opening in CHF
+  * assets +50 CHF
+  * equity -50 CHF
+
+2024-01-03
+  | Coffee
+  * assets   -5 USD
+  * expenses +5 USD
