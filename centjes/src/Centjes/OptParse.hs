@@ -14,6 +14,9 @@ import Control.Applicative
 import Control.Monad.Logger
 import qualified Data.Text as T
 import Data.Time
+import Data.Time.Calendar.Month
+import Data.Time.Calendar.Quarter
+import Data.Time.Calendar.WeekDate
 import OptEnvConf
 import Path
 import Path.IO
@@ -310,38 +313,104 @@ parseIncomeStatementSettings = subConfig_ "income-statement" $ do
 -- | Parser for time filtering with both begin and end dates (for register)
 timeFilterParser :: Parser (Maybe Day, Maybe Day)
 timeFilterParser =
-  let getCurrentYear = do
-        (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
+  let getCurrentDay = utctDay <$> getCurrentTime
+      getCurrentYear = do
+        (y, _, _) <- toGregorian <$> getCurrentDay
         pure y
       yearTuple y = ((periodFirstDay :: Year -> Day) y, (periodLastDay :: Year -> Day) y)
+      quarterTuple q = ((periodFirstDay :: Quarter -> Day) q, (periodLastDay :: Quarter -> Day) q)
+      monthTuple m = ((periodFirstDay :: Month -> Day) m, (periodLastDay :: Month -> Day) m)
+      weekTuple d =
+        let (y, w, _) = toWeekDate d
+         in (fromWeekDate y w 1, fromWeekDate y w 7)
       distributeMaybe =
         fmap
           ( \case
               Nothing -> (Nothing, Nothing)
               Just (b, e) -> (Just b, Just e)
           )
-      yearParser =
+      periodParser =
         distributeMaybe $
           optional $
             choice
               [ yearTuple
                   <$> setting
-                    [ help "Balance at the end of the given year",
+                    [ help "Filter to the given year",
                       name "year",
                       reader auto,
                       metavar "YEAR"
                     ],
                 mapIO (\() -> yearTuple <$> getCurrentYear) $
                   setting
-                    [ help "Balance at the end of the current year",
+                    [ help "Filter to the current year",
                       switch (),
                       long "this-year"
                     ],
                 mapIO (\() -> yearTuple . (\y -> y - 1) <$> getCurrentYear) $
                   setting
-                    [ help "Balance at the end of last year",
+                    [ help "Filter to last year (beginning to end of last year)",
                       switch (),
                       long "last-year"
+                    ],
+                mapIO (\() -> (\today -> (addDays (-364) today, today)) <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to the past year (past 365 days)",
+                      switch (),
+                      long "past-year"
+                    ],
+                mapIO (\() -> quarterTuple . (dayPeriod :: Day -> Quarter) <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to the current quarter",
+                      switch (),
+                      long "this-quarter"
+                    ],
+                mapIO (\() -> quarterTuple . pred . (dayPeriod :: Day -> Quarter) <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to last quarter (beginning to end of last quarter)",
+                      switch (),
+                      long "last-quarter"
+                    ],
+                mapIO (\() -> (\today -> (addDays (-89) today, today)) <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to the past quarter (past 90 days)",
+                      switch (),
+                      long "past-quarter"
+                    ],
+                mapIO (\() -> monthTuple . dayPeriod <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to the current month",
+                      switch (),
+                      long "this-month"
+                    ],
+                mapIO (\() -> monthTuple . pred . dayPeriod <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to last month (beginning to end of last month)",
+                      switch (),
+                      long "last-month"
+                    ],
+                mapIO (\() -> (\today -> (addDays (-29) today, today)) <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to the past month (past 30 days)",
+                      switch (),
+                      long "past-month"
+                    ],
+                mapIO (\() -> weekTuple <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to the current week",
+                      switch (),
+                      long "this-week"
+                    ],
+                mapIO (\() -> weekTuple . addDays (-7) <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to last week (beginning to end of last week)",
+                      switch (),
+                      long "last-week"
+                    ],
+                mapIO (\() -> (\today -> (addDays (-6) today, today)) <$> getCurrentDay) $
+                  setting
+                    [ help "Filter to the past week (past 7 days)",
+                      switch (),
+                      long "past-week"
                     ]
               ]
       dayParser =
@@ -368,41 +437,101 @@ timeFilterParser =
                   metavar "DATE"
                 ]
             )
-      -- Combine year-based and day-based parsers
-      -- If a year filter is set, it provides default begin/end dates
-      -- Explicit --begin/--end override the year-based dates
-      combineFilters (yearBegin, yearEnd) (dayBegin, dayEnd) =
-        (dayBegin <|> yearBegin, dayEnd <|> yearEnd)
-   in combineFilters <$> yearParser <*> dayParser
+      -- Combine period-based and day-based parsers
+      -- If a period filter is set, it provides default begin/end dates
+      -- Explicit --begin/--end override the period-based dates
+      combineFilters (periodBegin, periodEnd) (dayBegin, dayEnd) =
+        (dayBegin <|> periodBegin, dayEnd <|> periodEnd)
+   in combineFilters <$> periodParser <*> dayParser
 
 -- | Parser for end-date filtering only (for balance)
 endFilterParser :: Parser (Maybe Day)
 endFilterParser =
-  let getCurrentYear = do
-        (y, _, _) <- toGregorian . utctDay <$> getCurrentTime
+  let getCurrentDay = utctDay <$> getCurrentTime
+      getCurrentYear = do
+        (y, _, _) <- toGregorian <$> getCurrentDay
         pure y
-      yearEnd = (periodLastDay :: Year -> Day)
-      yearParser =
+      periodParser =
         optional $
           choice
-            [ yearEnd
+            [ (periodLastDay :: Year -> Day)
                 <$> setting
                   [ help "Balance at the end of the given year",
                     name "year",
                     reader auto,
                     metavar "YEAR"
                   ],
-              mapIO (\() -> yearEnd <$> getCurrentYear) $
+              mapIO (\() -> (periodLastDay :: Year -> Day) <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of the current year",
                     switch (),
                     long "this-year"
                   ],
-              mapIO (\() -> yearEnd . (\y -> y - 1) <$> getCurrentYear) $
+              mapIO (\() -> (periodLastDay :: Year -> Day) . (\y -> y - 1) <$> getCurrentYear) $
                 setting
                   [ help "Balance at the end of last year",
                     switch (),
                     long "last-year"
+                  ],
+              mapIO (\() -> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of the past year (today)",
+                    switch (),
+                    long "past-year"
+                  ],
+              mapIO (\() -> (periodLastDay :: Quarter -> Day) . (dayPeriod :: Day -> Quarter) <$> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of the current quarter",
+                    switch (),
+                    long "this-quarter"
+                  ],
+              mapIO (\() -> (periodLastDay :: Quarter -> Day) . pred . (dayPeriod :: Day -> Quarter) <$> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of last quarter",
+                    switch (),
+                    long "last-quarter"
+                  ],
+              mapIO (\() -> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of the past quarter (today)",
+                    switch (),
+                    long "past-quarter"
+                  ],
+              mapIO (\() -> (periodLastDay :: Month -> Day) . dayPeriod <$> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of the current month",
+                    switch (),
+                    long "this-month"
+                  ],
+              mapIO (\() -> (periodLastDay :: Month -> Day) . pred . dayPeriod <$> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of last month",
+                    switch (),
+                    long "last-month"
+                  ],
+              mapIO (\() -> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of the past month (today)",
+                    switch (),
+                    long "past-month"
+                  ],
+              mapIO (\() -> (\d -> let (y, w, _) = toWeekDate d in fromWeekDate y w 7) <$> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of the current week",
+                    switch (),
+                    long "this-week"
+                  ],
+              mapIO (\() -> (\d -> let (y, w, _) = toWeekDate (addDays (-7) d) in fromWeekDate y w 7) <$> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of last week",
+                    switch (),
+                    long "last-week"
+                  ],
+              mapIO (\() -> getCurrentDay) $
+                setting
+                  [ help "Balance at the end of the past week (today)",
+                    switch (),
+                    long "past-week"
                   ]
             ]
       dayParser =
@@ -415,10 +544,10 @@ endFilterParser =
               reader auto,
               metavar "DATE"
             ]
-      -- Combine year-based and day-based parsers
-      -- Explicit --end overrides the year-based date
-      combineFilters yearEnd' dayEnd = dayEnd <|> yearEnd'
-   in combineFilters <$> yearParser <*> dayParser
+      -- Combine period-based and day-based parsers
+      -- Explicit --end overrides the period-based date
+      combineFilters periodEnd dayEnd = dayEnd <|> periodEnd
+   in combineFilters <$> periodParser <*> dayParser
 
 data ShowEmpty
   = ShowEmpty

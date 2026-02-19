@@ -86,18 +86,48 @@
         [33m<boolean>[m
     default: [33mFalse[m
     
-    [34mBalance at the end of the given year[m
+    [34mFilter to the given year[m
     option: [37m--year[m [33mYEAR[m
     env: [37mCENTJES_YEAR[m [33mYEAR[m
     config:
       [37mregister.year[m: # [32mor null[m
         [33m<integer>[m
   
-    [34mBalance at the end of the current year[m
+    [34mFilter to the current year[m
     switch: [37m--this-year[m
   
-    [34mBalance at the end of last year[m
+    [34mFilter to last year (beginning to end of last year)[m
     switch: [37m--last-year[m
+  
+    [34mFilter to the past year (past 365 days)[m
+    switch: [37m--past-year[m
+  
+    [34mFilter to the current quarter[m
+    switch: [37m--this-quarter[m
+  
+    [34mFilter to last quarter (beginning to end of last quarter)[m
+    switch: [37m--last-quarter[m
+  
+    [34mFilter to the past quarter (past 90 days)[m
+    switch: [37m--past-quarter[m
+  
+    [34mFilter to the current month[m
+    switch: [37m--this-month[m
+  
+    [34mFilter to last month (beginning to end of last month)[m
+    switch: [37m--last-month[m
+  
+    [34mFilter to the past month (past 30 days)[m
+    switch: [37m--past-month[m
+  
+    [34mFilter to the current week[m
+    switch: [37m--this-week[m
+  
+    [34mFilter to last week (beginning to end of last week)[m
+    switch: [37m--last-week[m
+  
+    [34mFilter to the past week (past 7 days)[m
+    switch: [37m--past-week[m
     
     [34mBegin date (inclusive), in YYYY-MM-DD format[m
     option: [37m--begin[m[36m|[m[37m-b[m [33mDATE[m
@@ -163,6 +193,36 @@
   
     [34mBalance at the end of last year[m
     switch: [37m--last-year[m
+  
+    [34mBalance at the end of the past year (today)[m
+    switch: [37m--past-year[m
+  
+    [34mBalance at the end of the current quarter[m
+    switch: [37m--this-quarter[m
+  
+    [34mBalance at the end of last quarter[m
+    switch: [37m--last-quarter[m
+  
+    [34mBalance at the end of the past quarter (today)[m
+    switch: [37m--past-quarter[m
+  
+    [34mBalance at the end of the current month[m
+    switch: [37m--this-month[m
+  
+    [34mBalance at the end of last month[m
+    switch: [37m--last-month[m
+  
+    [34mBalance at the end of the past month (today)[m
+    switch: [37m--past-month[m
+  
+    [34mBalance at the end of the current week[m
+    switch: [37m--this-week[m
+  
+    [34mBalance at the end of last week[m
+    switch: [37m--last-week[m
+  
+    [34mBalance at the end of the past week (today)[m
+    switch: [37m--past-week[m
     
     [34mEnd date (inclusive), in YYYY-MM-DD format[m
     option: [37m--end[m[36m|[m[37m-e[m [33mDATE[m
@@ -195,18 +255,48 @@
     switch: [37m--csv[m
     default: [33mOutputFormatTerminal[m
     
-    [34mBalance at the end of the given year[m
+    [34mFilter to the given year[m
     option: [37m--year[m [33mYEAR[m
     env: [37mCENTJES_YEAR[m [33mYEAR[m
     config:
       [37mnet-worth.year[m: # [32mor null[m
         [33m<integer>[m
   
-    [34mBalance at the end of the current year[m
+    [34mFilter to the current year[m
     switch: [37m--this-year[m
   
-    [34mBalance at the end of last year[m
+    [34mFilter to last year (beginning to end of last year)[m
     switch: [37m--last-year[m
+  
+    [34mFilter to the past year (past 365 days)[m
+    switch: [37m--past-year[m
+  
+    [34mFilter to the current quarter[m
+    switch: [37m--this-quarter[m
+  
+    [34mFilter to last quarter (beginning to end of last quarter)[m
+    switch: [37m--last-quarter[m
+  
+    [34mFilter to the past quarter (past 90 days)[m
+    switch: [37m--past-quarter[m
+  
+    [34mFilter to the current month[m
+    switch: [37m--this-month[m
+  
+    [34mFilter to last month (beginning to end of last month)[m
+    switch: [37m--last-month[m
+  
+    [34mFilter to the past month (past 30 days)[m
+    switch: [37m--past-month[m
+  
+    [34mFilter to the current week[m
+    switch: [37m--this-week[m
+  
+    [34mFilter to last week (beginning to end of last week)[m
+    switch: [37m--last-week[m
+  
+    [34mFilter to the past week (past 7 days)[m
+    switch: [37m--past-week[m
     
     [34mBegin date (inclusive), in YYYY-MM-DD format[m
     option: [37m--begin[m[36m|[m[37m-b[m [33mDATE[m
@@ -245,18 +335,48 @@
         [33m<boolean>[m
     default: [33mFalse[m
     
-    [34mBalance at the end of the given year[m
+    [34mFilter to the given year[m
     option: [37m--year[m [33mYEAR[m
     env: [37mCENTJES_YEAR[m [33mYEAR[m
     config:
       [37mincome-statement.year[m: # [32mor null[m
         [33m<integer>[m
   
-    [34mBalance at the end of the current year[m
+    [34mFilter to the current year[m
     switch: [37m--this-year[m
   
-    [34mBalance at the end of last year[m
+    [34mFilter to last year (beginning to end of last year)[m
     switch: [37m--last-year[m
+  
+    [34mFilter to the past year (past 365 days)[m
+    switch: [37m--past-year[m
+  
+    [34mFilter to the current quarter[m
+    switch: [37m--this-quarter[m
+  
+    [34mFilter to last quarter (beginning to end of last quarter)[m
+    switch: [37m--last-quarter[m
+  
+    [34mFilter to the past quarter (past 90 days)[m
+    switch: [37m--past-quarter[m
+  
+    [34mFilter to the current month[m
+    switch: [37m--this-month[m
+  
+    [34mFilter to last month (beginning to end of last month)[m
+    switch: [37m--last-month[m
+  
+    [34mFilter to the past month (past 30 days)[m
+    switch: [37m--past-month[m
+  
+    [34mFilter to the current week[m
+    switch: [37m--this-week[m
+  
+    [34mFilter to last week (beginning to end of last week)[m
+    switch: [37m--last-week[m
+  
+    [34mFilter to the past week (past 7 days)[m
+    switch: [37m--past-week[m
     
     [34mBegin date (inclusive), in YYYY-MM-DD format[m
     option: [37m--begin[m[36m|[m[37m-b[m [33mDATE[m
@@ -310,51 +430,91 @@
   [37m--config-file[m [34mPath to the configuration file[m
   [35mcheck[m [34mperform an internal consistency check[m
   [35mregister[m [34mregister report[m
-      [37m--convert[m      [34mCurrency to convert to[m                                                   
-      [37m--individually[m [34mAll transactions in one block[m                                            
-      [37m--daily[m        [34mGroup transactions by day[m                                                
-      [37m--weekly[m       [34mGroup transactions by week[m                                               
-      [37m--monthly[m      [34mGroup transactions by month[m                                              
-      [37m--quarterly[m    [34mGroup transactions by quarter[m                                            
-      [37m--yearly[m       [34mGroup transactions by year[m                                               
-      [37m--block[m        [34mGroup transactions[m                           default: [33mBlockSizeIndividual[m
-      [37m--virtual[m      [34mShow virtual postings too[m                    default: [33mFalse[m              
-      [37m--year[m         [34mBalance at the end of the given year[m                                     
-      [37m--this-year[m    [34mBalance at the end of the current year[m                                   
-      [37m--last-year[m    [34mBalance at the end of last year[m                                          
-      [37m--begin[m[36m|[m[37m-b[m     [34mBegin date (inclusive), in YYYY-MM-DD format[m                             
-      [37m--end[m[36m|[m[37m-e[m       [34mEnd date (inclusive), in YYYY-MM-DD format[m                               
-      [33mFILTER[m         [34mfilter[m                                                                   
-      [33mFILTER[m         [34mfilter[m                                                                   
+      [37m--convert[m      [34mCurrency to convert to[m                                                                
+      [37m--individually[m [34mAll transactions in one block[m                                                         
+      [37m--daily[m        [34mGroup transactions by day[m                                                             
+      [37m--weekly[m       [34mGroup transactions by week[m                                                            
+      [37m--monthly[m      [34mGroup transactions by month[m                                                           
+      [37m--quarterly[m    [34mGroup transactions by quarter[m                                                         
+      [37m--yearly[m       [34mGroup transactions by year[m                                                            
+      [37m--block[m        [34mGroup transactions[m                                        default: [33mBlockSizeIndividual[m
+      [37m--virtual[m      [34mShow virtual postings too[m                                 default: [33mFalse[m              
+      [37m--year[m         [34mFilter to the given year[m                                                              
+      [37m--this-year[m    [34mFilter to the current year[m                                                            
+      [37m--last-year[m    [34mFilter to last year (beginning to end of last year)[m                                   
+      [37m--past-year[m    [34mFilter to the past year (past 365 days)[m                                               
+      [37m--this-quarter[m [34mFilter to the current quarter[m                                                         
+      [37m--last-quarter[m [34mFilter to last quarter (beginning to end of last quarter)[m                             
+      [37m--past-quarter[m [34mFilter to the past quarter (past 90 days)[m                                             
+      [37m--this-month[m   [34mFilter to the current month[m                                                           
+      [37m--last-month[m   [34mFilter to last month (beginning to end of last month)[m                                 
+      [37m--past-month[m   [34mFilter to the past month (past 30 days)[m                                               
+      [37m--this-week[m    [34mFilter to the current week[m                                                            
+      [37m--last-week[m    [34mFilter to last week (beginning to end of last week)[m                                   
+      [37m--past-week[m    [34mFilter to the past week (past 7 days)[m                                                 
+      [37m--begin[m[36m|[m[37m-b[m     [34mBegin date (inclusive), in YYYY-MM-DD format[m                                          
+      [37m--end[m[36m|[m[37m-e[m       [34mEnd date (inclusive), in YYYY-MM-DD format[m                                            
+      [33mFILTER[m         [34mfilter[m                                                                                
+      [33mFILTER[m         [34mfilter[m                                                                                
   [35mbalance[m [34mbalance report[m
-      [37m--convert[m    [34mCurrency to convert to[m                                            
-      [37m--show-empty[m [34mShow empty balances instead of hiding them[m default: [33mDoNotShowEmpty[m
-      [37m--virtual[m    [34mShow virtual postings too[m                  default: [33mFalse[m         
-      [37m--year[m       [34mBalance at the end of the given year[m                              
-      [37m--this-year[m  [34mBalance at the end of the current year[m                            
-      [37m--last-year[m  [34mBalance at the end of last year[m                                   
-      [37m--end[m[36m|[m[37m-e[m     [34mEnd date (inclusive), in YYYY-MM-DD format[m                        
-      [33mFILTER[m       [34mfilter[m                                                            
-      [33mFILTER[m       [34mfilter[m                                                            
+      [37m--convert[m      [34mCurrency to convert to[m                                                
+      [37m--show-empty[m   [34mShow empty balances instead of hiding them[m     default: [33mDoNotShowEmpty[m
+      [37m--virtual[m      [34mShow virtual postings too[m                      default: [33mFalse[m         
+      [37m--year[m         [34mBalance at the end of the given year[m                                  
+      [37m--this-year[m    [34mBalance at the end of the current year[m                                
+      [37m--last-year[m    [34mBalance at the end of last year[m                                       
+      [37m--past-year[m    [34mBalance at the end of the past year (today)[m                           
+      [37m--this-quarter[m [34mBalance at the end of the current quarter[m                             
+      [37m--last-quarter[m [34mBalance at the end of last quarter[m                                    
+      [37m--past-quarter[m [34mBalance at the end of the past quarter (today)[m                        
+      [37m--this-month[m   [34mBalance at the end of the current month[m                               
+      [37m--last-month[m   [34mBalance at the end of last month[m                                      
+      [37m--past-month[m   [34mBalance at the end of the past month (today)[m                          
+      [37m--this-week[m    [34mBalance at the end of the current week[m                                
+      [37m--last-week[m    [34mBalance at the end of last week[m                                       
+      [37m--past-week[m    [34mBalance at the end of the past week (today)[m                           
+      [37m--end[m[36m|[m[37m-e[m       [34mEnd date (inclusive), in YYYY-MM-DD format[m                            
+      [33mFILTER[m         [34mfilter[m                                                                
+      [33mFILTER[m         [34mfilter[m                                                                
   [35mnet-worth[m [34mnet worth report[m
-      [37m--convert[m   [34mCurrency to convert to[m                                                    
-      [37m--csv[m       [34mOutput as CSV[m                                default: [33mOutputFormatTerminal[m
-      [37m--year[m      [34mBalance at the end of the given year[m                                      
-      [37m--this-year[m [34mBalance at the end of the current year[m                                    
-      [37m--last-year[m [34mBalance at the end of last year[m                                           
-      [37m--begin[m[36m|[m[37m-b[m  [34mBegin date (inclusive), in YYYY-MM-DD format[m                              
-      [37m--end[m[36m|[m[37m-e[m    [34mEnd date (inclusive), in YYYY-MM-DD format[m                                
+      [37m--convert[m      [34mCurrency to convert to[m                                                                 
+      [37m--csv[m          [34mOutput as CSV[m                                             default: [33mOutputFormatTerminal[m
+      [37m--year[m         [34mFilter to the given year[m                                                               
+      [37m--this-year[m    [34mFilter to the current year[m                                                             
+      [37m--last-year[m    [34mFilter to last year (beginning to end of last year)[m                                    
+      [37m--past-year[m    [34mFilter to the past year (past 365 days)[m                                                
+      [37m--this-quarter[m [34mFilter to the current quarter[m                                                          
+      [37m--last-quarter[m [34mFilter to last quarter (beginning to end of last quarter)[m                              
+      [37m--past-quarter[m [34mFilter to the past quarter (past 90 days)[m                                              
+      [37m--this-month[m   [34mFilter to the current month[m                                                            
+      [37m--last-month[m   [34mFilter to last month (beginning to end of last month)[m                                  
+      [37m--past-month[m   [34mFilter to the past month (past 30 days)[m                                                
+      [37m--this-week[m    [34mFilter to the current week[m                                                             
+      [37m--last-week[m    [34mFilter to last week (beginning to end of last week)[m                                    
+      [37m--past-week[m    [34mFilter to the past week (past 7 days)[m                                                  
+      [37m--begin[m[36m|[m[37m-b[m     [34mBegin date (inclusive), in YYYY-MM-DD format[m                                           
+      [37m--end[m[36m|[m[37m-e[m       [34mEnd date (inclusive), in YYYY-MM-DD format[m                                             
   [35mincome-statement[m [34mincome statement report[m
-      [37m--convert[m    [34mCurrency to convert to[m                                              
-      [37m--show-empty[m [34mShow empty balances instead of hiding them[m   default: [33mDoNotShowEmpty[m
-      [37m--virtual[m    [34mShow virtual postings too[m                    default: [33mFalse[m         
-      [37m--year[m       [34mBalance at the end of the given year[m                                
-      [37m--this-year[m  [34mBalance at the end of the current year[m                              
-      [37m--last-year[m  [34mBalance at the end of last year[m                                     
-      [37m--begin[m[36m|[m[37m-b[m   [34mBegin date (inclusive), in YYYY-MM-DD format[m                        
-      [37m--end[m[36m|[m[37m-e[m     [34mEnd date (inclusive), in YYYY-MM-DD format[m                          
-      [33mFILTER[m       [34mfilter[m                                                              
-      [33mFILTER[m       [34mfilter[m                                                              
+      [37m--convert[m      [34mCurrency to convert to[m                                                           
+      [37m--show-empty[m   [34mShow empty balances instead of hiding them[m                default: [33mDoNotShowEmpty[m
+      [37m--virtual[m      [34mShow virtual postings too[m                                 default: [33mFalse[m         
+      [37m--year[m         [34mFilter to the given year[m                                                         
+      [37m--this-year[m    [34mFilter to the current year[m                                                       
+      [37m--last-year[m    [34mFilter to last year (beginning to end of last year)[m                              
+      [37m--past-year[m    [34mFilter to the past year (past 365 days)[m                                          
+      [37m--this-quarter[m [34mFilter to the current quarter[m                                                    
+      [37m--last-quarter[m [34mFilter to last quarter (beginning to end of last quarter)[m                        
+      [37m--past-quarter[m [34mFilter to the past quarter (past 90 days)[m                                        
+      [37m--this-month[m   [34mFilter to the current month[m                                                      
+      [37m--last-month[m   [34mFilter to last month (beginning to end of last month)[m                            
+      [37m--past-month[m   [34mFilter to the past month (past 30 days)[m                                          
+      [37m--this-week[m    [34mFilter to the current week[m                                                       
+      [37m--last-week[m    [34mFilter to last week (beginning to end of last week)[m                              
+      [37m--past-week[m    [34mFilter to the past week (past 7 days)[m                                            
+      [37m--begin[m[36m|[m[37m-b[m     [34mBegin date (inclusive), in YYYY-MM-DD format[m                                     
+      [37m--end[m[36m|[m[37m-e[m       [34mEnd date (inclusive), in YYYY-MM-DD format[m                                       
+      [33mFILTER[m         [34mfilter[m                                                                           
+      [33mFILTER[m         [34mfilter[m                                                                           
   [35mformat[m [34mformat files[m
       [37m-f[m[36m|[m[37m--file[m      [34mFile to format[m     
       [37m-d[m[36m|[m[37m--directory[m [34mDirectory to format[m
@@ -366,10 +526,10 @@
 
 [36mEnvironment Variables[m:
   [37mCENTJES_CONFIG_FILE[m [33mFILE_PATH[m   [34mPath to the configuration file[m                                               
+  [37mCENTJES_YEAR[m [33mYEAR[m               [34mFilter to the given year[m                                                     
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
-  [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
-  [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
-  [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
+  [37mCENTJES_YEAR[m [33mYEAR[m               [34mFilter to the given year[m                                                     
+  [37mCENTJES_YEAR[m [33mYEAR[m               [34mFilter to the given year[m                                                     
   [37mCENTJES_LEDGER[m [33mFILE_PATH[m        [34mledger file[m                            default: [33m"ledger.cent"[m                
   [37mCENTJES_WATCH[m [33mANY[m               [34mRun centjes in a loop[m                  default: [33mFalse[m                        
   [37mCENTJES_LOG_LEVEL[m [33mLOG_LEVEL[m     [34mMinimal severity of log messages[m       default: [33mLevelInfo[m       example: [33mInfo[m
@@ -389,7 +549,7 @@
   [37mregister.virtual[m:
     # [32mor null[m
     [33m<boolean>[m
-  [34mBalance at the end of the given year[m
+  [34mFilter to the given year[m
   [37mregister.year[m:
     # [32mor null[m
     [33m<integer>[m
@@ -441,7 +601,7 @@
   [37mnet-worth.convert[m:
     # [32mor null[m
     [33m<string>[m
-  [34mBalance at the end of the given year[m
+  [34mFilter to the given year[m
   [37mnet-worth.year[m:
     # [32mor null[m
     [33m<integer>[m
@@ -469,7 +629,7 @@
   [37mincome-statement.virtual[m:
     # [32mor null[m
     [33m<boolean>[m
-  [34mBalance at the end of the given year[m
+  [34mFilter to the given year[m
   [37mincome-statement.year[m:
     # [32mor null[m
     [33m<integer>[m

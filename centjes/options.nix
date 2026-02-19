@@ -68,7 +68,7 @@
         };
         year = lib.mkOption {
           default = null;
-          description = "Balance at the end of the given year";
+          description = "Filter to the given year";
           type = lib.types.nullOr lib.types.int;
         };
       };
@@ -110,7 +110,7 @@
         };
         year = lib.mkOption {
           default = null;
-          description = "Balance at the end of the given year";
+          description = "Filter to the given year";
           type = lib.types.nullOr lib.types.int;
         };
       };
@@ -152,7 +152,7 @@
         };
         year = lib.mkOption {
           default = null;
-          description = "Balance at the end of the given year";
+          description = "Filter to the given year";
           type = lib.types.nullOr lib.types.int;
         };
       };
