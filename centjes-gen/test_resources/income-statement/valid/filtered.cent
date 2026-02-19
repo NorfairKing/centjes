@@ -1,0 +1,28 @@
+currency USD 0.01
+
+account assets
+account equity
+account income:salary
+account income:bonus
+account expenses:rent
+account expenses:food
+
+2024-01-15
+  | Salary
+  * assets        +5000 USD
+  * income:salary -5000 USD
+
+2024-01-31
+  | Bonus
+  * assets       +1000 USD
+  * income:bonus -1000 USD
+
+2024-01-31
+  | Rent
+  * assets        -1500 USD
+  * expenses:rent +1500 USD
+
+2024-01-31
+  | Groceries
+  * assets        -500 USD
+  * expenses:food +500 USD

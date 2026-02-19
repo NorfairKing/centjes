@@ -1,0 +1,14 @@
+             [37mBalance[m      [37mTotal[m       
+[37mincome[m                    [32m 6000.00[m [32mCHF[m
+[37m├─ bonus[m     [32m 1000.00[m [32mCHF[m [32m 1000.00[m [32mCHF[m
+[37m└─ salary[m    [32m 5000.00[m [32mCHF[m [32m 5000.00[m [32mCHF[m
+[34mTotal[m                     [32m 6000.00[m [32mCHF[m
+                                      
+             [37mBalance[m      [37mTotal[m       
+[37mexpenses[m                  [31m-2100.00[m [31mCHF[m
+[37m├─ food[m      [31m -500.00[m [31mCHF[m [31m -500.00[m [31mCHF[m
+[37m├─ rent[m      [31m-1500.00[m [31mCHF[m [31m-1500.00[m [31mCHF[m
+[37m└─ transport[m [31m -100.00[m [31mCHF[m [31m -100.00[m [31mCHF[m
+[34mTotal[m                     [31m-2100.00[m [31mCHF[m
+                                      
+[34mNet Income[m                [32m 3900.00[m [32mCHF[m

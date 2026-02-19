@@ -1,0 +1,9 @@
+           [37mBalance[m      [37mTotal[m       
+[37mincome[m     [32m2640.00[m  [32mCHF[m [32m2640.00[m  [32mCHF[m
+[34mTotal[m                   [32m2640.00[m  [32mCHF[m
+                                    
+           [37mBalance[m      [37mTotal[m       
+[37mexpenses[m   [31m-1500.00[m [31mCHF[m [31m-1500.00[m [31mCHF[m
+[34mTotal[m                   [31m-1500.00[m [31mCHF[m
+                                    
+[34mNet Income[m              [32m1140.00[m  [32mCHF[m

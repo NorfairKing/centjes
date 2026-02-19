@@ -7,6 +7,8 @@
 module Centjes.Report.Balance
   ( BalanceReport (..),
     produceBalanceReportFromEvaluatedLedger,
+    entryBeforeOrOnDay,
+    lastEntryState,
     -- Re-exports from EvaluatedLedger
     AccountBalances,
     BalanceError (..),

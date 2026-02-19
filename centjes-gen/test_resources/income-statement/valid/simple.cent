@@ -1,0 +1,26 @@
+currency USD 0.01
+
+account assets
+account equity
+account income
+account expenses
+
+2023-12-16
+  | Opening
+  * assets +5000 USD
+  * equity -5000 USD
+
+2023-12-17
+  | Salary
+  * assets  +3000 USD
+  * income  -3000 USD
+
+2023-12-18
+  | Rent
+  * assets   -1500 USD
+  * expenses +1500 USD
+
+2023-12-19
+  | Groceries
+  * assets   -200 USD
+  * expenses +200 USD

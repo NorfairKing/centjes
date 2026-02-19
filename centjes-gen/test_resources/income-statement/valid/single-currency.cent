@@ -1,0 +1,39 @@
+currency CHF 0.05
+
+account assets
+account equity
+account income:salary
+account income:bonus
+account expenses:rent
+account expenses:food
+account expenses:transport
+
+2024-01-01
+  | Opening
+  * assets +10000 CHF
+  * equity -10000 CHF
+
+2024-01-15
+  | Salary
+  * assets        +5000 CHF
+  * income:salary -5000 CHF
+
+2024-01-31
+  | Bonus
+  * assets       +1000 CHF
+  * income:bonus -1000 CHF
+
+2024-01-31
+  | Rent
+  * assets        -1500 CHF
+  * expenses:rent +1500 CHF
+
+2024-01-31
+  | Groceries
+  * assets        -500 CHF
+  * expenses:food +500 CHF
+
+2024-01-31
+  | Train
+  * assets             -100 CHF
+  * expenses:transport +100 CHF

@@ -1,0 +1,26 @@
+currency USD 0.01
+currency CHF 0.05
+
+account assets
+account equity
+account income
+account expenses
+
+price 2024-01-01 USD 0.90 CHF
+
+2024-01-02
+  | Opening balance in USD
+  * assets +10000 USD
+  * equity -10000 USD
+
+2024-02-15
+  | Salary in CHF
+  * assets  +3000 CHF
+  * income  -3000 CHF
+
+2024-02-28
+  | Rent in CHF
+  * assets   -1500 CHF
+  * expenses +1500 CHF
+
+price 2024-06-01 USD 0.85 CHF

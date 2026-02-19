@@ -211,6 +211,22 @@ extra-source-files:
     test_resources/errors/compile/CE_INVALID_PRICE.err
     test_resources/errors/compile/CE_INVALID_QUANTISATION_FACTOR.err
     test_resources/errors/compile/CE_UNDECLARED_CURRENCY.err
+    test_resources/income-statement/valid/filtered.cent
+    test_resources/income-statement/valid/filtered.config
+    test_resources/income-statement/valid/filtered.txt
+    test_resources/income-statement/valid/multi-currency.cent
+    test_resources/income-statement/valid/multi-currency.config
+    test_resources/income-statement/valid/multi-currency.txt
+    test_resources/income-statement/valid/revaluation.cent
+    test_resources/income-statement/valid/revaluation.config
+    test_resources/income-statement/valid/revaluation.txt
+    test_resources/income-statement/valid/simple.cent
+    test_resources/income-statement/valid/simple.txt
+    test_resources/income-statement/valid/single-currency.cent
+    test_resources/income-statement/valid/single-currency.txt
+    test_resources/income-statement/valid/with-date-range.cent
+    test_resources/income-statement/valid/with-date-range.config
+    test_resources/income-statement/valid/with-date-range.txt
     test_resources/load/dir.cent/dummy.cent
     test_resources/load/LE_IMPORT.cent
     test_resources/load/LE_IMPORT.err
@@ -565,6 +581,7 @@ test-suite centjes-test
       Centjes.Report.BalanceSpec
       Centjes.Report.CheckSpec
       Centjes.Report.EvaluatedLedgerSpec
+      Centjes.Report.IncomeStatementSpec
       Centjes.Report.NetWorthSpec
       Centjes.Report.RegisterSpec
       Centjes.TagSpec

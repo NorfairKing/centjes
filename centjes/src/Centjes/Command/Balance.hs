@@ -6,6 +6,14 @@
 module Centjes.Command.Balance
   ( runCentjesBalance,
     renderBalanceReport,
+    AccountTree (..),
+    TreeRenderContext (..),
+    buildAccountForest,
+    flattenForestWithContext,
+    renderTreeAccountRow,
+    accountBalancesMaxWidth,
+    blankChunks,
+    totalLines,
   )
 where
 

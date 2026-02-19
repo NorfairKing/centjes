@@ -27,6 +27,7 @@ library
       Centjes.Command.Balance
       Centjes.Command.Check
       Centjes.Command.Format
+      Centjes.Command.IncomeStatement
       Centjes.Command.NetWorth
       Centjes.Command.RatesGraph
       Centjes.Command.Register
@@ -50,6 +51,7 @@ library
       Centjes.Report.Balance
       Centjes.Report.Check
       Centjes.Report.EvaluatedLedger
+      Centjes.Report.IncomeStatement
       Centjes.Report.NetWorth
       Centjes.Report.Register
       Centjes.Tag

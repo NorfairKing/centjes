@@ -112,6 +112,7 @@ data Dispatch
   | DispatchRegister !RegisterSettings
   | DispatchBalance !BalanceSettings
   | DispatchNetWorth !NetWorthSettings
+  | DispatchIncomeStatement !IncomeStatementSettings
   | DispatchFormat !FormatSettings
   | DispatchRatesGraph !RatesGraphSettings
   deriving (Show)
@@ -127,6 +128,7 @@ parseDispatch =
       command "register" "register report" $ DispatchRegister <$> settingsParser,
       command "balance" "balance report" $ DispatchBalance <$> settingsParser,
       command "net-worth" "net worth report" $ DispatchNetWorth <$> settingsParser,
+      command "income-statement" "income statement report" $ DispatchIncomeStatement <$> settingsParser,
       command "format" "format files" $ DispatchFormat <$> settingsParser,
       command "rates-graph" "graph exchange rates" $ DispatchRatesGraph <$> settingsParser
     ]
@@ -258,6 +260,52 @@ parseNetWorthSettings = subConfig_ "net-worth" $ do
       ]
   ~(netWorthSettingBegin, netWorthSettingEnd) <- timeFilterParser
   pure NetWorthSettings {..}
+
+data IncomeStatementSettings = IncomeStatementSettings
+  { incomeStatementSettingFilter :: !Filter,
+    incomeStatementSettingCurrency :: !(Maybe CurrencySymbol),
+    incomeStatementSettingShowEmpty :: !ShowEmpty,
+    incomeStatementSettingShowVirtual :: !Bool,
+    incomeStatementSettingBegin :: !(Maybe Day),
+    incomeStatementSettingEnd :: !(Maybe Day)
+  }
+  deriving (Show)
+
+instance HasParser IncomeStatementSettings where
+  settingsParser = parseIncomeStatementSettings
+
+{-# ANN parseIncomeStatementSettings ("NOCOVER" :: String) #-}
+parseIncomeStatementSettings :: Parser IncomeStatementSettings
+parseIncomeStatementSettings = subConfig_ "income-statement" $ do
+  incomeStatementSettingCurrency <-
+    optional $
+      setting
+        [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+          help "Currency to convert to",
+          option,
+          long "convert",
+          conf "convert",
+          metavar "CURRENCY"
+        ]
+  incomeStatementSettingShowEmpty <-
+    setting
+      [ help "Show empty balances instead of hiding them",
+        switch ShowEmpty,
+        long "show-empty",
+        conf "show-empty",
+        value DoNotShowEmpty
+      ]
+  incomeStatementSettingShowVirtual <-
+    setting
+      [ help "Show virtual postings too",
+        switch True,
+        long "virtual",
+        conf "virtual",
+        value False
+      ]
+  ~(incomeStatementSettingBegin, incomeStatementSettingEnd) <- timeFilterParser
+  incomeStatementSettingFilter <- settingsParser
+  pure IncomeStatementSettings {..}
 
 -- | Parser for time filtering with both begin and end dates (for register)
 timeFilterParser :: Parser (Maybe Day, Maybe Day)

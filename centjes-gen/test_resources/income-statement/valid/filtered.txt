@@ -1,0 +1,9 @@
+           [37mBalance[m      [37mTotal[m       
+[37mincome[m                  [32m 5000.00[m [32mUSD[m
+[37m└─ salary[m  [32m 5000.00[m [32mUSD[m [32m 5000.00[m [32mUSD[m
+[34mTotal[m                   [32m 5000.00[m [32mUSD[m
+                                    
+           [37mBalance[m      [37mTotal[m       
+[34mTotal[m                               
+                                    
+[34mNet Income[m              [32m 5000.00[m [32mUSD[m

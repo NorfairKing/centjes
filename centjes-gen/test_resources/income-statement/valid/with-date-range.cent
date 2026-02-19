@@ -1,0 +1,31 @@
+currency USD 0.01
+
+account assets
+account equity
+account income
+account expenses
+
+2024-01-01
+  | Opening
+  * assets +10000 USD
+  * equity -10000 USD
+
+2024-01-15
+  | January salary
+  * assets +3000 USD
+  * income -3000 USD
+
+2024-01-31
+  | January rent
+  * assets   -1500 USD
+  * expenses +1500 USD
+
+2024-02-15
+  | February salary
+  * assets +3000 USD
+  * income -3000 USD
+
+2024-02-28
+  | February rent
+  * assets   -1500 USD
+  * expenses +1500 USD

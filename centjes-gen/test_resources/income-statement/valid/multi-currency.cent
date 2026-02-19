@@ -1,0 +1,19 @@
+currency USD 0.01
+currency CHF 0.05
+
+account assets
+account equity
+account income
+account expenses
+
+price 2024-01-01 USD 0.88 CHF
+
+2024-01-15
+  | Salary in USD
+  * assets +3000 USD
+  * income -3000 USD
+
+2024-01-31
+  | Rent in CHF
+  * assets   -1500 CHF
+  * expenses +1500 CHF

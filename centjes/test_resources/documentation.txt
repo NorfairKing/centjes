@@ -223,6 +223,71 @@
         [33m<string>[m
     
   
+  [34mincome statement report[m
+  command: [35mincome-statement[m
+    [34mCurrency to convert to[m
+    option: [37m--convert[m [33mCURRENCY[m
+    config:
+      [37mincome-statement.convert[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mShow empty balances instead of hiding them[m
+    switch: [37m--show-empty[m
+    config:
+      [37mincome-statement.show-empty[m: # [32mor null[m
+        [33m<boolean>[m
+    default: [33mDoNotShowEmpty[m
+    
+    [34mShow virtual postings too[m
+    switch: [37m--virtual[m
+    config:
+      [37mincome-statement.virtual[m: # [32mor null[m
+        [33m<boolean>[m
+    default: [33mFalse[m
+    
+    [34mBalance at the end of the given year[m
+    option: [37m--year[m [33mYEAR[m
+    env: [37mCENTJES_YEAR[m [33mYEAR[m
+    config:
+      [37mincome-statement.year[m: # [32mor null[m
+        [33m<integer>[m
+  
+    [34mBalance at the end of the current year[m
+    switch: [37m--this-year[m
+  
+    [34mBalance at the end of last year[m
+    switch: [37m--last-year[m
+    
+    [34mBegin date (inclusive), in YYYY-MM-DD format[m
+    option: [37m--begin[m[36m|[m[37m-b[m [33mDATE[m
+    config:
+      [37mincome-statement.begin[m: # [32mor null[m
+        # Day
+        [33m<string>[m
+    
+    [34mEnd date (inclusive), in YYYY-MM-DD format[m
+    option: [37m--end[m[36m|[m[37m-e[m [33mDATE[m
+    config:
+      [37mincome-statement.end[m: # [32mor null[m
+        # Day
+        [33m<string>[m
+    
+    [34mfilter[m
+    argument: [33mFILTER[m
+    
+    [34mfilter[m
+    argument: [33mFILTER[m
+    
+    [34mfilter[m
+    config:
+      [37mincome-statement.filter[m: # [32mor null[m
+        [36mdef: Filter[m
+        # [32many of[m
+        [ [33m<string>[m
+        , - [36mref: Filter[m
+        ]
+    
+  
   [34mformat files[m
   command: [35mformat[m
     [34mFile to format[m
@@ -279,6 +344,17 @@
       [37m--last-year[m [34mBalance at the end of last year[m                                           
       [37m--begin[m[36m|[m[37m-b[m  [34mBegin date (inclusive), in YYYY-MM-DD format[m                              
       [37m--end[m[36m|[m[37m-e[m    [34mEnd date (inclusive), in YYYY-MM-DD format[m                                
+  [35mincome-statement[m [34mincome statement report[m
+      [37m--convert[m    [34mCurrency to convert to[m                                              
+      [37m--show-empty[m [34mShow empty balances instead of hiding them[m   default: [33mDoNotShowEmpty[m
+      [37m--virtual[m    [34mShow virtual postings too[m                    default: [33mFalse[m         
+      [37m--year[m       [34mBalance at the end of the given year[m                                
+      [37m--this-year[m  [34mBalance at the end of the current year[m                              
+      [37m--last-year[m  [34mBalance at the end of last year[m                                     
+      [37m--begin[m[36m|[m[37m-b[m   [34mBegin date (inclusive), in YYYY-MM-DD format[m                        
+      [37m--end[m[36m|[m[37m-e[m     [34mEnd date (inclusive), in YYYY-MM-DD format[m                          
+      [33mFILTER[m       [34mfilter[m                                                              
+      [33mFILTER[m       [34mfilter[m                                                              
   [35mformat[m [34mformat files[m
       [37m-f[m[36m|[m[37m--file[m      [34mFile to format[m     
       [37m-d[m[36m|[m[37m--directory[m [34mDirectory to format[m
@@ -290,6 +366,7 @@
 
 [36mEnvironment Variables[m:
   [37mCENTJES_CONFIG_FILE[m [33mFILE_PATH[m   [34mPath to the configuration file[m                                               
+  [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
   [37mCENTJES_YEAR[m [33mYEAR[m               [34mBalance at the end of the given year[m                                         
@@ -378,6 +455,42 @@
     # [32mor null[m
     # Day
     [33m<string>[m
+  [34mCurrency to convert to[m
+  [37mincome-statement.convert[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mShow empty balances instead of hiding them[m
+  default: [33mDoNotShowEmpty[m
+  [37mincome-statement.show-empty[m:
+    # [32mor null[m
+    [33m<boolean>[m
+  [34mShow virtual postings too[m
+  default: [33mFalse[m
+  [37mincome-statement.virtual[m:
+    # [32mor null[m
+    [33m<boolean>[m
+  [34mBalance at the end of the given year[m
+  [37mincome-statement.year[m:
+    # [32mor null[m
+    [33m<integer>[m
+  [34mBegin date (inclusive), in YYYY-MM-DD format[m
+  [37mincome-statement.begin[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
+  [34mEnd date (inclusive), in YYYY-MM-DD format[m
+  [37mincome-statement.end[m:
+    # [32mor null[m
+    # Day
+    [33m<string>[m
+  [34mfilter[m
+  [37mincome-statement.filter[m:
+    # [32mor null[m
+    [36mdef: Filter[m
+    # [32many of[m
+    [ [33m<string>[m
+    , - [36mref: Filter[m
+    ]
   [34mledger file[m
   default: [33m"ledger.cent"[m
   [37mledger[m:
