@@ -1,6 +1,6 @@
        [37mBalance[m     [37mTotal[m      
 [37massets[m [32m  50.00[m [32mEUR[m [32m  50.00[m [32mEUR[m
-       [32m 100.00[m [32mUSD[m [32m 100.00[m [32mUSD[m
+[37m[m       [32m 100.00[m [32mUSD[m [32m 100.00[m [32mUSD[m
 [37mequity[m [31m -50.00[m [31mEUR[m [31m -50.00[m [31mEUR[m
-       [31m-100.00[m [31mUSD[m [31m-100.00[m [31mUSD[m
+[37m[m       [31m-100.00[m [31mUSD[m [31m-100.00[m [31mUSD[m
 [34mTotal[m                         

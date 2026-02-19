@@ -1,0 +1,28 @@
+currency CHF 0.01
+currency EUR 0.01
+currency USD 0.01
+
+account equity
+account assets:checking
+account assets:vacation
+account expenses:witholding-tax
+
+2024-01-01
+  | Opening CHF
+  * equity          -100 CHF
+  * assets:checking +100 CHF
+
+2024-01-02
+  | Opening EUR
+  * equity          -50 EUR
+  * assets:checking +50 EUR
+
+2024-01-03
+  | Opening USD
+  * equity          -200 USD
+  * assets:vacation +200 USD
+
+2024-01-04
+  | Witholding tax
+  * assets:checking         -50 CHF
+  * expenses:witholding-tax +50 CHF

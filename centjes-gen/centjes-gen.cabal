@@ -63,6 +63,8 @@ extra-source-files:
     test_resources/balance/balanced/multi-hop-revaluation.txt
     test_resources/balance/balanced/multiple-currencies-balance.cent
     test_resources/balance/balanced/multiple-currencies-balance.txt
+    test_resources/balance/balanced/multiple-currencies-nested.cent
+    test_resources/balance/balanced/multiple-currencies-nested.txt
     test_resources/balance/balanced/percentage.cent
     test_resources/balance/balanced/percentage.txt
     test_resources/balance/balanced/rates.cent

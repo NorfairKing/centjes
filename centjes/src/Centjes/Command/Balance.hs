@@ -165,8 +165,11 @@ renderTreeAccountRow width actualBalances (ctx, AccountTree {..}) =
       actualChunks = case mActualAmount of
         Nothing -> blankChunks filledChunks
         Just amt -> multiAccountChunksWithWidth (Just width) amt
-      -- Name column: prefix + connector + name all in one single chunk
-      nameCol = [[fore white $ chunk $ renderTreePrefixText ctx <> accountTreeName]]
+      -- Name column: prefix + connector + name, with continuation lines for multi-currency
+      firstLine = [fore white $ chunk $ renderTreePrefixText ctx <> accountTreeName]
+      extraLines = max (length actualChunks) (length filledChunks) - 1
+      continuationLine = [fore white $ chunk $ renderTreeContinuationText ctx]
+      nameCol = firstLine : replicate extraLines continuationLine
    in hCatTable [nameCol, actualChunks, filledChunks]
 
 -- | Render tree prefix with connector as text using Unicode box-drawing characters
@@ -185,6 +188,26 @@ renderTreePrefixText TreeRenderContext {..}
     ancestorPrefix isLast
       | isLast = "   " -- Ancestor was last child, no continuation line (3 spaces to match connector width)
       | otherwise = "│  " -- Ancestor has siblings below, draw continuation line
+
+-- | Render tree continuation prefix for multi-line rows (e.g. multi-currency balances)
+-- This draws the vertical lines for ancestors and the current node, but no connector or name.
+renderTreeContinuationText :: TreeRenderContext -> Text
+renderTreeContinuationText TreeRenderContext {..}
+  | treeRenderContextIsRoot = "" -- Root level, no prefix
+  | otherwise =
+      let ancestorPrefixes = map ancestorPrefix (reverse treeRenderContextPrefixStack)
+          -- If this node is not last, it has siblings below, so draw a continuation line
+          -- If this node is last, just spaces
+          selfPrefix =
+            if treeRenderContextIsLast
+              then "   "
+              else "│  "
+       in mconcat ancestorPrefixes <> selfPrefix
+  where
+    ancestorPrefix :: Bool -> Text
+    ancestorPrefix isLast
+      | isLast = "   "
+      | otherwise = "│  "
 
 -- | Create blank placeholder chunks matching the structure of the given chunks
 blankChunks :: [[Chunk]] -> [[Chunk]]

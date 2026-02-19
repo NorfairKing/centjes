@@ -1,0 +1,13 @@
+                  [37mBalance[m     [37mTotal[m      
+[37massets[m                        [32m  50.00[m [32mCHF[m
+[37m[m                              [32m  50.00[m [32mEUR[m
+[37m[m                              [32m 200.00[m [32mUSD[m
+[37m├─ checking[m       [32m  50.00[m [32mCHF[m [32m  50.00[m [32mCHF[m
+[37m│  [m               [32m  50.00[m [32mEUR[m [32m  50.00[m [32mEUR[m
+[37m└─ vacation[m       [32m 200.00[m [32mUSD[m [32m 200.00[m [32mUSD[m
+[37mequity[m            [31m-100.00[m [31mCHF[m [31m-100.00[m [31mCHF[m
+[37m[m                  [31m -50.00[m [31mEUR[m [31m -50.00[m [31mEUR[m
+[37m[m                  [31m-200.00[m [31mUSD[m [31m-200.00[m [31mUSD[m
+[37mexpenses[m                      [32m  50.00[m [32mCHF[m
+[37m└─ witholding-tax[m [32m  50.00[m [32mCHF[m [32m  50.00[m [32mCHF[m
+[34mTotal[m                                    
