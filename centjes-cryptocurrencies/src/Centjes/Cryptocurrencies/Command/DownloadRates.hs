@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 module Centjes.Cryptocurrencies.Command.DownloadRates (runCentjesCryptocurrenciesDownloadRates) where
 
@@ -57,19 +56,19 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
         -- Gentle delay between requests
         .| C.mapM (\day -> liftIO (threadDelay 100_000) >> pure day)
         -- Fetch USD rates for this day (one request per day)
-        .| C.mapM (\day -> (day,) <$> fetchUsdRates man day)
+        .| C.mapM (\day -> (\rates -> (day, rates)) <$> fetchUsdRates man day)
         -- Filter out failed requests
-        .| C.concatMap (\(day, mRates) -> (day,) <$> mRates)
+        .| C.concatMap (\(day, mRates) -> (\rates -> (day, rates)) <$> mRates)
         -- Expand to (day, rates, symbol) for each symbol we want
-        .| C.concatMap (\(day, rates) -> (day,rates,) <$> symbols)
+        .| C.concatMap (\(day, rates) -> (\symbol -> (day, rates, symbol)) <$> symbols)
         -- Convert symbol to lowercase text for API lookup
         .| C.map (\(day, rates, symbol) -> (day, rates, symbol, T.toLower $ CurrencySymbol.toText symbol))
         -- Look up the rate for this symbol
-        .| C.concatMap (\(day, rates, symbol, symbolTextLower) -> (day,symbol,) <$> KM.lookup (Key.fromText symbolTextLower) rates)
+        .| C.concatMap (\(day, rates, symbol, symbolTextLower) -> (\val -> (day, symbol, val)) <$> KM.lookup (Key.fromText symbolTextLower) rates)
         -- Extract the numeric rate
-        .| C.concatMap (\(day, symbol, val) -> (day,symbol,) <$> extractNumber val)
+        .| C.concatMap (\(day, symbol, val) -> (\n -> (day, symbol, n)) <$> extractNumber val)
         -- Calculate the rate expression (invert: USD per 1 symbol)
-        .| C.concatMap (\(day, symbol, symbolUsdRate) -> (day,symbol,) <$> calculateRate symbolUsdRate)
+        .| C.concatMap (\(day, symbol, symbolUsdRate) -> (\rateExpression -> (day, symbol, rateExpression)) <$> calculateRate symbolUsdRate)
         -- Only continue with known currencies that are also cryptocurrencies
         .| C.filter (\(_, symbol, _) -> M.member symbol currencies)
         .| C.filter (\(_, symbol, _) -> isCryptocurrency symbol)

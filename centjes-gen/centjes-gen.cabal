@@ -231,6 +231,12 @@ extra-source-files:
     test_resources/net-worth/valid/empty.cent
     test_resources/net-worth/valid/empty.config
     test_resources/net-worth/valid/empty.txt
+    test_resources/net-worth/valid/multi-currency-no-convert-spacing.cent
+    test_resources/net-worth/valid/multi-currency-no-convert-spacing.config
+    test_resources/net-worth/valid/multi-currency-no-convert-spacing.txt
+    test_resources/net-worth/valid/multi-currency-no-convert.cent
+    test_resources/net-worth/valid/multi-currency-no-convert.config
+    test_resources/net-worth/valid/multi-currency-no-convert.txt
     test_resources/net-worth/valid/multi-currency.cent
     test_resources/net-worth/valid/multi-currency.config
     test_resources/net-worth/valid/multi-currency.txt

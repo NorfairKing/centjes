@@ -226,7 +226,7 @@ parseBalanceSettings = subConfig_ "balance" $ do
   pure BalanceSettings {..}
 
 data NetWorthSettings = NetWorthSettings
-  { netWorthSettingCurrency :: !CurrencySymbol,
+  { netWorthSettingCurrency :: !(Maybe CurrencySymbol),
     netWorthSettingBegin :: !(Maybe Day),
     netWorthSettingEnd :: !(Maybe Day),
     netWorthSettingOutputFormat :: !OutputFormat
@@ -240,14 +240,15 @@ instance HasParser NetWorthSettings where
 parseNetWorthSettings :: Parser NetWorthSettings
 parseNetWorthSettings = subConfig_ "net-worth" $ do
   netWorthSettingCurrency <-
-    setting
-      [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
-        help "Currency to convert to",
-        option,
-        long "convert",
-        conf "convert",
-        metavar "CURRENCY"
-      ]
+    optional $
+      setting
+        [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+          help "Currency to convert to",
+          option,
+          long "convert",
+          conf "convert",
+          metavar "CURRENCY"
+        ]
   netWorthSettingOutputFormat <-
     setting
       [ help "Output as CSV",

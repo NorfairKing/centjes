@@ -1,1 +1,5 @@
 [34m2024-01-01[m: [32m90.00[m [32mCHF[m
+
+       [37mBalance[m     [37mTotal[m     
+[37massets[m [32m 90.00[m  [32mCHF[m [32m 90.00[m [32mCHF[m
+[34mTotal[m              [32m 90.00[m [32mCHF[m

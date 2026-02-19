@@ -5,6 +5,8 @@
 
 module Centjes.Report.NetWorth
   ( NetWorthReport (..),
+    NetWorthReportConvertedData (..),
+    NetWorthReportMultiCurrencyData (..),
     NetWorthError (..),
     produceNetWorthReport,
   )
@@ -16,6 +18,7 @@ import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import Centjes.Ledger
 import Centjes.Location
+import Centjes.Report.Balance (BalanceReport (..))
 import Centjes.Report.EvaluatedLedger
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
@@ -27,11 +30,24 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
 import qualified Money.Account as Money (Account)
+import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 
-data NetWorthReport ann = NetWorthReport
-  { netWorthReportCurrency :: !(Currency ann),
-    netWorthReportEntries :: !(Vector (Day, Money.Account))
+data NetWorthReport ann
+  = NetWorthReportConverted !(NetWorthReportConvertedData ann)
+  | NetWorthReportMultiCurrency !(NetWorthReportMultiCurrencyData ann)
+  deriving (Show)
+
+data NetWorthReportConvertedData ann = NetWorthReportConvertedData
+  { netWorthReportConvertedCurrency :: !(Currency ann),
+    netWorthReportConvertedEntries :: !(Vector (Day, Money.Account)),
+    netWorthReportConvertedBalanceReport :: !(Maybe (BalanceReport ann))
+  }
+  deriving (Show)
+
+data NetWorthReportMultiCurrencyData ann = NetWorthReportMultiCurrencyData
+  { netWorthReportMultiCurrencyEntries :: !(Vector (Day, Money.MultiAccount (Currency ann))),
+    netWorthReportMultiCurrencyBalanceReport :: !(Maybe (BalanceReport ann))
   }
   deriving (Show)
 
@@ -39,6 +55,7 @@ data NetWorthError ann
   = NetWorthErrorEvaluatedLedger !(EvaluatedLedgerError ann)
   | NetWorthErrorConvert !(ConvertError ann)
   | NetWorthErrorCouldNotSum !Day
+  | NetWorthErrorBalance !(BalanceError ann)
 
 instance ToReport (NetWorthError SourceSpan) where
   toReport = \case
@@ -50,37 +67,41 @@ instance ToReport (NetWorthError SourceSpan) where
         ("Could not sum account balances for net worth on " <> show day)
         []
         []
+    NetWorthErrorBalance balanceError -> toReport balanceError
 
 produceNetWorthReport ::
   forall ann.
   (Ord ann) =>
-  CurrencySymbol ->
+  Maybe CurrencySymbol ->
   Maybe Day ->
   Maybe Day ->
   Ledger ann ->
   Validation (NetWorthError ann) (NetWorthReport ann)
-produceNetWorthReport currencySymbolTo mBegin mEnd ledger = do
-  -- Resolve target currency
-  netWorthReportCurrency <-
-    mapValidationFailure NetWorthErrorConvert $
-      lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
-
+produceNetWorthReport mCurrencySymbolTo mBegin mEnd ledger = do
   -- Produce evaluated ledger
   evaluatedLedger <-
     mapValidationFailure NetWorthErrorEvaluatedLedger $
       produceEvaluatedLedger ledger
 
-  produceNetWorthReportFromEvaluatedLedger netWorthReportCurrency mBegin mEnd evaluatedLedger
+  case mCurrencySymbolTo of
+    Just currencySymbolTo -> do
+      -- Resolve target currency
+      currency <-
+        mapValidationFailure NetWorthErrorConvert $
+          lookupConversionCurrency (ledgerCurrencies ledger) currencySymbolTo
+      NetWorthReportConverted <$> produceConvertedReport currency mBegin mEnd evaluatedLedger
+    Nothing ->
+      NetWorthReportMultiCurrency <$> produceMultiCurrencyReport mBegin mEnd evaluatedLedger
 
-produceNetWorthReportFromEvaluatedLedger ::
+produceConvertedReport ::
   forall ann.
   (Ord ann) =>
   Currency ann ->
   Maybe Day ->
   Maybe Day ->
   EvaluatedLedger ann ->
-  Validation (NetWorthError ann) (NetWorthReport ann)
-produceNetWorthReportFromEvaluatedLedger netWorthReportCurrency mBegin mEnd evaluatedLedger = do
+  Validation (NetWorthError ann) (NetWorthReportConvertedData ann)
+produceConvertedReport netWorthReportConvertedCurrency mBegin mEnd evaluatedLedger = do
   let ledger = evaluatedLedgerSource evaluatedLedger
       entries = evaluatedLedgerEntries evaluatedLedger
 
@@ -88,7 +109,7 @@ produceNetWorthReportFromEvaluatedLedger netWorthReportCurrency mBegin mEnd eval
   let daySnapshots = buildDaySnapshots (ledgerAccounts ledger) entries
 
   if M.null daySnapshots
-    then pure $ NetWorthReport {netWorthReportEntries = V.empty, ..}
+    then pure $ NetWorthReportConvertedData {netWorthReportConvertedEntries = V.empty, netWorthReportConvertedBalanceReport = Nothing, ..}
     else do
       -- Determine date range
       let firstDay = fst (M.findMin daySnapshots)
@@ -97,17 +118,82 @@ produceNetWorthReportFromEvaluatedLedger netWorthReportCurrency mBegin mEnd eval
       let endDay = fromMaybe lastDay mEnd
 
       -- Generate entries for each day in the range
-      netWorthReportEntries <-
+      netWorthReportConvertedEntries <-
         V.fromList
           <$> traverse
             ( \day -> do
                 let (balances, priceGraph) = fromMaybe (M.empty, MemoisedPriceGraph.empty) $ lookupLE day daySnapshots
-                account <- computeDayNetWorth day priceGraph netWorthReportCurrency balances
+                account <- computeDayNetWorth day priceGraph netWorthReportConvertedCurrency balances
                 pure (day, account)
             )
             [beginDay .. endDay]
 
-      pure NetWorthReport {..}
+      -- Produce balance report from the final day's snapshot
+      let (finalBalances, finalPriceGraph) = fromMaybe (M.empty, MemoisedPriceGraph.empty) $ lookupLE endDay daySnapshots
+      balanceReportBalances <-
+        mapValidationFailure NetWorthErrorConvert $
+          convertAccountBalances finalPriceGraph netWorthReportConvertedCurrency finalBalances
+      balanceReportFilledBalances <-
+        mapValidationFailure NetWorthErrorBalance $
+          fillAccountBalances balanceReportBalances
+      balanceReportTotal <- case MultiAccount.sum balanceReportBalances of
+        Nothing -> validationFailure $ NetWorthErrorCouldNotSum endDay
+        Just total -> pure total
+      let netWorthReportConvertedBalanceReport = Just BalanceReport {..}
+
+      pure NetWorthReportConvertedData {..}
+
+produceMultiCurrencyReport ::
+  forall ann.
+  (Ord ann) =>
+  Maybe Day ->
+  Maybe Day ->
+  EvaluatedLedger ann ->
+  Validation (NetWorthError ann) (NetWorthReportMultiCurrencyData ann)
+produceMultiCurrencyReport mBegin mEnd evaluatedLedger = do
+  let ledger = evaluatedLedgerSource evaluatedLedger
+      entries = evaluatedLedgerEntries evaluatedLedger
+
+  -- Build day-boundary snapshots of (balances, priceGraph) from entries
+  let daySnapshots = buildDaySnapshots (ledgerAccounts ledger) entries
+
+  if M.null daySnapshots
+    then
+      pure $
+        NetWorthReportMultiCurrencyData
+          { netWorthReportMultiCurrencyEntries = V.empty,
+            netWorthReportMultiCurrencyBalanceReport = Nothing
+          }
+    else do
+      -- Determine date range
+      let firstDay = fst (M.findMin daySnapshots)
+      let lastDay = fst (M.findMax daySnapshots)
+      let beginDay = fromMaybe firstDay mBegin
+      let endDay = fromMaybe lastDay mEnd
+
+      -- Generate entries for each day in the range
+      netWorthReportMultiCurrencyEntries <-
+        V.fromList
+          <$> traverse
+            ( \day -> do
+                let (balances, _priceGraph) = fromMaybe (M.empty, MemoisedPriceGraph.empty) $ lookupLE day daySnapshots
+                multiAccount <- computeDayMultiCurrencyNetWorth day balances
+                pure (day, multiAccount)
+            )
+            [beginDay .. endDay]
+
+      -- Produce unconverted balance report from the final day's snapshot
+      let (finalBalances, _finalPriceGraph) = fromMaybe (M.empty, MemoisedPriceGraph.empty) $ lookupLE endDay daySnapshots
+      let balanceReportBalances = finalBalances
+      balanceReportFilledBalances <-
+        mapValidationFailure NetWorthErrorBalance $
+          fillAccountBalances balanceReportBalances
+      balanceReportTotal <- case MultiAccount.sum balanceReportBalances of
+        Nothing -> validationFailure $ NetWorthErrorCouldNotSum endDay
+        Just total -> pure total
+      let netWorthReportMultiCurrencyBalanceReport = Just BalanceReport {..}
+
+      pure NetWorthReportMultiCurrencyData {..}
 
 -- | Build a map from Day to (asset+liability balances, price graph) snapshots.
 --
@@ -153,6 +239,17 @@ computeDayNetWorth day priceGraph currencyTo balances = do
     Just total ->
       mapValidationFailure NetWorthErrorConvert $
         convertMultiAccountToAccount Nothing priceGraph currencyTo total
+
+-- | Compute the net worth for a single day by summing all account balances without converting.
+computeDayMultiCurrencyNetWorth ::
+  (Ord ann) =>
+  Day ->
+  AccountBalances ann ->
+  Validation (NetWorthError ann) (Money.MultiAccount (Currency ann))
+computeDayMultiCurrencyNetWorth day balances =
+  case MultiAccount.sum (M.elems balances) of
+    Nothing -> validationFailure $ NetWorthErrorCouldNotSum day
+    Just total -> pure total
 
 -- | Look up the greatest key less than or equal to the given key.
 lookupLE :: (Ord k) => k -> Map k v -> Maybe v

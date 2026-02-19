@@ -1,0 +1,21 @@
+currency CHF 0.01
+currency USD 0.01
+currency EUR 0.01
+
+account assets
+account equity
+
+2024-01-01
+  | Opening in CHF
+  * assets  +150000 CHF
+  * equity  -150000 CHF
+
+2024-01-02
+  | Opening in USD
+  * assets  +200 USD
+  * equity  -200 USD
+
+2024-01-03
+  | Opening in EUR
+  * assets  +50 EUR
+  * equity  -50 EUR
