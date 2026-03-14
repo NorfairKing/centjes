@@ -57,6 +57,11 @@
     description = "the account to use for electricity expenses";
     type = lib.types.nullOr lib.types.str;
   };
+  electricity-private-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for private electricity expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   exports-income-account = lib.mkOption {
     default = null;
     description = "Account name of your exports' income";
@@ -82,9 +87,19 @@
     description = "the account to use for homeoffice expenses";
     type = lib.types.nullOr lib.types.str;
   };
+  homeoffice-private-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for private homeoffice expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   internet-expenses-account = lib.mkOption {
     default = null;
     description = "the account to use for internet expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
+  internet-private-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for private internet expenses";
     type = lib.types.nullOr lib.types.str;
   };
   last-name = lib.mkOption {
@@ -140,6 +155,11 @@
   phone-expenses-account = lib.mkOption {
     default = null;
     description = "the account to use for phone expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
+  phone-private-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for private phone expenses";
     type = lib.types.nullOr lib.types.str;
   };
   prices = lib.mkOption {
@@ -217,6 +237,11 @@
   travel-expenses-account = lib.mkOption {
     default = null;
     description = "the account to use for travel expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
+  travel-private-expenses-account = lib.mkOption {
+    default = null;
+    description = "the account to use for private travel expenses";
     type = lib.types.nullOr lib.types.str;
   };
   vat = lib.mkOption {

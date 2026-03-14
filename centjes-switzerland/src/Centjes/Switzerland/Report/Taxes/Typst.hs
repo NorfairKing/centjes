@@ -84,90 +84,131 @@ taxesReportInput TaxesReport {..} =
             inputThirdPillarContributionEvidence = thirdPillarContributionEvidence
          in ThirdPillarContributionInput {..}
       inputTotalThirdPillarContributions = formatChfAmount taxesReportTotalThirdPillarContributions
-      inputInsuranceExpenses = flip map taxesReportInsuranceExpenses $ \InsuranceExpense {..} ->
-        let inputInsuranceExpenseDay = Timestamp.toDay insuranceExpenseTimestamp
-            inputInsuranceExpenseDescription = Description.toText insuranceExpenseDescription
-            inputInsuranceExpenseAmount =
+      convertPrivateExpense PrivateExpense {..} =
+        PrivateExpenseInput
+          { inputPrivateExpenseDay = Timestamp.toDay privateExpenseTimestamp,
+            inputPrivateExpenseDescription = Description.toText privateExpenseDescription,
+            inputPrivateExpenseAmount =
               AmountWithCurrency
-                { amountWithCurrencyAmount = formatAmount insuranceExpenseCurrency insuranceExpenseAmount,
-                  amountWithCurrencyCurrency = currencySymbol insuranceExpenseCurrency
-                }
-            inputInsuranceExpenseCHFAmount = formatChfAmount insuranceExpenseCHFAmount
-            inputInsuranceExpenseEvidence = insuranceExpenseEvidence
-         in InsuranceExpenseInput {..}
-      inputTotalInsuranceExpenses = formatChfAmount taxesReportTotalInsuranceExpenses
-      inputHomeofficeExpenses = flip map taxesReportHomeofficeExpenses $ \HomeofficeExpense {..} ->
-        let inputHomeofficeExpenseDay = Timestamp.toDay homeofficeExpenseTimestamp
-            inputHomeofficeExpenseDescription = Description.toText homeofficeExpenseDescription
-            inputHomeofficeExpenseAmount =
-              AmountWithCurrency
-                { amountWithCurrencyAmount = formatAmount homeofficeExpenseCurrency homeofficeExpenseAmount,
-                  amountWithCurrencyCurrency = currencySymbol homeofficeExpenseCurrency
-                }
-            inputHomeofficeExpenseCHFAmount = formatChfAmount homeofficeExpenseCHFAmount
-            inputHomeofficeExpenseEvidence = homeofficeExpenseEvidence
-         in HomeofficeExpenseInput {..}
-      inputTotalHomeofficeExpenses = formatChfAmount taxesReportTotalHomeofficeExpenses
-      inputElectricityExpenses = flip map taxesReportElectricityExpenses $ \ElectricityExpense {..} ->
-        let inputElectricityExpenseDay = Timestamp.toDay electricityExpenseTimestamp
-            inputElectricityExpenseDescription = Description.toText electricityExpenseDescription
-            inputElectricityExpenseAmount =
-              AmountWithCurrency
-                { amountWithCurrencyAmount = formatAmount electricityExpenseCurrency electricityExpenseAmount,
-                  amountWithCurrencyCurrency = currencySymbol electricityExpenseCurrency
-                }
-            inputElectricityExpenseCHFAmount = formatChfAmount electricityExpenseCHFAmount
-            inputElectricityExpenseEvidence = electricityExpenseEvidence
-         in ElectricityExpenseInput {..}
-      inputTotalElectricityExpenses = formatChfAmount taxesReportTotalElectricityExpenses
-      inputPhoneExpenses = flip map taxesReportPhoneExpenses $ \PhoneExpense {..} ->
-        let inputPhoneExpenseDay = Timestamp.toDay phoneExpenseTimestamp
-            inputPhoneExpenseDescription = Description.toText phoneExpenseDescription
-            inputPhoneExpenseAmount =
-              AmountWithCurrency
-                { amountWithCurrencyAmount = formatAmount phoneExpenseCurrency phoneExpenseAmount,
-                  amountWithCurrencyCurrency = currencySymbol phoneExpenseCurrency
-                }
-            inputPhoneExpenseCHFAmount = formatChfAmount phoneExpenseCHFAmount
-            inputPhoneExpenseEvidence = phoneExpenseEvidence
-         in PhoneExpenseInput {..}
-      inputTotalPhoneExpenses = formatChfAmount taxesReportTotalPhoneExpenses
-      inputTravelExpenses = flip map taxesReportTravelExpenses $ \TravelExpense {..} ->
-        let inputTravelExpenseDay = Timestamp.toDay travelExpenseTimestamp
-            inputTravelExpenseDescription = Description.toText travelExpenseDescription
-            inputTravelExpenseAmount =
-              AmountWithCurrency
-                { amountWithCurrencyAmount = formatAmount travelExpenseCurrency travelExpenseAmount,
-                  amountWithCurrencyCurrency = currencySymbol travelExpenseCurrency
-                }
-            inputTravelExpenseCHFAmount = formatChfAmount travelExpenseCHFAmount
-            inputTravelExpenseEvidence = travelExpenseEvidence
-         in TravelExpenseInput {..}
-      inputTotalTravelExpenses = formatChfAmount taxesReportTotalTravelExpenses
-      inputInternetExpenses = flip map taxesReportInternetExpenses $ \InternetExpense {..} ->
-        let inputInternetExpenseDay = Timestamp.toDay internetExpenseTimestamp
-            inputInternetExpenseDescription = Description.toText internetExpenseDescription
-            inputInternetExpenseAmount =
-              AmountWithCurrency
-                { amountWithCurrencyAmount = formatAmount internetExpenseCurrency internetExpenseAmount,
-                  amountWithCurrencyCurrency = currencySymbol internetExpenseCurrency
-                }
-            inputInternetExpenseCHFAmount = formatChfAmount internetExpenseCHFAmount
-            inputInternetExpenseEvidence = internetExpenseEvidence
-         in InternetExpenseInput {..}
-      inputTotalInternetExpenses = formatChfAmount taxesReportTotalInternetExpenses
-      inputHealthExpenses = flip map taxesReportHealthExpenses $ \HealthExpense {..} ->
-        let inputHealthExpenseDay = Timestamp.toDay healthExpenseTimestamp
-            inputHealthExpenseDescription = Description.toText healthExpenseDescription
-            inputHealthExpenseAmount =
-              AmountWithCurrency
-                { amountWithCurrencyAmount = formatAmount healthExpenseCurrency healthExpenseAmount,
-                  amountWithCurrencyCurrency = currencySymbol healthExpenseCurrency
-                }
-            inputHealthExpenseCHFAmount = formatChfAmount healthExpenseCHFAmount
-            inputHealthExpenseEvidence = healthExpenseEvidence
-         in HealthExpenseInput {..}
-      inputTotalHealthExpenses = formatChfAmount taxesReportTotalHealthExpenses
+                { amountWithCurrencyAmount = formatAmount privateExpenseCurrency privateExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol privateExpenseCurrency
+                },
+            inputPrivateExpenseCHFAmount = formatChfAmount privateExpenseCHFAmount,
+            inputPrivateExpenseEvidence = privateExpenseEvidence
+          }
+      convertPartitionedExpenses convertExpense PartitionedExpenses {..} =
+        PartitionedExpensesInput
+          { partitionedExpensesInputBusinessExpenses = map convertExpense partitionedExpensesBusinessExpenses,
+            partitionedExpensesInputTotalBusinessExpenses = formatChfAmount partitionedExpensesTotalBusinessExpenses,
+            partitionedExpensesInputPrivateExpenses = map convertPrivateExpense partitionedExpensesPrivateExpenses,
+            partitionedExpensesInputTotalPrivateExpenses = formatChfAmount partitionedExpensesTotalPrivateExpenses,
+            partitionedExpensesInputTotalExpenses = maybe "ERROR" formatChfAmount $ Amount.add partitionedExpensesTotalBusinessExpenses partitionedExpensesTotalPrivateExpenses
+          }
+      inputInsuranceExpenses =
+        convertPartitionedExpenses
+          ( \InsuranceExpense {..} ->
+              let inputInsuranceExpenseDay = Timestamp.toDay insuranceExpenseTimestamp
+                  inputInsuranceExpenseDescription = Description.toText insuranceExpenseDescription
+                  inputInsuranceExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount insuranceExpenseCurrency insuranceExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol insuranceExpenseCurrency
+                      }
+                  inputInsuranceExpenseCHFAmount = formatChfAmount insuranceExpenseCHFAmount
+                  inputInsuranceExpenseEvidence = insuranceExpenseEvidence
+               in InsuranceExpenseInput {..}
+          )
+          taxesReportInsuranceExpenses
+      inputHomeofficeExpenses =
+        convertPartitionedExpenses
+          ( \HomeofficeExpense {..} ->
+              let inputHomeofficeExpenseDay = Timestamp.toDay homeofficeExpenseTimestamp
+                  inputHomeofficeExpenseDescription = Description.toText homeofficeExpenseDescription
+                  inputHomeofficeExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount homeofficeExpenseCurrency homeofficeExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol homeofficeExpenseCurrency
+                      }
+                  inputHomeofficeExpenseCHFAmount = formatChfAmount homeofficeExpenseCHFAmount
+                  inputHomeofficeExpenseEvidence = homeofficeExpenseEvidence
+               in HomeofficeExpenseInput {..}
+          )
+          taxesReportHomeofficeExpenses
+      inputElectricityExpenses =
+        convertPartitionedExpenses
+          ( \ElectricityExpense {..} ->
+              let inputElectricityExpenseDay = Timestamp.toDay electricityExpenseTimestamp
+                  inputElectricityExpenseDescription = Description.toText electricityExpenseDescription
+                  inputElectricityExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount electricityExpenseCurrency electricityExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol electricityExpenseCurrency
+                      }
+                  inputElectricityExpenseCHFAmount = formatChfAmount electricityExpenseCHFAmount
+                  inputElectricityExpenseEvidence = electricityExpenseEvidence
+               in ElectricityExpenseInput {..}
+          )
+          taxesReportElectricityExpenses
+      inputPhoneExpenses =
+        convertPartitionedExpenses
+          ( \PhoneExpense {..} ->
+              let inputPhoneExpenseDay = Timestamp.toDay phoneExpenseTimestamp
+                  inputPhoneExpenseDescription = Description.toText phoneExpenseDescription
+                  inputPhoneExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount phoneExpenseCurrency phoneExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol phoneExpenseCurrency
+                      }
+                  inputPhoneExpenseCHFAmount = formatChfAmount phoneExpenseCHFAmount
+                  inputPhoneExpenseEvidence = phoneExpenseEvidence
+               in PhoneExpenseInput {..}
+          )
+          taxesReportPhoneExpenses
+      inputTravelExpenses =
+        convertPartitionedExpenses
+          ( \TravelExpense {..} ->
+              let inputTravelExpenseDay = Timestamp.toDay travelExpenseTimestamp
+                  inputTravelExpenseDescription = Description.toText travelExpenseDescription
+                  inputTravelExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount travelExpenseCurrency travelExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol travelExpenseCurrency
+                      }
+                  inputTravelExpenseCHFAmount = formatChfAmount travelExpenseCHFAmount
+                  inputTravelExpenseEvidence = travelExpenseEvidence
+               in TravelExpenseInput {..}
+          )
+          taxesReportTravelExpenses
+      inputInternetExpenses =
+        convertPartitionedExpenses
+          ( \InternetExpense {..} ->
+              let inputInternetExpenseDay = Timestamp.toDay internetExpenseTimestamp
+                  inputInternetExpenseDescription = Description.toText internetExpenseDescription
+                  inputInternetExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount internetExpenseCurrency internetExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol internetExpenseCurrency
+                      }
+                  inputInternetExpenseCHFAmount = formatChfAmount internetExpenseCHFAmount
+                  inputInternetExpenseEvidence = internetExpenseEvidence
+               in InternetExpenseInput {..}
+          )
+          taxesReportInternetExpenses
+      inputHealthExpenses =
+        convertPartitionedExpenses
+          ( \HealthExpense {..} ->
+              let inputHealthExpenseDay = Timestamp.toDay healthExpenseTimestamp
+                  inputHealthExpenseDescription = Description.toText healthExpenseDescription
+                  inputHealthExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount healthExpenseCurrency healthExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol healthExpenseCurrency
+                      }
+                  inputHealthExpenseCHFAmount = formatChfAmount healthExpenseCHFAmount
+                  inputHealthExpenseEvidence = healthExpenseEvidence
+               in HealthExpenseInput {..}
+          )
+          taxesReportHealthExpenses
       convertDepreciationSchedule DepreciationSchedule {..} =
         DepreciationScheduleInput
           { depreciationScheduleInputDepreciationRate = printf "%.0f%%" $ (realToFrac :: Ratio Natural -> Double) $ depreciationScheduleDepreciationRate * 100,
@@ -201,20 +242,13 @@ data Input = Input
     inputTotalRevenues :: !FormattedAmount,
     inputThirdPillarContributions :: ![ThirdPillarContributionInput],
     inputTotalThirdPillarContributions :: !FormattedAmount,
-    inputInsuranceExpenses :: ![InsuranceExpenseInput],
-    inputTotalInsuranceExpenses :: !FormattedAmount,
-    inputHomeofficeExpenses :: ![HomeofficeExpenseInput],
-    inputTotalHomeofficeExpenses :: !FormattedAmount,
-    inputElectricityExpenses :: ![ElectricityExpenseInput],
-    inputTotalElectricityExpenses :: !FormattedAmount,
-    inputPhoneExpenses :: ![PhoneExpenseInput],
-    inputTotalPhoneExpenses :: !FormattedAmount,
-    inputTravelExpenses :: ![TravelExpenseInput],
-    inputTotalTravelExpenses :: !FormattedAmount,
-    inputInternetExpenses :: ![InternetExpenseInput],
-    inputTotalInternetExpenses :: !FormattedAmount,
-    inputHealthExpenses :: ![HealthExpenseInput],
-    inputTotalHealthExpenses :: !FormattedAmount,
+    inputInsuranceExpenses :: !(PartitionedExpensesInput InsuranceExpenseInput),
+    inputHomeofficeExpenses :: !(PartitionedExpensesInput HomeofficeExpenseInput),
+    inputElectricityExpenses :: !(PartitionedExpensesInput ElectricityExpenseInput),
+    inputPhoneExpenses :: !(PartitionedExpensesInput PhoneExpenseInput),
+    inputTravelExpenses :: !(PartitionedExpensesInput TravelExpenseInput),
+    inputInternetExpenses :: !(PartitionedExpensesInput InternetExpenseInput),
+    inputHealthExpenses :: !(PartitionedExpensesInput HealthExpenseInput),
     inputMovables :: !DepreciationScheduleInput,
     inputMachinery :: !DepreciationScheduleInput
   }
@@ -246,32 +280,18 @@ instance HasCodec Input where
           .= inputTotalThirdPillarContributions
         <*> requiredField "insurance_expenses" "insurance expenses"
           .= inputInsuranceExpenses
-        <*> requiredField "total_insurance_expenses" "total insurance expenses"
-          .= inputTotalInsuranceExpenses
         <*> requiredField "homeoffice_expenses" "homeoffice expenses"
           .= inputHomeofficeExpenses
-        <*> requiredField "total_homeoffice_expenses" "total homeoffice expenses"
-          .= inputTotalHomeofficeExpenses
         <*> requiredField "electricity_expenses" "electricity expenses"
           .= inputElectricityExpenses
-        <*> requiredField "total_electricity_expenses" "total electricity expenses"
-          .= inputTotalElectricityExpenses
         <*> requiredField "phone_expenses" "phone expenses"
           .= inputPhoneExpenses
-        <*> requiredField "total_phone_expenses" "total phone expenses"
-          .= inputTotalPhoneExpenses
         <*> requiredField "travel_expenses" "travel expenses"
           .= inputTravelExpenses
-        <*> requiredField "total_travel_expenses" "total travel expenses"
-          .= inputTotalTravelExpenses
         <*> requiredField "internet_expenses" "internet expenses"
           .= inputInternetExpenses
-        <*> requiredField "total_internet_expenses" "total internet expenses"
-          .= inputTotalInternetExpenses
         <*> requiredField "health_expenses" "health insurance expenses"
           .= inputHealthExpenses
-        <*> requiredField "total_health_expenses" "total health insurance expenses"
-          .= inputTotalHealthExpenses
         <*> requiredField "movables" "movables depreciation schedule"
           .= inputMovables
         <*> requiredField "machinery" "machinery depreciation schedule"
@@ -351,6 +371,52 @@ instance HasCodec ThirdPillarContributionInput where
           .= inputThirdPillarContributionCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputThirdPillarContributionEvidence
+
+data PartitionedExpensesInput a = PartitionedExpensesInput
+  { partitionedExpensesInputBusinessExpenses :: ![a],
+    partitionedExpensesInputTotalBusinessExpenses :: !FormattedAmount,
+    partitionedExpensesInputPrivateExpenses :: ![PrivateExpenseInput],
+    partitionedExpensesInputTotalPrivateExpenses :: !FormattedAmount,
+    partitionedExpensesInputTotalExpenses :: !FormattedAmount
+  }
+
+instance (HasCodec a) => HasCodec (PartitionedExpensesInput a) where
+  codec =
+    object "PartitionedExpensesInput" $
+      PartitionedExpensesInput
+        <$> requiredField "business_expenses" "business expenses"
+          .= partitionedExpensesInputBusinessExpenses
+        <*> requiredField "total_business_expenses" "total business expenses"
+          .= partitionedExpensesInputTotalBusinessExpenses
+        <*> requiredField "private_expenses" "private expenses"
+          .= partitionedExpensesInputPrivateExpenses
+        <*> requiredField "total_private_expenses" "total private expenses"
+          .= partitionedExpensesInputTotalPrivateExpenses
+        <*> requiredField "total_expenses" "total expenses (business + private)"
+          .= partitionedExpensesInputTotalExpenses
+
+data PrivateExpenseInput = PrivateExpenseInput
+  { inputPrivateExpenseDay :: !Day,
+    inputPrivateExpenseDescription :: !Text,
+    inputPrivateExpenseAmount :: !AmountWithCurrency,
+    inputPrivateExpenseCHFAmount :: !FormattedAmount,
+    inputPrivateExpenseEvidence :: ![Path Rel File]
+  }
+
+instance HasCodec PrivateExpenseInput where
+  codec =
+    object "PrivateExpenseInput" $
+      PrivateExpenseInput
+        <$> requiredField "day" "day of expense"
+          .= inputPrivateExpenseDay
+        <*> requiredField "description" "description of expense"
+          .= inputPrivateExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputPrivateExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputPrivateExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputPrivateExpenseEvidence
 
 data InsuranceExpenseInput = InsuranceExpenseInput
   { inputInsuranceExpenseDay :: !Day,

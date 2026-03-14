@@ -9,7 +9,10 @@
 
 module Centjes.Switzerland.Report.Taxes.Types
   ( TaxesInput (..),
+    PartitionedExpenseAccounts (..),
     TaxesReport (..),
+    PartitionedExpenses (..),
+    PrivateExpense (..),
     AssetAccount (..),
     Revenue (..),
     ThirdPillarContribution (..),
@@ -74,13 +77,13 @@ data TaxesInput = TaxesInput
     taxesInputTagNotTaxDeductible :: !Tag,
     taxesInputThirdPillarAssetsAccount :: !AccountName,
     taxesInputThirdPillarInsuranceExpensesAccount :: !AccountName,
-    taxesInputHomeofficeExpensesAccount :: !AccountName,
+    taxesInputHomeofficeExpenseAccounts :: !PartitionedExpenseAccounts,
     taxesInputAccidentInsuranceExpenseAccount :: !AccountName,
     taxesInputDailyAllowanceInsuranceExpenseAccount :: !AccountName,
-    taxesInputElectricityExpensesAccount :: !AccountName,
-    taxesInputPhoneExpensesAccount :: !AccountName,
-    taxesInputTravelExpensesAccount :: !AccountName,
-    taxesInputInternetExpensesAccount :: !AccountName,
+    taxesInputElectricityExpenseAccounts :: !PartitionedExpenseAccounts,
+    taxesInputPhoneExpenseAccounts :: !PartitionedExpenseAccounts,
+    taxesInputTravelExpenseAccounts :: !PartitionedExpenseAccounts,
+    taxesInputInternetExpenseAccounts :: !PartitionedExpenseAccounts,
     taxesInputHealthExpensesAccount :: !AccountName,
     taxesInputMovablesAssetsAccount :: !AccountName,
     taxesInputMovablesExpensesAccount :: !AccountName,
@@ -190,41 +193,41 @@ parseTaxesInput = do
         conf "daily-allowance-insurance-expenses-account",
         value "expenses:insurance:daily-allowance"
       ]
-  taxesInputHomeofficeExpensesAccount <-
-    setting
-      [ help "the account to use for homeoffice expenses",
-        reader $ maybeReader AccountName.fromString,
-        conf "homeoffice-expenses-account",
-        value "expenses:rent:homeoffice"
-      ]
-  taxesInputElectricityExpensesAccount <-
-    setting
-      [ help "the account to use for electricity expenses",
-        reader $ maybeReader AccountName.fromString,
-        conf "electricity-expenses-account",
-        value "expenses:electricity:homeoffice"
-      ]
-  taxesInputPhoneExpensesAccount <-
-    setting
-      [ help "the account to use for phone expenses",
-        reader $ maybeReader AccountName.fromString,
-        conf "phone-expenses-account",
-        value "expenses:phone:professional"
-      ]
-  taxesInputTravelExpensesAccount <-
-    setting
-      [ help "the account to use for travel expenses",
-        reader $ maybeReader AccountName.fromString,
-        conf "travel-expenses-account",
-        value "expenses:travel:professional"
-      ]
-  taxesInputInternetExpensesAccount <-
-    setting
-      [ help "the account to use for internet expenses",
-        reader $ maybeReader AccountName.fromString,
-        conf "internet-expenses-account",
-        value "expenses:internet:homeoffice"
-      ]
+  taxesInputHomeofficeExpenseAccounts <-
+    parsePartitionedExpenseAccounts
+      "homeoffice"
+      "homeoffice-expenses-account"
+      "expenses:rent:homeoffice"
+      "homeoffice-private-expenses-account"
+      "expenses:rent:private"
+  taxesInputElectricityExpenseAccounts <-
+    parsePartitionedExpenseAccounts
+      "electricity"
+      "electricity-expenses-account"
+      "expenses:electricity:homeoffice"
+      "electricity-private-expenses-account"
+      "expenses:electricity:private"
+  taxesInputPhoneExpenseAccounts <-
+    parsePartitionedExpenseAccounts
+      "phone"
+      "phone-expenses-account"
+      "expenses:phone:professional"
+      "phone-private-expenses-account"
+      "expenses:phone:private"
+  taxesInputTravelExpenseAccounts <-
+    parsePartitionedExpenseAccounts
+      "travel"
+      "travel-expenses-account"
+      "expenses:travel:professional"
+      "travel-private-expenses-account"
+      "expenses:travel:private"
+  taxesInputInternetExpenseAccounts <-
+    parsePartitionedExpenseAccounts
+      "internet"
+      "internet-expenses-account"
+      "expenses:internet:homeoffice"
+      "internet-private-expenses-account"
+      "expenses:internet:private"
   taxesInputHealthExpensesAccount <-
     setting
       [ help "the account to use for health insurance expenses",
@@ -282,6 +285,31 @@ parseTaxesInput = do
       ]
   pure TaxesInput {..}
 
+{-# ANN parsePartitionedExpenseAccounts ("NOCOVER" :: String) #-}
+parsePartitionedExpenseAccounts ::
+  String ->
+  String ->
+  AccountName ->
+  String ->
+  AccountName ->
+  Parser PartitionedExpenseAccounts
+parsePartitionedExpenseAccounts category businessKey businessDefault privateKey privateDefault = do
+  partitionedExpenseAccountsBusiness <-
+    setting
+      [ help $ "the account to use for " <> category <> " expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf businessKey,
+        value businessDefault
+      ]
+  partitionedExpenseAccountsPrivate <-
+    setting
+      [ help $ "the account to use for private " <> category <> " expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf privateKey,
+        value privateDefault
+      ]
+  pure PartitionedExpenseAccounts {..}
+
 parseDepreciationRate :: String -> Either String (Ratio Natural)
 parseDepreciationRate s = case DecimalLiteral.fromString s of
   Nothing -> Left $ "Could not parse depreciation rate: " <> s
@@ -299,6 +327,14 @@ depreciationRateCodec =
     )
     codec
 
+data PartitionedExpenseAccounts = PartitionedExpenseAccounts
+  { partitionedExpenseAccountsBusiness :: !AccountName,
+    partitionedExpenseAccountsPrivate :: !AccountName
+  }
+  deriving (Show, Generic)
+
+instance Validity PartitionedExpenseAccounts
+
 -- | The information we need to produce Taxes reports like the pdfs, zip files,
 -- or xml files.
 data TaxesReport ann = TaxesReport
@@ -314,20 +350,13 @@ data TaxesReport ann = TaxesReport
     taxesReportTotalRevenues :: !Money.Amount,
     taxesReportThirdPillarContributions :: ![ThirdPillarContribution ann],
     taxesReportTotalThirdPillarContributions :: !Money.Amount,
-    taxesReportInsuranceExpenses :: ![InsuranceExpense ann],
-    taxesReportTotalInsuranceExpenses :: !Money.Amount,
-    taxesReportHomeofficeExpenses :: ![HomeofficeExpense ann],
-    taxesReportTotalHomeofficeExpenses :: !Money.Amount,
-    taxesReportElectricityExpenses :: ![ElectricityExpense ann],
-    taxesReportTotalElectricityExpenses :: !Money.Amount,
-    taxesReportPhoneExpenses :: ![PhoneExpense ann],
-    taxesReportTotalPhoneExpenses :: !Money.Amount,
-    taxesReportTravelExpenses :: ![TravelExpense ann],
-    taxesReportTotalTravelExpenses :: !Money.Amount,
-    taxesReportInternetExpenses :: ![InternetExpense ann],
-    taxesReportTotalInternetExpenses :: !Money.Amount,
-    taxesReportHealthExpenses :: ![HealthExpense ann],
-    taxesReportTotalHealthExpenses :: !Money.Amount,
+    taxesReportInsuranceExpenses :: !(PartitionedExpenses (InsuranceExpense ann) ann),
+    taxesReportHomeofficeExpenses :: !(PartitionedExpenses (HomeofficeExpense ann) ann),
+    taxesReportElectricityExpenses :: !(PartitionedExpenses (ElectricityExpense ann) ann),
+    taxesReportPhoneExpenses :: !(PartitionedExpenses (PhoneExpense ann) ann),
+    taxesReportTravelExpenses :: !(PartitionedExpenses (TravelExpense ann) ann),
+    taxesReportInternetExpenses :: !(PartitionedExpenses (InternetExpense ann) ann),
+    taxesReportHealthExpenses :: !(PartitionedExpenses (HealthExpense ann) ann),
     taxesReportMovables :: !(DepreciationSchedule ann),
     taxesReportMachinery :: !(DepreciationSchedule ann)
   }
@@ -343,21 +372,49 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
           Amount.sum (map revenueAmount taxesReportRevenues) == Just taxesReportTotalRevenues,
         declare "the third pillar contributions sum to the total third pillar contributions" $
           Amount.sum (map thirdPillarContributionCHFAmount taxesReportThirdPillarContributions) == Just taxesReportTotalThirdPillarContributions,
-        declare "the insurance costs sum to the total insurance costs" $
-          Amount.sum (map insuranceExpenseAmount taxesReportInsuranceExpenses) == Just taxesReportTotalInsuranceExpenses,
-        declare "the homeoffice costs sum to the total homeoffice costs" $
-          Amount.sum (map homeofficeExpenseAmount taxesReportHomeofficeExpenses) == Just taxesReportTotalHomeofficeExpenses,
-        declare "the electricity costs sum to the total electricity costs" $
-          Amount.sum (map electricityExpenseAmount taxesReportElectricityExpenses) == Just taxesReportTotalElectricityExpenses,
-        declare "the phone costs sum to the total phone costs" $
-          Amount.sum (map phoneExpenseAmount taxesReportPhoneExpenses) == Just taxesReportTotalPhoneExpenses,
-        declare "the travel costs sum to the total travel costs" $
-          Amount.sum (map travelExpenseAmount taxesReportTravelExpenses) == Just taxesReportTotalTravelExpenses,
-        declare "the internet costs sum to the total internet costs" $
-          Amount.sum (map internetExpenseAmount taxesReportInternetExpenses) == Just taxesReportTotalInternetExpenses,
-        declare "the health insurance costs sum to the total health insurance costs" $
-          Amount.sum (map healthExpenseAmount taxesReportHealthExpenses) == Just taxesReportTotalHealthExpenses
+        validatePartitionedExpenses "insurance" insuranceExpenseCHFAmount taxesReportInsuranceExpenses,
+        validatePartitionedExpenses "homeoffice" homeofficeExpenseCHFAmount taxesReportHomeofficeExpenses,
+        validatePartitionedExpenses "electricity" electricityExpenseCHFAmount taxesReportElectricityExpenses,
+        validatePartitionedExpenses "phone" phoneExpenseCHFAmount taxesReportPhoneExpenses,
+        validatePartitionedExpenses "travel" travelExpenseCHFAmount taxesReportTravelExpenses,
+        validatePartitionedExpenses "internet" internetExpenseCHFAmount taxesReportInternetExpenses,
+        validatePartitionedExpenses "health insurance" healthExpenseCHFAmount taxesReportHealthExpenses
       ]
+
+validatePartitionedExpenses ::
+  String ->
+  (a -> Money.Amount) ->
+  PartitionedExpenses a ann ->
+  Data.Validity.Validation
+validatePartitionedExpenses expenseName businessAccessor PartitionedExpenses {..} =
+  mconcat
+    [ declare ("the " <> expenseName <> " costs sum to the total " <> expenseName <> " costs") $
+        Amount.sum (map businessAccessor partitionedExpensesBusinessExpenses) == Just partitionedExpensesTotalBusinessExpenses,
+      declare ("the private " <> expenseName <> " costs sum to the total private " <> expenseName <> " costs") $
+        Amount.sum (map privateExpenseCHFAmount partitionedExpensesPrivateExpenses) == Just partitionedExpensesTotalPrivateExpenses
+    ]
+
+data PartitionedExpenses a ann = PartitionedExpenses
+  { partitionedExpensesBusinessExpenses :: ![a],
+    partitionedExpensesTotalBusinessExpenses :: !Money.Amount,
+    partitionedExpensesPrivateExpenses :: ![PrivateExpense ann],
+    partitionedExpensesTotalPrivateExpenses :: !Money.Amount
+  }
+  deriving (Show, Generic)
+
+instance (Validity a, Validity ann, Show ann, Ord ann) => Validity (PartitionedExpenses a ann)
+
+data PrivateExpense ann = PrivateExpense
+  { privateExpenseTimestamp :: !Timestamp,
+    privateExpenseDescription :: !Description,
+    privateExpenseAmount :: !Money.Amount,
+    privateExpenseCurrency :: !(Currency ann),
+    privateExpenseCHFAmount :: !Money.Amount,
+    privateExpenseEvidence :: ![Path Rel File]
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (PrivateExpense ann)
 
 data AssetAccount ann = AssetAccount
   { assetAccountName :: !AccountName,

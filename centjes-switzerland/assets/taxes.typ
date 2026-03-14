@@ -1,4 +1,5 @@
 #set text(font: "DejaVu Sans Mono", size: 8pt)
+#set heading(numbering: "1.1.")
 
 #set page(numbering: (
   (current, total) => align(
@@ -141,29 +142,50 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 === Self-employment expenses
 
-==== Homeoffice
+#let expense_section(title, partitioned) = {
+  [==== #title]
 
-#amount_table(input.homeoffice_expenses, input.total_homeoffice_expenses)
+  table(
+    stroke: 0.5pt,
+    columns: (1fr, 1fr, 1fr),
+    align: (right, right, right),
+    text(weight: "bold", [Total]),
+    text(weight: "bold", [Private]),
+    text(weight: "bold", [Business]),
 
-==== Phone
+    [#partitioned.total_expenses CHF],
+    [#partitioned.total_private_expenses CHF],
+    [#partitioned.total_business_expenses CHF],
+  )
 
-#amount_table(input.phone_expenses, input.total_phone_expenses)
+  if partitioned.business_expenses.len() > 0 {
+    [===== Business expenses]
+    amount_table(
+      partitioned.business_expenses,
+      partitioned.total_business_expenses,
+    )
+  }
 
-==== Travel
+  if partitioned.private_expenses.len() > 0 {
+    [===== Private expenses]
+    amount_table(
+      partitioned.private_expenses,
+      partitioned.total_private_expenses,
+    )
+  }
+}
 
-#amount_table(input.travel_expenses, input.total_travel_expenses)
+#expense_section("Rent", input.homeoffice_expenses)
 
-==== Internet
+#expense_section("Phone", input.phone_expenses)
 
-#amount_table(input.internet_expenses, input.total_internet_expenses)
+#expense_section("Travel", input.travel_expenses)
 
-==== Electricity
+#expense_section("Internet", input.internet_expenses)
 
-#amount_table(input.electricity_expenses, input.total_electricity_expenses)
+#expense_section("Electricity", input.electricity_expenses)
 
-==== Insurance
-
-#amount_table(input.insurance_expenses, input.total_insurance_expenses)
+#expense_section("Insurance", input.insurance_expenses)
 
 === Third pillar
 
@@ -185,7 +207,34 @@ health insurance company.
 These are the uninsured doctor and dentist costs, which need to be declared
 separately.
 
-#amount_table(input.health_expenses, input.total_health_expenses)
+#table(
+  stroke: 0.5pt,
+  columns: (1fr, 1fr, 1fr),
+  align: (right, right, right),
+  text(weight: "bold", [Total]),
+  text(weight: "bold", [Private]),
+  text(weight: "bold", [Business]),
+
+  [#input.health_expenses.total_expenses CHF],
+  [#input.health_expenses.total_private_expenses CHF],
+  [#input.health_expenses.total_business_expenses CHF],
+)
+
+#if input.health_expenses.business_expenses.len() > 0 {
+  [==== Business health expenses]
+  amount_table(
+    input.health_expenses.business_expenses,
+    input.health_expenses.total_business_expenses,
+  )
+}
+
+#if input.health_expenses.private_expenses.len() > 0 {
+  [==== Private health expenses]
+  amount_table(
+    input.health_expenses.private_expenses,
+    input.health_expenses.total_private_expenses,
+  )
+}
 
 == Assets
 

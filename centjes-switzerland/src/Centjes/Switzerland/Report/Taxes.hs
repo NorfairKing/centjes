@@ -39,6 +39,7 @@ import Centjes.Switzerland.Reporter
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad
+import Data.Either
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
@@ -244,151 +245,196 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
   taxesReportTotalThirdPillarContributions <- requireSum $ map thirdPillarContributionCHFAmount taxesReportThirdPillarContributions
 
   let forAccountPostings a = forAccountsPostings (S.singleton a)
-  let forDeductableExpense a func = forAccountPostings a $ \lt@(Located tl Transaction {..}) _ lp ->
-        withDeductibleTag taxesInput tl lp transactionTags $
-          func lt lp
+  let makePrivateExpense (Located _ Transaction {..}) (Located _ Posting {..}) = do
+        let Located _ timestamp = transactionTimestamp
+        let day = Timestamp.toDay timestamp
+        privateExpenseDescription <- requireDescription transactionDescription
+        let Located al account = postingAccount
+        privateExpenseAmount <- requireExpensePositive al account
+        let privateExpenseTimestamp = timestamp
+        let Located _ privateExpenseCurrency = postingCurrency
+        privateExpenseCHFAmount <- convertDaily al dailyPriceGraphs day privateExpenseCurrency taxesReportCHF privateExpenseAmount
+        privateExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+          let fileInTarball = [reldir|expenses/private|] </> filename rf
+          includeFile fileInTarball rf
+          pure fileInTarball
+        pure PrivateExpense {..}
+  let forDeductableExpensePartitioned PartitionedExpenseAccounts {..} businessFunc = do
+        eithers <- forAccountsPostings (S.fromList [partitionedExpenseAccountsBusiness, partitionedExpenseAccountsPrivate]) $ \lt@(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+          let accountName = locatedValue postingAccountName
+           in if accountName == partitionedExpenseAccountsPrivate
+                then Just . Left <$> makePrivateExpense lt lp
+                else Just <$> withDeductibleTagEither taxesInput tl lp transactionTags (businessFunc lt lp) (makePrivateExpense lt lp)
+        pure $ partitionEithers eithers
 
-  taxesReportInsuranceExpenses <- forAccountsPostings
-    ( S.fromList
-        [ taxesInputAccidentInsuranceExpenseAccount,
-          taxesInputDailyAllowanceInsuranceExpenseAccount
-        ]
-    )
-    $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) -> withDeductibleTag taxesInput tl lp transactionTags $ do
-      let Located _ timestamp = transactionTimestamp
-      let day = Timestamp.toDay timestamp
-      insuranceExpenseDescription <- requireDescription transactionDescription
-      let Located al account = postingAccount
-      insuranceExpenseAmount <- requireExpensePositive al account
-      let insuranceExpenseTimestamp = timestamp
-      let Located _ insuranceExpenseCurrency = postingCurrency
-      insuranceExpenseCHFAmount <- convertDaily al dailyPriceGraphs day insuranceExpenseCurrency taxesReportCHF insuranceExpenseAmount
-      insuranceExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
-        let fileInTarball = [reldir|expenses/insurance|] </> filename rf
-        includeFile fileInTarball rf
-        pure fileInTarball
-      pure InsuranceExpense {..}
-
-  taxesReportTotalInsuranceExpenses <- requireSum $ map insuranceExpenseCHFAmount taxesReportInsuranceExpenses
+  taxesReportInsuranceExpenses <-
+    makePartitionedExpenses insuranceExpenseCHFAmount
+      . partitionEithers
+      =<< forAccountsPostings
+        ( S.fromList
+            [ taxesInputAccidentInsuranceExpenseAccount,
+              taxesInputDailyAllowanceInsuranceExpenseAccount
+            ]
+        )
+        ( \lt@(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+            Just
+              <$> withDeductibleTagEither
+                taxesInput
+                tl
+                lp
+                transactionTags
+                ( do
+                    let Located _ timestamp = transactionTimestamp
+                    let day = Timestamp.toDay timestamp
+                    insuranceExpenseDescription <- requireDescription transactionDescription
+                    let Located al account = postingAccount
+                    insuranceExpenseAmount <- requireExpensePositive al account
+                    let insuranceExpenseTimestamp = timestamp
+                    let Located _ insuranceExpenseCurrency = postingCurrency
+                    insuranceExpenseCHFAmount <- convertDaily al dailyPriceGraphs day insuranceExpenseCurrency taxesReportCHF insuranceExpenseAmount
+                    insuranceExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+                      let fileInTarball = [reldir|expenses/insurance|] </> filename rf
+                      includeFile fileInTarball rf
+                      pure fileInTarball
+                    pure InsuranceExpense {..}
+                )
+                (makePrivateExpense lt lp)
+        )
 
   taxesReportHomeofficeExpenses <-
-    forDeductableExpense taxesInputHomeofficeExpensesAccount $
-      \(Located _ Transaction {..}) (Located _ Posting {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        homeofficeExpenseDescription <- requireDescription transactionDescription
-        let Located al account = postingAccount
-        homeofficeExpenseAmount <- requireExpensePositive al account
-        let homeofficeExpenseTimestamp = timestamp
-        let Located _ homeofficeExpenseCurrency = postingCurrency
-        homeofficeExpenseCHFAmount <- convertDaily al dailyPriceGraphs day homeofficeExpenseCurrency taxesReportCHF homeofficeExpenseAmount
-        homeofficeExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
-          let fileInTarball = [reldir|expenses/homeoffice|] </> filename rf
-          includeFile fileInTarball rf
-          pure fileInTarball
-        pure HomeofficeExpense {..}
-
-  taxesReportTotalHomeofficeExpenses <- requireSum $ map homeofficeExpenseCHFAmount taxesReportHomeofficeExpenses
+    makePartitionedExpenses homeofficeExpenseCHFAmount
+      =<< forDeductableExpensePartitioned
+        taxesInputHomeofficeExpenseAccounts
+        ( \(Located _ Transaction {..}) (Located _ Posting {..}) -> do
+            let Located _ timestamp = transactionTimestamp
+            let day = Timestamp.toDay timestamp
+            homeofficeExpenseDescription <- requireDescription transactionDescription
+            let Located al account = postingAccount
+            homeofficeExpenseAmount <- requireExpensePositive al account
+            let homeofficeExpenseTimestamp = timestamp
+            let Located _ homeofficeExpenseCurrency = postingCurrency
+            homeofficeExpenseCHFAmount <- convertDaily al dailyPriceGraphs day homeofficeExpenseCurrency taxesReportCHF homeofficeExpenseAmount
+            homeofficeExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+              let fileInTarball = [reldir|expenses/homeoffice|] </> filename rf
+              includeFile fileInTarball rf
+              pure fileInTarball
+            pure HomeofficeExpense {..}
+        )
 
   taxesReportElectricityExpenses <-
-    forDeductableExpense taxesInputElectricityExpensesAccount $
-      \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        electricityExpenseDescription <- requireDescription transactionDescription
-        let Located al account = postingAccount
-        electricityExpenseAmount <- requireExpensePositive al account
-        let electricityExpenseTimestamp = timestamp
-        let Located _ electricityExpenseCurrency = postingCurrency
-        electricityExpenseCHFAmount <- convertDaily al dailyPriceGraphs day electricityExpenseCurrency taxesReportCHF electricityExpenseAmount
-        ne <- requireNonEmptyEvidence tl transactionAttachments
-        electricityExpenseEvidence <- forM ne $ \rf -> do
-          let fileInTarball = [reldir|expenses/electricity|] </> filename rf
-          includeFile fileInTarball rf
-          pure fileInTarball
-        pure ElectricityExpense {..}
-
-  taxesReportTotalElectricityExpenses <- requireSum $ map electricityExpenseCHFAmount taxesReportElectricityExpenses
+    makePartitionedExpenses electricityExpenseCHFAmount
+      =<< forDeductableExpensePartitioned
+        taxesInputElectricityExpenseAccounts
+        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+            let Located _ timestamp = transactionTimestamp
+            let day = Timestamp.toDay timestamp
+            electricityExpenseDescription <- requireDescription transactionDescription
+            let Located al account = postingAccount
+            electricityExpenseAmount <- requireExpensePositive al account
+            let electricityExpenseTimestamp = timestamp
+            let Located _ electricityExpenseCurrency = postingCurrency
+            electricityExpenseCHFAmount <- convertDaily al dailyPriceGraphs day electricityExpenseCurrency taxesReportCHF electricityExpenseAmount
+            ne <- requireNonEmptyEvidence tl transactionAttachments
+            electricityExpenseEvidence <- forM ne $ \rf -> do
+              let fileInTarball = [reldir|expenses/electricity|] </> filename rf
+              includeFile fileInTarball rf
+              pure fileInTarball
+            pure ElectricityExpense {..}
+        )
 
   taxesReportPhoneExpenses <-
-    forDeductableExpense taxesInputPhoneExpensesAccount $
-      \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        phoneExpenseDescription <- requireDescription transactionDescription
-        let Located al account = postingAccount
-        phoneExpenseAmount <- requireExpensePositive al account
-        let phoneExpenseTimestamp = timestamp
-        let Located _ phoneExpenseCurrency = postingCurrency
-        phoneExpenseCHFAmount <- convertDaily al dailyPriceGraphs day phoneExpenseCurrency taxesReportCHF phoneExpenseAmount
-        ne <- requireNonEmptyEvidence tl transactionAttachments
-        phoneExpenseEvidence <- forM ne $ \rf -> do
-          let fileInTarball = [reldir|expenses/phone|] </> filename rf
-          includeFile fileInTarball rf
-          pure fileInTarball
-        pure PhoneExpense {..}
-
-  taxesReportTotalPhoneExpenses <- requireSum $ map phoneExpenseCHFAmount taxesReportPhoneExpenses
+    makePartitionedExpenses phoneExpenseCHFAmount
+      =<< forDeductableExpensePartitioned
+        taxesInputPhoneExpenseAccounts
+        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+            let Located _ timestamp = transactionTimestamp
+            let day = Timestamp.toDay timestamp
+            phoneExpenseDescription <- requireDescription transactionDescription
+            let Located al account = postingAccount
+            phoneExpenseAmount <- requireExpensePositive al account
+            let phoneExpenseTimestamp = timestamp
+            let Located _ phoneExpenseCurrency = postingCurrency
+            phoneExpenseCHFAmount <- convertDaily al dailyPriceGraphs day phoneExpenseCurrency taxesReportCHF phoneExpenseAmount
+            ne <- requireNonEmptyEvidence tl transactionAttachments
+            phoneExpenseEvidence <- forM ne $ \rf -> do
+              let fileInTarball = [reldir|expenses/phone|] </> filename rf
+              includeFile fileInTarball rf
+              pure fileInTarball
+            pure PhoneExpense {..}
+        )
 
   taxesReportTravelExpenses <-
-    forDeductableExpense taxesInputTravelExpensesAccount $
-      \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        travelExpenseDescription <- requireDescription transactionDescription
-        let Located al account = postingAccount
-        travelExpenseAmount <- requireExpensePositive al account
-        let travelExpenseTimestamp = timestamp
-        let Located _ travelExpenseCurrency = postingCurrency
-        travelExpenseCHFAmount <- convertDaily al dailyPriceGraphs day travelExpenseCurrency taxesReportCHF travelExpenseAmount
-        ne <- requireNonEmptyEvidence tl transactionAttachments
-        travelExpenseEvidence <- forM ne $ \rf -> do
-          let fileInTarball = [reldir|expenses/travel|] </> filename rf
-          includeFile fileInTarball rf
-          pure fileInTarball
-        pure TravelExpense {..}
-
-  taxesReportTotalTravelExpenses <- requireSum $ map travelExpenseCHFAmount taxesReportTravelExpenses
+    makePartitionedExpenses travelExpenseCHFAmount
+      =<< forDeductableExpensePartitioned
+        taxesInputTravelExpenseAccounts
+        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+            let Located _ timestamp = transactionTimestamp
+            let day = Timestamp.toDay timestamp
+            travelExpenseDescription <- requireDescription transactionDescription
+            let Located al account = postingAccount
+            travelExpenseAmount <- requireExpensePositive al account
+            let travelExpenseTimestamp = timestamp
+            let Located _ travelExpenseCurrency = postingCurrency
+            travelExpenseCHFAmount <- convertDaily al dailyPriceGraphs day travelExpenseCurrency taxesReportCHF travelExpenseAmount
+            ne <- requireNonEmptyEvidence tl transactionAttachments
+            travelExpenseEvidence <- forM ne $ \rf -> do
+              let fileInTarball = [reldir|expenses/travel|] </> filename rf
+              includeFile fileInTarball rf
+              pure fileInTarball
+            pure TravelExpense {..}
+        )
 
   taxesReportInternetExpenses <-
-    forDeductableExpense taxesInputInternetExpensesAccount $
-      \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        internetExpenseDescription <- requireDescription transactionDescription
-        let Located al account = postingAccount
-        internetExpenseAmount <- requireExpensePositive al account
-        let internetExpenseTimestamp = timestamp
-        let Located _ internetExpenseCurrency = postingCurrency
-        internetExpenseCHFAmount <- convertDaily al dailyPriceGraphs day internetExpenseCurrency taxesReportCHF internetExpenseAmount
-        ne <- requireNonEmptyEvidence tl transactionAttachments
-        internetExpenseEvidence <- forM ne $ \rf -> do
-          let fileInTarball = [reldir|expenses/internet|] </> filename rf
-          includeFile fileInTarball rf
-          pure fileInTarball
-        pure InternetExpense {..}
-
-  taxesReportTotalInternetExpenses <- requireSum $ map internetExpenseCHFAmount taxesReportInternetExpenses
+    makePartitionedExpenses internetExpenseCHFAmount
+      =<< forDeductableExpensePartitioned
+        taxesInputInternetExpenseAccounts
+        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+            let Located _ timestamp = transactionTimestamp
+            let day = Timestamp.toDay timestamp
+            internetExpenseDescription <- requireDescription transactionDescription
+            let Located al account = postingAccount
+            internetExpenseAmount <- requireExpensePositive al account
+            let internetExpenseTimestamp = timestamp
+            let Located _ internetExpenseCurrency = postingCurrency
+            internetExpenseCHFAmount <- convertDaily al dailyPriceGraphs day internetExpenseCurrency taxesReportCHF internetExpenseAmount
+            ne <- requireNonEmptyEvidence tl transactionAttachments
+            internetExpenseEvidence <- forM ne $ \rf -> do
+              let fileInTarball = [reldir|expenses/internet|] </> filename rf
+              includeFile fileInTarball rf
+              pure fileInTarball
+            pure InternetExpense {..}
+        )
 
   taxesReportHealthExpenses <-
-    forDeductableExpense taxesInputHealthExpensesAccount $
-      \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
-        let Located _ timestamp = transactionTimestamp
-        let day = Timestamp.toDay timestamp
-        healthExpenseDescription <- requireDescription transactionDescription
-        let Located al account = postingAccount
-        healthExpenseAmount <- requireExpensePositive al account
-        let healthExpenseTimestamp = timestamp
-        let Located _ healthExpenseCurrency = postingCurrency
-        healthExpenseCHFAmount <- convertDaily al dailyPriceGraphs day healthExpenseCurrency taxesReportCHF healthExpenseAmount
-        ne <- requireNonEmptyEvidence tl transactionAttachments
-        healthExpenseEvidence <- forM ne $ \rf -> do
-          let fileInTarball = [reldir|expenses/health-insurance|] </> filename rf
-          includeFile fileInTarball rf
-          pure fileInTarball
-        pure HealthExpense {..}
-
-  taxesReportTotalHealthExpenses <- requireSum $ map healthExpenseCHFAmount taxesReportHealthExpenses
+    makePartitionedExpenses healthExpenseCHFAmount
+      . partitionEithers
+      =<< forAccountPostings
+        taxesInputHealthExpensesAccount
+        ( \lt@(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+            Just
+              <$> withDeductibleTagEither
+                taxesInput
+                tl
+                lp
+                transactionTags
+                ( do
+                    let Located _ timestamp = transactionTimestamp
+                    let day = Timestamp.toDay timestamp
+                    healthExpenseDescription <- requireDescription transactionDescription
+                    let Located al account = postingAccount
+                    healthExpenseAmount <- requireExpensePositive al account
+                    let healthExpenseTimestamp = timestamp
+                    let Located _ healthExpenseCurrency = postingCurrency
+                    healthExpenseCHFAmount <- convertDaily al dailyPriceGraphs day healthExpenseCurrency taxesReportCHF healthExpenseAmount
+                    ne <- requireNonEmptyEvidence tl transactionAttachments
+                    healthExpenseEvidence <- forM ne $ \rf -> do
+                      let fileInTarball = [reldir|expenses/health-insurance|] </> filename rf
+                      includeFile fileInTarball rf
+                      pure fileInTarball
+                    pure HealthExpense {..}
+                )
+                (makePrivateExpense lt lp)
+        )
 
   taxesReportMovables <-
     produceDepreciationSchedule
@@ -499,6 +545,17 @@ requireNonEmptyEvidence tl attachments =
     Nothing -> validationTFailure $ TaxesErrorNoEvidence tl
     Just ne -> forM ne $ \(Located _ (Attachment (Located _ rf))) -> pure rf
 
+makePartitionedExpenses ::
+  (a -> Money.Amount) ->
+  ([PrivateExpense ann], [a]) ->
+  Reporter (TaxesError ann) (PartitionedExpenses a ann)
+makePartitionedExpenses businessSumAccessor (privateExpenses, businessExpenses) = do
+  partitionedExpensesTotalBusinessExpenses <- requireSum $ map businessSumAccessor businessExpenses
+  partitionedExpensesTotalPrivateExpenses <- requireSum $ map privateExpenseCHFAmount privateExpenses
+  let partitionedExpensesBusinessExpenses = businessExpenses
+  let partitionedExpensesPrivateExpenses = privateExpenses
+  pure PartitionedExpenses {..}
+
 requireSum :: (Foldable f) => f Money.Amount -> Reporter (TaxesError ann) Money.Amount
 requireSum amounts =
   case Amount.sum amounts of
@@ -520,6 +577,28 @@ withDeductibleTag TaxesInput {..} tl lp tags continue = do
   case decideDeductible mTagDeductible mTagNotDeductible mTagTaxDeductible mTagNotTaxDeductible of
     DefinitelyDeductible _ -> Just <$> continue
     DefinitelyNotDeductible _ -> pure Nothing
+    Undeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+    RedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
+    AmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl
+
+-- | Like 'withDeductibleTag' but returns 'Right' for deductible and 'Left' for not-deductible
+-- instead of discarding not-deductible expenses.
+withDeductibleTagEither ::
+  TaxesInput ->
+  ann ->
+  GenLocated ann (Posting ann) ->
+  Map Tag ann ->
+  Reporter (TaxesError ann) a ->
+  Reporter (TaxesError ann) b ->
+  Reporter (TaxesError ann) (Either b a)
+withDeductibleTagEither TaxesInput {..} tl lp tags businessContinue privateContinue = do
+  let mTagDeductible = M.lookup taxesInputTagDeductible tags
+  let mTagNotDeductible = M.lookup taxesInputTagNotDeductible tags
+  let mTagTaxDeductible = M.lookup taxesInputTagTaxDeductible tags
+  let mTagNotTaxDeductible = M.lookup taxesInputTagNotTaxDeductible tags
+  case decideDeductible mTagDeductible mTagNotDeductible mTagTaxDeductible mTagNotTaxDeductible of
+    DefinitelyDeductible _ -> Right <$> businessContinue
+    DefinitelyNotDeductible _ -> Left <$> privateContinue
     Undeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
     RedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
     AmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl

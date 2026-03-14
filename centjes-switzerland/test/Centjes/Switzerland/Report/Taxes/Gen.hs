@@ -8,11 +8,27 @@ import Centjes.Switzerland.Report.Taxes.Types
 import Control.Monad
 import Data.GenValidity
 import Data.GenValidity.Time ()
+import Money.Amount (Amount)
 import qualified Money.Amount as Amount
 import Money.Amount.Gen ()
 import Test.QuickCheck
 
 instance GenValid TaxesInput
+
+instance GenValid PartitionedExpenseAccounts
+
+fixPartitionedExpensesTotals ::
+  (a -> Amount) ->
+  PartitionedExpenses a ann ->
+  Maybe (PartitionedExpenses a ann)
+fixPartitionedExpensesTotals businessAccessor pe = do
+  totalBusiness <- Amount.sum (map businessAccessor (partitionedExpensesBusinessExpenses pe))
+  totalPrivate <- Amount.sum (map privateExpenseCHFAmount (partitionedExpensesPrivateExpenses pe))
+  pure $
+    pe
+      { partitionedExpensesTotalBusinessExpenses = totalBusiness,
+        partitionedExpensesTotalPrivateExpenses = totalPrivate
+      }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
@@ -31,32 +47,32 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         pure $ tr {taxesReportTotalThirdPillarContributions = totalThirdPillarContributions}
                     )
       `suchThatMap` ( \tr -> do
-                        totalHomeofficeExpenses <- Amount.sum (map homeofficeExpenseAmount (taxesReportHomeofficeExpenses tr))
-                        pure $ tr {taxesReportTotalHomeofficeExpenses = totalHomeofficeExpenses}
+                        fixed <- fixPartitionedExpensesTotals insuranceExpenseCHFAmount (taxesReportInsuranceExpenses tr)
+                        pure $ tr {taxesReportInsuranceExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
-                        totalInsuranceExpenses <- Amount.sum (map insuranceExpenseAmount (taxesReportInsuranceExpenses tr))
-                        pure $ tr {taxesReportTotalInsuranceExpenses = totalInsuranceExpenses}
+                        fixed <- fixPartitionedExpensesTotals homeofficeExpenseCHFAmount (taxesReportHomeofficeExpenses tr)
+                        pure $ tr {taxesReportHomeofficeExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
-                        totalElectricityExpenses <- Amount.sum (map electricityExpenseAmount (taxesReportElectricityExpenses tr))
-                        pure $ tr {taxesReportTotalElectricityExpenses = totalElectricityExpenses}
+                        fixed <- fixPartitionedExpensesTotals electricityExpenseCHFAmount (taxesReportElectricityExpenses tr)
+                        pure $ tr {taxesReportElectricityExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
-                        totalPhoneExpenses <- Amount.sum (map phoneExpenseAmount (taxesReportPhoneExpenses tr))
-                        pure $ tr {taxesReportTotalPhoneExpenses = totalPhoneExpenses}
+                        fixed <- fixPartitionedExpensesTotals phoneExpenseCHFAmount (taxesReportPhoneExpenses tr)
+                        pure $ tr {taxesReportPhoneExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
-                        totalTravelExpenses <- Amount.sum (map travelExpenseAmount (taxesReportTravelExpenses tr))
-                        pure $ tr {taxesReportTotalTravelExpenses = totalTravelExpenses}
+                        fixed <- fixPartitionedExpensesTotals travelExpenseCHFAmount (taxesReportTravelExpenses tr)
+                        pure $ tr {taxesReportTravelExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
-                        totalInternetExpenses <- Amount.sum (map internetExpenseAmount (taxesReportInternetExpenses tr))
-                        pure $ tr {taxesReportTotalInternetExpenses = totalInternetExpenses}
+                        fixed <- fixPartitionedExpensesTotals internetExpenseCHFAmount (taxesReportInternetExpenses tr)
+                        pure $ tr {taxesReportInternetExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
-                        totalHealthExpenses <- Amount.sum (map healthExpenseAmount (taxesReportHealthExpenses tr))
-                        pure $ tr {taxesReportTotalHealthExpenses = totalHealthExpenses}
+                        fixed <- fixPartitionedExpensesTotals healthExpenseCHFAmount (taxesReportHealthExpenses tr)
+                        pure $ tr {taxesReportHealthExpenses = fixed}
                     )
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (AssetAccount ann) where
@@ -199,6 +215,22 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (DepreciationPurchase ann
       r
         { depreciationPurchaseAmount = amount
         }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (PrivateExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { privateExpenseAmount = amount,
+          privateExpenseCHFAmount = chfAmount
+        }
+
+instance (GenValid a, Show ann, Ord ann, GenValid ann) => GenValid (PartitionedExpenses a ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DepreciationSchedule ann) where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

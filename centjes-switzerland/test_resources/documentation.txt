@@ -135,11 +135,23 @@
         [33m<string>[m
     default: [33m"expenses:rent:homeoffice"[m
     
+    [34mthe account to use for private homeoffice expenses[m
+    config:
+      [37mhomeoffice-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:rent:private"[m
+    
     [34mthe account to use for electricity expenses[m
     config:
       [37melectricity-expenses-account[m: # [32mor null[m
         [33m<string>[m
     default: [33m"expenses:electricity:homeoffice"[m
+    
+    [34mthe account to use for private electricity expenses[m
+    config:
+      [37melectricity-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:electricity:private"[m
     
     [34mthe account to use for phone expenses[m
     config:
@@ -147,17 +159,35 @@
         [33m<string>[m
     default: [33m"expenses:phone:professional"[m
     
+    [34mthe account to use for private phone expenses[m
+    config:
+      [37mphone-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:phone:private"[m
+    
     [34mthe account to use for travel expenses[m
     config:
       [37mtravel-expenses-account[m: # [32mor null[m
         [33m<string>[m
     default: [33m"expenses:travel:professional"[m
     
+    [34mthe account to use for private travel expenses[m
+    config:
+      [37mtravel-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:travel:private"[m
+    
     [34mthe account to use for internet expenses[m
     config:
       [37minternet-expenses-account[m: # [32mor null[m
         [33m<string>[m
     default: [33m"expenses:internet:homeoffice"[m
+    
+    [34mthe account to use for private internet expenses[m
+    config:
+      [37minternet-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:internet:private"[m
     
     [34mthe account to use for health insurance expenses[m
     config:
@@ -454,9 +484,19 @@
   [37mhomeoffice-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
+  [34mthe account to use for private homeoffice expenses[m
+  default: [33m"expenses:rent:private"[m
+  [37mhomeoffice-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mthe account to use for electricity expenses[m
   default: [33m"expenses:electricity:homeoffice"[m
   [37melectricity-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for private electricity expenses[m
+  default: [33m"expenses:electricity:private"[m
+  [37melectricity-private-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for phone expenses[m
@@ -464,14 +504,29 @@
   [37mphone-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
+  [34mthe account to use for private phone expenses[m
+  default: [33m"expenses:phone:private"[m
+  [37mphone-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mthe account to use for travel expenses[m
   default: [33m"expenses:travel:professional"[m
   [37mtravel-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
+  [34mthe account to use for private travel expenses[m
+  default: [33m"expenses:travel:private"[m
+  [37mtravel-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mthe account to use for internet expenses[m
   default: [33m"expenses:internet:homeoffice"[m
   [37minternet-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for private internet expenses[m
+  default: [33m"expenses:internet:private"[m
+  [37minternet-private-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for health insurance expenses[m
