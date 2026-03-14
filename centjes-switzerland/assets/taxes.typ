@@ -99,7 +99,45 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 #amount_table(input.revenues, input.total_revenues)
 
+#pagebreak()
+
 == Deductions
+
+=== Depreciation
+
+#let depreciation_schedule(title, schedule) = {
+  [==== #title]
+
+  table(
+    stroke: 0.5pt,
+    columns: (1fr, auto),
+    align: (left, right),
+    [Balance at the end of last year
+      #for evidence in schedule.opening_balance_evidence [
+        #linebreak()
+        #link(evidence, evidence)
+      ]
+    ],
+    [#schedule.opening_balance CHF],
+
+    [Purchases (see below)], [#schedule.total_purchases CHF],
+    [Depreciation (#schedule.depreciation_rate)],
+    [\-#schedule.depreciation CHF],
+
+    text(weight: "bold", [Balance at the end of the year]),
+    [#text(weight: "bold", schedule.closing_balance) CHF],
+  )
+
+  if schedule.purchases.len() > 0 {
+    amount_table(schedule.purchases, schedule.total_purchases)
+  }
+}
+
+#depreciation_schedule("Movables", input.movables)
+
+#depreciation_schedule("Machinery", input.machinery)
+
+#pagebreak()
 
 === Self-employment expenses
 

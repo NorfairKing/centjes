@@ -34,6 +34,8 @@ extra-source-files:
     test_resources/documentation.txt
     test_resources/empty/input.json
     test_resources/empty/ledger.cent
+    test_resources/empty/machinery-balance.txt
+    test_resources/empty/movables-balance.txt
     test_resources/empty/switzerland.yaml
     test_resources/empty/taxes.xml
     test_resources/empty/vat.xml
@@ -45,6 +47,8 @@ extra-source-files:
     test_resources/example/input.json
     test_resources/example/joe-feb.txt
     test_resources/example/ledger.cent
+    test_resources/example/machinery-balance.txt
+    test_resources/example/movables-balance.txt
     test_resources/example/options.nix
     test_resources/example/quux-dec.txt
     test_resources/example/quux-feb.txt

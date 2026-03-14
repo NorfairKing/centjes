@@ -20,10 +20,13 @@ module Centjes.Switzerland.Report.Taxes.Types
     TravelExpense (..),
     InternetExpense (..),
     HealthExpense (..),
+    DepreciationSchedule (..),
+    DepreciationPurchase (..),
     TaxesError (..),
   )
 where
 
+import Autodocodec
 import qualified Centjes.AccountName as AccountName
 import Centjes.Convert
 import qualified Centjes.CurrencySymbol as CurrencySymbol
@@ -31,6 +34,7 @@ import Centjes.Format
 import Centjes.Ledger as Ledger
 import Centjes.Location
 import Centjes.Module
+import qualified Centjes.Module as Syntax
 import Centjes.Report.Balance
 import Centjes.Report.EvaluatedLedger
 import qualified Centjes.Tag as Tag
@@ -38,6 +42,7 @@ import Centjes.Validation
 import Data.List
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map (Map)
+import Data.Ratio
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -50,6 +55,8 @@ import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import qualified Money.ConversionRate as Money (ConversionRate)
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
+import qualified Numeric.DecimalLiteral as DecimalLiteral
+import Numeric.Natural
 import OptEnvConf
 import Path
 import Text.Read (readMaybe)
@@ -74,7 +81,13 @@ data TaxesInput = TaxesInput
     taxesInputPhoneExpensesAccount :: !AccountName,
     taxesInputTravelExpensesAccount :: !AccountName,
     taxesInputInternetExpensesAccount :: !AccountName,
-    taxesInputHealthExpensesAccount :: !AccountName
+    taxesInputHealthExpensesAccount :: !AccountName,
+    taxesInputMovablesAssetsAccount :: !AccountName,
+    taxesInputMovablesExpensesAccount :: !AccountName,
+    taxesInputMovablesDepreciationRate :: !(Ratio Natural),
+    taxesInputMachineryAssetsAccount :: !AccountName,
+    taxesInputMachineryExpensesAccount :: !AccountName,
+    taxesInputMachineryDepreciationRate :: !(Ratio Natural)
   }
   deriving (Show, Generic)
 
@@ -219,7 +232,72 @@ parseTaxesInput = do
         conf "health-insurance-expenses-account",
         value "expenses:health"
       ]
+  taxesInputMovablesAssetsAccount <-
+    setting
+      [ help "the account to use for movables assets",
+        reader $ maybeReader AccountName.fromString,
+        conf "movables-assets-account",
+        value "assets:movables"
+      ]
+  taxesInputMovablesExpensesAccount <-
+    setting
+      [ help "the expenses account for movables purchases",
+        reader $ maybeReader AccountName.fromString,
+        conf "movables-expenses-account",
+        value "expenses:movables"
+      ]
+  -- Declining-balance depreciation rate for Mobilien (movable property).
+  -- Default 25% per ESTV Merkblatt A/1995 Geschäftliche Betriebe:
+  -- https://www.estv.admin.ch/dam/estv/de/dokumente/dbst/merkblaetter/dbst-mb-a-1995-geschbetriebe-de.pdf
+  taxesInputMovablesDepreciationRate <-
+    setting
+      [ help "the depreciation rate for movables (e.g. 0.25 for 25%)",
+        reader $ eitherReader parseDepreciationRate,
+        confWith "movables-depreciation-rate" depreciationRateCodec,
+        value (25 % 100)
+      ]
+  taxesInputMachineryAssetsAccount <-
+    setting
+      [ help "the account to use for machinery assets",
+        reader $ maybeReader AccountName.fromString,
+        conf "machinery-assets-account",
+        value "assets:machinery"
+      ]
+  taxesInputMachineryExpensesAccount <-
+    setting
+      [ help "the expenses account for machinery purchases",
+        reader $ maybeReader AccountName.fromString,
+        conf "machinery-expenses-account",
+        value "expenses:machinery"
+      ]
+  -- Declining-balance depreciation rate for Maschinen (machinery).
+  -- Default 40% per ESTV Merkblatt A/1995 Geschäftliche Betriebe:
+  -- https://www.estv.admin.ch/dam/estv/de/dokumente/dbst/merkblaetter/dbst-mb-a-1995-geschbetriebe-de.pdf
+  taxesInputMachineryDepreciationRate <-
+    setting
+      [ help "the depreciation rate for machinery (e.g. 0.4 for 40%)",
+        reader $ eitherReader parseDepreciationRate,
+        confWith "machinery-depreciation-rate" depreciationRateCodec,
+        value (40 % 100)
+      ]
   pure TaxesInput {..}
+
+parseDepreciationRate :: String -> Either String (Ratio Natural)
+parseDepreciationRate s = case DecimalLiteral.fromString s of
+  Nothing -> Left $ "Could not parse depreciation rate: " <> s
+  Just dl -> case DecimalLiteral.toRatio dl of
+    Nothing -> Left $ "Could not convert depreciation rate to ratio: " <> s
+    Just r -> Right r
+
+depreciationRateCodec :: JSONCodec (Ratio Natural)
+depreciationRateCodec =
+  bimapCodec
+    parseDepreciationRate
+    ( \r -> case DecimalLiteral.fromRatio r of
+        Nothing -> show (numerator r) <> "/" <> show (denominator r)
+        Just dl -> DecimalLiteral.toString dl
+    )
+    codec
 
 -- | The information we need to produce Taxes reports like the pdfs, zip files,
 -- or xml files.
@@ -249,7 +327,9 @@ data TaxesReport ann = TaxesReport
     taxesReportInternetExpenses :: ![InternetExpense ann],
     taxesReportTotalInternetExpenses :: !Money.Amount,
     taxesReportHealthExpenses :: ![HealthExpense ann],
-    taxesReportTotalHealthExpenses :: !Money.Amount
+    taxesReportTotalHealthExpenses :: !Money.Amount,
+    taxesReportMovables :: !(DepreciationSchedule ann),
+    taxesReportMachinery :: !(DepreciationSchedule ann)
   }
   deriving (Show, Generic)
 
@@ -404,6 +484,29 @@ data HealthExpense ann = HealthExpense
 
 instance (Validity ann, Show ann, Ord ann) => Validity (HealthExpense ann)
 
+data DepreciationSchedule ann = DepreciationSchedule
+  { depreciationScheduleDepreciationRate :: !(Ratio Natural),
+    depreciationScheduleOpeningBalance :: !Money.Amount,
+    depreciationScheduleOpeningBalanceEvidence :: !(NonEmpty (Path Rel File)),
+    depreciationSchedulePurchases :: ![DepreciationPurchase ann],
+    depreciationScheduleTotalPurchases :: !Money.Amount,
+    depreciationScheduleDepreciation :: !Money.Amount,
+    depreciationScheduleClosingBalance :: !Money.Amount
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (DepreciationSchedule ann)
+
+data DepreciationPurchase ann = DepreciationPurchase
+  { depreciationPurchaseTimestamp :: !Timestamp,
+    depreciationPurchaseDescription :: !Description,
+    depreciationPurchaseAmount :: !Money.Amount,
+    depreciationPurchaseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (DepreciationPurchase ann)
+
 data TaxesError ann
   = TaxesErrorNoCHF
   | TaxesErrorSum
@@ -422,6 +525,12 @@ data TaxesError ann
   | TaxesErrorDeductibleAndNotDeductible !ann !ann !ann
   | TaxesErrorRedundantlyDeclared !ann !ann !ann
   | TaxesErrorUntaggedExpenses !ann !(GenLocated ann (Ledger.Posting ann))
+  | TaxesErrorDepreciationAdditionOverflow
+  | TaxesErrorDepreciationFractionError
+  | TaxesErrorDepreciationSubtractionOverflow
+  | TaxesErrorDepreciationNegativeBalance !ann !AccountName
+  | TaxesErrorDepreciationAccountNotDeclared !AccountName
+  | TaxesErrorDepreciationNoOpeningBalance !ann !AccountName !Year
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (TaxesError ann)
@@ -552,6 +661,62 @@ instance ToReport (TaxesError SourceSpan) where
           (toDiagnosePosition tl, Where "in this transaction")
         ]
         [Hint "tag as 'deductible' or 'not-deductible' to resolve this ambiguity"]
+    TaxesErrorDepreciationAdditionOverflow -> Err Nothing "depreciation addition overflow: opening balance plus purchases became too big" [] []
+    TaxesErrorDepreciationFractionError -> Err Nothing "depreciation fraction error: could not compute depreciation amount" [] []
+    TaxesErrorDepreciationSubtractionOverflow -> Err Nothing "depreciation subtraction overflow: could not compute closing balance" [] []
+    TaxesErrorDepreciationNegativeBalance al an ->
+      Err
+        Nothing
+        ("Negative balance for depreciation account: " <> show an)
+        [(toDiagnosePosition al, This "This account has a negative balance")]
+        []
+    TaxesErrorDepreciationAccountNotDeclared an ->
+      Err
+        Nothing
+        ("Depreciation account not declared: " <> show an)
+        []
+        [Hint "Declare the account in the ledger"]
+    TaxesErrorDepreciationNoOpeningBalance al an year ->
+      Err
+        Nothing
+        ("No opening balance for depreciation account: " <> show an)
+        [(toDiagnosePosition al, This "This account has no balance at the end of the previous year")]
+        [ Hint $
+            unlines'
+              [ "Make sure the asset account has a balance at the end of the previous year.",
+                "For example, add a transaction like this:",
+                T.unpack $
+                  T.strip $
+                    formatDeclaration $
+                      DeclarationTransaction $
+                        noLoc $
+                          Syntax.Transaction
+                            { transactionTimestamp = noLoc $ TimestampDay $ fromGregorian (year - 1) 12 31,
+                              transactionDescription = Just $ noLoc $ Description "Opening balance",
+                              transactionPostings =
+                                [ noLoc $
+                                    Syntax.Posting
+                                      { postingReal = True,
+                                        postingAccountName = noLoc "equity:starting",
+                                        postingAccount = noLoc $ DecimalLiteral Nothing 0 0,
+                                        postingCurrencySymbol = noLoc $ CurrencySymbol "CHF",
+                                        postingCost = Nothing,
+                                        postingRatio = Nothing
+                                      },
+                                  noLoc $
+                                    Syntax.Posting
+                                      { postingReal = True,
+                                        postingAccountName = noLoc an,
+                                        postingAccount = noLoc $ DecimalLiteral Nothing 0 0,
+                                        postingCurrencySymbol = noLoc $ CurrencySymbol "CHF",
+                                        postingCost = Nothing,
+                                        postingRatio = Nothing
+                                      }
+                                ],
+                              transactionExtras = []
+                            }
+              ]
+        ]
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"

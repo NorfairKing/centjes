@@ -44,17 +44,19 @@ import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe
+import Data.Ratio
 import qualified Data.Set as S
 import Data.Time
 import Data.Traversable
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Money.Account as Money (Account (..))
+import qualified Money.Account as Money
 import Money.Amount as Money (Amount (..), Rounding (..))
 import qualified Money.Amount as Amount
 import Money.MultiAccount (MultiAccount (..))
 import qualified Money.MultiAccount as MultiAccount
 import qualified Money.QuantisationFactor as QuantisationFactor
+import Numeric.Natural
 import Path
 
 produceTaxesReport ::
@@ -116,6 +118,12 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
     liftValidation $
       mapValidationFailure TaxesErrorBalanceError $
         produceBalanceReportFromEvaluatedLedger FilterAny (Just endOfYear) Nothing False evaluatedLedger
+
+  let endOfPreviousYear = fromGregorian (taxesReportYear - 1) 12 31
+  previousYearBalanceReport <-
+    liftValidation $
+      mapValidationFailure TaxesErrorBalanceError $
+        produceBalanceReportFromEvaluatedLedger FilterAny (Just endOfPreviousYear) Nothing False evaluatedLedger
 
   taxesReportAssetAccounts <- fmap catMaybes $ for (M.toList ledgerAccounts) $ \(an, Located al Account {..}) -> do
     let mUndeclaredTag = M.lookup taxesInputTagUndeclared accountTags
@@ -382,6 +390,32 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportTotalHealthExpenses <- requireSum $ map healthExpenseCHFAmount taxesReportHealthExpenses
 
+  taxesReportMovables <-
+    produceDepreciationSchedule
+      taxesInput
+      taxesInputMovablesAssetsAccount
+      taxesInputMovablesExpensesAccount
+      taxesInputMovablesDepreciationRate
+      dailyPriceGraphs
+      taxesReportCHF
+      ledgerAccounts
+      previousYearBalanceReport
+      yearTransactions
+      [reldir|depreciation/movables|]
+
+  taxesReportMachinery <-
+    produceDepreciationSchedule
+      taxesInput
+      taxesInputMachineryAssetsAccount
+      taxesInputMachineryExpensesAccount
+      taxesInputMachineryDepreciationRate
+      dailyPriceGraphs
+      taxesReportCHF
+      ledgerAccounts
+      previousYearBalanceReport
+      yearTransactions
+      [reldir|depreciation/machinery|]
+
   pure TaxesReport {..}
 
 dayInYear :: Integer -> Day -> Bool
@@ -489,3 +523,86 @@ withDeductibleTag TaxesInput {..} tl lp tags continue = do
     Undeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
     RedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
     AmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl
+
+produceDepreciationSchedule ::
+  (Ord ann) =>
+  TaxesInput ->
+  AccountName ->
+  AccountName ->
+  Ratio Natural ->
+  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Currency ann ->
+  Map AccountName (GenLocated ann (Account ann)) ->
+  BalanceReport ann ->
+  Vector (GenLocated ann (Transaction ann)) ->
+  Path Rel Dir ->
+  Reporter (TaxesError ann) (DepreciationSchedule ann)
+produceDepreciationSchedule taxesInput assetAccount expenseAccount depreciationScheduleDepreciationRate dailyPriceGraphs chf accounts previousYearBalanceReport yearTransactions tarballDir = do
+  let endOfPreviousYear = fromGregorian (taxesInputYear taxesInput - 1) 12 31
+
+  (accountLocation, depreciationScheduleOpeningBalanceEvidence) <- case M.lookup assetAccount accounts of
+    Nothing -> validationTFailure $ TaxesErrorDepreciationAccountNotDeclared assetAccount
+    Just (Located al Account {..}) -> do
+      let attachments = map (locatedValue . attachmentPath . locatedValue) $ V.toList accountAttachments
+      case NE.nonEmpty attachments of
+        Nothing -> validationTFailure $ TaxesErrorAssetAccountWithoutEvidence (Located al assetAccount)
+        Just ne -> do
+          evidence <- forM ne $ \rf -> do
+            let fileInTarball = tarballDir </> simplifyDir rf
+            includeFile fileInTarball rf
+            pure fileInTarball
+          pure (al, evidence)
+
+  depreciationScheduleOpeningBalance <- case M.lookup assetAccount $ balanceReportBalances previousYearBalanceReport of
+    Nothing -> validationTFailure $ TaxesErrorDepreciationNoOpeningBalance accountLocation assetAccount (taxesInputYear taxesInput)
+    Just ma -> convertBalance accountLocation endOfPreviousYear ma
+
+  depreciationSchedulePurchases <- fmap (concatMap catMaybes) $ forM (V.toList yearTransactions) $ \(Located tl Transaction {..}) -> do
+    let matchingPostings =
+          filter
+            ( \(Located _ Posting {..}) ->
+                locatedValue postingAccountName == expenseAccount && postingReal
+            )
+            (V.toList transactionPostings)
+    forM matchingPostings $ \lp@(Located _ Posting {..}) ->
+      withDeductibleTag taxesInput tl lp transactionTags $ do
+        let Located al account = postingAccount
+        positive <- requireExpensePositive al account
+        depreciationPurchaseDescription <- requireDescription transactionDescription
+        let depreciationPurchaseTimestamp = locatedValue transactionTimestamp
+        let Located _ purchaseCurrency = postingCurrency
+        let day = Timestamp.toDay depreciationPurchaseTimestamp
+        depreciationPurchaseAmount <-
+          convertDaily al dailyPriceGraphs day purchaseCurrency chf positive
+        ne <- requireNonEmptyEvidence tl transactionAttachments
+        depreciationPurchaseEvidence <- forM ne $ \rf -> do
+          let fileInTarball = tarballDir </> filename rf
+          includeFile fileInTarball rf
+          pure fileInTarball
+        pure DepreciationPurchase {..}
+
+  depreciationScheduleTotalPurchases <- requireSum $ map depreciationPurchaseAmount depreciationSchedulePurchases
+
+  openingPlusPurchases <-
+    case Amount.add depreciationScheduleOpeningBalance depreciationScheduleTotalPurchases of
+      Nothing -> validationTFailure TaxesErrorDepreciationAdditionOverflow
+      Just s -> pure s
+
+  depreciationScheduleDepreciation <-
+    case fst $ Amount.fraction RoundNearest openingPlusPurchases depreciationScheduleDepreciationRate of
+      Nothing -> validationTFailure TaxesErrorDepreciationFractionError
+      Just d -> pure d
+  depreciationScheduleClosingBalance <-
+    case Amount.subtract openingPlusPurchases depreciationScheduleDepreciation of
+      Nothing -> validationTFailure TaxesErrorDepreciationSubtractionOverflow
+      Just c -> pure c
+
+  pure DepreciationSchedule {..}
+  where
+    convertBalance al day ma = do
+      converted <- flip M.traverseWithKey (MultiAccount.unMultiAccount ma) $ \currency account -> do
+        amount <- case account of
+          Money.Positive a -> pure a
+          Money.Negative _ -> validationTFailure $ TaxesErrorDepreciationNegativeBalance al assetAccount
+        convertDaily al dailyPriceGraphs day currency chf amount
+      requireSum $ M.elems converted

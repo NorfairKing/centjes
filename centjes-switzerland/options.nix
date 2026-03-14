@@ -97,6 +97,36 @@
     description = "ledger file";
     type = lib.types.nullOr lib.types.str;
   };
+  machinery-assets-account = lib.mkOption {
+    default = null;
+    description = "the account to use for machinery assets";
+    type = lib.types.nullOr lib.types.str;
+  };
+  machinery-depreciation-rate = lib.mkOption {
+    default = null;
+    description = "the depreciation rate for machinery (e.g. 0.4 for 40%)";
+    type = lib.types.nullOr lib.types.str;
+  };
+  machinery-expenses-account = lib.mkOption {
+    default = null;
+    description = "the expenses account for machinery purchases";
+    type = lib.types.nullOr lib.types.str;
+  };
+  movables-assets-account = lib.mkOption {
+    default = null;
+    description = "the account to use for movables assets";
+    type = lib.types.nullOr lib.types.str;
+  };
+  movables-depreciation-rate = lib.mkOption {
+    default = null;
+    description = "the depreciation rate for movables (e.g. 0.25 for 25%)";
+    type = lib.types.nullOr lib.types.str;
+  };
+  movables-expenses-account = lib.mkOption {
+    default = null;
+    description = "the expenses account for movables purchases";
+    type = lib.types.nullOr lib.types.str;
+  };
   organisation-name = lib.mkOption {
     default = null;
     description = "The organisation's legal name";

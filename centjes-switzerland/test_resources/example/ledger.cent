@@ -6,6 +6,12 @@ currency CHF 0.01
 account equity:starting
 account assets:bank
   + attach bank-statement.txt
+account assets:movables
+  + tag undeclared
+  + attach movables-balance.txt
+account assets:machinery
+  + tag undeclared
+  + attach machinery-balance.txt
 account expenses:bank
 account expenses:coffee
 account expenses:hardware
@@ -19,11 +25,14 @@ account income:VAT
 
 tag deductible
 tag not-deductible
+tag undeclared
 
 2023-12-31
   | Opening balances
   * equity:starting -10000 CHF
   * assets:bank 10000 CHF
+  * assets:movables 0 CHF
+  * assets:machinery 0 CHF
 
 2024-01-02
   | Computer

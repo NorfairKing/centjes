@@ -1,4 +1,19 @@
 currency CHF 0.01
 
+account equity:starting
+account assets:movables
+  + tag undeclared
+  + attach movables-balance.txt
+account assets:machinery
+  + tag undeclared
+  + attach machinery-balance.txt
+
 tag deductible
 tag not-deductible
+tag undeclared
+
+2023-12-31
+  | Opening balances
+  * equity:starting -0 CHF
+  * assets:movables 0 CHF
+  * assets:machinery 0 CHF

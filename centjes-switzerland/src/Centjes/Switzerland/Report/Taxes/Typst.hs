@@ -168,6 +168,24 @@ taxesReportInput TaxesReport {..} =
             inputHealthExpenseEvidence = healthExpenseEvidence
          in HealthExpenseInput {..}
       inputTotalHealthExpenses = formatChfAmount taxesReportTotalHealthExpenses
+      convertDepreciationSchedule DepreciationSchedule {..} =
+        DepreciationScheduleInput
+          { depreciationScheduleInputDepreciationRate = printf "%.0f%%" $ (realToFrac :: Ratio Natural -> Double) $ depreciationScheduleDepreciationRate * 100,
+            depreciationScheduleInputOpeningBalance = formatChfAmount depreciationScheduleOpeningBalance,
+            depreciationScheduleInputOpeningBalanceEvidence = depreciationScheduleOpeningBalanceEvidence,
+            depreciationScheduleInputPurchases = flip map depreciationSchedulePurchases $ \DepreciationPurchase {..} ->
+              DepreciationPurchaseInput
+                { depreciationPurchaseInputDay = Timestamp.toDay depreciationPurchaseTimestamp,
+                  depreciationPurchaseInputDescription = Description.toText depreciationPurchaseDescription,
+                  depreciationPurchaseInputAmount = formatChfAmount depreciationPurchaseAmount,
+                  depreciationPurchaseInputEvidence = depreciationPurchaseEvidence
+                },
+            depreciationScheduleInputTotalPurchases = formatChfAmount depreciationScheduleTotalPurchases,
+            depreciationScheduleInputDepreciation = formatChfAmount depreciationScheduleDepreciation,
+            depreciationScheduleInputClosingBalance = formatChfAmount depreciationScheduleClosingBalance
+          }
+      inputMovables = convertDepreciationSchedule taxesReportMovables
+      inputMachinery = convertDepreciationSchedule taxesReportMachinery
    in Input {..}
 
 -- Note that this is a separate type from the ETax 'XMLReport' because there
@@ -196,7 +214,9 @@ data Input = Input
     inputInternetExpenses :: ![InternetExpenseInput],
     inputTotalInternetExpenses :: !FormattedAmount,
     inputHealthExpenses :: ![HealthExpenseInput],
-    inputTotalHealthExpenses :: !FormattedAmount
+    inputTotalHealthExpenses :: !FormattedAmount,
+    inputMovables :: !DepreciationScheduleInput,
+    inputMachinery :: !DepreciationScheduleInput
   }
   deriving (ToJSON) via (Autodocodec Input)
 
@@ -252,6 +272,10 @@ instance HasCodec Input where
           .= inputHealthExpenses
         <*> requiredField "total_health_expenses" "total health insurance expenses"
           .= inputTotalHealthExpenses
+        <*> requiredField "movables" "movables depreciation schedule"
+          .= inputMovables
+        <*> requiredField "machinery" "machinery depreciation schedule"
+          .= inputMachinery
 
 data AssetInput = AssetInput
   { assetInputAccountName :: !AccountName,
@@ -488,6 +512,55 @@ instance HasCodec HealthExpenseInput where
           .= inputHealthExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputHealthExpenseEvidence
+
+data DepreciationScheduleInput = DepreciationScheduleInput
+  { depreciationScheduleInputDepreciationRate :: !String,
+    depreciationScheduleInputOpeningBalance :: !FormattedAmount,
+    depreciationScheduleInputOpeningBalanceEvidence :: !(NonEmpty (Path Rel File)),
+    depreciationScheduleInputPurchases :: ![DepreciationPurchaseInput],
+    depreciationScheduleInputTotalPurchases :: !FormattedAmount,
+    depreciationScheduleInputDepreciation :: !FormattedAmount,
+    depreciationScheduleInputClosingBalance :: !FormattedAmount
+  }
+
+instance HasCodec DepreciationScheduleInput where
+  codec =
+    object "DepreciationScheduleInput" $
+      DepreciationScheduleInput
+        <$> requiredField "depreciation_rate" "depreciation rate"
+          .= depreciationScheduleInputDepreciationRate
+        <*> requiredField "opening_balance" "opening balance"
+          .= depreciationScheduleInputOpeningBalance
+        <*> requiredField "opening_balance_evidence" "opening balance evidence"
+          .= depreciationScheduleInputOpeningBalanceEvidence
+        <*> requiredField "purchases" "purchases"
+          .= depreciationScheduleInputPurchases
+        <*> requiredField "total_purchases" "total purchases"
+          .= depreciationScheduleInputTotalPurchases
+        <*> requiredField "depreciation" "depreciation"
+          .= depreciationScheduleInputDepreciation
+        <*> requiredField "closing_balance" "closing balance"
+          .= depreciationScheduleInputClosingBalance
+
+data DepreciationPurchaseInput = DepreciationPurchaseInput
+  { depreciationPurchaseInputDay :: !Day,
+    depreciationPurchaseInputDescription :: !Text,
+    depreciationPurchaseInputAmount :: !FormattedAmount,
+    depreciationPurchaseInputEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec DepreciationPurchaseInput where
+  codec =
+    object "DepreciationPurchaseInput" $
+      DepreciationPurchaseInput
+        <$> requiredField "day" "day of purchase"
+          .= depreciationPurchaseInputDay
+        <*> requiredField "description" "description of purchase"
+          .= depreciationPurchaseInputDescription
+        <*> requiredField "amount_chf" "amount in CHF"
+          .= depreciationPurchaseInputAmount
+        <*> requiredField "evidence" "evidence"
+          .= depreciationPurchaseInputEvidence
 
 data AmountWithCurrency = AmountWithCurrency
   { amountWithCurrencyAmount :: FormattedAmount,

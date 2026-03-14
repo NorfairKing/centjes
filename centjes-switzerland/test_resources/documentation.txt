@@ -165,6 +165,42 @@
         [33m<string>[m
     default: [33m"expenses:health"[m
     
+    [34mthe account to use for movables assets[m
+    config:
+      [37mmovables-assets-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:movables"[m
+    
+    [34mthe expenses account for movables purchases[m
+    config:
+      [37mmovables-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:movables"[m
+    
+    [34mthe depreciation rate for movables (e.g. 0.25 for 25%)[m
+    config:
+      [37mmovables-depreciation-rate[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m1 % 4[m
+    
+    [34mthe account to use for machinery assets[m
+    config:
+      [37mmachinery-assets-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:machinery"[m
+    
+    [34mthe expenses account for machinery purchases[m
+    config:
+      [37mmachinery-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:machinery"[m
+    
+    [34mthe depreciation rate for machinery (e.g. 0.4 for 40%)[m
+    config:
+      [37mmachinery-depreciation-rate[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m2 % 5[m
+    
     [34mPath to the zip file to create[m
     option: [37m--zip-file[m [33mFILE_PATH[m
     env: [37mCENTJES_SWITZERLAND_ZIP_FILE[m [33mFILE_PATH[m
@@ -441,6 +477,36 @@
   [34mthe account to use for health insurance expenses[m
   default: [33m"expenses:health"[m
   [37mhealth-insurance-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for movables assets[m
+  default: [33m"assets:movables"[m
+  [37mmovables-assets-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe expenses account for movables purchases[m
+  default: [33m"expenses:movables"[m
+  [37mmovables-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe depreciation rate for movables (e.g. 0.25 for 25%)[m
+  default: [33m1 % 4[m
+  [37mmovables-depreciation-rate[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for machinery assets[m
+  default: [33m"assets:machinery"[m
+  [37mmachinery-assets-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe expenses account for machinery purchases[m
+  default: [33m"expenses:machinery"[m
+  [37mmachinery-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe depreciation rate for machinery (e.g. 0.4 for 40%)[m
+  default: [33m2 % 5[m
+  [37mmachinery-depreciation-rate[m:
     # [32mor null[m
     [33m<string>[m
   [34mPath to the zip file to create[m

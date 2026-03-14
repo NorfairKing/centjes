@@ -189,3 +189,29 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (HealthExpense ann) where
         { healthExpenseAmount = amount,
           healthExpenseCHFAmount = chfAmount
         }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (DepreciationPurchase ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { depreciationPurchaseAmount = amount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (DepreciationSchedule ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    openingBalance <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    closingBalance <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    totalPurchases <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    depreciation <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { depreciationScheduleOpeningBalance = openingBalance,
+          depreciationScheduleTotalPurchases = totalPurchases,
+          depreciationScheduleDepreciation = depreciation,
+          depreciationScheduleClosingBalance = closingBalance
+        }
