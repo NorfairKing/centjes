@@ -405,36 +405,43 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
             pure InternetExpense {..}
         )
 
-  taxesReportHealthExpenses <-
-    makePartitionedExpenses healthExpenseCHFAmount
-      . partitionEithers
-      =<< forAccountPostings
-        taxesInputHealthExpensesAccount
-        ( \lt@(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
-            Just
-              <$> withDeductibleTagEither
-                taxesInput
-                tl
-                lp
-                transactionTags
-                ( do
-                    let Located _ timestamp = transactionTimestamp
-                    let day = Timestamp.toDay timestamp
-                    healthExpenseDescription <- requireDescription transactionDescription
-                    let Located al account = postingAccount
-                    healthExpenseAmount <- requireExpensePositive al account
-                    let healthExpenseTimestamp = timestamp
-                    let Located _ healthExpenseCurrency = postingCurrency
-                    healthExpenseCHFAmount <- convertDaily al dailyPriceGraphs day healthExpenseCurrency taxesReportCHF healthExpenseAmount
-                    ne <- requireNonEmptyEvidence tl transactionAttachments
-                    healthExpenseEvidence <- forM ne $ \rf -> do
-                      let fileInTarball = [reldir|expenses/health-insurance|] </> filename rf
-                      includeFile fileInTarball rf
-                      pure fileInTarball
-                    pure HealthExpense {..}
-                )
-                (makePrivateExpense lt lp)
-        )
+  let makeHealthExpenses account tarballSubdir =
+        forAccountPostings account $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+          withDeductibleTag taxesInput tl lp transactionTags $ do
+            let Located _ timestamp = transactionTimestamp
+            let day = Timestamp.toDay timestamp
+            healthExpenseDescription <- requireDescription transactionDescription
+            let Located al account' = postingAccount
+            healthExpenseAmount <- requireExpensePositive al account'
+            let healthExpenseTimestamp = timestamp
+            let Located _ healthExpenseCurrency = postingCurrency
+            healthExpenseCHFAmount <- convertDaily al dailyPriceGraphs day healthExpenseCurrency taxesReportCHF healthExpenseAmount
+            ne <- requireNonEmptyEvidence tl transactionAttachments
+            healthExpenseEvidence <- forM ne $ \rf -> do
+              let fileInTarball = tarballSubdir </> filename rf
+              includeFile fileInTarball rf
+              pure fileInTarball
+            pure HealthExpense {..}
+
+  healthCostsInsurancePremiums <- makeHealthExpenses taxesInputHealthInsurancePremiumsAccount [reldir|expenses/health/insurance-premiums|]
+  healthCostsTotalInsurancePremiums <- requireSum $ map healthExpenseCHFAmount healthCostsInsurancePremiums
+
+  healthCostsOther <- makeHealthExpenses taxesInputHealthOtherAccount [reldir|expenses/health/other|]
+  healthCostsTotalOther <- requireSum $ map healthExpenseCHFAmount healthCostsOther
+
+  healthCostsDentist <- makeHealthExpenses taxesInputHealthDentistAccount [reldir|expenses/health/dentist|]
+  healthCostsTotalDentist <- requireSum $ map healthExpenseCHFAmount healthCostsDentist
+
+  healthCostsDoctor <- makeHealthExpenses taxesInputHealthDoctorAccount [reldir|expenses/health/doctor|]
+  healthCostsTotalDoctor <- requireSum $ map healthExpenseCHFAmount healthCostsDoctor
+
+  healthCostsHospital <- makeHealthExpenses taxesInputHealthHospitalAccount [reldir|expenses/health/hospital|]
+  healthCostsTotalHospital <- requireSum $ map healthExpenseCHFAmount healthCostsHospital
+
+  healthCostsTherapy <- makeHealthExpenses taxesInputHealthTherapyAccount [reldir|expenses/health/therapy|]
+  healthCostsTotalTherapy <- requireSum $ map healthExpenseCHFAmount healthCostsTherapy
+
+  let taxesReportHealthCosts = HealthCosts {..}
 
   taxesReportMovables <-
     produceDepreciationSchedule

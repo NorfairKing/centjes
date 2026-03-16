@@ -23,6 +23,7 @@ module Centjes.Switzerland.Report.Taxes.Types
     TravelExpense (..),
     InternetExpense (..),
     HealthExpense (..),
+    HealthCosts (..),
     DepreciationSchedule (..),
     DepreciationPurchase (..),
     TaxesError (..),
@@ -84,7 +85,12 @@ data TaxesInput = TaxesInput
     taxesInputPhoneExpenseAccounts :: !PartitionedExpenseAccounts,
     taxesInputTravelExpenseAccounts :: !PartitionedExpenseAccounts,
     taxesInputInternetExpenseAccounts :: !PartitionedExpenseAccounts,
-    taxesInputHealthExpensesAccount :: !AccountName,
+    taxesInputHealthInsurancePremiumsAccount :: !AccountName,
+    taxesInputHealthOtherAccount :: !AccountName,
+    taxesInputHealthDentistAccount :: !AccountName,
+    taxesInputHealthDoctorAccount :: !AccountName,
+    taxesInputHealthHospitalAccount :: !AccountName,
+    taxesInputHealthTherapyAccount :: !AccountName,
     taxesInputMovablesAssetsAccount :: !AccountName,
     taxesInputMovablesExpensesAccount :: !AccountName,
     taxesInputMovablesDepreciationRate :: !(Ratio Natural),
@@ -228,12 +234,47 @@ parseTaxesInput = do
       "expenses:internet:homeoffice"
       "internet-private-expenses-account"
       "expenses:internet:private"
-  taxesInputHealthExpensesAccount <-
+  taxesInputHealthInsurancePremiumsAccount <-
     setting
-      [ help "the account to use for health insurance expenses",
+      [ help "the account to use for health insurance premiums",
         reader $ maybeReader AccountName.fromString,
-        conf "health-insurance-expenses-account",
-        value "expenses:health"
+        conf "health-insurance-premiums-account",
+        value "expenses:insurance:health"
+      ]
+  taxesInputHealthOtherAccount <-
+    setting
+      [ help "the account to use for other health expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "health-other-account",
+        value "expenses:health:other"
+      ]
+  taxesInputHealthDentistAccount <-
+    setting
+      [ help "the account to use for dentist expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "health-dentist-account",
+        value "expenses:health:dentist"
+      ]
+  taxesInputHealthDoctorAccount <-
+    setting
+      [ help "the account to use for doctor and prescription expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "health-doctor-account",
+        value "expenses:health:doctor"
+      ]
+  taxesInputHealthHospitalAccount <-
+    setting
+      [ help "the account to use for hospital stay expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "health-hospital-account",
+        value "expenses:health:hospital"
+      ]
+  taxesInputHealthTherapyAccount <-
+    setting
+      [ help "the account to use for therapy and cure expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "health-therapy-account",
+        value "expenses:health:therapy"
       ]
   taxesInputMovablesAssetsAccount <-
     setting
@@ -356,7 +397,7 @@ data TaxesReport ann = TaxesReport
     taxesReportPhoneExpenses :: !(PartitionedExpenses (PhoneExpense ann) ann),
     taxesReportTravelExpenses :: !(PartitionedExpenses (TravelExpense ann) ann),
     taxesReportInternetExpenses :: !(PartitionedExpenses (InternetExpense ann) ann),
-    taxesReportHealthExpenses :: !(PartitionedExpenses (HealthExpense ann) ann),
+    taxesReportHealthCosts :: !(HealthCosts ann),
     taxesReportMovables :: !(DepreciationSchedule ann),
     taxesReportMachinery :: !(DepreciationSchedule ann)
   }
@@ -378,7 +419,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
         validatePartitionedExpenses "phone" phoneExpenseCHFAmount taxesReportPhoneExpenses,
         validatePartitionedExpenses "travel" travelExpenseCHFAmount taxesReportTravelExpenses,
         validatePartitionedExpenses "internet" internetExpenseCHFAmount taxesReportInternetExpenses,
-        validatePartitionedExpenses "health insurance" healthExpenseCHFAmount taxesReportHealthExpenses
+        validateHealthCosts taxesReportHealthCosts
       ]
 
 validatePartitionedExpenses ::
@@ -540,6 +581,43 @@ data HealthExpense ann = HealthExpense
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (HealthExpense ann)
+
+data HealthCosts ann = HealthCosts
+  { healthCostsInsurancePremiums :: ![HealthExpense ann],
+    healthCostsTotalInsurancePremiums :: !Money.Amount,
+    healthCostsOther :: ![HealthExpense ann],
+    healthCostsTotalOther :: !Money.Amount,
+    healthCostsDentist :: ![HealthExpense ann],
+    healthCostsTotalDentist :: !Money.Amount,
+    healthCostsDoctor :: ![HealthExpense ann],
+    healthCostsTotalDoctor :: !Money.Amount,
+    healthCostsHospital :: ![HealthExpense ann],
+    healthCostsTotalHospital :: !Money.Amount,
+    healthCostsTherapy :: ![HealthExpense ann],
+    healthCostsTotalTherapy :: !Money.Amount
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (HealthCosts ann)
+
+validateHealthCosts ::
+  HealthCosts ann ->
+  Data.Validity.Validation
+validateHealthCosts HealthCosts {..} =
+  mconcat
+    [ declare "the health insurance premiums sum to the total" $
+        Amount.sum (map healthExpenseCHFAmount healthCostsInsurancePremiums) == Just healthCostsTotalInsurancePremiums,
+      declare "the other health expenses sum to the total" $
+        Amount.sum (map healthExpenseCHFAmount healthCostsOther) == Just healthCostsTotalOther,
+      declare "the dentist expenses sum to the total" $
+        Amount.sum (map healthExpenseCHFAmount healthCostsDentist) == Just healthCostsTotalDentist,
+      declare "the doctor expenses sum to the total" $
+        Amount.sum (map healthExpenseCHFAmount healthCostsDoctor) == Just healthCostsTotalDoctor,
+      declare "the hospital expenses sum to the total" $
+        Amount.sum (map healthExpenseCHFAmount healthCostsHospital) == Just healthCostsTotalHospital,
+      declare "the therapy expenses sum to the total" $
+        Amount.sum (map healthExpenseCHFAmount healthCostsTherapy) == Just healthCostsTotalTherapy
+    ]
 
 data DepreciationSchedule ann = DepreciationSchedule
   { depreciationScheduleDepreciationRate :: !(Ratio Natural),

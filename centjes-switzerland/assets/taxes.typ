@@ -199,43 +199,65 @@ the contributions.
   input.total_third_pillar_contributions,
 )
 
-=== Health insurance and doctor costs
+=== Health insurance and medical costs
 
-Health insurance costs are declared using the "tax extract" document from the
-health insurance company.
+==== Health insurance premiums
 
-These are the uninsured doctor and dentist costs, which need to be declared
-separately.
+These are described in the document from the health insurance company.
 
-#table(
-  stroke: 0.5pt,
-  columns: (1fr, 1fr, 1fr),
-  align: (right, right, right),
-  text(weight: "bold", [Total]),
-  text(weight: "bold", [Private]),
-  text(weight: "bold", [Business]),
-
-  [#input.health_expenses.total_expenses CHF],
-  [#input.health_expenses.total_private_expenses CHF],
-  [#input.health_expenses.total_business_expenses CHF],
+#amount_table(
+  input.health_costs.insurance_premiums,
+  input.health_costs.total_insurance_premiums,
 )
 
-#if input.health_expenses.business_expenses.len() > 0 {
-  [==== Business health expenses]
-  amount_table(
-    input.health_expenses.business_expenses,
-    input.health_expenses.total_business_expenses,
-  )
+#pagebreak()
+==== Illness and accident costs
+
+These are described in the document from the health insurance company.
+
+===== Further costs
+
+#if input.health_costs.dentist.len() > 0 {
+  [
+    ====== Dentist costs
+    Dentist costs
+  ]
+  amount_table(input.health_costs.dentist, input.health_costs.total_dentist)
 }
 
-#if input.health_expenses.private_expenses.len() > 0 {
-  [==== Private health expenses]
-  amount_table(
-    input.health_expenses.private_expenses,
-    input.health_expenses.total_private_expenses,
-  )
+#if input.health_costs.doctor.len() > 0 {
+  [
+    ====== Doctor and prescriptions
+    Doctors and doctor-prescribed medication
+  ]
+  amount_table(input.health_costs.doctor, input.health_costs.total_doctor)
 }
 
+#if input.health_costs.hospital.len() > 0 {
+  [
+    ====== Hospital stays
+    Hospital stays
+  ]
+  amount_table(input.health_costs.hospital, input.health_costs.total_hospital)
+}
+
+#if input.health_costs.therapy.len() > 0 {
+  [
+    ====== Therapies
+    Doctor-prescribed therapies
+  ]
+  amount_table(input.health_costs.therapy, input.health_costs.total_therapy)
+}
+
+#if input.health_costs.other.len() > 0 {
+  [
+    ====== Other health expenses
+    Other health expenses that are not part of the other categories
+  ]
+  amount_table(input.health_costs.other, input.health_costs.total_other)
+}
+
+#pagebreak()
 == Assets
 
 #table(

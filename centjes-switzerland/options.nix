@@ -77,9 +77,34 @@
     description = "Account name of your foreign income";
     type = lib.types.nullOr lib.types.str;
   };
-  health-insurance-expenses-account = lib.mkOption {
+  health-dentist-account = lib.mkOption {
     default = null;
-    description = "the account to use for health insurance expenses";
+    description = "the account to use for dentist expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
+  health-doctor-account = lib.mkOption {
+    default = null;
+    description = "the account to use for doctor and prescription expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
+  health-hospital-account = lib.mkOption {
+    default = null;
+    description = "the account to use for hospital stay expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
+  health-insurance-premiums-account = lib.mkOption {
+    default = null;
+    description = "the account to use for health insurance premiums";
+    type = lib.types.nullOr lib.types.str;
+  };
+  health-other-account = lib.mkOption {
+    default = null;
+    description = "the account to use for other health expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
+  health-therapy-account = lib.mkOption {
+    default = null;
+    description = "the account to use for therapy and cure expenses";
     type = lib.types.nullOr lib.types.str;
   };
   homeoffice-expenses-account = lib.mkOption {

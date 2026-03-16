@@ -189,11 +189,41 @@
         [33m<string>[m
     default: [33m"expenses:internet:private"[m
     
-    [34mthe account to use for health insurance expenses[m
+    [34mthe account to use for health insurance premiums[m
     config:
-      [37mhealth-insurance-expenses-account[m: # [32mor null[m
+      [37mhealth-insurance-premiums-account[m: # [32mor null[m
         [33m<string>[m
-    default: [33m"expenses:health"[m
+    default: [33m"expenses:insurance:health"[m
+    
+    [34mthe account to use for other health expenses[m
+    config:
+      [37mhealth-other-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:other"[m
+    
+    [34mthe account to use for dentist expenses[m
+    config:
+      [37mhealth-dentist-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:dentist"[m
+    
+    [34mthe account to use for doctor and prescription expenses[m
+    config:
+      [37mhealth-doctor-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:doctor"[m
+    
+    [34mthe account to use for hospital stay expenses[m
+    config:
+      [37mhealth-hospital-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:hospital"[m
+    
+    [34mthe account to use for therapy and cure expenses[m
+    config:
+      [37mhealth-therapy-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:therapy"[m
     
     [34mthe account to use for movables assets[m
     config:
@@ -529,9 +559,34 @@
   [37minternet-private-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
-  [34mthe account to use for health insurance expenses[m
-  default: [33m"expenses:health"[m
-  [37mhealth-insurance-expenses-account[m:
+  [34mthe account to use for health insurance premiums[m
+  default: [33m"expenses:insurance:health"[m
+  [37mhealth-insurance-premiums-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for other health expenses[m
+  default: [33m"expenses:health:other"[m
+  [37mhealth-other-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for dentist expenses[m
+  default: [33m"expenses:health:dentist"[m
+  [37mhealth-dentist-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for doctor and prescription expenses[m
+  default: [33m"expenses:health:doctor"[m
+  [37mhealth-doctor-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for hospital stay expenses[m
+  default: [33m"expenses:health:hospital"[m
+  [37mhealth-hospital-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for therapy and cure expenses[m
+  default: [33m"expenses:health:therapy"[m
+  [37mhealth-therapy-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for movables assets[m

@@ -194,21 +194,33 @@ taxesReportInput TaxesReport {..} =
                in InternetExpenseInput {..}
           )
           taxesReportInternetExpenses
-      inputHealthExpenses =
-        convertPartitionedExpenses
-          ( \HealthExpense {..} ->
-              let inputHealthExpenseDay = Timestamp.toDay healthExpenseTimestamp
-                  inputHealthExpenseDescription = Description.toText healthExpenseDescription
-                  inputHealthExpenseAmount =
-                    AmountWithCurrency
-                      { amountWithCurrencyAmount = formatAmount healthExpenseCurrency healthExpenseAmount,
-                        amountWithCurrencyCurrency = currencySymbol healthExpenseCurrency
-                      }
-                  inputHealthExpenseCHFAmount = formatChfAmount healthExpenseCHFAmount
-                  inputHealthExpenseEvidence = healthExpenseEvidence
-               in HealthExpenseInput {..}
-          )
-          taxesReportHealthExpenses
+      convertHealthExpenses = map $ \HealthExpense {..} ->
+        let inputHealthExpenseDay = Timestamp.toDay healthExpenseTimestamp
+            inputHealthExpenseDescription = Description.toText healthExpenseDescription
+            inputHealthExpenseAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount healthExpenseCurrency healthExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol healthExpenseCurrency
+                }
+            inputHealthExpenseCHFAmount = formatChfAmount healthExpenseCHFAmount
+            inputHealthExpenseEvidence = healthExpenseEvidence
+         in HealthExpenseInput {..}
+      inputHealthCosts =
+        let HealthCosts {..} = taxesReportHealthCosts
+         in HealthCostsInput
+              { healthCostsInputInsurancePremiums = convertHealthExpenses healthCostsInsurancePremiums,
+                healthCostsInputTotalInsurancePremiums = formatChfAmount healthCostsTotalInsurancePremiums,
+                healthCostsInputOther = convertHealthExpenses healthCostsOther,
+                healthCostsInputTotalOther = formatChfAmount healthCostsTotalOther,
+                healthCostsInputDentist = convertHealthExpenses healthCostsDentist,
+                healthCostsInputTotalDentist = formatChfAmount healthCostsTotalDentist,
+                healthCostsInputDoctor = convertHealthExpenses healthCostsDoctor,
+                healthCostsInputTotalDoctor = formatChfAmount healthCostsTotalDoctor,
+                healthCostsInputHospital = convertHealthExpenses healthCostsHospital,
+                healthCostsInputTotalHospital = formatChfAmount healthCostsTotalHospital,
+                healthCostsInputTherapy = convertHealthExpenses healthCostsTherapy,
+                healthCostsInputTotalTherapy = formatChfAmount healthCostsTotalTherapy
+              }
       convertDepreciationSchedule DepreciationSchedule {..} =
         DepreciationScheduleInput
           { depreciationScheduleInputDepreciationRate = printf "%.0f%%" $ (realToFrac :: Ratio Natural -> Double) $ depreciationScheduleDepreciationRate * 100,
@@ -248,7 +260,7 @@ data Input = Input
     inputPhoneExpenses :: !(PartitionedExpensesInput PhoneExpenseInput),
     inputTravelExpenses :: !(PartitionedExpensesInput TravelExpenseInput),
     inputInternetExpenses :: !(PartitionedExpensesInput InternetExpenseInput),
-    inputHealthExpenses :: !(PartitionedExpensesInput HealthExpenseInput),
+    inputHealthCosts :: !HealthCostsInput,
     inputMovables :: !DepreciationScheduleInput,
     inputMachinery :: !DepreciationScheduleInput
   }
@@ -290,8 +302,8 @@ instance HasCodec Input where
           .= inputTravelExpenses
         <*> requiredField "internet_expenses" "internet expenses"
           .= inputInternetExpenses
-        <*> requiredField "health_expenses" "health insurance expenses"
-          .= inputHealthExpenses
+        <*> requiredField "health_costs" "health costs"
+          .= inputHealthCosts
         <*> requiredField "movables" "movables depreciation schedule"
           .= inputMovables
         <*> requiredField "machinery" "machinery depreciation schedule"
@@ -578,6 +590,50 @@ instance HasCodec HealthExpenseInput where
           .= inputHealthExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputHealthExpenseEvidence
+
+data HealthCostsInput = HealthCostsInput
+  { healthCostsInputInsurancePremiums :: ![HealthExpenseInput],
+    healthCostsInputTotalInsurancePremiums :: !FormattedAmount,
+    healthCostsInputOther :: ![HealthExpenseInput],
+    healthCostsInputTotalOther :: !FormattedAmount,
+    healthCostsInputDentist :: ![HealthExpenseInput],
+    healthCostsInputTotalDentist :: !FormattedAmount,
+    healthCostsInputDoctor :: ![HealthExpenseInput],
+    healthCostsInputTotalDoctor :: !FormattedAmount,
+    healthCostsInputHospital :: ![HealthExpenseInput],
+    healthCostsInputTotalHospital :: !FormattedAmount,
+    healthCostsInputTherapy :: ![HealthExpenseInput],
+    healthCostsInputTotalTherapy :: !FormattedAmount
+  }
+
+instance HasCodec HealthCostsInput where
+  codec =
+    object "HealthCostsInput" $
+      HealthCostsInput
+        <$> requiredField "insurance_premiums" "health insurance premiums"
+          .= healthCostsInputInsurancePremiums
+        <*> requiredField "total_insurance_premiums" "total health insurance premiums"
+          .= healthCostsInputTotalInsurancePremiums
+        <*> requiredField "other" "other health expenses"
+          .= healthCostsInputOther
+        <*> requiredField "total_other" "total other health expenses"
+          .= healthCostsInputTotalOther
+        <*> requiredField "dentist" "dentist expenses"
+          .= healthCostsInputDentist
+        <*> requiredField "total_dentist" "total dentist expenses"
+          .= healthCostsInputTotalDentist
+        <*> requiredField "doctor" "doctor and prescription expenses"
+          .= healthCostsInputDoctor
+        <*> requiredField "total_doctor" "total doctor expenses"
+          .= healthCostsInputTotalDoctor
+        <*> requiredField "hospital" "hospital stay expenses"
+          .= healthCostsInputHospital
+        <*> requiredField "total_hospital" "total hospital expenses"
+          .= healthCostsInputTotalHospital
+        <*> requiredField "therapy" "therapy and cure expenses"
+          .= healthCostsInputTherapy
+        <*> requiredField "total_therapy" "total therapy expenses"
+          .= healthCostsInputTotalTherapy
 
 data DepreciationScheduleInput = DepreciationScheduleInput
   { depreciationScheduleInputDepreciationRate :: !String,

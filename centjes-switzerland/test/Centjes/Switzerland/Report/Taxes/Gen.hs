@@ -71,9 +71,33 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         pure $ tr {taxesReportInternetExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
-                        fixed <- fixPartitionedExpensesTotals healthExpenseCHFAmount (taxesReportHealthExpenses tr)
-                        pure $ tr {taxesReportHealthExpenses = fixed}
+                        fixed <- fixHealthCostsTotals (taxesReportHealthCosts tr)
+                        pure $ tr {taxesReportHealthCosts = fixed}
                     )
+
+fixHealthCostsTotals ::
+  HealthCosts ann ->
+  Maybe (HealthCosts ann)
+fixHealthCostsTotals hc = do
+  totalInsurancePremiums <- Amount.sum (map healthExpenseCHFAmount (healthCostsInsurancePremiums hc))
+  totalOther <- Amount.sum (map healthExpenseCHFAmount (healthCostsOther hc))
+  totalDentist <- Amount.sum (map healthExpenseCHFAmount (healthCostsDentist hc))
+  totalDoctor <- Amount.sum (map healthExpenseCHFAmount (healthCostsDoctor hc))
+  totalHospital <- Amount.sum (map healthExpenseCHFAmount (healthCostsHospital hc))
+  totalTherapy <- Amount.sum (map healthExpenseCHFAmount (healthCostsTherapy hc))
+  pure $
+    hc
+      { healthCostsTotalInsurancePremiums = totalInsurancePremiums,
+        healthCostsTotalOther = totalOther,
+        healthCostsTotalDentist = totalDentist,
+        healthCostsTotalDoctor = totalDoctor,
+        healthCostsTotalHospital = totalHospital,
+        healthCostsTotalTherapy = totalTherapy
+      }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (HealthCosts ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (AssetAccount ann) where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
