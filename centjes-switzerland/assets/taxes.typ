@@ -109,9 +109,9 @@
 ]
 
 #pagebreak()
-= Children
+= Children (Kinder)
 
-== Daycare costs
+== Daycare costs (Kinderbetreuungskosten)
 
 #if input.children_costs.daycare.len() > 0 {
   amount_table(
@@ -123,10 +123,10 @@
 ]
 
 #pagebreak()
-= Depreciation
+= Depreciation (Abschreibungen)
 
 #let depreciation_schedule(title, schedule) = {
-  [=== #title]
+  [== #title]
 
   table(
     stroke: 0.5pt,
@@ -153,13 +153,13 @@
   }
 }
 
-#depreciation_schedule("Movables", input.movables)
+#depreciation_schedule("Movables (Mobilien)", input.movables)
 
-#depreciation_schedule("Machinery", input.machinery)
+#depreciation_schedule("Machinery (Maschinen / Werkzeuge)", input.machinery)
 
 #pagebreak()
 
-= Income
+= Income (Einkünfte)
 
 All income is reported in CHF, using the exchange of the day of the transaction.
 
@@ -167,9 +167,9 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 #pagebreak()
 
-= Deductions
+= Deductions (Abzüge)
 
-== Self-employment expenses
+== Self-employment expenses (Selbständige Erwerbstätigkeit)
 
 #let expense_section(title, partitioned) = {
   [=== #title]
@@ -178,9 +178,9 @@ All income is reported in CHF, using the exchange of the day of the transaction.
     stroke: 0.5pt,
     columns: (1fr, 1fr, 1fr),
     align: (right, right, right),
-    text(weight: "bold", [Total]),
-    text(weight: "bold", [Private]),
-    text(weight: "bold", [Business]),
+    text(weight: "bold", [Total (Betrag)]),
+    text(weight: "bold", [Private (Privatanteil)]),
+    text(weight: "bold", [Business (Geschäftsanteil)]),
 
     [#partitioned.total_expenses CHF],
     [#partitioned.total_private_expenses CHF],
@@ -188,7 +188,7 @@ All income is reported in CHF, using the exchange of the day of the transaction.
   )
 
   if partitioned.business_expenses.len() > 0 {
-    [==== Business expenses]
+    [==== Business expenses (Geschäftsaufwand)]
     amount_table(
       partitioned.business_expenses,
       partitioned.total_business_expenses,
@@ -196,7 +196,7 @@ All income is reported in CHF, using the exchange of the day of the transaction.
   }
 
   if partitioned.private_expenses.len() > 0 {
-    [==== Private expenses]
+    [==== Private expenses (Privataufwand)]
     amount_table(
       partitioned.private_expenses,
       partitioned.total_private_expenses,
@@ -204,19 +204,19 @@ All income is reported in CHF, using the exchange of the day of the transaction.
   }
 }
 
-#expense_section("Rent", input.homeoffice_expenses)
+#expense_section("Rent (Miete)", input.homeoffice_expenses)
 
-#expense_section("Phone", input.phone_expenses)
+#expense_section("Phone (Telefon)", input.phone_expenses)
 
-#expense_section("Travel", input.travel_expenses)
+#expense_section("Travel (Reisen)", input.travel_expenses)
 
-#expense_section("Internet", input.internet_expenses)
+#expense_section("Internet (Internet)", input.internet_expenses)
 
-#expense_section("Electricity", input.electricity_expenses)
+#expense_section("Electricity (Strom)", input.electricity_expenses)
 
-#expense_section("Insurance", input.insurance_expenses)
+#expense_section("Insurance (Versicherungen)", input.insurance_expenses)
 
-== Third pillar
+== Third pillar (Säule 3a)
 
 These are declared according to the "tax extract" documents from the
 third-pillar providers.
@@ -228,9 +228,9 @@ the contributions.
   input.total_third_pillar_contributions,
 )
 
-== Health insurance and medical costs
+== Health insurance and medical costs (Krankheits- und Unfallkosten)
 
-=== Health insurance premiums
+=== Health insurance premiums (Krankenkassenprämien)
 
 These are described in the document from the health insurance company.
 
@@ -240,15 +240,15 @@ These are described in the document from the health insurance company.
 )
 
 #pagebreak()
-=== Illness and accident costs
+=== Illness and accident costs (Krankheits- und Unfallkosten)
 
 These are described in the document from the health insurance company.
 
-==== Further costs
+==== Further costs (Weitere Kosten)
 
 #if input.health_costs.dentist.len() > 0 {
   [
-    ===== Dentist costs
+    ===== Dentist costs (Zahnarztkosten)
     Dentist costs
   ]
   amount_table(input.health_costs.dentist, input.health_costs.total_dentist)
@@ -256,7 +256,7 @@ These are described in the document from the health insurance company.
 
 #if input.health_costs.doctor.len() > 0 {
   [
-    ===== Doctor and prescriptions
+    ===== Doctor and prescriptions (Arzt und Medikamente)
     Doctors and doctor-prescribed medication
   ]
   amount_table(input.health_costs.doctor, input.health_costs.total_doctor)
@@ -264,7 +264,7 @@ These are described in the document from the health insurance company.
 
 #if input.health_costs.hospital.len() > 0 {
   [
-    ===== Hospital stays
+    ===== Hospital stays (Spitalaufenthalte)
     Hospital stays
   ]
   amount_table(input.health_costs.hospital, input.health_costs.total_hospital)
@@ -272,7 +272,7 @@ These are described in the document from the health insurance company.
 
 #if input.health_costs.therapy.len() > 0 {
   [
-    ===== Therapies
+    ===== Therapies (Therapien)
     Doctor-prescribed therapies
   ]
   amount_table(input.health_costs.therapy, input.health_costs.total_therapy)
@@ -280,14 +280,14 @@ These are described in the document from the health insurance company.
 
 #if input.health_costs.other.len() > 0 {
   [
-    ===== Other health expenses
+    ===== Other health expenses (Andere Gesundheitskosten)
     Other health expenses that are not part of the other categories
   ]
   amount_table(input.health_costs.other, input.health_costs.total_other)
 }
 
 #pagebreak()
-= Assets
+= Assets (Vermögen)
 
 #table(
   stroke: 0.5pt,
@@ -350,7 +350,7 @@ These are described in the document from the health insurance company.
   ]
 ]
 
-= Exchange rates
+= Exchange rates (Wechselkurse)
 
 These exchange rates are used for asset valuations on #datetime(year: input.year, month: 12, day: 31).display()
 
