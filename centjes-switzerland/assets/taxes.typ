@@ -94,6 +94,19 @@
 This document is the index of all the attachment for the tax declaration of #{ input.first_name } #input.last_name for
 the year #{ input.year }.
 
+== Children
+
+=== Daycare costs
+
+#if input.children_costs.daycare.len() > 0 {
+  amount_table(
+    input.children_costs.daycare,
+    input.children_costs.total_daycare,
+  )
+} else [
+  No daycare costs.
+]
+
 == Income
 
 All income is reported in CHF, using the exchange of the day of the transaction.

@@ -183,6 +183,32 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                 then func lt la lp
                 else pure Nothing
 
+  let forAccountsPostings accountNames =
+        forMatchingPostings (\_ Posting {..} -> postingReal && S.member (locatedValue postingAccountName) accountNames)
+
+  let forAccountPostings a = forAccountsPostings (S.singleton a)
+
+  childrenCostsDaycare <- forAccountPostings taxesInputDaycareAccount $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+    withDeductibleTag taxesInput tl lp transactionTags $ do
+      let Located _ timestamp = transactionTimestamp
+      let day = Timestamp.toDay timestamp
+      daycareExpenseDescription <- requireDescription transactionDescription
+      let Located al account = postingAccount
+      daycareExpenseAmount <- requireExpensePositive al account
+      let daycareExpenseTimestamp = timestamp
+      let Located _ daycareExpenseCurrency = postingCurrency
+      daycareExpenseCHFAmount <- convertDaily al dailyPriceGraphs day daycareExpenseCurrency taxesReportCHF daycareExpenseAmount
+      ne <- requireNonEmptyEvidence tl transactionAttachments
+      daycareExpenseEvidence <- forM ne $ \rf -> do
+        let fileInTarball = [reldir|expenses/daycare|] </> filename rf
+        includeFile fileInTarball rf
+        pure fileInTarball
+      pure DaycareExpense {..}
+
+  childrenCostsTotalDaycare <- requireSum $ map daycareExpenseCHFAmount childrenCostsDaycare
+
+  let taxesReportChildrenCosts = ChildrenCosts {..}
+
   taxesReportRevenues <- forMatchingPostings
     (\Account {..} Posting {..} -> postingReal && accountType == AccountTypeIncome)
     $ \(Located tl Transaction {..}) (Located al Account {..}) (Located pl Posting {..}) -> do
@@ -217,9 +243,6 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportTotalRevenues <- requireSum $ map revenueCHFAmount taxesReportRevenues
 
-  let forAccountsPostings accountNames =
-        forMatchingPostings (\_ Posting {..} -> postingReal && S.member (locatedValue postingAccountName) accountNames)
-
   taxesReportThirdPillarContributions <- forAccountsPostings
     ( S.fromList
         [ taxesInputThirdPillarInsuranceExpensesAccount,
@@ -244,7 +267,6 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportTotalThirdPillarContributions <- requireSum $ map thirdPillarContributionCHFAmount taxesReportThirdPillarContributions
 
-  let forAccountPostings a = forAccountsPostings (S.singleton a)
   let makePrivateExpense (Located _ Transaction {..}) (Located _ Posting {..}) = do
         let Located _ timestamp = transactionTimestamp
         let day = Timestamp.toDay timestamp

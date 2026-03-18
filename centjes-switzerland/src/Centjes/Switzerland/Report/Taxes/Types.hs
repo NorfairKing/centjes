@@ -24,6 +24,8 @@ module Centjes.Switzerland.Report.Taxes.Types
     InternetExpense (..),
     HealthExpense (..),
     HealthCosts (..),
+    DaycareExpense (..),
+    ChildrenCosts (..),
     DepreciationSchedule (..),
     DepreciationPurchase (..),
     TaxesError (..),
@@ -91,6 +93,7 @@ data TaxesInput = TaxesInput
     taxesInputHealthDoctorAccount :: !AccountName,
     taxesInputHealthHospitalAccount :: !AccountName,
     taxesInputHealthTherapyAccount :: !AccountName,
+    taxesInputDaycareAccount :: !AccountName,
     taxesInputMovablesAssetsAccount :: !AccountName,
     taxesInputMovablesExpensesAccount :: !AccountName,
     taxesInputMovablesDepreciationRate :: !(Ratio Natural),
@@ -276,6 +279,13 @@ parseTaxesInput = do
         conf "health-therapy-account",
         value "expenses:health:therapy"
       ]
+  taxesInputDaycareAccount <-
+    setting
+      [ help "the account to use for daycare expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "daycare-account",
+        value "expenses:daycare"
+      ]
   taxesInputMovablesAssetsAccount <-
     setting
       [ help "the account to use for movables assets",
@@ -387,6 +397,7 @@ data TaxesReport ann = TaxesReport
     taxesReportConversionRates :: !(Map (Currency ann) Money.ConversionRate),
     taxesReportAssetAccounts :: ![AssetAccount ann],
     taxesReportTotalAssets :: !Money.Amount,
+    taxesReportChildrenCosts :: !(ChildrenCosts ann),
     taxesReportRevenues :: ![Revenue ann],
     taxesReportTotalRevenues :: !Money.Amount,
     taxesReportThirdPillarContributions :: ![ThirdPillarContribution ann],
@@ -419,7 +430,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
         validatePartitionedExpenses "phone" phoneExpenseCHFAmount taxesReportPhoneExpenses,
         validatePartitionedExpenses "travel" travelExpenseCHFAmount taxesReportTravelExpenses,
         validatePartitionedExpenses "internet" internetExpenseCHFAmount taxesReportInternetExpenses,
-        validateHealthCosts taxesReportHealthCosts
+        validateHealthCosts taxesReportHealthCosts,
+        validateChildrenCosts taxesReportChildrenCosts
       ]
 
 validatePartitionedExpenses ::
@@ -617,6 +629,36 @@ validateHealthCosts HealthCosts {..} =
         Amount.sum (map healthExpenseCHFAmount healthCostsHospital) == Just healthCostsTotalHospital,
       declare "the therapy expenses sum to the total" $
         Amount.sum (map healthExpenseCHFAmount healthCostsTherapy) == Just healthCostsTotalTherapy
+    ]
+
+data DaycareExpense ann = DaycareExpense
+  { daycareExpenseTimestamp :: !Timestamp,
+    daycareExpenseDescription :: !Description,
+    daycareExpenseAmount :: !Money.Amount,
+    daycareExpenseCurrency :: !(Currency ann),
+    daycareExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    daycareExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (DaycareExpense ann)
+
+data ChildrenCosts ann = ChildrenCosts
+  { childrenCostsDaycare :: ![DaycareExpense ann],
+    childrenCostsTotalDaycare :: !Money.Amount
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (ChildrenCosts ann)
+
+validateChildrenCosts ::
+  ChildrenCosts ann ->
+  Data.Validity.Validation
+validateChildrenCosts ChildrenCosts {..} =
+  mconcat
+    [ declare "the daycare expenses sum to the total" $
+        Amount.sum (map daycareExpenseCHFAmount childrenCostsDaycare) == Just childrenCostsTotalDaycare
     ]
 
 data DepreciationSchedule ann = DepreciationSchedule

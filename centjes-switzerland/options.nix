@@ -25,6 +25,11 @@
     description = "the account to use for daily allowance insurance expenses";
     type = lib.types.nullOr lib.types.str;
   };
+  daycare-account = lib.mkOption {
+    default = null;
+    description = "the account to use for daycare expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   domestic-income-account = lib.mkOption {
     default = null;
     description = "Account name of your domestic income";

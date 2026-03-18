@@ -74,6 +74,10 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         fixed <- fixHealthCostsTotals (taxesReportHealthCosts tr)
                         pure $ tr {taxesReportHealthCosts = fixed}
                     )
+      `suchThatMap` ( \tr -> do
+                        fixed <- fixChildrenCostsTotals (taxesReportChildrenCosts tr)
+                        pure $ tr {taxesReportChildrenCosts = fixed}
+                    )
 
 fixHealthCostsTotals ::
   HealthCosts ann ->
@@ -96,6 +100,20 @@ fixHealthCostsTotals hc = do
       }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (HealthCosts ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = genValidStructurallyWithoutExtraChecking
+
+fixChildrenCostsTotals ::
+  ChildrenCosts ann ->
+  Maybe (ChildrenCosts ann)
+fixChildrenCostsTotals cc = do
+  totalDaycare <- Amount.sum (map daycareExpenseCHFAmount (childrenCostsDaycare cc))
+  pure $
+    cc
+      { childrenCostsTotalDaycare = totalDaycare
+      }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (ChildrenCosts ann) where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
   genValid = genValidStructurallyWithoutExtraChecking
 
@@ -228,6 +246,19 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (HealthExpense ann) where
       r
         { healthExpenseAmount = amount,
           healthExpenseCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (DaycareExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { daycareExpenseAmount = amount,
+          daycareExpenseCHFAmount = chfAmount
         }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DepreciationPurchase ann) where

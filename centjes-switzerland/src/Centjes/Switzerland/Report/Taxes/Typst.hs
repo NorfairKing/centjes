@@ -64,6 +64,22 @@ taxesReportInput TaxesReport {..} =
                in AssetInput {..}
           )
           taxesReportAssetAccounts
+      inputChildrenCosts =
+        let ChildrenCosts {..} = taxesReportChildrenCosts
+         in ChildrenCostsInput
+              { childrenCostsInputDaycare = flip map childrenCostsDaycare $ \DaycareExpense {..} ->
+                  let inputDaycareExpenseDay = Timestamp.toDay daycareExpenseTimestamp
+                      inputDaycareExpenseDescription = Description.toText daycareExpenseDescription
+                      inputDaycareExpenseAmount =
+                        AmountWithCurrency
+                          { amountWithCurrencyAmount = formatAmount daycareExpenseCurrency daycareExpenseAmount,
+                            amountWithCurrencyCurrency = currencySymbol daycareExpenseCurrency
+                          }
+                      inputDaycareExpenseCHFAmount = formatChfAmount daycareExpenseCHFAmount
+                      inputDaycareExpenseEvidence = daycareExpenseEvidence
+                   in DaycareExpenseInput {..},
+                childrenCostsInputTotalDaycare = formatChfAmount childrenCostsTotalDaycare
+              }
       inputTotalRevenues = formatChfAmount taxesReportTotalRevenues
       inputRevenues = flip map taxesReportRevenues $ \Revenue {..} ->
         let inputRevenueDay = Timestamp.toDay revenueTimestamp
@@ -250,6 +266,7 @@ data Input = Input
     inputConversionRates :: !(Map Text String),
     inputAssets :: ![AssetInput],
     inputTotalAssets :: !FormattedAmount,
+    inputChildrenCosts :: !ChildrenCostsInput,
     inputRevenues :: ![RevenueInput],
     inputTotalRevenues :: !FormattedAmount,
     inputThirdPillarContributions :: ![ThirdPillarContributionInput],
@@ -282,6 +299,8 @@ instance HasCodec Input where
           .= inputAssets
         <*> requiredField "total_assets" "total assets"
           .= inputTotalAssets
+        <*> requiredField "children_costs" "children costs"
+          .= inputChildrenCosts
         <*> requiredField "revenues" "revenues"
           .= inputRevenues
         <*> requiredField "total_revenues" "total revenues"
@@ -634,6 +653,43 @@ instance HasCodec HealthCostsInput where
           .= healthCostsInputTherapy
         <*> requiredField "total_therapy" "total therapy expenses"
           .= healthCostsInputTotalTherapy
+
+data ChildrenCostsInput = ChildrenCostsInput
+  { childrenCostsInputDaycare :: ![DaycareExpenseInput],
+    childrenCostsInputTotalDaycare :: !FormattedAmount
+  }
+
+instance HasCodec ChildrenCostsInput where
+  codec =
+    object "ChildrenCostsInput" $
+      ChildrenCostsInput
+        <$> requiredField "daycare" "daycare expenses"
+          .= childrenCostsInputDaycare
+        <*> requiredField "total_daycare" "total daycare expenses"
+          .= childrenCostsInputTotalDaycare
+
+data DaycareExpenseInput = DaycareExpenseInput
+  { inputDaycareExpenseDay :: !Day,
+    inputDaycareExpenseDescription :: !Text,
+    inputDaycareExpenseAmount :: !AmountWithCurrency,
+    inputDaycareExpenseCHFAmount :: !FormattedAmount,
+    inputDaycareExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec DaycareExpenseInput where
+  codec =
+    object "DaycareExpenseInput" $
+      DaycareExpenseInput
+        <$> requiredField "day" "day of daycare expense"
+          .= inputDaycareExpenseDay
+        <*> requiredField "description" "description of daycare expense"
+          .= inputDaycareExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputDaycareExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputDaycareExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputDaycareExpenseEvidence
 
 data DepreciationScheduleInput = DepreciationScheduleInput
   { depreciationScheduleInputDepreciationRate :: !String,
