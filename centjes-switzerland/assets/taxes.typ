@@ -94,6 +94,7 @@
 This document is the index of all the attachment for the tax declaration of #{ input.first_name } #input.last_name for
 the year #{ input.year }.
 
+#pagebreak()
 == Children
 
 === Daycare costs
@@ -107,17 +108,8 @@ the year #{ input.year }.
   No daycare costs.
 ]
 
-== Income
-
-All income is reported in CHF, using the exchange of the day of the transaction.
-
-#amount_table(input.revenues, input.total_revenues)
-
 #pagebreak()
-
-== Deductions
-
-=== Depreciation
+== Depreciation
 
 #let depreciation_schedule(title, schedule) = {
   [==== #title]
@@ -152,6 +144,16 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 #depreciation_schedule("Machinery", input.machinery)
 
 #pagebreak()
+
+== Income
+
+All income is reported in CHF, using the exchange of the day of the transaction.
+
+#amount_table(input.revenues, input.total_revenues)
+
+#pagebreak()
+
+== Deductions
 
 === Self-employment expenses
 
