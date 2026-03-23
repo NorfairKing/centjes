@@ -253,6 +253,18 @@ taxesReportInput TaxesReport {..} =
             depreciationScheduleInputDepreciation = formatChfAmount depreciationScheduleDepreciation,
             depreciationScheduleInputClosingBalance = formatChfAmount depreciationScheduleClosingBalance
           }
+      inputEducationExpenses = flip map taxesReportEducationExpenses $ \EducationExpense {..} ->
+        let inputEducationExpenseDay = Timestamp.toDay educationExpenseTimestamp
+            inputEducationExpenseDescription = Description.toText educationExpenseDescription
+            inputEducationExpenseAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount educationExpenseCurrency educationExpenseAmount,
+                  amountWithCurrencyCurrency = currencySymbol educationExpenseCurrency
+                }
+            inputEducationExpenseCHFAmount = formatChfAmount educationExpenseCHFAmount
+            inputEducationExpenseEvidence = educationExpenseEvidence
+         in EducationExpenseInput {..}
+      inputTotalEducationExpenses = formatChfAmount taxesReportTotalEducationExpenses
       inputMovables = convertDepreciationSchedule taxesReportMovables
       inputMachinery = convertDepreciationSchedule taxesReportMachinery
    in Input {..}
@@ -278,6 +290,8 @@ data Input = Input
     inputTravelExpenses :: !(PartitionedExpensesInput TravelExpenseInput),
     inputInternetExpenses :: !(PartitionedExpensesInput InternetExpenseInput),
     inputHealthCosts :: !HealthCostsInput,
+    inputEducationExpenses :: ![EducationExpenseInput],
+    inputTotalEducationExpenses :: !FormattedAmount,
     inputMovables :: !DepreciationScheduleInput,
     inputMachinery :: !DepreciationScheduleInput
   }
@@ -323,6 +337,10 @@ instance HasCodec Input where
           .= inputInternetExpenses
         <*> requiredField "health_costs" "health costs"
           .= inputHealthCosts
+        <*> requiredField "education_expenses" "education expenses"
+          .= inputEducationExpenses
+        <*> requiredField "total_education_expenses" "total education expenses"
+          .= inputTotalEducationExpenses
         <*> requiredField "movables" "movables depreciation schedule"
           .= inputMovables
         <*> requiredField "machinery" "machinery depreciation schedule"
@@ -690,6 +708,29 @@ instance HasCodec DaycareExpenseInput where
           .= inputDaycareExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputDaycareExpenseEvidence
+
+data EducationExpenseInput = EducationExpenseInput
+  { inputEducationExpenseDay :: !Day,
+    inputEducationExpenseDescription :: !Text,
+    inputEducationExpenseAmount :: !AmountWithCurrency,
+    inputEducationExpenseCHFAmount :: !FormattedAmount,
+    inputEducationExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec EducationExpenseInput where
+  codec =
+    object "EducationExpenseInput" $
+      EducationExpenseInput
+        <$> requiredField "day" "day of education expense"
+          .= inputEducationExpenseDay
+        <*> requiredField "description" "description of education expense"
+          .= inputEducationExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputEducationExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputEducationExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputEducationExpenseEvidence
 
 data DepreciationScheduleInput = DepreciationScheduleInput
   { depreciationScheduleInputDepreciationRate :: !String,

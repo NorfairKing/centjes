@@ -25,6 +25,7 @@ module Centjes.Switzerland.Report.Taxes.Types
     HealthExpense (..),
     HealthCosts (..),
     DaycareExpense (..),
+    EducationExpense (..),
     ChildrenCosts (..),
     DepreciationSchedule (..),
     DepreciationPurchase (..),
@@ -94,6 +95,7 @@ data TaxesInput = TaxesInput
     taxesInputHealthHospitalAccount :: !AccountName,
     taxesInputHealthTherapyAccount :: !AccountName,
     taxesInputDaycareAccount :: !AccountName,
+    taxesInputEducationAccount :: !AccountName,
     taxesInputMovablesAssetsAccount :: !AccountName,
     taxesInputMovablesExpensesAccount :: !AccountName,
     taxesInputMovablesDepreciationRate :: !(Ratio Natural),
@@ -286,6 +288,13 @@ parseTaxesInput = do
         conf "daycare-account",
         value "expenses:daycare"
       ]
+  taxesInputEducationAccount <-
+    setting
+      [ help "the account to use for education expenses",
+        reader $ maybeReader AccountName.fromString,
+        conf "education-account",
+        value "expenses:education"
+      ]
   taxesInputMovablesAssetsAccount <-
     setting
       [ help "the account to use for movables assets",
@@ -409,6 +418,8 @@ data TaxesReport ann = TaxesReport
     taxesReportTravelExpenses :: !(PartitionedExpenses (TravelExpense ann) ann),
     taxesReportInternetExpenses :: !(PartitionedExpenses (InternetExpense ann) ann),
     taxesReportHealthCosts :: !(HealthCosts ann),
+    taxesReportEducationExpenses :: ![EducationExpense ann],
+    taxesReportTotalEducationExpenses :: !Money.Amount,
     taxesReportMovables :: !(DepreciationSchedule ann),
     taxesReportMachinery :: !(DepreciationSchedule ann)
   }
@@ -431,6 +442,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
         validatePartitionedExpenses "travel" travelExpenseCHFAmount taxesReportTravelExpenses,
         validatePartitionedExpenses "internet" internetExpenseCHFAmount taxesReportInternetExpenses,
         validateHealthCosts taxesReportHealthCosts,
+        declare "the education expenses sum to the total education expenses" $
+          Amount.sum (map educationExpenseCHFAmount taxesReportEducationExpenses) == Just taxesReportTotalEducationExpenses,
         validateChildrenCosts taxesReportChildrenCosts
       ]
 
@@ -643,6 +656,18 @@ data DaycareExpense ann = DaycareExpense
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (DaycareExpense ann)
+
+data EducationExpense ann = EducationExpense
+  { educationExpenseTimestamp :: !Timestamp,
+    educationExpenseDescription :: !Description,
+    educationExpenseAmount :: !Money.Amount,
+    educationExpenseCurrency :: !(Currency ann),
+    educationExpenseCHFAmount :: !Money.Amount,
+    educationExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (EducationExpense ann)
 
 data ChildrenCosts ann = ChildrenCosts
   { childrenCostsDaycare :: ![DaycareExpense ann],

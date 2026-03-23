@@ -57,6 +57,11 @@
       };
     };
   };
+  education-account = lib.mkOption {
+    default = null;
+    description = "the account to use for education expenses";
+    type = lib.types.nullOr lib.types.str;
+  };
   electricity-expenses-account = lib.mkOption {
     default = null;
     description = "the account to use for electricity expenses";

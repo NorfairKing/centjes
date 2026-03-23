@@ -1,17 +1,13 @@
 #set text(font: "DejaVu Sans Mono", size: 8pt)
 #set heading(numbering: "1.1.")
 
-#set page(numbering: (
-  (current, total) => align(
-    right,
-    {
-      "Page "
-      str(current)
-      " of "
-      str(total)
-    },
-  )
-))
+#set page(
+  footer: context {
+    let current = counter(page).get().first()
+    let total = counter(page).final().first()
+    align(right, [Page #current of #total])
+  },
+)
 
 #let input = json("input.json")
 
@@ -107,6 +103,8 @@
   ]
   #v(1fr)
 ]
+
+#outline(indent: auto)
 
 #pagebreak()
 = Children (Kinder)
@@ -215,6 +213,17 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 #expense_section("Electricity (Strom)", input.electricity_expenses)
 
 #expense_section("Insurance (Versicherungen)", input.insurance_expenses)
+
+== Education and professional development (Aus- und Weiterbildungskosten)
+
+#if input.education_expenses.len() > 0 {
+  amount_table(
+    input.education_expenses,
+    input.total_education_expenses,
+  )
+} else [
+  No education expenses.
+]
 
 == Third pillar (Säule 3a)
 

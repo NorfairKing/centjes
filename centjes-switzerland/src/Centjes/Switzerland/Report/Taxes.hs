@@ -209,6 +209,25 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   let taxesReportChildrenCosts = ChildrenCosts {..}
 
+  taxesReportEducationExpenses <- forAccountPostings taxesInputEducationAccount $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+    withDeductibleTag taxesInput tl lp transactionTags $ do
+      let Located _ timestamp = transactionTimestamp
+      let day = Timestamp.toDay timestamp
+      educationExpenseDescription <- requireDescription transactionDescription
+      let Located al account = postingAccount
+      educationExpenseAmount <- requireExpensePositive al account
+      let educationExpenseTimestamp = timestamp
+      let Located _ educationExpenseCurrency = postingCurrency
+      educationExpenseCHFAmount <- convertDaily al dailyPriceGraphs day educationExpenseCurrency taxesReportCHF educationExpenseAmount
+      ne <- requireNonEmptyEvidence tl transactionAttachments
+      educationExpenseEvidence <- forM ne $ \rf -> do
+        let fileInTarball = [reldir|expenses/education|] </> filename rf
+        includeFile fileInTarball rf
+        pure fileInTarball
+      pure EducationExpense {..}
+
+  taxesReportTotalEducationExpenses <- requireSum $ map educationExpenseCHFAmount taxesReportEducationExpenses
+
   taxesReportRevenues <- forMatchingPostings
     (\Account {..} Posting {..} -> postingReal && accountType == AccountTypeIncome)
     $ \(Located tl Transaction {..}) (Located al Account {..}) (Located pl Posting {..}) -> do

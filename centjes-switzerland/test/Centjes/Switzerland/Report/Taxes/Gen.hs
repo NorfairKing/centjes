@@ -78,6 +78,10 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         fixed <- fixChildrenCostsTotals (taxesReportChildrenCosts tr)
                         pure $ tr {taxesReportChildrenCosts = fixed}
                     )
+      `suchThatMap` ( \tr -> do
+                        totalEducationExpenses <- Amount.sum (map educationExpenseCHFAmount (taxesReportEducationExpenses tr))
+                        pure $ tr {taxesReportTotalEducationExpenses = totalEducationExpenses}
+                    )
 
 fixHealthCostsTotals ::
   HealthCosts ann ->
@@ -259,6 +263,19 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (DaycareExpense ann) wher
       r
         { daycareExpenseAmount = amount,
           daycareExpenseCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (EducationExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { educationExpenseAmount = amount,
+          educationExpenseCHFAmount = chfAmount
         }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DepreciationPurchase ann) where

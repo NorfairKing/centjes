@@ -231,6 +231,12 @@
         [33m<string>[m
     default: [33m"expenses:daycare"[m
     
+    [34mthe account to use for education expenses[m
+    config:
+      [37meducation-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:education"[m
+    
     [34mthe account to use for movables assets[m
     config:
       [37mmovables-assets-account[m: # [32mor null[m
@@ -598,6 +604,11 @@
   [34mthe account to use for daycare expenses[m
   default: [33m"expenses:daycare"[m
   [37mdaycare-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for education expenses[m
+  default: [33m"expenses:education"[m
+  [37meducation-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for movables assets[m
