@@ -43,6 +43,7 @@ library
       Centjes.Ledger
       Centjes.Load
       Centjes.Location
+      Centjes.Merge
       Centjes.Module
       Centjes.OptParse
       Centjes.Parse

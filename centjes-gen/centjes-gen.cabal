@@ -234,6 +234,21 @@ extra-source-files:
     test_resources/load/LE_IMPORT.err
     test_resources/load/LE_IMPORT_DIR.cent
     test_resources/load/LE_IMPORT_DIR.err
+    test_resources/merge/empty-existing/existing.cent
+    test_resources/merge/empty-existing/new.cent
+    test_resources/merge/empty-existing/result.cent
+    test_resources/merge/interleaved-dates/existing.cent
+    test_resources/merge/interleaved-dates/new.cent
+    test_resources/merge/interleaved-dates/result.cent
+    test_resources/merge/multiple-currencies-same-day/existing.cent
+    test_resources/merge/multiple-currencies-same-day/new.cent
+    test_resources/merge/multiple-currencies-same-day/result.cent
+    test_resources/merge/no-new/existing.cent
+    test_resources/merge/no-new/new.cent
+    test_resources/merge/no-new/result.cent
+    test_resources/merge/with-currency-declarations/existing.cent
+    test_resources/merge/with-currency-declarations/new.cent
+    test_resources/merge/with-currency-declarations/result.cent
     test_resources/net-worth/error/missing-price.cent
     test_resources/net-worth/error/missing-price.config
     test_resources/net-worth/error/missing-price.err
@@ -578,6 +593,7 @@ test-suite centjes-test
       Centjes.FormatSpec
       Centjes.LedgerSpec
       Centjes.LoadSpec
+      Centjes.MergeSpec
       Centjes.ModuleSpec
       Centjes.ParseSpec
       Centjes.Report.BalanceSpec

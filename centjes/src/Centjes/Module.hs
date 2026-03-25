@@ -28,6 +28,7 @@ module Centjes.Module
     LPriceDeclaration,
     PriceDeclaration (..),
     priceDeclarationCurrencySymbols,
+    stripDeclarationAnnotation,
     stripPriceDeclarationAnnotation,
     LCostExpression,
     CostExpression (..),
@@ -311,6 +312,91 @@ stripRationalExpressionAnnotation RationalExpression {..} =
       rationalExpressionDenominator = fmap (noLoc . locatedValue) rationalExpressionDenominator,
       rationalExpressionPercent = rationalExpressionPercent
     }
+
+stripDeclarationAnnotation :: Declaration ann -> Declaration ()
+stripDeclarationAnnotation (DeclarationComment (Located _ t)) = DeclarationComment (noLoc t)
+stripDeclarationAnnotation (DeclarationCurrency (Located _ cd)) = DeclarationCurrency (noLoc (stripCurrencyDeclarationAnnotation cd))
+stripDeclarationAnnotation (DeclarationAccount (Located _ ad)) = DeclarationAccount (noLoc (stripAccountDeclarationAnnotation ad))
+stripDeclarationAnnotation (DeclarationTag (Located _ td)) = DeclarationTag (noLoc (stripTagDeclarationAnnotation td))
+stripDeclarationAnnotation (DeclarationPrice (Located _ pd)) = DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd))
+stripDeclarationAnnotation (DeclarationTransaction (Located _ t)) = DeclarationTransaction (noLoc (stripTransactionAnnotation t))
+
+stripCurrencyDeclarationAnnotation :: CurrencyDeclaration ann -> CurrencyDeclaration ()
+stripCurrencyDeclarationAnnotation CurrencyDeclaration {..} =
+  CurrencyDeclaration
+    { currencyDeclarationSymbol = noLoc (locatedValue currencyDeclarationSymbol),
+      currencyDeclarationQuantisationFactor = noLoc (locatedValue currencyDeclarationQuantisationFactor)
+    }
+
+stripAccountDeclarationAnnotation :: AccountDeclaration ann -> AccountDeclaration ()
+stripAccountDeclarationAnnotation AccountDeclaration {..} =
+  AccountDeclaration
+    { accountDeclarationName = noLoc (locatedValue accountDeclarationName),
+      accountDeclarationType = fmap (noLoc . locatedValue) accountDeclarationType,
+      accountDeclarationExtras = map (noLoc . stripAccountExtraAnnotation . locatedValue) accountDeclarationExtras
+    }
+
+stripAccountExtraAnnotation :: AccountExtra ann -> AccountExtra ()
+stripAccountExtraAnnotation (AccountExtraAttachment (Located _ ea)) = AccountExtraAttachment (noLoc (stripExtraAttachmentAnnotation ea))
+stripAccountExtraAnnotation (AccountExtraAssertion (Located _ aa)) = AccountExtraAssertion (noLoc (stripAccountAssertionAnnotation aa))
+stripAccountExtraAnnotation (AccountExtraTag (Located _ et)) = AccountExtraTag (noLoc (stripExtraTagAnnotation et))
+
+stripAccountAssertionAnnotation :: AccountAssertion ann -> AccountAssertion ()
+stripAccountAssertionAnnotation (AccountAssertionCurrency (Located _ cs)) = AccountAssertionCurrency (noLoc cs)
+stripAccountAssertionAnnotation (AccountAssertionVirtual (Located _ v)) = AccountAssertionVirtual (noLoc v)
+
+stripTagDeclarationAnnotation :: TagDeclaration ann -> TagDeclaration ()
+stripTagDeclarationAnnotation TagDeclaration {..} =
+  TagDeclaration {tagDeclarationTag = noLoc (locatedValue tagDeclarationTag)}
+
+stripTransactionAnnotation :: Transaction ann -> Transaction ()
+stripTransactionAnnotation Transaction {..} =
+  Transaction
+    { transactionTimestamp = noLoc (locatedValue transactionTimestamp),
+      transactionDescription = fmap (noLoc . locatedValue) transactionDescription,
+      transactionPostings = map (noLoc . stripPostingAnnotation . locatedValue) transactionPostings,
+      transactionExtras = map (noLoc . stripTransactionExtraAnnotation . locatedValue) transactionExtras
+    }
+
+stripPostingAnnotation :: Posting ann -> Posting ()
+stripPostingAnnotation Posting {..} =
+  Posting
+    { postingReal = postingReal,
+      postingAccountName = noLoc (locatedValue postingAccountName),
+      postingAccount = noLoc (locatedValue postingAccount),
+      postingCurrencySymbol = noLoc (locatedValue postingCurrencySymbol),
+      postingCost = fmap (noLoc . stripCostExpressionAnnotation . locatedValue) postingCost,
+      postingRatio = fmap (noLoc . stripRatioExpressionAnnotation . locatedValue) postingRatio
+    }
+
+stripRatioExpressionAnnotation :: RatioExpression ann -> RatioExpression ()
+stripRatioExpressionAnnotation RatioExpression {..} =
+  RatioExpression
+    { ratioExpressionInclusive = ratioExpressionInclusive,
+      ratioExpressionRounding = ratioExpressionRounding,
+      ratioExpressionRationalExpression = noLoc (stripRationalExpressionAnnotation (locatedValue ratioExpressionRationalExpression))
+    }
+
+stripTransactionExtraAnnotation :: TransactionExtra ann -> TransactionExtra ()
+stripTransactionExtraAnnotation (TransactionAttachment (Located _ ea)) = TransactionAttachment (noLoc (stripExtraAttachmentAnnotation ea))
+stripTransactionExtraAnnotation (TransactionAssertion (Located _ ea)) = TransactionAssertion (noLoc (stripExtraAssertionAnnotation ea))
+stripTransactionExtraAnnotation (TransactionTag (Located _ et)) = TransactionTag (noLoc (stripExtraTagAnnotation et))
+
+stripExtraAttachmentAnnotation :: ExtraAttachment ann -> ExtraAttachment ()
+stripExtraAttachmentAnnotation (ExtraAttachment (Located _ a)) = ExtraAttachment (noLoc (stripAttachmentAnnotation a))
+
+stripAttachmentAnnotation :: Attachment ann -> Attachment ()
+stripAttachmentAnnotation (Attachment (Located _ p)) = Attachment (noLoc p)
+
+stripExtraAssertionAnnotation :: ExtraAssertion ann -> ExtraAssertion ()
+stripExtraAssertionAnnotation (ExtraAssertion (Located _ a)) = ExtraAssertion (noLoc (stripAssertionAnnotation a))
+
+stripAssertionAnnotation :: Assertion ann -> Assertion ()
+stripAssertionAnnotation (AssertionEquals (Located _ an) (Located _ dl) (Located _ cs)) =
+  AssertionEquals (noLoc an) (noLoc dl) (noLoc cs)
+
+stripExtraTagAnnotation :: ExtraTag ann -> ExtraTag ()
+stripExtraTagAnnotation (ExtraTag (Located _ t)) = ExtraTag (noLoc t)
 
 type LTransaction = LLocated Transaction
 

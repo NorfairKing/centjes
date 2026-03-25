@@ -12,6 +12,7 @@ import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Format (formatModule)
 import Centjes.Load
 import Centjes.Location
+import Centjes.Merge (extractDeclarationsFromFile, mergePriceDeclarations)
 import Centjes.Module
 import Centjes.Timestamp (toDay)
 import Centjes.Validation
@@ -26,7 +27,6 @@ import qualified Data.Aeson.KeyMap as KM
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.Conduit.Combinators as C
-import Data.List (sortOn)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Scientific (Scientific, toRealFloat)
@@ -58,12 +58,9 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
 
   -- Extract existing price declarations from the loaded declarations that came from the output file
   let outputRelFile = downloadRatesSettingOutput >>= stripProperPrefix (parent settingLedgerFile)
-  let existingDeclarations =
-        [ noLoc (DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd)))
-        | Located loc (DeclarationPrice (Located _ pd)) <- declarations,
-          Just relFile <- [outputRelFile],
-          sourceSpanFile loc == relFile
-        ]
+  let existingDeclarations = case outputRelFile of
+        Nothing -> []
+        Just relFile -> extractDeclarationsFromFile relFile declarations
 
   let existingDays =
         M.fromListWith
@@ -108,17 +105,10 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
         .| C.map (\(day, symbol, rateExpression) -> noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day symbol rateExpression downloadRatesSettingTarget)
         .| C.sinkList
 
-  let allDeclarations =
-        sortOn priceDeclarationSortKey $
-          existingDeclarations ++ newDeclarations
-
   let output =
         TE.encodeUtf8 $
           formatModule $
-            Module
-              { moduleImports = [],
-                moduleDeclarations = allDeclarations
-              }
+            mergePriceDeclarations existingDeclarations newDeclarations
 
   liftIO $ case downloadRatesSettingOutput of
     Nothing -> SB.putStr output
@@ -294,8 +284,3 @@ knownCryptocurrencies =
       "ZEC",
       "ZIL"
     ]
-
-priceDeclarationSortKey :: GenLocated () (Declaration ()) -> (Day, CurrencySymbol)
-priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) =
-  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
-priceDeclarationSortKey _ = error "priceDeclarationSortKey: not a price declaration"

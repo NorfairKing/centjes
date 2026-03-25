@@ -14,7 +14,8 @@ import Centjes.Format (formatModule)
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
-import Centjes.Module (CostExpression (..), Declaration (..), Module (..), PriceDeclaration (..), RationalExpression (..), stripPriceDeclarationAnnotation)
+import Centjes.Merge (extractDeclarationsFromFile, mergePriceDeclarations)
+import Centjes.Module (CostExpression (..), Declaration (..), PriceDeclaration (..), RationalExpression (..))
 import Centjes.Switzerland.OptParse
 import Centjes.Timestamp (toDay)
 import Centjes.Validation
@@ -23,7 +24,7 @@ import Control.Concurrent
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import qualified Data.Conduit.Combinators as C
-import Data.List (find, sortOn)
+import Data.List (find)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Ratio
@@ -46,14 +47,10 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
     currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
     man <- liftIO newTlsManager
 
-    -- Extract existing price declarations from the loaded declarations that came from the destination file
-    let destinationRelFile = stripProperPrefix settingBaseDir downloadRatesSettingDestination
-    let existingDeclarations =
-          [ noLoc (DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd)))
-          | Located loc (DeclarationPrice (Located _ pd)) <- declarations,
-            Just relFile <- [destinationRelFile],
-            sourceSpanFile loc == relFile
-          ]
+    -- Extract existing declarations from the loaded declarations that came from the destination file
+    let existingDeclarations = case stripProperPrefix settingBaseDir downloadRatesSettingDestination of
+          Nothing -> []
+          Just relFile -> extractDeclarationsFromFile relFile declarations
 
     -- Collect days that already have any rates in the output file
     let existingDays =
@@ -169,20 +166,8 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
             )
           .| C.sinkList
 
-    let allDeclarations =
-          sortOn priceDeclarationSortKey $
-            existingDeclarations ++ newDeclarations
-
     liftIO $
       SB.writeFile (fromAbsFile downloadRatesSettingDestination) $
         TE.encodeUtf8 $
           formatModule $
-            Module
-              { moduleImports = [],
-                moduleDeclarations = allDeclarations
-              }
-
-priceDeclarationSortKey :: GenLocated () (Declaration ()) -> (Day, CurrencySymbol)
-priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) =
-  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
-priceDeclarationSortKey _ = error "priceDeclarationSortKey: not a price declaration"
+            mergePriceDeclarations existingDeclarations newDeclarations
