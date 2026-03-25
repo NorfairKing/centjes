@@ -13,6 +13,7 @@ import Centjes.Format (formatModule)
 import Centjes.Load
 import Centjes.Location
 import Centjes.Module
+import Centjes.Timestamp (toDay)
 import Centjes.Validation
 import Conduit
 import Control.Concurrent (threadDelay)
@@ -25,6 +26,7 @@ import qualified Data.Aeson.KeyMap as KM
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.Conduit.Combinators as C
+import Data.List (sortOn)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Scientific (Scientific, toRealFloat)
@@ -48,11 +50,38 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
   man <- liftIO newTlsManager
 
   -- Use provided symbols or fall back to all currencies from the ledger (excluding target)
-  let symbols = maybe (filter (/= downloadRatesSettingTarget) $ M.keys currencies) NE.toList downloadRatesSettingSymbols
+  -- Only keep symbols that are known currencies and cryptocurrencies
+  let symbols =
+        filter (\s -> M.member s currencies && isCryptocurrency s) $
+          maybe (filter (/= downloadRatesSettingTarget) $ M.keys currencies) NE.toList downloadRatesSettingSymbols
+  let symbolsSet = S.fromList symbols
 
-  generatedDeclarations <-
+  -- Extract existing price declarations from the loaded declarations that came from the output file
+  let outputRelFile = downloadRatesSettingOutput >>= stripProperPrefix (parent settingLedgerFile)
+  let existingDeclarations =
+        [ noLoc (DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd)))
+        | Located loc (DeclarationPrice (Located _ pd)) <- declarations,
+          Just relFile <- [outputRelFile],
+          sourceSpanFile loc == relFile
+        ]
+
+  let existingDays =
+        M.fromListWith
+          S.union
+          [ (toDay (locatedValue (priceDeclarationTimestamp pd)), S.singleton (locatedValue (priceDeclarationCurrencySymbol pd)))
+          | Located _ (DeclarationPrice (Located _ pd)) <- existingDeclarations
+          ]
+
+  -- A day can be skipped if we already have data for all requested symbols
+  let dayFullyCovered day = case M.lookup day existingDays of
+        Nothing -> False
+        Just coveredSymbols -> symbolsSet `S.isSubsetOf` coveredSymbols
+
+  newDeclarations <-
     runConduit $
       yieldMany [downloadRatesSettingBegin .. downloadRatesSettingEnd]
+        -- Skip days where we already have all rates
+        .| C.filter (not . dayFullyCovered)
         -- Gentle delay between requests
         .| C.mapM (\day -> liftIO (threadDelay 100_000) >> pure day)
         -- Fetch USD rates for this day (one request per day)
@@ -69,19 +98,26 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
         .| C.concatMap (\(day, symbol, val) -> (\n -> (day, symbol, n)) <$> extractNumber val)
         -- Calculate the rate expression (invert: USD per 1 symbol)
         .| C.concatMap (\(day, symbol, symbolUsdRate) -> (\rateExpression -> (day, symbol, rateExpression)) <$> calculateRate symbolUsdRate)
-        -- Only continue with known currencies that are also cryptocurrencies
-        .| C.filter (\(_, symbol, _) -> M.member symbol currencies)
-        .| C.filter (\(_, symbol, _) -> isCryptocurrency symbol)
+        -- Skip rates that already exist in the file (for partially covered days)
+        .| C.filter
+          ( \(day, symbol, _) -> case M.lookup day existingDays of
+              Nothing -> True
+              Just coveredSymbols -> not $ S.member symbol coveredSymbols
+          )
         -- Produce price declarations
         .| C.map (\(day, symbol, rateExpression) -> noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day symbol rateExpression downloadRatesSettingTarget)
         .| C.sinkList
+
+  let allDeclarations =
+        sortOn priceDeclarationSortKey $
+          existingDeclarations ++ newDeclarations
 
   let output =
         TE.encodeUtf8 $
           formatModule $
             Module
               { moduleImports = [],
-                moduleDeclarations = generatedDeclarations
+                moduleDeclarations = allDeclarations
               }
 
   liftIO $ case downloadRatesSettingOutput of
@@ -258,3 +294,8 @@ knownCryptocurrencies =
       "ZEC",
       "ZIL"
     ]
+
+priceDeclarationSortKey :: GenLocated () (Declaration ()) -> (Day, CurrencySymbol)
+priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) =
+  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
+priceDeclarationSortKey _ = error "priceDeclarationSortKey: not a price declaration"

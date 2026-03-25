@@ -14,18 +14,20 @@ import Centjes.Format (formatModule)
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
-import Centjes.Module (CostExpression (..), Declaration (..), Module (..), PriceDeclaration (..), RationalExpression (..))
+import Centjes.Module (CostExpression (..), Declaration (..), Module (..), PriceDeclaration (..), RationalExpression (..), stripPriceDeclarationAnnotation)
 import Centjes.Switzerland.OptParse
+import Centjes.Timestamp (toDay)
 import Centjes.Validation
 import Conduit
 import Control.Concurrent
 import Control.Monad.Logger
 import qualified Data.ByteString as SB
 import qualified Data.Conduit.Combinators as C
-import Data.List (find)
+import Data.List (find, sortOn)
 import qualified Data.Map as M
 import Data.Maybe
 import Data.Ratio
+import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.Time
@@ -43,10 +45,29 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
     (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
     currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
     man <- liftIO newTlsManager
-    generatedDeclarations <-
+
+    -- Extract existing price declarations from the loaded declarations that came from the destination file
+    let destinationRelFile = stripProperPrefix settingBaseDir downloadRatesSettingDestination
+    let existingDeclarations =
+          [ noLoc (DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd)))
+          | Located loc (DeclarationPrice (Located _ pd)) <- declarations,
+            Just relFile <- [destinationRelFile],
+            sourceSpanFile loc == relFile
+          ]
+
+    -- Collect days that already have any rates in the output file
+    let existingDays =
+          S.fromList
+            [ toDay (locatedValue (priceDeclarationTimestamp pd))
+            | Located _ (DeclarationPrice (Located _ pd)) <- existingDeclarations
+            ]
+
+    newDeclarations <-
       runConduit $
         -- For each day
         yieldMany [downloadRatesSettingBegin .. downloadRatesSettingEnd]
+          -- Skip days we already have rates for
+          .| C.filter (not . (`S.member` existingDays))
           .| C.mapM
             ( \a -> do
                 -- Gentle delay
@@ -61,9 +82,19 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
                 let request = HTTP.setQueryString params requestPrototype
                 pure (day, request)
             )
-          .| C.mapM (\(day, request) -> (,) day <$> liftIO (httpLbs request man))
-          -- Ignore failed requests
-          .| C.filter (\(_, response) -> HTTP.statusCode (responseStatus response) == 200)
+          .| C.mapM
+            ( \(day, request) -> do
+                logDebugN $ T.pack $ unwords ["Fetching rates for", show day]
+                response <- liftIO $ httpLbs request man
+                let status = HTTP.statusCode (responseStatus response)
+                if status /= 200
+                  then do
+                    logWarnN $ T.pack $ unwords ["HTTP request for", show day, "returned status", show status]
+                    pure (day, Nothing)
+                  else pure (day, Just response)
+            )
+          -- Filter out failed requests
+          .| C.concatMap (\(day, mResponse) -> (,) day <$> mResponse)
           -- Parse XML from the response body
           .| C.concatMap (\(day, response) -> (,) day <$> XML.parseLBS XML.def (responseBody response))
           -- Get the individual elements out
@@ -124,7 +155,9 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
                           }
                 pure (day, currencySymbol, rateExpression)
             )
-          -- \| Produce Price declarations
+          -- Skip rates that already exist in the file
+          .| C.filter (\(day, _, _) -> not $ S.member day existingDays)
+          -- Produce Price declarations
           .| C.map
             ( \(day, currencySymbol, rateExpression) ->
                 let priceDeclarationTimestamp = noLoc $ TimestampDay day
@@ -132,15 +165,24 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
                     costExpressionConversionRate = noLoc rateExpression
                     costExpressionCurrencySymbol = noLoc $ CurrencySymbol "CHF"
                     priceDeclarationCost = noLoc $ CostExpression {..}
-                 in PriceDeclaration {..}
+                 in noLoc $ DeclarationPrice $ noLoc PriceDeclaration {..}
             )
-          .| C.map (noLoc . DeclarationPrice . noLoc)
           .| C.sinkList
+
+    let allDeclarations =
+          sortOn priceDeclarationSortKey $
+            existingDeclarations ++ newDeclarations
+
     liftIO $
       SB.writeFile (fromAbsFile downloadRatesSettingDestination) $
         TE.encodeUtf8 $
           formatModule $
             Module
               { moduleImports = [],
-                moduleDeclarations = generatedDeclarations
+                moduleDeclarations = allDeclarations
               }
+
+priceDeclarationSortKey :: GenLocated () (Declaration ()) -> (Day, CurrencySymbol)
+priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) =
+  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
+priceDeclarationSortKey _ = error "priceDeclarationSortKey: not a price declaration"

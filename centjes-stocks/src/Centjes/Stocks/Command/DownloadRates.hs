@@ -13,6 +13,7 @@ import Centjes.Load
 import Centjes.Location
 import Centjes.Module
 import Centjes.Stocks.OptParse
+import Centjes.Timestamp (toDay)
 import Centjes.Validation
 import Conduit
 import Control.Concurrent (threadDelay)
@@ -29,6 +30,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (maybeToList)
 import Data.Scientific (Scientific, toRealFloat)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as TE
@@ -53,10 +55,25 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
 
   let stocks = NE.toList downloadRatesSettingStocks
 
+  -- Extract existing price declarations from the loaded declarations that came from the output file
+  let outputRelFile = downloadRatesSettingOutput >>= stripProperPrefix (parent settingLedgerFile)
+  let existingDeclarations =
+        [ noLoc (DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd)))
+        | Located loc (DeclarationPrice (Located _ pd)) <- declarations,
+          Just relFile <- [outputRelFile],
+          sourceSpanFile loc == relFile
+        ]
+
+  let existingKeys =
+        Set.fromList
+          [ (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
+          | Located _ (DeclarationPrice (Located _ pd)) <- existingDeclarations
+          ]
+
   man <- liftIO newTlsManager
 
   -- Single unified conduit pipeline
-  generatedDeclarations <-
+  newDeclarations <-
     runConduit $
       yieldMany stocks
         -- Parse and validate stock settings against ledger
@@ -73,19 +90,25 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
         .| C.filter (\(_, _, day, _) -> day >= downloadRatesSettingBegin && day <= downloadRatesSettingEnd)
         -- Convert to rate expressions
         .| C.concatMap (\(sym, targetCur, day, price) -> [(sym, targetCur, day, rateExpr) | rateExpr <- maybeToList (priceToRateExpression price)])
+        -- Skip rates that already exist in the file
+        .| C.filter (\(sym, _, day, _) -> not $ Set.member (day, sym) existingKeys)
         -- Generate price declarations
         .| C.map
           ( \(sym, targetCurrency, day, rateExpression) ->
-              (day, noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day sym rateExpression targetCurrency)
+              noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day sym rateExpression targetCurrency
           )
-        .| (map snd . sortOn fst <$> C.sinkList)
+        .| C.sinkList
+
+  let allDeclarations =
+        sortOn priceDeclarationSortKey $
+          existingDeclarations ++ newDeclarations
 
   let output =
         TE.encodeUtf8 $
           formatModule $
             Module
               { moduleImports = [],
-                moduleDeclarations = generatedDeclarations
+                moduleDeclarations = allDeclarations
               }
 
   liftIO $ case downloadRatesSettingOutput of
@@ -291,3 +314,8 @@ mkPriceDeclaration day symbol rateExpression target =
       costExpressionCurrencySymbol = noLoc target
       priceDeclarationCost = noLoc $ CostExpression {..}
    in PriceDeclaration {..}
+
+priceDeclarationSortKey :: GenLocated () (Declaration ()) -> (Day, CurrencySymbol)
+priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) =
+  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
+priceDeclarationSortKey _ = error "priceDeclarationSortKey: not a price declaration"

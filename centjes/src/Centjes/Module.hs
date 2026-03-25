@@ -28,6 +28,7 @@ module Centjes.Module
     LPriceDeclaration,
     PriceDeclaration (..),
     priceDeclarationCurrencySymbols,
+    stripPriceDeclarationAnnotation,
     LCostExpression,
     CostExpression (..),
     LRatioExpression,
@@ -282,6 +283,34 @@ priceDeclarationCurrencySymbols PriceDeclaration {..} =
       Located _ cd = priceDeclarationCost
       Located _ cs = costExpressionCurrencySymbol cd
    in S.fromList [ps, cs]
+
+stripPriceDeclarationAnnotation :: PriceDeclaration ann -> PriceDeclaration ()
+stripPriceDeclarationAnnotation PriceDeclaration {..} =
+  let Located _ timestamp = priceDeclarationTimestamp
+      Located _ currencySymbol = priceDeclarationCurrencySymbol
+      Located _ costExpression = priceDeclarationCost
+   in PriceDeclaration
+        { priceDeclarationTimestamp = noLoc timestamp,
+          priceDeclarationCurrencySymbol = noLoc currencySymbol,
+          priceDeclarationCost = noLoc (stripCostExpressionAnnotation costExpression)
+        }
+
+stripCostExpressionAnnotation :: CostExpression ann -> CostExpression ()
+stripCostExpressionAnnotation CostExpression {..} =
+  let Located _ conversionRate = costExpressionConversionRate
+      Located _ currencySymbol = costExpressionCurrencySymbol
+   in CostExpression
+        { costExpressionConversionRate = noLoc (stripRationalExpressionAnnotation conversionRate),
+          costExpressionCurrencySymbol = noLoc currencySymbol
+        }
+
+stripRationalExpressionAnnotation :: RationalExpression ann -> RationalExpression ()
+stripRationalExpressionAnnotation RationalExpression {..} =
+  RationalExpression
+    { rationalExpressionNumerator = noLoc (locatedValue rationalExpressionNumerator),
+      rationalExpressionDenominator = fmap (noLoc . locatedValue) rationalExpressionDenominator,
+      rationalExpressionPercent = rationalExpressionPercent
+    }
 
 type LTransaction = LLocated Transaction
 
