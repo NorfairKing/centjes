@@ -162,7 +162,7 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
                     costExpressionConversionRate = noLoc rateExpression
                     costExpressionCurrencySymbol = noLoc $ CurrencySymbol "CHF"
                     priceDeclarationCost = noLoc $ CostExpression {..}
-                 in noLoc $ DeclarationPrice $ noLoc PriceDeclaration {..}
+                 in noLoc PriceDeclaration {..}
             )
           .| C.sinkList
 

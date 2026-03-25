@@ -1,9 +1,9 @@
 module Centjes.MergeSpec (spec) where
 
 import Centjes.Format (formatModule)
-import Centjes.Location (locatedValue, noLoc)
+import Centjes.Location (GenLocated (..), locatedValue, noLoc)
 import Centjes.Merge
-import Centjes.Module (Module (..), stripDeclarationAnnotation)
+import Centjes.Module (Declaration (..), Module (..), stripDeclarationAnnotation, stripPriceDeclarationAnnotation)
 import Centjes.Parse (parseModule)
 import Centjes.Parse.TestUtils (shouldParse)
 import Control.Monad
@@ -30,5 +30,8 @@ spec =
             newRf <- makeRelative here newFile
             newContents <- T.readFile (fromAbsFile newFile)
             newModule <- shouldParse parseModule here newRf newContents
-            let newDeclarations = map (noLoc . stripDeclarationAnnotation . locatedValue) (moduleDeclarations newModule)
+            let newDeclarations =
+                  [ noLoc (stripPriceDeclarationAnnotation pd)
+                  | Located _ (DeclarationPrice (Located _ pd)) <- moduleDeclarations newModule
+                  ]
             pure $ formatModule $ mergePriceDeclarations existingDeclarations newDeclarations

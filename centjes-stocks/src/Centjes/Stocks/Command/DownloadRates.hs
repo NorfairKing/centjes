@@ -92,7 +92,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
         -- Generate price declarations
         .| C.map
           ( \(sym, targetCurrency, day, rateExpression) ->
-              noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day sym rateExpression targetCurrency
+              noLoc $ mkPriceDeclaration day sym rateExpression targetCurrency
           )
         .| C.sinkList
 

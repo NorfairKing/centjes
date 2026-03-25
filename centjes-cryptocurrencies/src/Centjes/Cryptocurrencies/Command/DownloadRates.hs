@@ -102,7 +102,7 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
               Just coveredSymbols -> not $ S.member symbol coveredSymbols
           )
         -- Produce price declarations
-        .| C.map (\(day, symbol, rateExpression) -> noLoc $ DeclarationPrice $ noLoc $ mkPriceDeclaration day symbol rateExpression downloadRatesSettingTarget)
+        .| C.map (\(day, symbol, rateExpression) -> noLoc $ mkPriceDeclaration day symbol rateExpression downloadRatesSettingTarget)
         .| C.sinkList
 
   let output =

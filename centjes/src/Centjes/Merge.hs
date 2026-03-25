@@ -31,12 +31,12 @@ extractDeclarationsFromFile relFile declarations =
 -- declarations, so that comments and other declarations stay in place.
 mergePriceDeclarations ::
   [GenLocated () (Declaration ())] ->
-  [GenLocated () (Declaration ())] ->
+  [GenLocated () (PriceDeclaration ())] ->
   Module ()
 mergePriceDeclarations existingDeclarations newPriceDeclarations =
   Module
     { moduleImports = [],
-      moduleDeclarations = interleave existingDeclarations (sortOn priceDeclarationSortKey newPriceDeclarations)
+      moduleDeclarations = interleave existingDeclarations (sortOn (priceDeclarationSortKey . locatedValue) newPriceDeclarations)
     }
 
 -- | Walk through existing declarations in order, inserting new price
@@ -44,21 +44,20 @@ mergePriceDeclarations existingDeclarations newPriceDeclarations =
 -- New prices that sort before the next existing price are inserted before it.
 interleave ::
   [GenLocated () (Declaration ())] ->
-  [GenLocated () (Declaration ())] ->
+  [GenLocated () (PriceDeclaration ())] ->
   [GenLocated () (Declaration ())]
 interleave existing [] = existing
-interleave [] new = new
+interleave [] new = map wrapPriceDeclaration new
 interleave (e : es) new = case locatedValue e of
   DeclarationPrice (Located _ pd) ->
-    let key = priceDeclarationKey pd
-        (before, after) = span (\n -> priceDeclarationSortKey n < key) new
-     in before ++ e : interleave es after
+    let key = priceDeclarationSortKey pd
+        (before, after) = span (\n -> priceDeclarationSortKey (locatedValue n) < key) new
+     in map wrapPriceDeclaration before ++ e : interleave es after
   _ -> e : interleave es new
 
-priceDeclarationKey :: PriceDeclaration () -> (Day, CurrencySymbol)
-priceDeclarationKey pd =
-  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
+wrapPriceDeclaration :: GenLocated () (PriceDeclaration ()) -> GenLocated () (Declaration ())
+wrapPriceDeclaration (Located _ pd) = noLoc (DeclarationPrice (noLoc pd))
 
-priceDeclarationSortKey :: GenLocated () (Declaration ()) -> (Day, CurrencySymbol)
-priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) = priceDeclarationKey pd
-priceDeclarationSortKey _ = error "priceDeclarationSortKey: not a price declaration"
+priceDeclarationSortKey :: PriceDeclaration () -> (Day, CurrencySymbol)
+priceDeclarationSortKey pd =
+  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
