@@ -1,7 +1,9 @@
+-- Currency declarations for rates file
 currency USD 0.01
 
 currency EUR 0.01
 
 currency CHF 0.01
 
+-- Existing rates below
 price 2024-01-01 USD 0.90 CHF
