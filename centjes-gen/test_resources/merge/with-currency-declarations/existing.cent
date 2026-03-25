@@ -1,6 +1,7 @@
 -- Currency declarations for rates file
 currency USD 0.01
 
+-- Another currency
 currency EUR 0.01
 
 currency CHF 0.01

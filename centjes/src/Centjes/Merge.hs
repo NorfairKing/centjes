@@ -9,7 +9,7 @@ where
 import Centjes.Location
 import Centjes.Module
 import Centjes.Timestamp (toDay)
-import Data.List (partition, sortOn)
+import Data.List (sortOn)
 import Data.Time (Day)
 import Path
 
@@ -26,28 +26,39 @@ extractDeclarationsFromFile relFile declarations =
   ]
 
 -- | Merge new price declarations into existing declarations from a rates file.
--- Non-price declarations are kept first (in original order),
--- then all price declarations (existing + new) sorted by (Day, CurrencySymbol).
+-- The original order of existing declarations is preserved.
+-- New price declarations are inserted in sorted order among the existing price
+-- declarations, so that comments and other declarations stay in place.
 mergePriceDeclarations ::
   [GenLocated () (Declaration ())] ->
   [GenLocated () (Declaration ())] ->
   Module ()
 mergePriceDeclarations existingDeclarations newPriceDeclarations =
-  let (existingPriceDeclarations, existingOtherDeclarations) =
-        partition (isPriceDeclaration . locatedValue) existingDeclarations
-      allDeclarations =
-        existingOtherDeclarations
-          ++ sortOn priceDeclarationSortKey (existingPriceDeclarations ++ newPriceDeclarations)
-   in Module
-        { moduleImports = [],
-          moduleDeclarations = allDeclarations
-        }
+  Module
+    { moduleImports = [],
+      moduleDeclarations = interleave existingDeclarations (sortOn priceDeclarationSortKey newPriceDeclarations)
+    }
 
-isPriceDeclaration :: Declaration ann -> Bool
-isPriceDeclaration (DeclarationPrice _) = True
-isPriceDeclaration _ = False
+-- | Walk through existing declarations in order, inserting new price
+-- declarations at the right positions. Non-price declarations stay in place.
+-- New prices that sort before the next existing price are inserted before it.
+interleave ::
+  [GenLocated () (Declaration ())] ->
+  [GenLocated () (Declaration ())] ->
+  [GenLocated () (Declaration ())]
+interleave existing [] = existing
+interleave [] new = new
+interleave (e : es) new = case locatedValue e of
+  DeclarationPrice (Located _ pd) ->
+    let key = priceDeclarationKey pd
+        (before, after) = span (\n -> priceDeclarationSortKey n < key) new
+     in before ++ e : interleave es after
+  _ -> e : interleave es new
+
+priceDeclarationKey :: PriceDeclaration () -> (Day, CurrencySymbol)
+priceDeclarationKey pd =
+  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
 
 priceDeclarationSortKey :: GenLocated () (Declaration ()) -> (Day, CurrencySymbol)
-priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) =
-  (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
+priceDeclarationSortKey (Located _ (DeclarationPrice (Located _ pd))) = priceDeclarationKey pd
 priceDeclarationSortKey _ = error "priceDeclarationSortKey: not a price declaration"
