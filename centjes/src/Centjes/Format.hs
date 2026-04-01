@@ -11,6 +11,7 @@ module Centjes.Format
     formatPriceDeclaration,
     formatRationalExpression,
     formatTransaction,
+    formatTransactionExtra,
     moduleDoc,
     SyntaxElement (..),
   )
@@ -56,6 +57,9 @@ formatRationalExpression = renderDocText . rationalExpressionDoc
 
 formatTransaction :: Transaction l -> Text
 formatTransaction = renderDocText . transactionDoc
+
+formatTransactionExtra :: TransactionExtra l -> Text
+formatTransactionExtra = renderDocText . transactionExtraDoc
 
 renderDocText :: Doc SyntaxElement -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions

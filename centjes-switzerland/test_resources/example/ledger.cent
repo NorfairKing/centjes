@@ -24,6 +24,7 @@ account income:VAT
   + assert virtual-only
 
 tag deductible
+tag duplicate-attachment
 tag not-deductible
 tag undeclared
 
@@ -48,6 +49,7 @@ tag undeclared
   * expenses:coffee 5 CHF
   ! expenses:VAT 0.37 CHF ~ 8.1%
   + attach receipt-coffee.txt
+  + tag duplicate-attachment
   + tag not-deductible
 
 2024-01-04
@@ -64,6 +66,7 @@ tag undeclared
   ! expenses:VAT 0.37 CHF ~ 8.1%
   + attach receipt-coffee.txt
   + tag deductible
+  + tag duplicate-attachment
 
 price 2024-01-07 USD 0.8589 CHF
 

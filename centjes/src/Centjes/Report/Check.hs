@@ -15,6 +15,7 @@ module Centjes.Report.Check
 where
 
 import Centjes.Compile
+import Centjes.Format (formatTransactionExtra)
 import Centjes.Ledger
 import Centjes.Location
 import Centjes.Module as Module
@@ -34,6 +35,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
+import qualified Data.Text as T
 import Error.Diagnose
 import Myers.Diff as Diff
 import Path
@@ -60,6 +62,7 @@ doCompleteCheck declarations = do
 data CheckError ann
   = CheckErrorDeclarationOutOfOrder !(GenLocated ann Timestamp) !(GenLocated ann Timestamp)
   | CheckErrorMissingAttachment !ann !(Attachment ann) ![Path Rel File]
+  | CheckErrorDuplicateAttachment !ann !ann !(Path Rel File)
   | CheckErrorUnusedCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | CheckErrorUnusedAccount !(GenLocated ann (AccountDeclaration ann))
   | CheckErrorUnusedTag !(GenLocated ann (TagDeclaration ann))
@@ -88,6 +91,14 @@ instance ToReport (CheckError SourceSpan) where
         [ Hint $ intercalate "\n" $ "Perhaps it was a typo and you meant one of these files in the same directory:" : map fromRelFile fs
         | not (null fs)
         ]
+    CheckErrorDuplicateAttachment l1 l2 rf ->
+      Err
+        (Just "CE_DUPLICATE_ATTACHMENT")
+        (unwords ["Duplicate attachment:", fromRelFile rf])
+        [ (toDiagnosePosition l1, Where "This attachment is the same as ..."),
+          (toDiagnosePosition l2, This "... this attachment")
+        ]
+        [Hint $ "If this is intentional, add '" <> T.unpack (formatTransactionExtra duplicateAttachmentExtra) <> "' to both."]
     CheckErrorUnusedCurrency (Located dl _) ->
       Err
         (Just "CE_UNUSED_CURRENCY")
@@ -120,6 +131,7 @@ checkDeclarations declarations = do
   withLoggedDuration "Check currency usage" $ checkCurrencyUsage declarations
   withLoggedDuration "Check account usage" $ checkAccountUsage declarations
   withLoggedDuration "Check tag usage" $ checkTagUsage declarations
+  withLoggedDuration "Check duplicate attachments" $ checkDuplicateAttachments declarations
   -- Check declarations individually
   traverse_ checkDeclaration declarations
 
@@ -247,6 +259,70 @@ checkTagUsage declarations =
       unuseds = M.difference declared $ M.fromSet (const ()) used
    in for_ unuseds $ \unused ->
         validationTFailure $ CheckErrorUnusedTag unused
+
+duplicateAttachmentTag :: Tag
+duplicateAttachmentTag = "duplicate-attachment"
+
+duplicateAttachmentExtra :: TransactionExtra ()
+duplicateAttachmentExtra = TransactionTag (Located () (ExtraTag (Located () duplicateAttachmentTag)))
+
+checkDuplicateAttachments :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
+checkDuplicateAttachments declarations =
+  let attachments :: [(Path Abs File, Path Rel File, SourceSpan)]
+      attachments = concatMap declarationAttachments declarations
+      go ::
+        Map (Path Abs File) (Path Rel File, SourceSpan) ->
+        (Path Abs File, Path Rel File, SourceSpan) ->
+        CheckerT SourceSpan (Map (Path Abs File) (Path Rel File, SourceSpan))
+      go seen (af, rf, l2) =
+        case M.lookup af seen of
+          Nothing -> pure $ M.insert af (rf, l2) seen
+          Just (_, l1) -> do
+            validationTFailure $ CheckErrorDuplicateAttachment l1 l2 rf
+            pure seen
+   in foldM_ go M.empty attachments
+
+declarationAttachments :: Declaration SourceSpan -> [(Path Abs File, Path Rel File, SourceSpan)]
+declarationAttachments = \case
+  DeclarationComment _ -> []
+  DeclarationCurrency _ -> []
+  DeclarationAccount (Located _ Module.AccountDeclaration {..}) ->
+    let hasDuplicateAttachmentTag =
+          any
+            ( \case
+                Located _ (AccountExtraTag (Located _ (ExtraTag (Located _ tag)))) ->
+                  tag == duplicateAttachmentTag
+                _ -> False
+            )
+            accountDeclarationExtras
+     in if hasDuplicateAttachmentTag
+          then []
+          else concatMap (accountExtraAttachments . locatedValue) accountDeclarationExtras
+  DeclarationTag _ -> []
+  DeclarationPrice _ -> []
+  DeclarationTransaction (Located _ Module.Transaction {..}) ->
+    let hasDuplicateAttachmentTag =
+          any
+            ( \case
+                Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag)))) ->
+                  tag == duplicateAttachmentTag
+                _ -> False
+            )
+            transactionExtras
+     in if hasDuplicateAttachmentTag
+          then []
+          else concatMap (transactionExtraAttachments . locatedValue) transactionExtras
+  where
+    accountExtraAttachments :: AccountExtra SourceSpan -> [(Path Abs File, Path Rel File, SourceSpan)]
+    accountExtraAttachments = \case
+      AccountExtraAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located l fp))))) ->
+        [(sourceSpanBase l </> fp, fp, l)]
+      _ -> []
+    transactionExtraAttachments :: TransactionExtra SourceSpan -> [(Path Abs File, Path Rel File, SourceSpan)]
+    transactionExtraAttachments = \case
+      TransactionAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located l fp))))) ->
+        [(sourceSpanBase l </> fp, fp, l)]
+      _ -> []
 
 checkDeclaration :: Declaration SourceSpan -> CheckerT SourceSpan ()
 checkDeclaration = \case
