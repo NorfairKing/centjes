@@ -928,7 +928,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
               (Just current, Just endBlock)
                 | current <= endBlock ->
                     let emptyBlock = makeEmptyBlock current runningTotal blockNum
-                     in emptyBlock : goBlocks (Just (nextBlock current)) blockNum runningTotal []
+                     in emptyBlock : goBlocks (Just (nextBlock current)) (blockNum + 1) runningTotal []
               _ -> []
           Just (blockTitle, blockEntries, restEntries) ->
             let emptyBlocks = case (mCurrentBlock, mEndBlock) of
@@ -985,7 +985,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
         | current >= target = []
         | otherwise =
             let emptyBlock = makeEmptyBlock current runningTotal blockNum
-             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal blockNum
+             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
 
       makeEmptyBlock ::
         Block ->
@@ -1140,7 +1140,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
               (Just current, Just endBlock)
                 | current <= endBlock ->
                     let emptyBlock = makeEmptyBlock current runningTotal blockNum
-                     in emptyBlock : goBlocks (Just (nextBlock current)) blockNum runningTotal []
+                     in emptyBlock : goBlocks (Just (nextBlock current)) (blockNum + 1) runningTotal []
               _ -> []
           Just (blockTitle, blockEntries, restEntries) ->
             let emptyBlocks = case (mCurrentBlock, mEndBlock) of
@@ -1201,7 +1201,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         | current >= target = []
         | otherwise =
             let emptyBlock = makeEmptyBlock current runningTotal blockNum
-             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal blockNum
+             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
 
       makeEmptyBlock ::
         Block ->
