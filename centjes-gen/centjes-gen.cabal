@@ -407,6 +407,12 @@ extra-source-files:
     test_resources/register/valid/prices-no-transactions-convert.cent
     test_resources/register/valid/prices-no-transactions-convert.config
     test_resources/register/valid/prices-no-transactions-convert.txt
+    test_resources/register/valid/quarterly-subscription-monthly-average-with-begin.cent
+    test_resources/register/valid/quarterly-subscription-monthly-average-with-begin.config
+    test_resources/register/valid/quarterly-subscription-monthly-average-with-begin.txt
+    test_resources/register/valid/quarterly-subscription-monthly-average.cent
+    test_resources/register/valid/quarterly-subscription-monthly-average.config
+    test_resources/register/valid/quarterly-subscription-monthly-average.txt
     test_resources/register/valid/quarterly.cent
     test_resources/register/valid/quarterly.config
     test_resources/register/valid/quarterly.txt

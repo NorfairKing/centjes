@@ -1,0 +1,5 @@
+Block   Timestamp  Description    Account              Amount      Running     Total      Average    
+[37m2025-01[m [34m2025-01-15[m [33mElectricity Q1[m [37mexpenses:electricity[m [32m 120.00[m [32mCHF[m [32m 120.00[m [32mCHF[m [32m120.00[m [32mCHF[m [32m120.00[m  [32mCHF[m
+[37m2025-04[m [34m2025-04-15[m [33mElectricity Q2[m [37mexpenses:electricity[m [32m 135.00[m [32mCHF[m [32m 135.00[m [32mCHF[m [32m255.00[m [32mCHF[m [32m127.50[m  [32mCHF[m
+[37m2025-07[m [34m2025-07-15[m [33mElectricity Q3[m [37mexpenses:electricity[m [32m 110.00[m [32mCHF[m [32m 110.00[m [32mCHF[m [32m365.00[m [32mCHF[m [32m121.66[m  [32mCHF[m
+[37m2025-10[m [34m2025-10-15[m [33mElectricity Q4[m [37mexpenses:electricity[m [32m 150.00[m [32mCHF[m [32m 150.00[m [32mCHF[m [32m515.00[m [32mCHF[m [32m128.75[m  [32mCHF[m

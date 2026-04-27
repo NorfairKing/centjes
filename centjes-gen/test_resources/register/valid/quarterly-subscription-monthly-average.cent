@@ -1,0 +1,25 @@
+currency CHF 0.01
+
+account equity
+account bank assets
+account expenses:electricity expenses
+
+2025-01-15
+  | Electricity Q1
+  * bank                 -120 CHF
+  * expenses:electricity +120 CHF
+
+2025-04-15
+  | Electricity Q2
+  * bank                 -135 CHF
+  * expenses:electricity +135 CHF
+
+2025-07-15
+  | Electricity Q3
+  * bank                 -110 CHF
+  * expenses:electricity +110 CHF
+
+2025-10-15
+  | Electricity Q4
+  * bank                 -150 CHF
+  * expenses:electricity +150 CHF
