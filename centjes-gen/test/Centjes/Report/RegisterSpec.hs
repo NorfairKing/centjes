@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -17,8 +18,13 @@ import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
 import Control.Monad.Logger
+import Data.Maybe (fromMaybe)
+import Data.Ratio
 import qualified Data.Text as T
+import qualified Data.Vector as V
 import qualified Data.Yaml as Yaml
+import qualified Money.Account as Account
+import qualified Money.Account as Money (Account, Rounding (..))
 import qualified OptEnvConf
 import qualified OptEnvConf.Args as Args
 import OptEnvConf.Capability (allCapabilities)
@@ -88,6 +94,51 @@ spec = do
 
                 pure $ renderChunksText termCaps $ renderAnyRegister rr
 
+    scenarioDir "test_resources/register/valid" $ \fp -> do
+      af <- liftIO $ resolveFile' fp
+      when (fileExtension af == Just ".cent") $ do
+        configFile <- liftIO $ replaceExtension ".config" af
+
+        it "has running averages equal to runningTotal / blockIndex" $ do
+          mConfig <- do
+            exists <- doesFileExist configFile
+            if exists
+              then Just <$> Yaml.decodeFileThrow (fromAbsFile configFile)
+              else pure Nothing
+          errOrSettings <-
+            OptEnvConf.runParserOn
+              allCapabilities
+              Nothing
+              OptEnvConf.settingsParser
+              Args.emptyArgs
+              EnvMap.empty
+              mConfig
+          let termCaps = With24BitColours
+          case errOrSettings of
+            Left errs -> expectationFailure $ T.unpack $ renderChunksText termCaps $ OptEnvConf.renderErrors errs
+            Right RegisterSettings {..} -> do
+              (ds, diag) <- runNoLoggingT $ loadModules af
+              ledger <- shouldValidate diag $ compileDeclarations ds
+              rr <-
+                shouldValidate diag $
+                  produceRegister
+                    registerSettingFilter
+                    registerSettingBlockSize
+                    registerSettingCurrency
+                    registerSettingShowVirtual
+                    registerSettingBegin
+                    registerSettingEnd
+                    ledger
+              case rr of
+                AnyConverted ConvertedRegister {..} ->
+                  let blocks = V.toList $ registerBlocks convertedRegister
+                   in forM_ (zip [1 :: Integer ..] blocks) $ \(i, block) -> do
+                        let expected = expectedAverage (registerBlockRunningTotal block) i
+                        registerBlockRunningAverage block `shouldBe` expected
+                AnyMultiCurrency _ ->
+                  -- Multi-currency averages use a map; skip for now
+                  pure ()
+
     scenarioDir "test_resources/register/error" $ \fp -> do
       af <- liftIO $ resolveFile' fp
       when (fileExtension af == Just ".cent") $ do
@@ -128,3 +179,8 @@ spec = do
                       ledger
 
                 pure $ renderValidationErrors diag errs
+
+expectedAverage :: Money.Account -> Integer -> Money.Account
+expectedAverage acc blockNum =
+  let (ma, _) = Account.fraction Money.RoundDown acc (1 % blockNum)
+   in fromMaybe Account.zero ma

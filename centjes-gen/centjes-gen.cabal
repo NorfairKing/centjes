@@ -636,5 +636,6 @@ test-suite centjes-test
     , sydtest
     , text
     , time
+    , vector
     , yaml
   default-language: Haskell2010

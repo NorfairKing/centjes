@@ -57,4 +57,5 @@ tests:
     - sydtest
     - text
     - time
+    - vector
     - yaml
