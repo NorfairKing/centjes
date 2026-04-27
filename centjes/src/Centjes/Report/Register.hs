@@ -928,7 +928,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
               (Just current, Just endBlock)
                 | current <= endBlock ->
                     let emptyBlock = makeEmptyBlock current runningTotal blockNum
-                     in emptyBlock : goBlocks (Just (nextBlock current)) blockNum runningTotal []
+                     in emptyBlock : goBlocks (Just (nextBlock current)) (blockNum + 1) runningTotal []
               _ -> []
           Just (blockTitle, blockEntries, restEntries) ->
             let emptyBlocks = case (mCurrentBlock, mEndBlock) of
@@ -985,7 +985,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
         | current >= target = []
         | otherwise =
             let emptyBlock = makeEmptyBlock current runningTotal blockNum
-             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal blockNum
+             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
 
       makeEmptyBlock ::
         Block ->
@@ -1140,7 +1140,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
               (Just current, Just endBlock)
                 | current <= endBlock ->
                     let emptyBlock = makeEmptyBlock current runningTotal blockNum
-                     in emptyBlock : goBlocks (Just (nextBlock current)) blockNum runningTotal []
+                     in emptyBlock : goBlocks (Just (nextBlock current)) (blockNum + 1) runningTotal []
               _ -> []
           Just (blockTitle, blockEntries, restEntries) ->
             let emptyBlocks = case (mCurrentBlock, mEndBlock) of
@@ -1156,9 +1156,8 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
                 -- Block total is the difference in running totals, not the sum of individual amounts.
                 -- This avoids accumulating rounding errors from individual conversions.
                 blockTotal = fromMaybe Account.zero (Account.subtract newRunningTotal runningTotal)
-                hasTransactions = any isTransactionEntry blockEntries
                 effectiveBlockNum = blockNum + numEmpty
-                nextBlockNum = if hasTransactions then effectiveBlockNum + 1 else effectiveBlockNum
+                nextBlockNum = effectiveBlockNum + 1
                 block =
                   RegisterBlock
                     { registerBlockTitle = blockTitle,
@@ -1166,7 +1165,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
                       registerBlockTotal = blockTotal,
                       registerBlockRunningTotal = newRunningTotal,
                       registerBlockRunningAverage =
-                        computeSingleAverage newRunningTotal (if hasTransactions then effectiveBlockNum else max 1 (effectiveBlockNum - 1))
+                        computeSingleAverage newRunningTotal effectiveBlockNum
                     }
                 shouldContinue = case mEndBlock of
                   Nothing -> not (null restEntries)
@@ -1202,7 +1201,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         | current >= target = []
         | otherwise =
             let emptyBlock = makeEmptyBlock current runningTotal blockNum
-             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal blockNum
+             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
 
       makeEmptyBlock ::
         Block ->
@@ -1227,13 +1226,6 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
               let (converted, newBlockRunning) = convertEntry blockRunning e
                in converted : go newBlockRunning es
          in go Account.zero entries
-
-      isTransactionEntry ::
-        ConvertedFlatEntry ann ->
-        Bool
-      isTransactionEntry = \case
-        ConvertedFlatEntryTransaction _ -> True
-        ConvertedFlatEntryRevaluation _ -> False
 
   let blocks = goBlocks mBeginBlock 1 Account.zero convertedFlatRegisterEntries
   pure

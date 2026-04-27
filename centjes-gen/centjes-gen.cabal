@@ -383,6 +383,9 @@ extra-source-files:
     test_resources/register/valid/price-change-later.cent
     test_resources/register/valid/price-change-later.config
     test_resources/register/valid/price-change-later.txt
+    test_resources/register/valid/price-change-not-counted-in-average.cent
+    test_resources/register/valid/price-change-not-counted-in-average.config
+    test_resources/register/valid/price-change-not-counted-in-average.txt
     test_resources/register/valid/price-decrease.cent
     test_resources/register/valid/price-decrease.config
     test_resources/register/valid/price-decrease.txt
@@ -633,5 +636,6 @@ test-suite centjes-test
     , sydtest
     , text
     , time
+    , vector
     , yaml
   default-language: Haskell2010
