@@ -1,5 +1,7 @@
 # Centjes
 
+[![NixCI](https://staging.nix-ci.com/badge/gh:NorfairKing:centjes)](https://staging.nix-ci.com/gh:NorfairKing:centjes)
+
 Plaintext double-entry accounting for the paranoid.
 
 Status: Does all my tax returns.
