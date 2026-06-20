@@ -443,7 +443,9 @@ instance ToReport (BalanceError SourceSpan) where
         "Could not fill accounts hierarchically because the result got too big."
         []
         []
-    -- [tag:BE_TOTAL] At least one test per error: test_resources/balance/error/BE_FILL.cent (triggers both BE_FILL and BE_TOTAL)
+    -- [tag:BE_TOTAL] At least one test per error: test_resources/balance/error/BE_TOTAL.cent
+    -- (filling runs before summing and short-circuits, so reaching this needs
+    -- non-sibling accounts that each fill fine but whose total overflows)
     BalanceErrorCouldNotSumTotal _ ->
       Err
         (Just "BE_TOTAL")

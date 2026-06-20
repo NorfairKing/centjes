@@ -124,6 +124,9 @@ extra-source-files:
     test_resources/balance/error/BE_PERCENTAGE_NO_PREVIOUS.err
     test_resources/balance/error/BE_RUNNING_BALANCE.cent
     test_resources/balance/error/BE_RUNNING_BALANCE.err
+    test_resources/balance/error/BE_TOTAL.cent
+    test_resources/balance/error/BE_TOTAL.config
+    test_resources/balance/error/BE_TOTAL.err
     test_resources/balance/error/BE_TRANSACTION_SUM.cent
     test_resources/balance/error/BE_TRANSACTION_SUM.err
     test_resources/balance/error/conversion-impossible-rate.cent
@@ -141,6 +144,7 @@ extra-source-files:
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.cent
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.config
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.err
+    test_resources/balance/show-virtual-price.cent
     test_resources/check/2025-01-02.txt
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.cent
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.err

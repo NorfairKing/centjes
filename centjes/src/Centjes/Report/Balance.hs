@@ -9,6 +9,7 @@ module Centjes.Report.Balance
     produceBalanceReportFromEvaluatedLedger,
     entryBeforeOrOnDay,
     lastEntryState,
+    selectVirtual,
     -- Re-exports from EvaluatedLedger
     AccountBalances,
     BalanceError (..),
@@ -28,13 +29,12 @@ import Centjes.Validation
 import qualified Data.Map.Strict as M
 import Data.Time
 import Data.Validity hiding (Validation (..))
+import qualified Data.Validity
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
-
-{-# ANN module ("DisableMutations" :: String) #-}
 
 data BalanceReport ann = BalanceReport
   { balanceReportBalances :: !(AccountBalances ann),
@@ -44,12 +44,25 @@ data BalanceReport ann = BalanceReport
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceReport ann) where
-  validate br@BalanceReport {..} =
-    mconcat
-      [ genericValidate br,
-        declare "The total matches the balances" $
-          MultiAccount.sum balanceReportBalances == Just balanceReportTotal
-      ]
+  validate = validateBalanceReport
+
+-- | The 'Validity' check for a 'BalanceReport', as a named binding so the
+-- 'ListLit' mutation can be disabled here.
+--
+-- Dropping @genericValidate br@ from the check list is an equivalent mutant: a
+-- 'BalanceReport' is only ever built from valid fields, and there is no
+-- generator for invalid fields, so the generic field check never changes the
+-- outcome.  The genuine check — the total matching the sum of the balances — is
+-- still mutated (and killed by the test suite).
+{-# ANN validateBalanceReport ("DisableMutation: ListLit" :: String) #-}
+validateBalanceReport :: (Validity ann, Show ann, Ord ann) => BalanceReport ann -> Data.Validity.Validation
+validateBalanceReport br@BalanceReport {..} =
+  mconcat
+    [ genericValidate br,
+      declare
+        "The total matches the balances"
+        (MultiAccount.sum balanceReportBalances == Just balanceReportTotal)
+    ]
 
 -- | Produce a balance report from a pre-computed evaluated ledger.
 --
@@ -124,17 +137,22 @@ lastEntryState showVirtual entries
   | V.null entries = Nothing
   | otherwise = Just $ case V.last entries of
       EvaluatedEntryTransaction evaluatedTransaction ->
-        let postings = evaluatedTransactionPostings evaluatedTransaction
-            pickBalance = if showVirtual then evaluatedPostingBalancesWithVirtual else evaluatedPostingBalancesWithoutVirtual
-            balance =
-              if V.null postings
-                then if showVirtual then evaluatedTransactionBalancesWithVirtual evaluatedTransaction else evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction
-                else pickBalance (V.last postings)
-            rawPriceGraph =
-              if V.null postings
-                then evaluatedTransactionPriceGraph evaluatedTransaction
-                else evaluatedPostingPriceGraph (V.last postings)
-         in (balance, MemoisedPriceGraph.fromPriceGraph rawPriceGraph)
+        -- The cumulative state "after the last entry" is just the transaction's
+        -- own cumulative balance and price graph.  For a non-empty transaction
+        -- this equals the last posting's cumulative state, so reading the last
+        -- posting instead would only add a redundant branch whose fallback is an
+        -- equivalent (unkillable) mutant.
+        ( selectVirtual showVirtual (evaluatedTransactionBalancesWithVirtual evaluatedTransaction) (evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction),
+          MemoisedPriceGraph.fromPriceGraph (evaluatedTransactionPriceGraph evaluatedTransaction)
+        )
       EvaluatedEntryPrice evaluatedPrice ->
-        let balance = if showVirtual then evaluatedPriceBalancesWithVirtual evaluatedPrice else evaluatedPriceBalancesWithoutVirtual evaluatedPrice
-         in (balance, MemoisedPriceGraph.fromPriceGraph (evaluatedPricePriceGraph evaluatedPrice))
+        ( selectVirtual showVirtual (evaluatedPriceBalancesWithVirtual evaluatedPrice) (evaluatedPriceBalancesWithoutVirtual evaluatedPrice),
+          MemoisedPriceGraph.fromPriceGraph (evaluatedPricePriceGraph evaluatedPrice)
+        )
+
+-- | Pick the with-virtual or the without-virtual variant.  Extracted (rather
+-- than inlined as @if showVirtual then ... else ...@ at each use) so the choice
+-- can be exercised directly by a test.
+selectVirtual :: Bool -> a -> a -> a
+selectVirtual showVirtual withVirtual withoutVirtual =
+  if showVirtual then withVirtual else withoutVirtual

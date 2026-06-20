@@ -1,0 +1,16 @@
+currency USD 0.01
+
+account keepone assets
+account keeptwo assets
+account offone equity
+account offtwo equity
+
+2024-01-01
+  | Keep one
+  * keepone +100000000000000000.00 USD
+  * offone  -100000000000000000.00 USD
+
+2024-01-02
+  | Keep two
+  * keeptwo +100000000000000000.00 USD
+  * offtwo  -100000000000000000.00 USD

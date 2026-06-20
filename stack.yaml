@@ -63,6 +63,7 @@ extra-deps:
   - sydtest
   - sydtest-aeson
   - sydtest-discover
+  - sydtest-mutation-runtime
 - github: NorfairKing/validity
   commit: 512aea6e0a112f5df09cc0b08f7fceffb122abc6
   subdirs:

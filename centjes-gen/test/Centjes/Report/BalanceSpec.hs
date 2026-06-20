@@ -7,7 +7,9 @@ module Centjes.Report.BalanceSpec (spec) where
 
 import Centjes.Command.Balance (renderBalanceReport)
 import Centjes.Compile
+import Centjes.Filter (Filter (FilterSubstring))
 import Centjes.Filter.Gen ()
+import Centjes.Ledger (Currency)
 import Centjes.Ledger.Gen ()
 import Centjes.Load
 import Centjes.OptParse
@@ -17,8 +19,12 @@ import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad
 import Control.Monad.Logger
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
+import qualified Data.Vector as V
 import qualified Data.Yaml as Yaml
+import qualified Money.MultiAccount as Money (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 import qualified OptEnvConf
 import qualified OptEnvConf.Args as Args
 import OptEnvConf.Capability (allCapabilities)
@@ -32,6 +38,37 @@ import Text.Colour
 
 spec :: Spec
 spec = do
+  describe "Validity (BalanceReport ())" $
+    it "rejects a report whose total does not match the sum of its balances" $
+      forAllValid $ \balances ->
+        forAllValid $ \filled ->
+          forAllValid $ \wrongTotal ->
+            -- Skip the rare case where the generated total happens to equal the
+            -- real sum: there the report is legitimately valid.
+            when (MultiAccount.sum balances /= Just wrongTotal) $
+              shouldBeInvalid
+                (BalanceReport balances filled (wrongTotal :: Money.MultiAccount (Currency ())))
+  describe "selectVirtual" $
+    it "returns the with-virtual value iff showVirtual is True" $
+      forAllValid $ \(withVirtual :: AccountBalances ()) ->
+        forAllValid $ \withoutVirtual -> do
+          selectVirtual True withVirtual withoutVirtual `shouldBe` withVirtual
+          selectVirtual False withVirtual withoutVirtual `shouldBe` withoutVirtual
+  describe "lastEntryState" $
+    it "picks the virtual or non-virtual balances of a price-terminated ledger" $ do
+      af <- liftIO $ resolveFile' "test_resources/balance/show-virtual-price.cent"
+      (ds, diag) <- runNoLoggingT $ loadModules af
+      ledger <- shouldValidate diag $ compileDeclarations ds
+      evaluatedLedger <- shouldValidate diag $ produceEvaluatedLedger ledger
+      let entries = evaluatedLedgerEntries evaluatedLedger
+      case V.last entries of
+        EvaluatedEntryPrice p -> do
+          -- The fixture has a virtual posting, so with- and without-virtual
+          -- differ; otherwise this could not distinguish the showVirtual branch.
+          evaluatedPriceBalancesWithVirtual p `shouldNotBe` evaluatedPriceBalancesWithoutVirtual p
+          (fst <$> lastEntryState True entries) `shouldBe` Just (evaluatedPriceBalancesWithVirtual p)
+          (fst <$> lastEntryState False entries) `shouldBe` Just (evaluatedPriceBalancesWithoutVirtual p)
+        _ -> expectationFailure "expected the last entry to be a price declaration"
   describe "produceBalanceReportFromEvaluatedLedger" $ do
     it "produces valid reports" $
       forAllValid $ \f ->
@@ -43,6 +80,23 @@ spec = do
                   Failure _ -> pure () -- EvaluatedLedger may legitimately fail on generated ledgers
                   Success evaluatedLedger ->
                     shouldBeValid $ produceBalanceReportFromEvaluatedLedger @() f mY mCur showVirtual evaluatedLedger
+
+    it "reports the offending balances when the cross-account total overflows" $ do
+      af <- liftIO $ resolveFile' "test_resources/balance/error/BE_TOTAL.cent"
+      (ds, diag) <- runNoLoggingT $ loadModules af
+      ledger <- shouldValidate diag $ compileDeclarations ds
+      evaluatedLedger <- shouldValidate diag $ produceEvaluatedLedger ledger
+      errs <-
+        shouldFailToValidate $
+          produceBalanceReportFromEvaluatedLedger
+            (FilterSubstring "keep")
+            Nothing
+            Nothing
+            False
+            evaluatedLedger
+      case NE.toList errs of
+        [BalanceErrorCouldNotSumTotal amounts] -> length amounts `shouldBe` 2
+        _ -> expectationFailure "expected a single BalanceErrorCouldNotSumTotal carrying the two kept balances"
 
     scenarioDirRecur "test_resources/balance/balanced" $ \fp -> do
       af <- liftIO $ resolveFile' fp
