@@ -21,6 +21,8 @@ import Money.QuantisationFactor
 import Text.Colour
 import Text.Printf
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 accountNameChunk :: AccountName -> Chunk
 accountNameChunk = fore white . chunk . AccountName.toText
 

@@ -19,6 +19,8 @@ import Prettyprinter.Render.Terminal (AnsiStyle, renderStrict)
 import System.Exit
 import System.IO
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 -- TODO define Validation in terms of ValidationT so we can use polymorphic functions?
 newtype ValidationT e m a = ValidationT {unValidationT :: m (Validation e a)}
   deriving (Functor)

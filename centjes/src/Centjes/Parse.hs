@@ -18,3 +18,5 @@ import Centjes.Parse.Happy
     parseTagDeclaration,
     parseTransaction,
   )
+
+{-# ANN module ("DisableMutations" :: String) #-}

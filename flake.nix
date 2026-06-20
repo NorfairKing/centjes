@@ -78,10 +78,25 @@
           self.overlays.${system}
         ];
       };
+      # Mutation-testing checks, exposed as on-demand packages rather than flake
+      # `checks` so `nix flake check` does not build them (the mutation report is
+      # report-only and still maturing). Build a report with
+      #   nix build .#mutation-centjes.report.centjes
+      # or run a diff-scoped pass with `nix run .#mutation-centjes-diff`.
+      mutationChecks = import ./nix/mutation-checks.nix {
+        inherit (pkgs) haskellPackages;
+      };
     in
     {
       overlays.${system} = import ./nix/overlay.nix;
-      packages.${system}.default = pkgs.centjesRelease;
+      packages.${system} = {
+        default = pkgs.centjesRelease;
+        inherit (mutationChecks) mutation-centjes;
+        # Diff-scoped mutation runner: mutation-tests only the mutations implied
+        # by the current diff (default: against the merge-base with the base
+        # branch). Run from inside the working tree. See nix/mutation-checks.nix.
+        mutation-centjes-diff = mutationChecks.mutation-centjes.diff;
+      };
       checks.${system} = {
         package = self.packages.${system}.default;
         shell = self.devShells.${system}.default;

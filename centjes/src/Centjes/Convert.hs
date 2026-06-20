@@ -42,6 +42,8 @@ import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import qualified Money.QuantisationFactor as Money (QuantisationFactor)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data ConvertError ann
   = ConvertErrorUnknownTarget !CurrencySymbol
   | ConvertErrorMissingPrice !(Maybe ann) !(Currency ann) !(Currency ann)

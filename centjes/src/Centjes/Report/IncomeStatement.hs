@@ -31,6 +31,8 @@ import GHC.Generics (Generic)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data IncomeStatementReport ann = IncomeStatementReport
   { incomeStatementReportIncome :: !(AccountBalances ann),
     incomeStatementReportFilledIncome :: !(AccountBalances ann),

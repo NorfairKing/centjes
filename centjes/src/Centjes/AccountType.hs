@@ -23,6 +23,8 @@ import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data AccountType
   = -- | Never negative
     AccountTypeAssets

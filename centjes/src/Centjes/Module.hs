@@ -83,6 +83,8 @@ import Money.Amount (Rounding (..))
 import Numeric.DecimalLiteral
 import Path
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 type LModule = Module SourceSpan
 
 -- | Module

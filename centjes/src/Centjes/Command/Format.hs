@@ -31,6 +31,8 @@ import Path.IO
 import System.Exit
 import UnliftIO
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 runCentjesFormat :: Settings -> FormatSettings -> LoggingT IO ()
 runCentjesFormat Settings {..} FormatSettings {..} =
   case formatSettingFileOrDir of

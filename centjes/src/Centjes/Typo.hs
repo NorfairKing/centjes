@@ -5,6 +5,8 @@ module Centjes.Typo (isTypoOf) where
 import Data.Text (Text)
 import qualified Data.Text as T
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 -- | Test whether a text could be a typo of another
 --
 -- Note that any text is considered a typo of itself as well.

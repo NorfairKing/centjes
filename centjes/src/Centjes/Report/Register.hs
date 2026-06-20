@@ -122,6 +122,8 @@ import qualified Money.Account as Money (Account, Rounding (..))
 import qualified Money.MultiAccount as Money (MultiAccount (..))
 import qualified Money.MultiAccount as MultiAccount
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 -- | Amount mode distinguishes between multi-currency and single-currency registers
 data AmountMode = MultiCurrency | SingleCurrency
 

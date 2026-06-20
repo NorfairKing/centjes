@@ -41,6 +41,8 @@ import Myers.Diff as Diff
 import Path
 import Path.IO
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 type CheckerT ann a = ValidationT (CheckError ann) (LoggingT IO) a
 
 type Checker ann a = Validation (CheckError ann) a

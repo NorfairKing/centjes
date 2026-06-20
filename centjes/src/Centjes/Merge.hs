@@ -13,6 +13,8 @@ import Data.List (sortOn)
 import Data.Time (Day)
 import Path
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 -- | Extract declarations belonging to a specific source file from loaded declarations,
 -- stripping their SourceSpan annotations.
 extractDeclarationsFromFile ::

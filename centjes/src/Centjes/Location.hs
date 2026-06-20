@@ -10,6 +10,8 @@ import qualified Error.Diagnose.Position as Diagnose (Position (..))
 import GHC.Generics (Generic)
 import Path
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data GenLocated l e = Located
   { locatedLocation :: !l,
     locatedValue :: !e

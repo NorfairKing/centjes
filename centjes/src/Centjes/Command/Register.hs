@@ -36,6 +36,8 @@ import qualified Money.MultiAccount as Money (MultiAccount)
 import Text.Colour
 import Text.Colour.Layout
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 runCentjesRegister :: Settings -> RegisterSettings -> LoggingT IO ()
 runCentjesRegister Settings {..} RegisterSettings {..} =
   loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do

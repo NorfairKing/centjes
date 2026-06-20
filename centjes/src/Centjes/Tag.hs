@@ -25,6 +25,8 @@ import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 newtype Tag = Tag {tagText :: Text}
   deriving stock (Eq, Ord, Generic)
   deriving newtype (Show)

@@ -33,6 +33,8 @@ import qualified Money.Account as Money (Account)
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data NetWorthReport ann
   = NetWorthReportConverted !(NetWorthReportConvertedData ann)
   | NetWorthReportMultiCurrency !(NetWorthReportMultiCurrencyData ann)

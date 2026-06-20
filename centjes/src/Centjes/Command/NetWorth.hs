@@ -32,6 +32,8 @@ import Money.QuantisationFactor (QuantisationFactor)
 import System.Exit (die)
 import Text.Colour
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 runCentjesNetWorth :: Settings -> NetWorthSettings -> LoggingT IO ()
 runCentjesNetWorth Settings {..} NetWorthSettings {..} =
   loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do

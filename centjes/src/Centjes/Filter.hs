@@ -19,6 +19,8 @@ import Data.Validity.Text ()
 import GHC.Generics (Generic)
 import OptEnvConf
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data Filter
   = FilterAny
   | FilterOr !(NonEmpty Filter)

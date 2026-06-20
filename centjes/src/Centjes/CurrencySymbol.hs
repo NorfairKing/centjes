@@ -24,6 +24,8 @@ import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 newtype CurrencySymbol = CurrencySymbol {currencySymbolText :: Text}
   deriving (Show, Eq, Ord, Generic)
 

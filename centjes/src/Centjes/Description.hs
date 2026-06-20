@@ -22,6 +22,8 @@ import Data.Validity.Text ()
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 newtype Description = Description {unDescription :: Text}
   deriving stock (Show, Eq, Generic)
 

@@ -34,6 +34,8 @@ import Path
 import Prettyprinter
 import Prettyprinter.Render.Text
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 formatModule :: Module l -> Text
 formatModule = renderDocText . moduleDoc
 

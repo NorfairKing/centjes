@@ -45,6 +45,8 @@ import System.IO
 import Text.Read (readMaybe)
 import UnliftIO
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 loadMWatchedModules ::
   (MonadUnliftIO m, MonadLogger m) =>
   Bool ->

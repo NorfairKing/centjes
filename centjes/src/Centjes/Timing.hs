@@ -10,6 +10,8 @@ import qualified Data.Text as T
 import Data.Word
 import GHC.Clock (getMonotonicTimeNSec)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 withLoggedDuration :: (MonadIO m, MonadLogger m) => String -> m a -> m a
 withLoggedDuration name func = do
   begin <- liftIO getMonotonicTimeNSec

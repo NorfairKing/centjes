@@ -12,6 +12,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Logger
 import Text.Colour
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 runCentjesCheck :: Settings -> CheckSettings -> LoggingT IO ()
 runCentjesCheck Settings {..} CheckSettings =
   loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) ->

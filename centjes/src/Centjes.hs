@@ -6,6 +6,8 @@ import Control.Monad.Logger
 import qualified Data.Text as T
 import Text.Show.Pretty
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 runCentjes :: IO ()
 runCentjes = do
   instructions@(Instructions d settings) <- getInstructions

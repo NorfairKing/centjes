@@ -53,6 +53,8 @@ import Money.QuantisationFactor
 import qualified Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data CompileError ann
   = CompileErrorInvalidQuantisationFactor !ann !CurrencySymbol !(GenLocated ann DecimalLiteral)
   | CompileErrorMissingCurrency !ann !(GenLocated ann CurrencySymbol)

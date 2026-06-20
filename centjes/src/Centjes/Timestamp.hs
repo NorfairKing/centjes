@@ -30,6 +30,8 @@ import Data.Validity.Time ()
 import Data.Word
 import GHC.Generics (Generic)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data Timestamp
   = TimestampDay !Day
   | TimestampMinute !Day !MinuteOfDay

@@ -28,6 +28,8 @@ import Path
 import System.IO
 import Text.Printf
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 runCentjesRatesGraph :: Settings -> RatesGraphSettings -> LoggingT IO ()
 runCentjesRatesGraph Settings {..} RatesGraphSettings {..} =
   loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) ->

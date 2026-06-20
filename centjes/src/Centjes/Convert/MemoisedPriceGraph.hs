@@ -22,6 +22,8 @@ import Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import Prelude hiding (lookup)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 -- | A memoised price graph:
 --
 -- We use a lazy map keyed by target currency. Each value is a map from source

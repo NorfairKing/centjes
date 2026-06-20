@@ -60,6 +60,8 @@ import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
 import qualified Numeric.DecimalLiteral as DecimalLiteral
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 type AccountBalances ann = Map AccountName (Money.MultiAccount (Currency ann))
 
 data EvaluatedLedger ann = EvaluatedLedger

@@ -27,6 +27,8 @@ import GHC.Generics (Generic)
 import OptEnvConf
 import Text.Printf (printf)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data BlockSize
   = BlockSizeIndividual
   | BlockSizeDay

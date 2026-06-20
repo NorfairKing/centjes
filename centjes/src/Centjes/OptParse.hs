@@ -24,6 +24,8 @@ import Paths_centjes (version)
 import Text.Colour
 import Text.Colour.Capabilities.FromEnv
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 getInstructions :: IO Instructions
 getInstructions = runSettingsParser version "really safe double-entry accounting"
 

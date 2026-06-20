@@ -30,6 +30,8 @@ import Money.ConversionRate as ConversionRate
 import qualified Money.ConversionRate as Money (ConversionRate)
 import Prelude hiding (lookup)
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 -- | A price graph:
 -- Map from node to a map of edges from that node.
 -- Instead of saving undirected edges, we save directed edges twice each: one

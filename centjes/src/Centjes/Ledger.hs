@@ -47,6 +47,8 @@ import Money.Amount (Rounding (..))
 import Money.ConversionRate (ConversionRate)
 import Money.QuantisationFactor
 
+{-# ANN module ("DisableMutations" :: String) #-}
+
 data Ledger ann = Ledger
   { -- Note: This field will have the source location of the currency _declaration_ that defined it.
     ledgerCurrencies :: !(Map CurrencySymbol (GenLocated ann QuantisationFactor)),
