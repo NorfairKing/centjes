@@ -52,18 +52,26 @@ extra-deps:
   - really-safe-money-autodocodec
   - really-safe-money-gen
 - github: NorfairKing/safe-coloured-text
-  commit: 26b7657428f277f819a0831cbddddb7f4c5408f9
+  commit: 9ed65a40b3b2fade447c9d5fcb941d58f6367308
   subdirs:
   - safe-coloured-text
   - safe-coloured-text-layout
   - safe-coloured-text-gen
+- github: NorfairKing/sydtest
+  commit: ee3784cce65c281dac8b5b771a421d9b102c4cb7
+  subdirs:
+  - sydtest
+  - sydtest-aeson
+  - sydtest-discover
 - github: NorfairKing/validity
-  commit: 51b8843b9bd5228160b99f653d3271147245d689
+  commit: 512aea6e0a112f5df09cc0b08f7fceffb122abc6
   subdirs:
     - validity
     - validity-dlist
     - genvalidity
     - genvalidity-dlist
+    - genvalidity-sydtest
+    - genvalidity-sydtest-aeson
 - github: NorfairKing/autodocodec
   commit: 7439601de128dadf562430f4216cbdb28580ed20
   subdirs:
@@ -72,7 +80,7 @@ extra-deps:
     - autodocodec-schema
     - autodocodec-yaml
 - github: NorfairKing/opt-env-conf
-  commit: 87865e39ddeefd1c5613d2e7df2c61d6cc27efab
+  commit: 5f115023d0f17de7241984bfc870e92a9a92960a
   subdirs:
     - opt-env-conf
     - opt-env-conf-test

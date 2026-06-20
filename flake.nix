@@ -33,6 +33,8 @@
     linkcheck.flake = false;
     seocheck.url = "github:NorfairKing/seocheck";
     seocheck.flake = false;
+    sydtest.url = "github:NorfairKing/sydtest";
+    sydtest.flake = false;
   };
 
   outputs =
@@ -51,6 +53,7 @@
     , dekking
     , linkcheck
     , seocheck
+    , sydtest
     }:
     let
       system = "x86_64-linux";
@@ -68,6 +71,7 @@
           (import (dekking + "/nix/overlay.nix"))
           (import (linkcheck + "/nix/overlay.nix"))
           (import (seocheck + "/nix/overlay.nix"))
+          (import (sydtest + "/nix/overlay.nix"))
           (import (weeder-nix + "/nix/overlay.nix"))
           (_:_: { makeDependencyGraph = haskell-dependency-graph-nix.lib.${system}.makeDependencyGraph; })
           (_:_: { evalNixOSConfig = args: import (nixpkgs + "/nixos/lib/eval-config.nix") (args // { inherit system; }); })

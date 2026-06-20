@@ -220,6 +220,7 @@
         "prometheus-wai": "prometheus-wai",
         "really-safe-money": "really-safe-money",
         "seocheck": "seocheck",
+        "sydtest": "sydtest",
         "template-haskell-reload": "template-haskell-reload",
         "weeder-nix": "weeder-nix",
         "yesod-autoreload": "yesod-autoreload",
@@ -239,6 +240,22 @@
       "original": {
         "owner": "NorfairKing",
         "repo": "seocheck",
+        "type": "github"
+      }
+    },
+    "sydtest": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781861902,
+        "narHash": "sha256-NbyF+K9F4Ig4mAYM60+huoQ2GwJrLWai1ruFANfkzZc=",
+        "owner": "NorfairKing",
+        "repo": "sydtest",
+        "rev": "ee3784cce65c281dac8b5b771a421d9b102c4cb7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NorfairKing",
+        "repo": "sydtest",
         "type": "github"
       }
     },
