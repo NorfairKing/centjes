@@ -40,6 +40,7 @@ import Error.Diagnose
 import Myers.Diff as Diff
 import Path
 import Path.IO
+import Text.Colour
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
@@ -90,7 +91,10 @@ instance ToReport (CheckError SourceSpan) where
         [ (toDiagnosePosition tl, Where "While trying to check this transaction"),
           (toDiagnosePosition fl, This "This file is missing")
         ]
-        [ Hint $ intercalate "\n" $ "Perhaps it was a typo and you meant one of these files in the same directory:" : map fromRelFile fs
+        [ Hint $
+            intercalate "\n" $
+              "Perhaps it was a typo and you meant one of these files in the same directory:"
+                : map (renderAttachmentSuggestion (fromRelFile (filename fp))) fs
         | not (null fs)
         ]
     CheckErrorDuplicateAttachment l1 l2 rf ->
@@ -123,6 +127,32 @@ instance ToReport (CheckError SourceSpan) where
     CheckErrorEvaluatedLedgerError evaluatedLedgerError -> toReport evaluatedLedgerError
     CheckErrorBalanceError balanceError -> toReport balanceError
     CheckErrorRegisterError registerError -> toReport registerError
+
+-- | Render a candidate file name as a character-level diff against the
+-- attachment file name that was typed.
+--
+-- Only characters that are actually part of the candidate file name are shown,
+-- so that the rendered text is always a real path.
+-- Characters that the candidate has in addition to the typed name are shown in
+-- red, and unchanged characters are shown in the same colour as the rest of the
+-- hint.
+-- We colour the unchanged characters explicitly rather than leaving them
+-- uncoloured, because otherwise a coloured difference would reset the colour
+-- back to the terminal default for the remaining unchanged characters.
+-- This makes it easy to spot which path is the most likely correct one.
+renderAttachmentSuggestion :: String -> Path Rel File -> String
+renderAttachmentSuggestion typed candidate =
+  T.unpack $
+    renderChunksText With8Colours $
+      mapMaybe characterChunk $
+        Diff.getStringDiff typed (fromRelFile (filename candidate))
+  where
+    characterChunk :: Diff Char -> Maybe Chunk
+    characterChunk = \case
+      Both character _ -> Just $ fore brightCyan $ chunk (T.singleton character)
+      -- Present in the typed name but not in the candidate, so don't show it.
+      First _ -> Nothing
+      Second character -> Just $ fore red $ chunk (T.singleton character)
 
 checkLDeclarations :: [LDeclaration] -> CheckerT SourceSpan ()
 checkLDeclarations = checkDeclarations . map locatedValue

@@ -17,7 +17,7 @@ import Test.Syd
 spec :: Spec
 spec =
   describe "doCompleteCheck" $ do
-    scenarioDir "test_resources/check" $ \fp -> do
+    scenarioDirRecur "test_resources/check" $ \fp -> do
       af <- liftIO $ resolveFile' fp
       when (fileExtension af == Just ".cent") $ do
         resultFile <- liftIO $ replaceExtension ".err" af

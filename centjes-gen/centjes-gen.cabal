@@ -164,6 +164,14 @@ extra-source-files:
     test_resources/check/CE_UNUSED_CURRENCY.err
     test_resources/check/CE_UNUSED_TAG.cent
     test_resources/check/CE_UNUSED_TAG.err
+    test_resources/check/many-similar-attachments/2025-03-invoice.txt
+    test_resources/check/many-similar-attachments/inv-2025-03.txt
+    test_resources/check/many-similar-attachments/invoice-2024-03.txt
+    test_resources/check/many-similar-attachments/invoice-2025-02.txt
+    test_resources/check/many-similar-attachments/invoice-2025-03.md
+    test_resources/check/many-similar-attachments/invoices-2025-03.txt
+    test_resources/check/many-similar-attachments/missing.cent
+    test_resources/check/many-similar-attachments/missing.err
     test_resources/compile/CE_ACCOUNT_NAME_TOO_SIMILAR.cent
     test_resources/compile/CE_ACCOUNT_NAME_TOO_SIMILAR.err
     test_resources/compile/CE_COST_SAME_CURRENCY.cent
