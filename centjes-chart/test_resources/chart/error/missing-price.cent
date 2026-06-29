@@ -1,0 +1,10 @@
+currency USD 0.01
+currency EUR 0.01
+
+account assets:euro
+account equity
+
+2024-01-01
+  | Opening
+  * assets:euro +10 EUR
+  * equity     -10 EUR

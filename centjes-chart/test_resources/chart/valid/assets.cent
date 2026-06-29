@@ -1,0 +1,21 @@
+currency USD 0.01
+
+account assets:checking
+account assets:savings
+account equity
+account expenses
+
+2024-01-01
+  | Opening
+  * assets:checking +100 USD
+  * equity -100 USD
+
+2024-01-03
+  | Move to savings
+  * assets:checking -40 USD
+  * assets:savings +40 USD
+
+2024-01-05
+  | Coffee
+  * assets:checking -5 USD
+  * expenses +5 USD

@@ -1,0 +1,9 @@
+currency USD 0.01
+
+account assets:checking
+account equity
+
+2024-01-01
+  | Opening
+  * assets:checking +100 USD
+  * equity -100 USD

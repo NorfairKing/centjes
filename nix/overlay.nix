@@ -196,6 +196,7 @@ with final.haskell.lib;
           centjesPackages = {
             centjes = centjesPkg "centjes";
             centjes-gen = centjesPkg "centjes-gen";
+            centjes-chart = centjesPkg "centjes-chart";
             centjes-cryptocurrencies = centjesPkg "centjes-cryptocurrencies";
             centjes-stocks = centjesPkg "centjes-stocks";
             centjes-import-cornercard = centjesPkg "centjes-import-cornercard";
