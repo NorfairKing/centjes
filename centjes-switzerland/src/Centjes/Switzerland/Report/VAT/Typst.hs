@@ -32,7 +32,7 @@ vatReportInput :: VATReport ann -> Input
 vatReportInput VATReport {..} =
   let inputPersonName = vatReportPersonName
       inputOrganisationName = vatReportOrganisationName
-      inputVATId = vatReportVATId
+      inputVATId = renderVATIdReference vatReportVATId
       inputQuarter = vatReportQuarter
       inputRevenues =
         sortOn inputRevenueDay $

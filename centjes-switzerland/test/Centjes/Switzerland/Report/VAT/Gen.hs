@@ -7,6 +7,7 @@ import Centjes.Ledger.Gen ()
 import Centjes.Switzerland.Report.VAT
 import Data.GenValidity
 import Data.GenValidity.Time ()
+import qualified Data.Text as T
 import Data.Time.Calendar.Quarter
 import qualified Money.Account as Account
 import qualified Money.Amount as Amount
@@ -17,6 +18,13 @@ import Test.QuickCheck
 instance GenValid Quarter
 
 instance GenValid VATInput
+
+instance GenValid VATId where
+  genValid = do
+    firstDigit <- choose ('1', '9')
+    restDigits <- vectorOf 8 (choose ('0', '9'))
+    pure $ VATId $ T.pack $ firstDigit : restDigits
+  shrinkValid _ = []
 
 instance GenValid VATRate
 

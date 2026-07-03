@@ -11,6 +11,10 @@
 module Centjes.Switzerland.Report.VAT
   ( VATInput (..),
     VATReport (..),
+    VATId (..),
+    parseVATId,
+    renderVATIdReference,
+    vatIdToken,
     DomesticRevenue (..),
     ForeignRevenue (..),
     DeductibleExpense (..),

@@ -11,6 +11,10 @@
 module Centjes.Switzerland.Report.VAT.Types
   ( VATInput (..),
     VATReport (..),
+    VATId (..),
+    parseVATId,
+    renderVATIdReference,
+    vatIdToken,
     DomesticRevenue (..),
     ForeignRevenue (..),
     DeductibleExpense (..),
@@ -26,7 +30,9 @@ import Centjes.Ledger
 import Centjes.Location
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
+import Data.Char (isDigit)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -47,11 +53,56 @@ import Text.Show.Pretty
 
 instance Validity Quarter
 
+-- | A Swiss UID / VAT identifier.
+--
+-- The number is nine digits, the first of which is nonzero. It is rendered for
+-- human reference as @111.222.333@ and as the eCH-0108 @uidType@ token
+-- @CHE111222333@ (matching @CHE[1-9][0-9]{8}@) in the E-MWST declaration.
+newtype VATId = VATId {vatIdNumber :: Text}
+  deriving (Show, Eq, Generic)
+
+instance Validity VATId where
+  validate vatId@(VATId t) =
+    mconcat
+      [ genericValidate vatId,
+        declare "The VAT identifier is nine characters long" $
+          T.length t == 9,
+        declare "The VAT identifier consists of only digits" $
+          T.all isDigit t,
+        declare "The VAT identifier does not start with a zero" $
+          case T.uncons t of
+            Just (firstDigit, _) -> firstDigit /= '0'
+            Nothing -> False
+      ]
+
+instance HasCodec VATId where
+  codec = bimapCodec parseVATId renderVATIdReference codec
+
+-- | Parse a 'VATId' from a loosely-formatted string.
+--
+-- An optional @CHE@ prefix and any @.@, @-@ or space separators are ignored, so
+-- that @111.222.333@, @CHE-111.222.333@ and @CHE111222333@ all parse to the
+-- same identifier.
+parseVATId :: Text -> Either String VATId
+parseVATId raw =
+  let withoutSeparators = T.filter (\c -> c /= '.' && c /= '-' && c /= ' ') raw
+      digits = fromMaybe withoutSeparators (T.stripPrefix "CHE" (T.toUpper withoutSeparators))
+   in prettyValidate (VATId digits)
+
+-- | Render a 'VATId' for human reference, e.g. @111.222.333@.
+renderVATIdReference :: VATId -> Text
+renderVATIdReference (VATId t) =
+  T.intercalate "." [T.take 3 t, T.take 3 (T.drop 3 t), T.drop 6 t]
+
+-- | Render a 'VATId' as the eCH-0108 @uidType@ token, e.g. @CHE111222333@.
+vatIdToken :: VATId -> Text
+vatIdToken (VATId t) = "CHE" <> t
+
 -- | The settings we need to produce a 'VATReport'
 data VATInput = VATInput
   { vatInputPersonName :: !Text,
     vatInputOrganisationName :: !Text,
-    vatInputVATId :: !Text,
+    vatInputVATId :: !VATId,
     vatInputQuarter :: !Quarter,
     vatInputTagDeductible :: !Tag,
     vatInputTagNotDeductible :: !Tag,
@@ -183,7 +234,7 @@ parseVATInput = do
 data VATReport ann = VATReport
   { vatReportPersonName :: !Text,
     vatReportOrganisationName :: !Text,
-    vatReportVATId :: !Text,
+    vatReportVATId :: !VATId,
     vatReportQuarter :: !Quarter,
     vatReportCHF :: !(Currency ann),
     -- | Domestic revenues

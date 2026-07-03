@@ -185,17 +185,14 @@ instance ToElement GeneralInformation where
 -- Note that in eCH-0217 version 1.0 this used to be @eCH-0097:uidStructureType@,
 -- a structure with separate @uidOrganisationIdCategorie@ and
 -- @uidOrganisationId@ child elements.
-data UID = UID
-  { uidCategory :: !Text,
-    uidId :: !Text
-  }
+newtype UID = UID {uidToken :: Text}
   deriving (Show)
 
 instance ToElement UID where
   toElement UID {..} =
     ech0217Element
       "uid"
-      [NodeContent $ uidCategory <> uidId]
+      [NodeContent uidToken]
 
 -- | `turnoverComputationType`
 --
@@ -477,15 +474,10 @@ instance ToElement OtherFlowOfFunds where
 -- TODO Put this in a validation instead of a Maybe?
 produceXMLReport :: UTCTime -> VATReport ann -> Maybe XMLReport
 produceXMLReport generalInformationGenerationTime VATReport {..} = do
-  let generalInformationUID =
-        UID
-          { uidCategory =
-              -- @
-              -- UID des Steuerpflichtigen, wobei im Element uidOrganisationIdCategory der Präfix (CHE)
-              -- @
-              "CHE",
-            uidId = T.filter (/= '.') vatReportVATId
-          }
+  -- @
+  -- UID des Steuerpflichtigen, wobei im Element uidOrganisationIdCategory der Präfix (CHE)
+  -- @
+  let generalInformationUID = UID {uidToken = vatIdToken vatReportVATId}
   let generalInformationOrganisationName = vatReportOrganisationName
   let generalInformationReportingPeriodFrom = periodFirstDay vatReportQuarter
   let generalInformationReportingPeriodTill = periodLastDay vatReportQuarter
