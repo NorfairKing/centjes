@@ -15,6 +15,8 @@
     weeder-nix.flake = false;
     opt-env-conf.url = "github:NorfairKing/opt-env-conf";
     opt-env-conf.flake = false;
+    autodocodec.url = "github:NorfairKing/autodocodec";
+    autodocodec.flake = false;
     really-safe-money.url = "github:NorfairKing/really-safe-money";
     really-safe-money.flake = false;
     yesod-autoreload.url = "github:NorfairKing/yesod-autoreload";
@@ -44,6 +46,7 @@
     , haskell-dependency-graph-nix
     , weeder-nix
     , opt-env-conf
+    , autodocodec
     , really-safe-money
     , yesod-autoreload
     , yesod-static-remote
@@ -61,6 +64,7 @@
         inherit system;
         config.allowUnfree = true;
         overlays = [
+          (import (autodocodec + "/nix/overlay.nix"))
           (import (opt-env-conf + "/nix/overlay.nix"))
           (import (really-safe-money + "/nix/overlay.nix"))
           (import (yesod-autoreload + "/nix/overlay.nix"))

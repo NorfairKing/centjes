@@ -270,81 +270,81 @@ packages:
 - completed:
     name: autodocodec
     pantry-tree:
-      sha256: 796ef7946dd4ee4a8a33ad72e45931d0cda8c05529c88ce0a348c6ef9e8fcfc2
+      sha256: b73f06986e6febcbb39871d4a493ff1aee0ccb8c0c503abcd28206252dd028ab
       size: 914
-    sha256: 00cddd0ec33ebaa020cefce9dca1034f3b1344cc7221cc4f881f87490298fbe3
-    size: 100149
+    sha256: 32cd1c13781bb482ff8556c593f44d0d5ab83af06d87ecf5a96cf8d8839600d6
+    size: 116372
     subdir: autodocodec
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
-    version: 0.4.2.2
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
+    version: 0.5.0.0
   original:
     subdir: autodocodec
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
 - completed:
     name: autodocodec-nix
     pantry-tree:
-      sha256: d7b47bbe5431a624d19d57a8653c10a56fe9b64b54f505496e46512c9b812a4a
-      size: 595
-    sha256: 00cddd0ec33ebaa020cefce9dca1034f3b1344cc7221cc4f881f87490298fbe3
-    size: 100149
+      sha256: 1df29743c27895e42797e21815dd4470b2c22f0ab6034dc4ce195acb345e2151
+      size: 596
+    sha256: 32cd1c13781bb482ff8556c593f44d0d5ab83af06d87ecf5a96cf8d8839600d6
+    size: 116372
     subdir: autodocodec-nix
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
-    version: 0.1.0.0
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
+    version: 0.1.0.1
   original:
     subdir: autodocodec-nix
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
 - completed:
     name: autodocodec-schema
     pantry-tree:
-      sha256: 05f5f3a98c0ec24cbdc0c55341c226aaedec79721327b6f8b0db9555c2961eeb
+      sha256: a608c6410213265068b7284900a53f5cc01de42efa9548e766882368e6d42d50
       size: 387
-    sha256: 00cddd0ec33ebaa020cefce9dca1034f3b1344cc7221cc4f881f87490298fbe3
-    size: 100149
+    sha256: 32cd1c13781bb482ff8556c593f44d0d5ab83af06d87ecf5a96cf8d8839600d6
+    size: 116372
     subdir: autodocodec-schema
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
     version: 0.2.0.1
   original:
     subdir: autodocodec-schema
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
 - completed:
     name: autodocodec-yaml
     pantry-tree:
-      sha256: 9eed7953d5eb1818c7e1fc0c47b692d2d172c081a096c8cd92303fde5a1e9328
+      sha256: fa1c0ddf8489bb130f618e54dfddf4c1ff4a5d1bace32a16092e0ecb67e48591
       size: 592
-    sha256: 00cddd0ec33ebaa020cefce9dca1034f3b1344cc7221cc4f881f87490298fbe3
-    size: 100149
+    sha256: 32cd1c13781bb482ff8556c593f44d0d5ab83af06d87ecf5a96cf8d8839600d6
+    size: 116372
     subdir: autodocodec-yaml
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
-    version: 0.4.0.1
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
+    version: 0.4.0.2
   original:
     subdir: autodocodec-yaml
-    url: https://github.com/NorfairKing/autodocodec/archive/7439601de128dadf562430f4216cbdb28580ed20.tar.gz
+    url: https://github.com/NorfairKing/autodocodec/archive/29b57dc2d425d732ce75143ecf3fc6411df0347b.tar.gz
 - completed:
     name: opt-env-conf
     pantry-tree:
       sha256: d513bb17427d8e6d29e437f939420f35ca30997b200d4fa38b1af55739021b5f
       size: 1631
-    sha256: a624ab65143bb0f65354c3383af143023018d1a39c78b81b04ff75f820ee9c02
-    size: 127395
+    sha256: c036704598f873b9a427e9c9c22af77188cb905095aa8f54ba9b1ad65a4648ce
+    size: 127463
     subdir: opt-env-conf
-    url: https://github.com/NorfairKing/opt-env-conf/archive/5f115023d0f17de7241984bfc870e92a9a92960a.tar.gz
+    url: https://github.com/NorfairKing/opt-env-conf/archive/de7ac850e960c28e5182810515a87fbe1d6daede.tar.gz
     version: 0.15.0.2
   original:
     subdir: opt-env-conf
-    url: https://github.com/NorfairKing/opt-env-conf/archive/5f115023d0f17de7241984bfc870e92a9a92960a.tar.gz
+    url: https://github.com/NorfairKing/opt-env-conf/archive/de7ac850e960c28e5182810515a87fbe1d6daede.tar.gz
 - completed:
     name: opt-env-conf-test
     pantry-tree:
       sha256: 9f64b3bb98cd21edc4b5dabe57673fa6fa5dcf0bb9e89ec86f9b8a1f48e816e2
       size: 28250
-    sha256: a624ab65143bb0f65354c3383af143023018d1a39c78b81b04ff75f820ee9c02
-    size: 127395
+    sha256: c036704598f873b9a427e9c9c22af77188cb905095aa8f54ba9b1ad65a4648ce
+    size: 127463
     subdir: opt-env-conf-test
-    url: https://github.com/NorfairKing/opt-env-conf/archive/5f115023d0f17de7241984bfc870e92a9a92960a.tar.gz
+    url: https://github.com/NorfairKing/opt-env-conf/archive/de7ac850e960c28e5182810515a87fbe1d6daede.tar.gz
     version: 0.0.0.4
   original:
     subdir: opt-env-conf-test
-    url: https://github.com/NorfairKing/opt-env-conf/archive/5f115023d0f17de7241984bfc870e92a9a92960a.tar.gz
+    url: https://github.com/NorfairKing/opt-env-conf/archive/de7ac850e960c28e5182810515a87fbe1d6daede.tar.gz
 - completed:
     name: prometheus-wai
     pantry-tree:

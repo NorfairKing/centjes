@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "autodocodec": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780340207,
+        "narHash": "sha256-ghOzTq/h22exSP9CEoNKtKNA08mNBkFGBFU9m4PFnC0=",
+        "owner": "NorfairKing",
+        "repo": "autodocodec",
+        "rev": "29b57dc2d425d732ce75143ecf3fc6411df0347b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NorfairKing",
+        "repo": "autodocodec",
+        "type": "github"
+      }
+    },
     "dekking": {
       "flake": false,
       "locked": {
@@ -127,11 +143,11 @@
     "opt-env-conf": {
       "flake": false,
       "locked": {
-        "lastModified": 1766081253,
-        "narHash": "sha256-xhoNUlgRBQGN6wDjXFZUMoaNkS1bSfdCf7+Ohh3o9NA=",
+        "lastModified": 1780340332,
+        "narHash": "sha256-FnHU+1d4+MABorp9+IRgOl1XUYpj+JJ7XFKrz5NkQlk=",
         "owner": "NorfairKing",
         "repo": "opt-env-conf",
-        "rev": "b6da7e94827e89cc8af8c02e0f61d7a856a610d7",
+        "rev": "de7ac850e960c28e5182810515a87fbe1d6daede",
         "type": "github"
       },
       "original": {
@@ -210,6 +226,7 @@
     },
     "root": {
       "inputs": {
+        "autodocodec": "autodocodec",
         "dekking": "dekking",
         "haskell-dependency-graph-nix": "haskell-dependency-graph-nix",
         "linkcheck": "linkcheck",

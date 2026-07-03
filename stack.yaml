@@ -76,14 +76,14 @@ extra-deps:
     - genvalidity-sydtest
     - genvalidity-sydtest-aeson
 - github: NorfairKing/autodocodec
-  commit: 7439601de128dadf562430f4216cbdb28580ed20
+  commit: 29b57dc2d425d732ce75143ecf3fc6411df0347b
   subdirs:
     - autodocodec
     - autodocodec-nix
     - autodocodec-schema
     - autodocodec-yaml
 - github: NorfairKing/opt-env-conf
-  commit: 5f115023d0f17de7241984bfc870e92a9a92960a
+  commit: de7ac850e960c28e5182810515a87fbe1d6daede
   subdirs:
     - opt-env-conf
     - opt-env-conf-test
