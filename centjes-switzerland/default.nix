@@ -1,11 +1,11 @@
 { mkDerivation, aeson, aeson-pretty, autodocodec, autoexporter
 , base, bytestring, centjes, centjes-gen, conduit, containers
-, diagnose, filepath, genvalidity, genvalidity-sydtest
+, diagnose, file-embed, filepath, genvalidity, genvalidity-sydtest
 , genvalidity-time, http-client, http-client-tls, http-types, lib
 , monad-logger, mtl, opt-env-conf, opt-env-conf-test, path, path-io
 , pretty-show, QuickCheck, really-safe-money, really-safe-money-gen
-, sydtest, sydtest-aeson, sydtest-discover, text, time
-, typed-process, unliftio, validity, validity-time, vector
+, sydtest, sydtest-aeson, sydtest-discover, template-haskell, text
+, time, typed-process, unliftio, validity, validity-time, vector
 , xml-conduit, zip
 }:
 mkDerivation {
@@ -17,10 +17,10 @@ mkDerivation {
   enableSeparateDataOutput = true;
   libraryHaskellDepends = [
     aeson aeson-pretty autodocodec base bytestring centjes conduit
-    containers diagnose http-client http-client-tls http-types
-    monad-logger mtl opt-env-conf path path-io pretty-show
-    really-safe-money text time typed-process unliftio validity
-    validity-time vector xml-conduit zip
+    containers diagnose file-embed http-client http-client-tls
+    http-types monad-logger mtl opt-env-conf path path-io pretty-show
+    really-safe-money template-haskell text time typed-process unliftio
+    validity validity-time vector xml-conduit zip
   ];
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];

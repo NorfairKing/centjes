@@ -15,6 +15,7 @@ import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Common
 import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.Reporter
+import Centjes.Switzerland.Schema (withEmbeddedSchemaDir)
 import Centjes.Switzerland.Typst
 import Centjes.Switzerland.Zip
 import Centjes.Validation
@@ -44,9 +45,6 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   dataDir <- Paths_centjes_switzerland.getDataDir >>= resolveDir'
   assetsDir <- resolveDir dataDir "assets"
   typstTemplateFile <- resolveFile assetsDir "vat.typ"
-  schemaDir <- resolveDir assetsDir "schemas"
-  catalogFile <- resolveFile schemaDir "catalog.xml"
-  schemaFile <- resolveFile schemaDir "eCH-0217-2-0-0.xsd"
 
   runStderrLoggingT $
     loadMWatchedModules settingWatch (settingBaseDir </> settingLedgerFile) $ \(declarations, fileMap) -> do
@@ -96,28 +94,31 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
                     xmlRenderSettings
                     xmlDoc
 
-              logInfoN $
-                T.pack $
-                  unwords
-                    [ "Validating XML output at",
-                      fromAbsFile xf,
-                      "against schema",
-                      fromAbsFile schemaFile
-                    ]
-              environment <- liftIO getEnvironment
-              let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
-              runProcess_ $
-                setWorkingDir (fromAbsDir packetDir) $
-                  setEnv newEnvironment $
-                    setStdout inherit $
-                      setStderr inherit $
-                        proc
-                          "xmllint"
-                          [ "--schema",
-                            fromAbsFile schemaFile,
-                            fromAbsFile xf,
-                            "--catalogs"
-                          ]
+              withEmbeddedSchemaDir $ \schemaDir -> do
+                let catalogFile = schemaDir </> [relfile|catalog.xml|]
+                let schemaFile = schemaDir </> [relfile|eCH-0217-2-0-0.xsd|]
+                logInfoN $
+                  T.pack $
+                    unwords
+                      [ "Validating XML output at",
+                        fromAbsFile xf,
+                        "against schema",
+                        fromAbsFile schemaFile
+                      ]
+                environment <- liftIO getEnvironment
+                let newEnvironment = ("SGML_CATALOG_FILES", fromAbsFile catalogFile) : environment
+                runProcess_ $
+                  setWorkingDir (fromAbsDir packetDir) $
+                    setEnv newEnvironment $
+                      setStdout inherit $
+                        setStderr inherit $
+                          proc
+                            "xmllint"
+                            [ "--schema",
+                              fromAbsFile schemaFile,
+                              fromAbsFile xf,
+                              "--catalogs"
+                            ]
               pure xf
 
         -- Write the input to a file

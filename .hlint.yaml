@@ -97,6 +97,7 @@
       - Centjes.Docs.Site.DependencyGraph
       - Centjes.Docs.Site.Handler.Reload
       - Centjes.Switzerland.Constants
+      - Centjes.Switzerland.Schema
 
 
   # Does unexpected things, see

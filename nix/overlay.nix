@@ -72,6 +72,10 @@ with final.haskell.lib;
     inherit (final) haskellPackages;
   };
 
+  # A directory of XML schemas assembled from upstream (see nix/schemas.nix),
+  # embedded into centjes-switzerland at compile time.
+  centjesSwitzerlandSchemas = final.callPackage ../nix/schemas.nix { };
+
   centjesReleasePackages =
     builtins.mapAttrs
       (_: pkg: justStaticExecutables pkg)
@@ -202,7 +206,13 @@ with final.haskell.lib;
             centjes-import-cornercard = centjesPkg "centjes-import-cornercard";
             centjes-import-neon = centjesPkg "centjes-import-neon";
             centjes-import-revolut = centjesPkg "centjes-import-revolut";
-            centjes-switzerland = (centjesPkg "centjes-switzerland").overrideAttrs (old: {
+            centjes-switzerland = (overrideCabal (centjesPkg "centjes-switzerland") (old: {
+              preConfigure = ''
+                ${old.preConfigure or ""}
+
+                export CENTJES_SWITZERLAND_SCHEMA_DIR="${final.centjesSwitzerlandSchemas}"
+              '';
+            })).overrideAttrs (old: {
               nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
                 final.makeWrapper
               ];

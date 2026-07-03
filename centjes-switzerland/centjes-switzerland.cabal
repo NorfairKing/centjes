@@ -11,30 +11,6 @@ bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
     assets/schemas/catalog.xml
-    assets/schemas/eCH-0006-2-0.xsd
-    assets/schemas/eCH-0007-5-0.xsd
-    assets/schemas/eCH-0007-5-0f.xsd
-    assets/schemas/eCH-0007-6-0.xsd
-    assets/schemas/eCH-0007-6-0f.xsd
-    assets/schemas/eCH-0008-3-0.xsd
-    assets/schemas/eCH-0008-3-0f.xsd
-    assets/schemas/eCH-0010-5-1f.xsd
-    assets/schemas/eCH-0010-6-0.xsd
-    assets/schemas/eCH-0010-7-0f.xsd
-    assets/schemas/eCH-0010-8-0.xsd
-    assets/schemas/eCH-0011-8-0f.xsd
-    assets/schemas/eCH-0044-4-0f.xsd
-    assets/schemas/eCH-0044-4-1.xsd
-    assets/schemas/eCH-0046-5-0f.xsd
-    assets/schemas/eCH-0058-5-0.xsd
-    assets/schemas/eCH-0097-2-0.xsd
-    assets/schemas/eCH-0097-3-0.xsd
-    assets/schemas/eCH-0097-5-0.xsd
-    assets/schemas/eCH-0108-7-0.xsd
-    assets/schemas/eCH-0119-4-0-0.xsd
-    assets/schemas/eCH-0129-6-0.xsd
-    assets/schemas/eCH-0135-1-0.xsd
-    assets/schemas/eCH-0217-2-0-0.xsd
     assets/schemas/README.md
     assets/taxes.typ
     assets/vat.typ
@@ -69,30 +45,6 @@ extra-source-files:
     options.nix
 data-files:
     assets/schemas/catalog.xml
-    assets/schemas/eCH-0006-2-0.xsd
-    assets/schemas/eCH-0007-5-0.xsd
-    assets/schemas/eCH-0007-5-0f.xsd
-    assets/schemas/eCH-0007-6-0.xsd
-    assets/schemas/eCH-0007-6-0f.xsd
-    assets/schemas/eCH-0008-3-0.xsd
-    assets/schemas/eCH-0008-3-0f.xsd
-    assets/schemas/eCH-0010-5-1f.xsd
-    assets/schemas/eCH-0010-6-0.xsd
-    assets/schemas/eCH-0010-7-0f.xsd
-    assets/schemas/eCH-0010-8-0.xsd
-    assets/schemas/eCH-0011-8-0f.xsd
-    assets/schemas/eCH-0044-4-0f.xsd
-    assets/schemas/eCH-0044-4-1.xsd
-    assets/schemas/eCH-0046-5-0f.xsd
-    assets/schemas/eCH-0058-5-0.xsd
-    assets/schemas/eCH-0097-2-0.xsd
-    assets/schemas/eCH-0097-3-0.xsd
-    assets/schemas/eCH-0097-5-0.xsd
-    assets/schemas/eCH-0108-7-0.xsd
-    assets/schemas/eCH-0119-4-0-0.xsd
-    assets/schemas/eCH-0129-6-0.xsd
-    assets/schemas/eCH-0135-1-0.xsd
-    assets/schemas/eCH-0217-2-0-0.xsd
     assets/schemas/README.md
     assets/taxes.typ
     assets/vat.typ
@@ -119,6 +71,7 @@ library
       Centjes.Switzerland.Report.VAT.Types
       Centjes.Switzerland.Report.VAT.Typst
       Centjes.Switzerland.Reporter
+      Centjes.Switzerland.Schema
       Centjes.Switzerland.Typst
       Centjes.Switzerland.XML
       Centjes.Switzerland.Zip
@@ -138,6 +91,7 @@ library
     , conduit
     , containers
     , diagnose
+    , file-embed
     , http-client
     , http-client-tls
     , http-types
@@ -148,6 +102,7 @@ library
     , path-io
     , pretty-show
     , really-safe-money
+    , template-haskell
     , text
     , time
     , typed-process

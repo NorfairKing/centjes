@@ -164,6 +164,7 @@
         DEVELOPMENT = "True";
         CENTJES_DOCS_DEPENDENCY_GRAPH = "${pkgs.centjesDependencyGraph}/centjes-dependency-graph.svg";
         CENTJES_DOCS_NIXOS_MODULE_DOCS = "${pkgs.centjesNixosModuleDocs}/share/doc/nixos/options.json";
+        CENTJES_SWITZERLAND_SCHEMA_DIR = "${pkgs.centjesSwitzerlandSchemas}";
       };
       nixosModules.${system}.default = self.nixosModuleFactories.${system}.default { envname = "production"; };
       nixosModuleFactories.${system}.default = import ./nix/nixos-module.nix {

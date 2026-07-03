@@ -27,6 +27,7 @@ library:
   - containers
   - containers
   - diagnose
+  - file-embed
   - http-client
   - http-client-tls
   - http-types
@@ -37,6 +38,7 @@ library:
   - path-io
   - pretty-show
   - really-safe-money
+  - template-haskell
   - text
   - time
   - typed-process
