@@ -46,7 +46,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   typstTemplateFile <- resolveFile assetsDir "vat.typ"
   schemaDir <- resolveDir assetsDir "schemas"
   catalogFile <- resolveFile schemaDir "catalog.xml"
-  schemaFile <- resolveFile schemaDir "eCH-0217-1-0.xsd"
+  schemaFile <- resolveFile schemaDir "eCH-0217-2-0-0.xsd"
 
   runStderrLoggingT $
     loadMWatchedModules settingWatch (settingBaseDir </> settingLedgerFile) $ \(declarations, fileMap) -> do

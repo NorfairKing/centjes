@@ -98,7 +98,7 @@ instance ToElement XMLReport where
       { elementName = ech0217Name "VATDeclaration",
         elementAttributes =
           M.fromList
-            [ (xsiName "schemaLocation", "http://www.ech.ch/xmlns/eCH-0217/1 eCH-0217-1-0.xsd")
+            [ (xsiName "schemaLocation", "http://www.ech.ch/xmlns/eCH-0217/2 eCH-0217-2-0-0.xsd")
             ],
         elementNodes =
           concat
@@ -175,7 +175,16 @@ instance ToElement GeneralInformation where
             ]
       ]
 
--- | `eCH-0097:uidStructureType`
+-- | `eCH-0108:uidType`
+--
+-- @
+-- A single token matching @CHE[1-9][0-9]{8}@, i.e. the category prefix
+-- (@CHE@) directly followed by the nine-digit organisation identifier.
+-- @
+--
+-- Note that in eCH-0217 version 1.0 this used to be @eCH-0097:uidStructureType@,
+-- a structure with separate @uidOrganisationIdCategorie@ and
+-- @uidOrganisationId@ child elements.
 data UID = UID
   { uidCategory :: !Text,
     uidId :: !Text
@@ -186,9 +195,7 @@ instance ToElement UID where
   toElement UID {..} =
     ech0217Element
       "uid"
-      [ NodeElement $ ech0097Element "uidOrganisationIdCategorie" [NodeContent uidCategory],
-        NodeElement $ ech0097Element "uidOrganisationId" [NodeContent uidId]
-      ]
+      [NodeContent $ uidCategory <> uidId]
 
 -- | `turnoverComputationType`
 --
@@ -549,8 +556,6 @@ xmlRenderSettings =
     { rsXMLDeclaration = True,
       rsNamespaces =
         [ (ech0058Abbreviation, ech0058Url),
-          (ech0097Abbreviation, ech0097Url),
-          (ech0119Abbreviation, ech0119Url),
           (ech0217Abbreviation, ech0217Url),
           (xsiAbbreviation, xsiUrl)
         ]

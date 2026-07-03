@@ -28,18 +28,6 @@ ech0058Abbreviation = "eCH-0058"
 ech0058Url :: Text
 ech0058Url = "http://www.ech.ch/xmlns/eCH-0058/5"
 
-ech0097Element :: Text -> [XML.Node] -> XML.Element
-ech0097Element name = xmlElement (ech0097Name name)
-
-ech0097Name :: Text -> XML.Name
-ech0097Name = xmlName ech0097Url ech0097Abbreviation
-
-ech0097Abbreviation :: Text
-ech0097Abbreviation = "eCH-0097"
-
-ech0097Url :: Text
-ech0097Url = "http://www.ech.ch/xmlns/eCH-0097/3"
-
 ech0119Element :: Text -> [XML.Node] -> XML.Element
 ech0119Element name = xmlElement (ech0119Name name)
 
@@ -59,7 +47,7 @@ ech0217Name :: Text -> XML.Name
 ech0217Name = xmlName ech0217Url ech0217Abbreviation
 
 ech0217Url :: Text
-ech0217Url = "http://www.ech.ch/xmlns/eCH-0217/1"
+ech0217Url = "http://www.ech.ch/xmlns/eCH-0217/2"
 
 ech0217Abbreviation :: Text
 ech0217Abbreviation = "eCH-0217"

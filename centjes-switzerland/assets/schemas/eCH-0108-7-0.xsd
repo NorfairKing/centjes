@@ -1,0 +1,541 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Mit XMLSpy v2021 rel. 3 (x64) (http://www.altova.com) von  (Bundesamt für Informatik und Telekommunikation BIT) bearbeitet -->
+<!-- edited with XMLSpy v2012 rel. 2 sp1 (http://www.altova.com) by Martin Stingelin (Stingelin Informatik GmbH) -->
+<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by BITUSER (Bundesamt für Informatik und Telekommunikation) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:eCH-0108="http://www.ech.ch/xmlns/eCH-0108/7" xmlns:eCH-0044="http://www.ech.ch/xmlns/eCH-0044/4" xmlns:eCH-0007="http://www.ech.ch/xmlns/eCH-0007/6" xmlns:eCH-0008="http://www.ech.ch/xmlns/eCH-0008/3" xmlns:eCH-0010="http://www.ech.ch/xmlns/eCH-0010/8" xmlns:eCH-0129="http://www.ech.ch/xmlns/eCH-0129/6" targetNamespace="http://www.ech.ch/xmlns/eCH-0108/7" elementFormDefault="qualified" attributeFormDefault="unqualified" version="7.0">
+  <xs:annotation>
+    <xs:documentation xml:lang="de">Ausgabedatum: 11.04.2024</xs:documentation>
+  </xs:annotation>
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0044/4" schemaLocation="http://www.ech.ch/xmlns/eCH-0044/4/eCH-0044-4-1.xsd" />
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0007/6" schemaLocation="http://www.ech.ch/xmlns/eCH-0007/6/eCH-0007-6-0.xsd" />
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0008/3" schemaLocation="http://www.ech.ch/xmlns/eCH-0008/3/eCH-0008-3-0.xsd" />
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0010/8" schemaLocation="http://www.ech.ch/xmlns/eCH-0010/8/eCH-0010-8-0.xsd" />
+  <xs:import namespace="http://www.ech.ch/xmlns/eCH-0129/6" schemaLocation="http://www.ech.ch/xmlns/eCH-0129/6/eCH-0129-6-0.xsd" />
+  <xs:element name="legalUnit" type="eCH-0108:legalUnitType">
+    <xs:annotation>
+      <xs:documentation>root element of the schema</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="legalUnitMasterData" type="eCH-0108:legalUnitMasterDataType">
+    <xs:annotation>
+      <xs:documentation>root element of the schema</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:element name="localUnitMasterData" type="eCH-0108:localUnitMasterDataType">
+    <xs:annotation>
+      <xs:documentation>root element of the schema</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="legalUnitType">
+    <xs:sequence>
+      <xs:element name="legalUnitKeyData" type="eCH-0108:legalUnitKeyDataType" />
+      <xs:element name="legalUnitAdditionalData" type="eCH-0108:legalUnitAdditionalDataType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="legalUnitMasterDataType">
+    <xs:sequence>
+      <xs:element name="uid" type="eCH-0108:uidType" minOccurs="0" />
+      <xs:element name="mainUid" type="eCH-0108:uidType" minOccurs="0" />
+      <xs:element name="name" type="eCH-0108:unitNameType" />
+      <xs:element name="additionalName" type="eCH-0108:unitNameType" minOccurs="0" />
+      <xs:element name="translatedName" type="eCH-0108:unitNameType" minOccurs="0" />
+      <xs:element name="status" type="eCH-0108:unitStatusType" minOccurs="0" />
+      <xs:element name="statusDate" type="xs:date" minOccurs="0" />
+      <xs:element name="legalForm" type="eCH-0108:legalFormType">
+        <xs:annotation>
+          <xs:documentation>DataType is defined in the schema or in one of its subschemas and possible values are documented on the platform i14y : https://www.i14y.admin.ch/en/home</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="mainAddress" type="eCH-0108:mainAddressType" />
+      <xs:element name="additionalPostOfficeBoxAddress" type="eCH-0108:additionalPostOfficeBoxAddressType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="localUnitMasterDataType">
+    <xs:sequence>
+      <xs:element name="localId" type="eCH-0108:localIdType" minOccurs="0" />
+      <xs:element name="mainUid" type="eCH-0108:uidType" minOccurs="0" />
+      <xs:element name="name" type="eCH-0108:unitNameType" />
+      <xs:element name="additionalName" type="eCH-0108:unitNameType" minOccurs="0" />
+      <xs:element name="status" type="eCH-0108:unitStatusType" minOccurs="0" />
+      <xs:element name="statusDate" type="xs:date" minOccurs="0" />
+      <xs:element name="sizeClassFte" type="eCH-0108:sizeClassFteType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>DataType is defined in the schema or in one of its subschemas and possible values are documented on the platform i14y : https://www.i14y.admin.ch/en/home</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="email" type="eCH-0108:emailType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>Email address</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="website" type="eCH-0108:websiteType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>Internet address / web site</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="nogaCode" type="eCH-0108:nogaCodeType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>DataType is defined in the schema or in one of its subschemas and possible values are documented on the platform i14y : https://www.i14y.admin.ch/en/home</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="nogaVersion" type="eCH-0108:nogaVersionType" minOccurs="0" />
+      <xs:element name="activityDescription" type="eCH-0108:activityDescriptionType" minOccurs="0" />
+      <xs:element name="mainAddress" type="eCH-0108:mainAddressType" />
+      <xs:element name="additionalLocationAddress" type="eCH-0108:additionalLocationAddressType" minOccurs="0" />
+      <xs:element name="additionalPostOfficeBoxAddress" type="eCH-0108:additionalPostOfficeBoxAddressType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="legalUnitKeyDataType">
+    <xs:sequence>
+      <xs:element name="commercialRegisterStatus" type="eCH-0108:registerStatusType" minOccurs="0" />
+      <xs:element name="vatRegisterStatus" type="eCH-0108:registerStatusType" minOccurs="0" />
+      <xs:element name="vatStartOfObligation" type="xs:date" minOccurs="0" />
+      <xs:element name="vatEndOfObligation" type="xs:date" minOccurs="0" />
+      <xs:element name="vatUid" type="eCH-0108:uidType" minOccurs="0" />
+      <xs:element name="lei" type="eCH-0108:leiRegisterStatusType" minOccurs="0" />
+      <xs:element name="leiRegisterRelationStatus" type="eCH-0108:leiRegisterStatusType" minOccurs="0" />
+      <xs:element name="legalUnitMasterData" type="eCH-0108:legalUnitMasterDataType" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="legalUnitAdditionalDataType">
+    <xs:sequence>
+      <xs:element name="legalUnitType" type="eCH-0108:legalUnitTypeType" minOccurs="0" />
+      <xs:element name="firstRegistrationDate" type="xs:date" minOccurs="0" />
+      <xs:element name="publicStatus" type="eCH-0108:uidPublicStatusType" minOccurs="0" />
+      <xs:element name="replacementUid" type="eCH-0108:uidType" minOccurs="0" />
+      <xs:element name="nogaCode" type="eCH-0108:nogaCodeType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>DataType is defined in the schema or in one of its subschemas and possible values are documented on the platform i14y : https://www.i14y.admin.ch/en/home</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="nogaVersion" type="eCH-0108:nogaVersionType" minOccurs="0" />
+      <xs:element name="activityDescription" type="eCH-0108:activityDescriptionType" minOccurs="0" />
+      <xs:element name="cessationReason" type="eCH-0108:cessationReasonType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>DataType is defined in the schema or in one of its subschemas and possible values are documented on the platform i14y : https://www.i14y.admin.ch/en/home</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="commercialRegisterActivationDate" type="xs:date" minOccurs="0" />
+      <xs:element name="commercialRegisterCessationDate" type="xs:date" minOccurs="0" />
+      <xs:element name="otherRegister" type="eCH-0108:otherRegisterType" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="soleProprietorshipPerson" type="eCH-0108:soleProprietorshipPersonType" minOccurs="0" />
+      <xs:element name="email" type="eCH-0108:emailType" minOccurs="0" />
+      <xs:element name="website" type="eCH-0108:websiteType" minOccurs="0" />
+      <xs:element name="correspondenceLanguage" type="eCH-0108:correspondenceLanguageType" minOccurs="0" />
+      <xs:element name="additionalLocationAddress" type="eCH-0108:additionalLocationAddressType" minOccurs="0" />
+      <xs:element name="foreignOrganisationInformation" type="eCH-0108:foreignOrganisationInformationType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="soleProprietorshipPersonType">
+    <xs:sequence>
+      <xs:element name="socialSecurityNumber" type="eCH-0044:vnType" minOccurs="0" />
+      <xs:element name="firstName" type="eCH-0108:firstNameType" />
+      <xs:element name="lastName" type="eCH-0108:lastNameType" />
+      <xs:element name="birthDate" type="eCH-0044:datePartiallyKnownType" minOccurs="0" />
+      <xs:element name="deathDate" type="xs:date" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="uidType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="12" />
+      <xs:maxLength value="12" />
+      <xs:pattern value="CHE[1-9][0-9]{8}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="localIdType">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="9" />
+      <xs:maxLength value="9" />
+      <xs:whiteSpace value="collapse" />
+      <xs:pattern value="[A-B][1-9][0-9]{7}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="firstNameType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="100" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="lastNameType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="100" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="cessationReasonType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="10" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="nogaVersionType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="100" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="nogaCodeType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="6" />
+      <xs:maxLength value="6" />
+      <xs:pattern value="[0-9]{6}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="NACECodeType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="4" />
+      <xs:maxLength value="4" />
+      <xs:pattern value="[0-9]{4}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="leiType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="20" />
+      <xs:maxLength value="20" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="activityDescriptionType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="10000" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ISICCodeType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="2" />
+      <xs:maxLength value="2" />
+      <xs:pattern value="[0-9]{2}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="sizeClassFteType">
+    <xs:restriction base="xs:nonNegativeInteger">
+      <xs:minInclusive value="1" />
+      <xs:maxInclusive value="12" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="addressCategoryType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="correspondenceAddress" />
+      <xs:enumeration value="liquidationAddress" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="careOfAddressLineType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="150" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="complementAddressLineType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="200" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="attentionOfAddressLineType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="60" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="mainAddressType">
+    <xs:sequence>
+      <xs:element name="careOfAddressLine" type="eCH-0108:careOfAddressLineType" minOccurs="0" />
+      <xs:element name="complementAddressLine" type="eCH-0108:complementAddressLineType" minOccurs="0" />
+      <xs:element name="postDeliverabilityStatus" type="eCH-0108:postDeliverabilityStatusType" minOccurs="0" />
+      <xs:element name="postDeliverabilityCheckDate" type="xs:date" minOccurs="0" />
+      <xs:element name="locationAddressDetails" type="eCH-0108:locationAddressDetailsType" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="additionalLocationAddressType">
+    <xs:sequence>
+      <xs:element name="addressCategory" type="eCH-0108:addressCategoryType" />
+      <xs:element name="careOfAddressLine" type="eCH-0108:careOfAddressLineType" minOccurs="0" />
+      <xs:element name="attentionOfAddressLine" type="eCH-0108:attentionOfAddressLineType" minOccurs="0" />
+      <xs:element name="complementAddressLine" type="eCH-0108:complementAddressLineType" minOccurs="0" />
+      <xs:element name="postDeliverabilityStatus" type="eCH-0108:postDeliverabilityStatusType" minOccurs="0" />
+      <xs:element name="postDeliverabilityCheckDate" type="xs:date" minOccurs="0" />
+      <xs:element name="locationAddressDetails" type="eCH-0108:locationAddressDetailsType" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="additionalPostOfficeBoxAddressType">
+    <xs:sequence>
+      <xs:element name="addressCategory" type="eCH-0108:addressCategoryType" />
+      <xs:element name="attentionOfAddressLine" type="eCH-0108:attentionOfAddressLineType" minOccurs="0" />
+      <xs:element name="careOfAddressLine" type="eCH-0108:careOfAddressLineType" minOccurs="0" />
+      <xs:element name="complementAddressLine" type="eCH-0108:complementAddressLineType" minOccurs="0" />
+      <xs:element name="cantonAbbreviation" type="eCH-0007:cantonAbbreviationType" minOccurs="0" />
+      <xs:element name="country" type="eCH-0008:countryIdISO2Type" />
+      <xs:element name="postOfficeBoxNumber" type="eCH-0108:postOfficeBoxNumberType" minOccurs="0" />
+      <xs:element name="town" type="eCH-0010:townType" />
+      <xs:element name="zipCode" type="eCH-0108:zipCodeType" />
+      <xs:element name="postDeliverabilityStatus" type="eCH-0108:postDeliverabilityStatusType" minOccurs="0" />
+      <xs:element name="postDeliverabilityCheckDate" type="xs:date" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="foreignLocationAddressType">
+    <xs:sequence>
+      <xs:element name="careOfAddressLine" type="eCH-0108:careOfAddressLineType" minOccurs="0" />
+      <xs:element name="complementAddressLine" type="eCH-0108:complementAddressLineType" minOccurs="0" />
+      <xs:element name="foreignLocationAddressDetails" type="eCH-0108:foreignLocationAddressDetailType" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="locationAddressDetailsType">
+    <xs:sequence>
+      <xs:element name="street" type="eCH-0010:streetType" minOccurs="0" />
+      <xs:element name="houseNumber" type="eCH-0010:houseNumberType" minOccurs="0" />
+      <xs:element name="language" type="eCH-0108:addressLanguageType" minOccurs="0" />
+      <xs:element name="cantonAbbreviation" type="eCH-0007:cantonAbbreviationType" minOccurs="0" />
+      <xs:element name="municipality" type="eCH-0007:municipalityNameType" minOccurs="0" />
+      <xs:element name="town" type="eCH-0010:townType" />
+      <xs:element name="zipCode" type="eCH-0108:zipCodeType" minOccurs="0" />
+      <xs:element name="country" type="eCH-0008:countryIdISO2Type" />
+      <xs:element name="EGAID" type="eCH-0129:EGAIDType" minOccurs="0" />
+      <xs:element name="GDEID" type="eCH-0007:municipalityIdType" minOccurs="0" />
+      <xs:element name="EGID" type="eCH-0129:EGIDType" minOccurs="0" />
+      <xs:element name="EDID" type="eCH-0129:EDIDType" minOccurs="0" />
+      <xs:element name="ESID" type="eCH-0129:ESIDType" minOccurs="0" />
+      <xs:element name="coordinatesNorth" type="eCH-0129:coordinatesNorthType" minOccurs="0" />
+      <xs:element name="coordinatesEast" type="eCH-0129:coordinatesEastType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="foreignLocationAddressDetailType">
+    <xs:sequence>
+      <xs:element name="street" type="eCH-0010:streetType" minOccurs="0" />
+      <xs:element name="houseNumber" type="eCH-0010:houseNumberType" minOccurs="0" />
+      <xs:element name="foreignZipCode" type="eCH-0010:foreignZipCodeType" minOccurs="0" />
+      <xs:element name="town" type="eCH-0010:townType" />
+      <xs:element name="country" type="eCH-0008:countryIdISO2Type" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="zipCodeType">
+    <xs:choice>
+      <xs:sequence>
+        <xs:element name="swissZipCode" type="eCH-0010:swissZipCodeType">
+          <xs:annotation>
+            <xs:documentation>is only expected for swiss addresses. Must be null for foreign addresses</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="zipCodeAddOn" type="eCH-0010:swissZipCodeAddOnType" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>is only expected for swiss addresses. Must be null for foreign addresses</xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:sequence>
+      <xs:element name="foreignZipCode" type="eCH-0010:foreignZipCodeType">
+        <xs:annotation>
+          <xs:documentation>is only expected for foreign addresses. Must be null for swiss addresses</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+  <xs:simpleType name="postOfficeBoxNumberType">
+    <xs:restriction base="xs:unsignedInt">
+      <xs:maxInclusive value="99999999" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="addressLanguageType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="de" />
+      <xs:enumeration value="rm" />
+      <xs:enumeration value="fr" />
+      <xs:enumeration value="it" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="postDeliverabilityStatusType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="unchecked" />
+      <xs:enumeration value="isDeliverable" />
+      <xs:enumeration value="isNotDeliverable" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="correspondenceLanguageType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="de" />
+      <xs:enumeration value="rm" />
+      <xs:enumeration value="fr" />
+      <xs:enumeration value="it" />
+      <xs:enumeration value="en" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="emailType">
+    <xs:restriction base="xs:token">
+      <xs:maxLength value="100" />
+      <xs:pattern value="[A-Za-zäöüÄÖÜàáâãåæçèéêëìíîïðñòóôõøùúûýþÿ0-9!#-'\*\+\-/=\?\^_`\{-~]+(\.[A-Za-zäöüÄÖÜàáâãåæçèéêëìíîïðñòóôõøùúûýþÿ0-9!#-'\*\+\-/=\?\^_`\{-~]+)*@[A-Za-zäöüÄÖÜàáâãåæçèéêëìíîïðñòóôõøùúûýþÿ0-9!#-'\*\+\-/=\?\^_`\{-~]+(\.[A-Za-zäöüÄÖÜàáâãåæçèéêëìíîïðñòóôõøùúûýþÿ0-9!#-'\*\+\-/=\?\^_`\{-~]+)*" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="websiteType">
+    <xs:restriction base="xs:token">
+      <xs:maxLength value="100" />
+      <xs:pattern value="https?://[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,4}(/\S*)?" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="legalUnitTypeType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="mainLegalUnit" />
+      <xs:enumeration value="branchLegalUnit" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="unitNameType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="255" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="legalFormType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="4" />
+      <xs:maxLength value="4" />
+      <xs:pattern value="[0-9]{4}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="uidPublicStatusType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="public" />
+      <xs:enumeration value="nonPublic" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="unitStatusType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="active" />
+      <xs:enumeration value="deleted" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="otherRegisterType">
+    <xs:sequence>
+      <xs:element name="registerEntryIdPrefix" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:minLength value="1" />
+            <xs:maxLength value="30" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="registerId">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:minLength value="12" />
+            <xs:maxLength value="12" />
+            <xs:pattern value="REG[1-9][0-9]{8}" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="registerName" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:minLength value="1" />
+            <xs:maxLength value="255" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="registerEntryId" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:maxLength value="36" />
+            <xs:minLength value="1" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="registerEntryStatus" type="eCH-0108:registerStatusType" minOccurs="0" />
+      <xs:element name="registrationDate" type="xs:date" minOccurs="0" />
+      <xs:element name="isResponsibleRegister" type="xs:boolean" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="registerStatusType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="active" />
+      <xs:enumeration value="inactive" />
+      <xs:enumeration value="noRelation" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="leiRegisterStatusType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="ISSUED" />
+      <xs:enumeration value="DUPLICATE" />
+      <xs:enumeration value="LAPSED" />
+      <xs:enumeration value="MERGED" />
+      <xs:enumeration value="RETIRED" />
+      <xs:enumeration value="ANNULLED" />
+      <xs:enumeration value="CANCELLED" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="foreignOrganisationInformationType">
+    <xs:sequence>
+      <xs:element name="foreignRegister" type="eCH-0108:foreignRegisterType" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="name" type="eCH-0108:unitNameType" />
+      <xs:element name="otherName" type="eCH-0108:unitNameType" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="foreignAddress" type="eCH-0108:foreignLocationAddressType" />
+      <xs:element name="NACECode" type="eCH-0108:NACECodeType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>DataType is defined in the schema or in one of its subschemas and possible values are documented on the platform i14y : https://www.i14y.admin.ch/en/home</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="ISICCode" type="eCH-0108:ISICCodeType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>DataType is defined in the schema or in one of its subschemas and possible values are documented on the platform i14y : https://www.i14y.admin.ch/en/home</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="foreignLegalFormName" type="eCH-0108:foreignLegalFormNameType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>"Entity Legal Form name Transliterated name" of the following CodeList is expected : https://www.gleif.org/en/about-lei/code-lists/iso-20275-entity-legal-forms-code-list
+					</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="foreignLegalFormCode" type="eCH-0108:foreignLegalFormCodeType" minOccurs="0">
+        <xs:annotation>
+          <xs:documentation>"ELF Code" of the following CodeList is expected : https://www.gleif.org/en/about-lei/code-lists/iso-20275-entity-legal-forms-code-list</xs:documentation>
+        </xs:annotation>
+      </xs:element>
+      <xs:element name="qualification" type="eCH-0108:qualificationType" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="foreignRegisterType">
+    <xs:sequence>
+      <xs:element name="foreignRegisterId" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:minLength value="1" />
+            <xs:maxLength value="255" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="foreignRegisterName">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:minLength value="1" />
+            <xs:maxLength value="255" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="foreignRegisterEntryId" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:maxLength value="36" />
+            <xs:minLength value="1" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="foreignRegisterEntryStatus" type="eCH-0108:registerStatusType" minOccurs="0" />
+      <xs:element name="registrationDate" type="xs:date" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="foreignLegalFormNameType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="1" />
+      <xs:maxLength value="255" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="foreignLegalFormCodeType">
+    <xs:restriction base="xs:token">
+      <xs:minLength value="4" />
+      <xs:maxLength value="4" />
+      <xs:pattern value="[A-Z0-9]{4}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="qualificationType">
+    <xs:restriction base="xs:token">
+      <xs:enumeration value="ENTITY_SUPPLIED_ONLY" />
+      <xs:enumeration value="PARTIALLY_CORROBORATED" />
+      <xs:enumeration value="FULLY_CORROBORATED" />
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>
