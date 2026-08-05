@@ -1,0 +1,15 @@
+currency CHF 0.01
+
+account assets:cash
+account expenses:vat
+  + assert virtual-allowed
+account income:gifts
+
+2025-01-27
+  | Both scopes on one account, with different answers
+  * assets:cash  +100.00 CHF
+  * income:gifts -105.00 CHF
+  * expenses:vat   +5.00 CHF
+  ! expenses:vat   +1.00 CHF
+  + assert expenses:vat = +5.00 CHF
+  + assert virtual expenses:vat = +6.00 CHF

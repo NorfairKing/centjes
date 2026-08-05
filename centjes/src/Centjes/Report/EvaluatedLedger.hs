@@ -215,7 +215,7 @@ instance ToReport (EvaluatedLedgerError SourceSpan) where
         ]
         []
     -- [tag:EVAL_ASSERTION] At least one test per error: test_resources/balance/error/EVAL_ASSERTION.cent, EVAL_ASSERTION-wrong-currency.cent
-    EvaluatedLedgerErrorAssertion s (Located al (AssertionEquals _ (Located _ asserted) (Located _ c))) actual mDifference ->
+    EvaluatedLedgerErrorAssertion s (Located al (AssertionEquals scope _ (Located _ asserted) (Located _ c))) actual mDifference ->
       Err
         (Just "EVAL_ASSERTION")
         "Assertion failure"
@@ -226,7 +226,12 @@ instance ToReport (EvaluatedLedgerError SourceSpan) where
                   Where $
                     unlines' $
                       concat $
-                        [ ["Calculated:"],
+                        [ [ case scope of
+                              AssertionScopeReal -> "Calculated:"
+                              -- Only the virtual form needs saying, because it
+                              -- is the one that means the less obvious balance.
+                              AssertionScopeVirtual -> "Calculated (including virtual postings):"
+                          ],
                           multiAccountLines actual,
                           ["Asserted:", accountLine c asserted]
                         ]
@@ -841,8 +846,20 @@ checkEntryAssertions _ (EvaluatedEntryPrice _) = pure ()
 checkEntryAssertions accounts (EvaluatedEntryTransaction evaluatedTransaction) = do
   let Located tl t = evaluatedTransactionLocated evaluatedTransaction
       balancesWithoutVirtual = evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction
+      balancesWithVirtual = evaluatedTransactionBalancesWithVirtual evaluatedTransaction
+  -- Account type assertions stay real-only.
   checkAccountTypeAssertions accounts tl balancesWithoutVirtual
-  traverse_ (checkAssertion tl balancesWithoutVirtual) (transactionAssertions t)
+  traverse_
+    ( \la@(Located _ (AssertionEquals scope _ _ _)) ->
+        checkAssertion
+          tl
+          ( case scope of
+              AssertionScopeReal -> balancesWithoutVirtual
+              AssertionScopeVirtual -> balancesWithVirtual
+          )
+          la
+    )
+    (transactionAssertions t)
 
 -- | An intermediate merged entry before evaluation
 data MergedEntry ann
@@ -1029,7 +1046,7 @@ checkAssertion ::
   AccountBalances ann ->
   GenLocated ann (Assertion ann) ->
   Validation (EvaluatedLedgerError ann) ()
-checkAssertion tl runningTotal a@(Located _ (AssertionEquals lan la lcs)) = do
+checkAssertion tl runningTotal a@(Located _ (AssertionEquals _ lan la lcs)) = do
   let Located _ an = lan
   let Located _ expected = la
   let Located _ c = lcs

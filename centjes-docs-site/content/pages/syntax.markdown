@@ -299,6 +299,24 @@ These assertions are checked after balancing the transaction.
     + assert assets:cash = 0.00 USD
 ```
 
+Assertions do not count virtual postings, so that what an assertion means does
+not depend on whether you are looking at the report with `--virtual`.
+To assert the balance that *does* include them, write `assert virtual`:
+
+``` centjes
+2025-01-27
+    | I bought a coffee.
+    * assets:cash -5.00 USD
+    * expenses:coffee 5.00 USD
+    ! expenses:vat 0.50 USD
+    + assert expenses:coffee = 5.00 USD
+    + assert virtual expenses:coffee = 5.00 USD
+    + assert virtual expenses:vat = 0.50 USD
+```
+
+An account declared `virtual-only` has no real balance at all, so a plain
+assertion on one is refused rather than being trivially true at zero.
+
 ### Tags
 
 Transactions can be tagged:

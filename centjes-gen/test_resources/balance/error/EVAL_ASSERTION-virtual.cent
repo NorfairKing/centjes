@@ -1,0 +1,13 @@
+currency CHF 0.01
+
+account assets:cash
+account liabilities:kids
+  + assert virtual-only
+account income:gifts
+
+2025-01-27
+  | The virtual assertion names the wrong amount
+  * assets:cash      +100.00 CHF
+  * income:gifts     -100.00 CHF
+  ! liabilities:kids  -50.00 CHF
+  + assert virtual liabilities:kids = -40.00 CHF

@@ -94,6 +94,7 @@ $alpha = [A-Za-z]
 @account = "account "
 @attach = "attach "
 @assert = "assert "
+@assert_virtual = "assert virtual "
 @tag = "tag "
 @price = "price "
 @lot = "lot "
@@ -160,6 +161,7 @@ tokens :-
 
 <0> @plus  { lex' TokenPlus `andBegin` extra }
 
+<extra> @assert_virtual     { lex' TokenAssertVirtual `andBegin` assertion }
 <extra> @assert             { lex' TokenAssert `andBegin` assertion }
 
 -- Account assertions
@@ -249,6 +251,7 @@ type Token = GenLocated SourceSpan TokenClass
 data TokenClass
   = TokenAttach
   | TokenAssert
+  | TokenAssertVirtual
   | TokenTag
   | TokenPrice
   | TokenLot

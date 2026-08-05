@@ -57,6 +57,7 @@ import qualified Data.Text as T
       tok_import          { Located _ TokenImport }
       tok_attach          { Located _ TokenAttach }
       tok_assert          { Located _ TokenAssert }
+      tok_assert_virtual  { Located _ TokenAssertVirtual }
       tok_tag             { Located _ TokenTag }
       tok_price           { Located _ TokenPrice }
       tok_lot             { Located _ TokenLot }
@@ -232,13 +233,14 @@ attachment
   :: { LAttachment }
   : rel_file_exp { sL1 $1 $ Attachment $1 }
 
+-- Note: The scope is only known from the keyword, so each keyword builds the
+-- assertion itself rather than fixing up one built without it.
 extra_assertion
   :: { LExtraAssertion }
-  : tok_assert assertion { sBE $1 $2 $ ExtraAssertion $2 }
-
-assertion
-  :: { LAssertion }
-  : account_name tok_eq account_exp commodity_exp { sBE $1 $4 $ AssertionEquals $1 $3 $4 }
+  : tok_assert account_name tok_eq account_exp commodity_exp
+      { sBE $1 $5 $ ExtraAssertion (sBE $2 $5 $ AssertionEquals AssertionScopeReal $2 $4 $5) }
+  | tok_assert_virtual account_name tok_eq account_exp commodity_exp
+      { sBE $1 $5 $ ExtraAssertion (sBE $2 $5 $ AssertionEquals AssertionScopeVirtual $2 $4 $5) }
 
 commodity_exp
   :: { LCommodityExpression }

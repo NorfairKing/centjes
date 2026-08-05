@@ -152,7 +152,8 @@ genAssertionWith accounts currencies = do
   an <- genLocatedWith $ chooseAccountName accounts
   acc <- genValid
   cur <- genLocatedWith $ chooseCommodity currencies
-  pure $ AssertionEquals an acc cur
+  scope <- genValid
+  pure $ AssertionEquals scope an acc cur
 
 instance (Eq ann, GenValid ann) => GenValid (Price ann)
 

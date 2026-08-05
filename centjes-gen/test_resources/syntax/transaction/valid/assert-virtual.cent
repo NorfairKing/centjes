@@ -1,0 +1,5 @@
+2025-01-27
+  | A virtual assertion
+  * assets:cash 100.00 CHF
+  * income:gifts -100.00 CHF
+  + assert virtual liabilities:kids = -50.00 CHF

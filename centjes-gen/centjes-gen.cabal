@@ -10,6 +10,8 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
+    test_resources/balance/balanced/assert-virtual.cent
+    test_resources/balance/balanced/assert-virtual.txt
     test_resources/balance/balanced/conversion-daily.cent
     test_resources/balance/balanced/conversion-daily.config
     test_resources/balance/balanced/conversion-daily.txt
@@ -171,6 +173,8 @@ extra-source-files:
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.err
     test_resources/balance/error/EVAL_ACCOUNT_TYPE_ASSERTION-lot.cent
     test_resources/balance/error/EVAL_ACCOUNT_TYPE_ASSERTION-lot.err
+    test_resources/balance/error/EVAL_ASSERTION-virtual.cent
+    test_resources/balance/error/EVAL_ASSERTION-virtual.err
     test_resources/balance/show-virtual-price.cent
     test_resources/check/2025-01-02.txt
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.cent
@@ -237,10 +241,14 @@ extra-source-files:
     test_resources/compile/CE_LOT_SAME_CURRENCY.err
     test_resources/compile/CE_PRICE_SAME_CURRENCY.cent
     test_resources/compile/CE_PRICE_SAME_CURRENCY.err
+    test_resources/compile/CE_REAL_ASSERTION_NOT_ALLOWED.cent
+    test_resources/compile/CE_REAL_ASSERTION_NOT_ALLOWED.err
     test_resources/compile/CE_REAL_POSTING_NOT_ALLOWED.cent
     test_resources/compile/CE_REAL_POSTING_NOT_ALLOWED.err
     test_resources/compile/CE_TAG_TOO_SIMILAR.cent
     test_resources/compile/CE_TAG_TOO_SIMILAR.err
+    test_resources/compile/CE_UNDECLARED_ACCOUNT-assertion.cent
+    test_resources/compile/CE_UNDECLARED_ACCOUNT-assertion.err
     test_resources/compile/CE_UNDECLARED_ACCOUNT.cent
     test_resources/compile/CE_UNDECLARED_ACCOUNT.err
     test_resources/compile/CE_UNDECLARED_CURRENCY-account-assertion.cent
@@ -550,6 +558,7 @@ extra-source-files:
     test_resources/syntax/module/valid/multiple-currencies.cent
     test_resources/syntax/module/valid/multiple-imports.cent
     test_resources/syntax/module/valid/without-newline-inbetween.cent
+    test_resources/syntax/transaction/formatted/assert-virtual.cent
     test_resources/syntax/transaction/formatted/btc-coffee.cent
     test_resources/syntax/transaction/formatted/currency-conversion-fraction.cent
     test_resources/syntax/transaction/formatted/currency-conversion.cent
@@ -569,6 +578,7 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/with-percentage-fraction.cent
     test_resources/syntax/transaction/formatted/with-percentage.cent
     test_resources/syntax/transaction/formatted/with-tag.cent
+    test_resources/syntax/transaction/valid/assert-virtual.cent
     test_resources/syntax/transaction/valid/btc-coffee.cent
     test_resources/syntax/transaction/valid/currency-conversion-fraction.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
@@ -588,6 +598,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
     test_resources/syntax/transaction/valid/with-tag.cent
+    test_resources/virtual/both-scopes.cent
 
 source-repository head
   type: git
@@ -664,6 +675,7 @@ test-suite centjes-test
       Centjes.TagSpec
       Centjes.TimestampSpec
       Centjes.TypoSpec
+      Centjes.VirtualAssertionSpec
       Paths_centjes_gen
   hs-source-dirs:
       test

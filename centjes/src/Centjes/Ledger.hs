@@ -13,6 +13,7 @@ module Centjes.Ledger
     Price (..),
     Transaction (..),
     Assertion (..),
+    AssertionScope (..),
     Description (..),
     Posting (..),
     PostingPrice (..),
@@ -40,7 +41,7 @@ where
 import Centjes.AccountName (AccountName (..))
 import Centjes.AccountType (AccountType (..))
 import Centjes.Location
-import Centjes.Module (Attachment (..), CurrencySymbol (..), Description (..))
+import Centjes.Module (AssertionScope (..), Attachment (..), CurrencySymbol (..), Description (..))
 import Centjes.Tag
 import Centjes.Timestamp as Timestamp
 import Data.Function
@@ -127,7 +128,7 @@ instance (Validity ann, Ord ann) => Validity (Ledger ann) where
                           tag `S.member` tagsSet,
                       decorateList (V.toList transactionAssertions) $ \(Located _ assertion) ->
                         case assertion of
-                          AssertionEquals (Located _ accountName) _ (Located _ commodity) ->
+                          AssertionEquals _ (Located _ accountName) _ (Located _ commodity) ->
                             mconcat
                               [ declare "The posting's account name is in the accounts map" $
                                   accountName `S.member` accountsSet,
@@ -209,6 +210,7 @@ instance (Validity ann, Ord ann) => Validity (Transaction ann)
 
 data Assertion ann
   = AssertionEquals
+      !AssertionScope
       !(GenLocated ann AccountName)
       -- Note: This field will have the source location of the decimal literal that defined it.
       !(GenLocated ann Money.Account)

@@ -342,8 +342,13 @@ extraAttachmentDoc (ExtraAttachment (Located _ (Attachment (Located _ fp)))) =
     <+> pretty (fromRelFile fp)
 
 extraAssertionDoc :: ExtraAssertion l -> Doc SyntaxElement
-extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) lce))) =
-  annotate SyntaxKeyword "assert"
+extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals scope an (Located _ dl) lce))) =
+  annotate
+    SyntaxKeyword
+    ( case scope of
+        AssertionScopeReal -> "assert"
+        AssertionScopeVirtual -> "assert virtual"
+    )
     <+> lAccountNameDoc an
     <+> "="
     <+> accountDoc dl

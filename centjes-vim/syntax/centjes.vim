@@ -3,6 +3,7 @@ syntax match Comment     /--.*$/
 syntax match Title       /^\d\d\d\d-\d\d-\d\d/
 syntax match Keyword     /\V+ tag/
 syntax match Keyword     /\V+ assert/
+syntax match Keyword     /\V+ assert virtual/
 syntax match Keyword     /\V+ attach/
 syntax match Keyword     /\Vimport/
 syntax match Keyword     /\Vaccount/

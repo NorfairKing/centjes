@@ -56,8 +56,8 @@ module Centjes.Module
     Attachment (..),
     LExtraAssertion,
     ExtraAssertion (..),
-    LAssertion,
     Assertion (..),
+    AssertionScope (..),
     LCommodityExpression,
     CommodityExpression (..),
     commodityExpressionCurrencySymbol,
@@ -410,8 +410,9 @@ stripExtraAssertionAnnotation :: ExtraAssertion ann -> ExtraAssertion ()
 stripExtraAssertionAnnotation (ExtraAssertion (Located _ a)) = ExtraAssertion (noLoc (stripAssertionAnnotation a))
 
 stripAssertionAnnotation :: Assertion ann -> Assertion ()
-stripAssertionAnnotation (AssertionEquals (Located _ an) (Located _ dl) (Located _ ce)) =
+stripAssertionAnnotation (AssertionEquals scope (Located _ an) (Located _ dl) (Located _ ce)) =
   AssertionEquals
+    scope
     (noLoc an)
     (noLoc dl)
     (noLoc (stripCommodityExpressionAnnotation ce))
@@ -642,8 +643,6 @@ newtype ExtraAssertion ann = ExtraAssertion {unExtraAssertion :: GenLocated ann 
 
 instance (Validity ann) => Validity (ExtraAssertion ann)
 
-type LAssertion = LLocated Assertion
-
 -- | Assertion
 --
 -- @
@@ -657,12 +656,26 @@ type LAssertion = LLocated Assertion
 -- @
 data Assertion ann
   = AssertionEquals
+      !AssertionScope
       !(GenLocated ann AccountName)
       !(GenLocated ann DecimalLiteral)
       !(GenLocated ann (CommodityExpression ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (Assertion ann)
+
+-- | Which balance an assertion is checked against.
+--
+-- The keyword names the view, not the kind of account: this is the exact mirror
+-- of the @--virtual@ flag, same account, other view.
+data AssertionScope
+  = -- | @+ assert@, checked against real postings only.
+    AssertionScopeReal
+  | -- | @+ assert virtual@, checked against real and virtual postings.
+    AssertionScopeVirtual
+  deriving stock (Show, Eq, Generic)
+
+instance Validity AssertionScope
 
 type LCommodityExpression = LLocated CommodityExpression
 

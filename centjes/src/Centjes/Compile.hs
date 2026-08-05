@@ -77,6 +77,7 @@ data CompileError ann
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   | CompileErrorVirtualPostingNotAllowed !ann !ann !ann !ann !(GenLocated ann AccountName)
   | CompileErrorRealPostingNotAllowed !ann !ann !ann !ann
+  | CompileErrorRealAssertionNotAllowed !ann !ann !ann !ann
   | CompileErrorAccountVirtualDeclaredTwice !ann !ann
   deriving (Show, Generic)
 
@@ -375,6 +376,16 @@ instance ToReport (CompileError SourceSpan) where
           (toDiagnosePosition tl, Where "In this transaction")
         ]
         []
+    CompileErrorRealAssertionNotAllowed tl el anl adl ->
+      Err
+        (Just "CE_REAL_ASSERTION_NOT_ALLOWED")
+        "Plain assertion on an account that only allows virtual postings"
+        [ (toDiagnosePosition anl, This "This account only allows virtual postings, so its real balance is always empty."),
+          (toDiagnosePosition adl, Where "Declared to be virtual-only here"),
+          (toDiagnosePosition el, Where "While trying to compile this assertion"),
+          (toDiagnosePosition tl, Where "in this transaction")
+        ]
+        [Hint "Use '+ assert virtual' to assert the balance that includes virtual postings."]
     CompileErrorAccountVirtualDeclaredTwice l1 l2 ->
       Err
         (Just "CE_DUPLICATE_ACCOUNT_VIRTUAL")
@@ -745,7 +756,7 @@ compileTransaction currencies accounts tags (Located l mt) = do
       (Module.transactionPostings mt)
   let transactionPostings = V.fromList postings
   let prices = concatMap (compilePostingPrices transactionTimestamp) postings
-  TransactionExtras {..} <- compileTransactionExtras currencies tags l (Module.transactionExtras mt)
+  TransactionExtras {..} <- compileTransactionExtras currencies accounts tags l (Module.transactionExtras mt)
   let transactionAttachments = V.fromList $ DList.toList transactionExtraAttachments
   let transactionAssertions = V.fromList $ DList.toList transactionExtraAssertions
   let transactionTags = transactionExtraTags
@@ -811,26 +822,28 @@ instance Monoid (TransactionExtras ann) where
 
 compileTransactionExtras ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   Map Tag ann ->
   ann ->
   [GenLocated ann (TransactionExtra ann)] ->
   Validation
     (CompileError ann)
     (TransactionExtras ann)
-compileTransactionExtras currencies tags l = foldMap $ compileTransactionExtra currencies tags l
+compileTransactionExtras currencies accounts tags l = foldMap $ compileTransactionExtra currencies accounts tags l
 
 compileTransactionExtra ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   Map Tag ann ->
   ann ->
   GenLocated ann (TransactionExtra ann) ->
   Validation
     (CompileError ann)
     (TransactionExtras ann)
-compileTransactionExtra currencies tags l (Located _ e) = case e of
+compileTransactionExtra currencies accounts tags l (Located _ e) = case e of
   TransactionAssertion a ->
     (\ca -> mempty {transactionExtraAssertions = DList.singleton ca})
-      <$> compileTransactionAssertion currencies l a
+      <$> compileTransactionAssertion currencies accounts l a
   TransactionAttachment (Located _ (ExtraAttachment a)) ->
     pure $ mempty {transactionExtraAttachments = DList.singleton a}
   TransactionTag et ->
@@ -956,10 +969,18 @@ checkAccountVirtualAssertion tl pl al (Located adl Account {..}) lan isReal =
 
 compileTransactionAssertion ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Map AccountName (GenLocated ann (Account ann)) ->
   ann ->
   GenLocated ann (Module.ExtraAssertion ann) ->
   Validation (CompileError ann) (GenLocated ann (Ledger.Assertion ann))
-compileTransactionAssertion currencies tl (Located l (ExtraAssertion (Located _ (Module.AssertionEquals lan ldl (Located _ commodityExpression))))) = do
+compileTransactionAssertion currencies accounts tl (Located l (ExtraAssertion (Located _ (Module.AssertionEquals scope lan@(Located anl _) ldl (Located _ commodityExpression))))) = do
+  Located adl account <- compileAccountName accounts tl lan
+  -- A plain assertion on a virtual-only account is either trivially true at
+  -- zero or always false, because its real balance is empty by construction.
+  case (scope, accountVirtualPostingPolicy account) of
+    (Module.AssertionScopeReal, VirtualPostingPolicyOnly) ->
+      validationFailure $ CompileErrorRealAssertionNotAllowed tl l anl adl
+    _ -> pure ()
   lDeclared@(Located dcl declared) <-
     compileCurrencySymbol currencies tl (Module.commodityExpressionCurrencySymbol commodityExpression)
   lc <- case commodityExpression of
@@ -969,7 +990,7 @@ compileTransactionAssertion currencies tl (Located l (ExtraAssertion (Located _ 
       pure (Located lcl (CommodityLot lot))
   let lqf = commodityQuantisationFactor (locatedValue lc)
   la <- compileDecimalLiteral tl lqf ldl
-  pure (Located l (Ledger.AssertionEquals lan la lc))
+  pure (Located l (Ledger.AssertionEquals scope lan la lc))
 
 compileTag ::
   Map Tag ann ->

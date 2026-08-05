@@ -197,6 +197,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
                 ExtraAssertion $
                   noLoc $
                     AssertionEquals
+                      AssertionScopeReal
                       (noLoc assetsAccountName)
                       (noLoc bl)
                       (noLoc (CommodityExpressionCurrency (noLoc rowCurrency)))

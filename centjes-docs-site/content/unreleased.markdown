@@ -8,3 +8,14 @@
   See the syntax page for details.
 
   A currency can no longer be called `lot`.
+
+* `+ assert virtual`, which asserts the balance that includes virtual postings.
+  Plain `+ assert` still counts only real postings, so what an assertion means
+  does not depend on `--virtual`.
+  An account declared `virtual-only` had no assertable balance at all before
+  this.
+
+## Fixed
+
+* An assertion naming an account that was never declared used to pass silently.
+  It is now `CE_UNDECLARED_ACCOUNT`, like every other name in the language.

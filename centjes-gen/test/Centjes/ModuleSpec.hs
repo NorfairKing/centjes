@@ -11,6 +11,7 @@ spec :: Spec
 spec = do
   genValidSpec @(PriceAnnotation ())
   genValidSpec @(CommodityExpression ())
+  genValidSpec @AssertionScope
   genValidSpec @(Posting ())
   genValidSpec @(Transaction ())
   genValidSpec @(CurrencyDeclaration ())

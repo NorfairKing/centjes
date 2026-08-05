@@ -1,0 +1,10 @@
+currency CHF 0.01
+
+account assets:cash
+account income:gifts
+
+2025-01-27
+  | The asserted account does not exist
+  * assets:cash  +100.00 CHF
+  * income:gifts -100.00 CHF
+  + assert assets:typoo = +0.00 CHF
