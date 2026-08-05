@@ -19,6 +19,7 @@ where
 
 import qualified Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
+import qualified Centjes.Comment as Comment
 import Centjes.Location
 import Centjes.Module
 import qualified Centjes.Tag as Tag
@@ -67,6 +68,31 @@ renderDocText :: Doc SyntaxElement -> Text
 renderDocText = renderStrict . layoutPretty layoutOptions
   where
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
+
+linesDoc :: [Doc SyntaxElement] -> Doc SyntaxElement
+linesDoc = mconcat . intersperse hardline
+
+-- | Lay out a declaration: its first line at the left margin, every line
+-- below it indented.
+blockDoc :: [Doc SyntaxElement] -> Doc SyntaxElement
+blockDoc = \case
+  [] -> mempty
+  (firstLineDoc : restLineDocs) ->
+    linesDoc $ firstLineDoc : map ("  " <>) restLineDocs
+
+-- | The lines of a piece of syntax: the comment written above it, then the
+-- syntax itself.
+commentedDocs :: (a -> [Doc SyntaxElement]) -> Commented l a -> [Doc SyntaxElement]
+commentedDocs func (Commented (Located _ value) mCommentAbove) =
+  concat
+    [ maybe [] (commentDocs . locatedValue) mCommentAbove,
+      func value
+    ]
+
+-- | One line per @--@ line the comment was written as.
+commentDocs :: Comment -> [Doc SyntaxElement]
+commentDocs =
+  map (\lineText -> annotate SyntaxComment ("--" <+> pretty lineText)) . Comment.commentLines
 
 moduleDoc :: Module l -> Doc SyntaxElement
 moduleDoc Module {..} =
@@ -136,19 +162,12 @@ importDoc (Import (Located _ fp)) =
 
 declarationDoc :: Declaration l -> Doc SyntaxElement
 declarationDoc = \case
-  DeclarationComment t -> commentDoc t
+  DeclarationComment t -> linesDoc (commentDocs (locatedValue t))
   DeclarationCurrency cd -> lCurrencyDeclarationDoc cd
   DeclarationAccount ad -> lAccountDeclarationDoc ad
   DeclarationTag ad -> lTagDeclarationDoc ad
   DeclarationPrice pd -> lPriceDeclarationDoc pd
   DeclarationTransaction t -> transactionDecDoc t
-
-commentDoc :: GenLocated l Text -> Doc SyntaxElement
-commentDoc (Located _ t) =
-  annotate SyntaxComment $
-    let ls = if T.null t then [""] else T.lines t
-        commentLine l = "--" <+> pretty l
-     in mconcat $ map commentLine ls
 
 lCurrencyDeclarationDoc :: GenLocated l (CurrencyDeclaration l) -> Doc SyntaxElement
 lCurrencyDeclarationDoc = currencyDeclarationDoc . locatedValue
@@ -167,19 +186,18 @@ lAccountDeclarationDoc = accountDeclarationDoc . locatedValue
 
 accountDeclarationDoc :: AccountDeclaration l -> Doc SyntaxElement
 accountDeclarationDoc AccountDeclaration {..} =
-  mconcat $
-    intersperse hardline $
-      concat
-        [ [ maybe
-              id
-              (\at -> (<+> lAccountTypeDoc at))
-              accountDeclarationType
-              ( annotate SyntaxKeyword "account"
-                  <+> lAccountNameDoc accountDeclarationName
-              )
-          ],
-          map (("  " <>) . accountExtraDoc . locatedValue) accountDeclarationExtras
-        ]
+  blockDoc $
+    concat
+      [ [ maybe
+            id
+            (\at -> (<+> lAccountTypeDoc at))
+            accountDeclarationType
+            ( annotate SyntaxKeyword "account"
+                <+> lAccountNameDoc accountDeclarationName
+            )
+        ],
+        concatMap (commentedDocs (\ae -> [accountExtraDoc ae])) accountDeclarationExtras
+      ]
 
 accountExtraDoc :: AccountExtra l -> Doc SyntaxElement
 accountExtraDoc =
@@ -239,29 +257,22 @@ transactionDecDoc = transactionDoc . locatedValue
 
 transactionDoc :: Transaction l -> Doc SyntaxElement
 transactionDoc Transaction {..} =
-  mconcat $
-    intersperse hardline $
-      concat
-        [ [lTimestampDoc transactionTimestamp],
-          map ("  " <>) $ maybe [] descriptionDocs transactionDescription,
-          map
-            ( ("  " <>)
-                . postingDocHelper
-                  (Just maxAccountNameWidth)
-                  (Just maxAccountWidth)
-                  (Just maxAccountDecimals)
-                . locatedValue
-            )
-            transactionPostings,
-          map (("  " <>) . transactionExtraDoc . locatedValue) transactionExtras
-        ]
-  where
-    maxAccountNameWidth = foldMap (accountNameWidth . postingAccountName . locatedValue) transactionPostings
-    accountNameWidth = Max . T.length . AccountName.toText . locatedValue
-    maxAccountWidth = foldMap (accountWidth . postingAccount . locatedValue) transactionPostings
-    accountWidth = Max . charactersBeforeDot . locatedValue
-    maxAccountDecimals = foldMap (accountDecimals . postingAccount . locatedValue) transactionPostings
-    accountDecimals = Max . DecimalLiteral.digits . locatedValue
+  let postings = map (locatedValue . commentedValue) transactionPostings
+      maxAccountNameWidth = foldMap (Max . T.length . AccountName.toText . locatedValue . postingAccountName) postings
+      maxAccountWidth = foldMap (Max . charactersBeforeDot . locatedValue . postingAccount) postings
+      maxAccountDecimals = foldMap (Max . DecimalLiteral.digits . locatedValue . postingAccount) postings
+      postingDoc =
+        postingDocHelper
+          (Just maxAccountNameWidth)
+          (Just maxAccountWidth)
+          (Just maxAccountDecimals)
+   in blockDoc $
+        concat
+          [ [lTimestampDoc transactionTimestamp],
+            maybe [] (commentedDocs descriptionDocs) transactionDescription,
+            concatMap (commentedDocs (\posting -> [postingDoc posting])) transactionPostings,
+            concatMap (commentedDocs (\extra -> [transactionExtraDoc extra])) transactionExtras
+          ]
 
 lTimestampDoc :: GenLocated l Timestamp -> Doc SyntaxElement
 lTimestampDoc = timestampDoc . locatedValue
@@ -269,8 +280,8 @@ lTimestampDoc = timestampDoc . locatedValue
 timestampDoc :: Timestamp -> Doc SyntaxElement
 timestampDoc = annotate SyntaxTimestamp . pretty . Timestamp.toString
 
-descriptionDocs :: GenLocated l Description -> [Doc SyntaxElement]
-descriptionDocs = map (annotate SyntaxDescription . pretty . ("| " <>)) . T.lines . unDescription . locatedValue
+descriptionDocs :: Description -> [Doc SyntaxElement]
+descriptionDocs = map (annotate SyntaxDescription . pretty . ("| " <>)) . T.lines . unDescription
 
 postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc SyntaxElement
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =

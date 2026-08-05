@@ -1,5 +1,7 @@
 {
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS -w #-}
 module Centjes.Parse.Happy
   ( parseModule
@@ -13,6 +15,7 @@ module Centjes.Parse.Happy
 
 import Centjes.AccountName as AccountName
 import Centjes.AccountType as AccountType
+import Centjes.Comment (Comment(..))
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Description as Description
 import Centjes.Location
@@ -53,7 +56,8 @@ import qualified Data.Text as T
 %expect 0
 
 %token 
-      tok_doubledash      { Located _ TokenDoubleDash }
+      tok_comment             { Located _ (TokenComment _) }
+      tok_indented_comment    { Located _ (TokenIndentedComment _) }
       tok_import          { Located _ TokenImport }
       tok_attach          { Located _ TokenAttach }
       tok_assert          { Located _ TokenAssert }
@@ -86,25 +90,56 @@ import qualified Data.Text as T
 
 module
   :: { LModule }
-  : many(import_dec) many(declaration) { Module $1 $2 }
+  : many(import_dec) declarations { Module $1 $2 }
 
 import_dec
   :: { LImport }
   : tok_import rel_file_exp { sBE $1 $2 $ Import $2 }
 
+-- Note: A run of comment lines is one comment, and this is one chain of
+-- productions so that the run appears in one place per parser state.  Letting a
+-- list of declarations each start with a run instead is ambiguous: after one
+-- comment line, another one could extend the run or start the next declaration,
+-- and that is a shift/reduce conflict.
+declarations
+  :: { [LDeclaration] }
+  : comment_run { commentDeclarations $1 }
+  | comment_run non_comment_dec declarations { commentDeclarations $1 ++ ($2 : $3) }
+
+comment_run
+  :: { Maybe (Located Comment) }
+  : many(comment_line) { combineComments $1 }
+
+comment_line
+  :: { Located Comment }
+  : tok_comment { parseComment $1 }
+
 declaration
   :: { LDeclaration }
   : comment_dec { sL1 $1 $ DeclarationComment $1 }
-  | currency_dec { sL1 $1 $ DeclarationCurrency $1 }
+  | non_comment_dec { $1 }
+
+-- Note: Only reachable as the start symbol of 'parseDeclaration', so a comment
+-- line can only be followed by another one here, not by a next declaration.
+comment_dec
+  :: { Located Comment }
+  : some(comment_line) {% requireComments (NE.toList $1) }
+
+non_comment_dec
+  :: { LDeclaration }
+  : currency_dec { sL1 $1 $ DeclarationCurrency $1 }
   | account_dec { sL1 $1 $ DeclarationAccount $1 }
   | tag_dec { sL1 $1 $ DeclarationTag $1 }
   | price_dec { sL1 $1 $ DeclarationPrice $1 }
   | transaction_dec { sL1 $1 $ DeclarationTransaction $1 }
 
-comment_dec
-  :: { Located Text }
-  : tok_doubledash tok_anyline { parseAnyLine $2 }
-  | tok_doubledash  { sL1 $1 "" }
+indented_comments
+  :: { Maybe (Located Comment) }
+  : many(indented_comment) { combineComments $1 }
+
+indented_comment
+  :: { Located Comment }
+  : tok_indented_comment { parseComment $1 }
 
 currency_dec
   :: { LCurrencyDeclaration }
@@ -120,11 +155,16 @@ quantisation_factor
 
 account_dec
   :: { LAccountDeclaration }
-  : tok_account account_name optional(account_type) account_extras { sBEML $1 $2 $3 $4 $ AccountDeclaration $2 $3 $4 }
+  : tok_account account_name optional(account_type) account_extras { sBEML $1 $2 $3 (map commentedValue $4) $ AccountDeclaration $2 $3 $4 }
 
+-- Note: The comments above a line belong to it, so each line of a block is
+-- preceded by the comments written above it.  Any comments left over at the end
+-- of a block belong to no line and are a parse error.
 account_extras
-  :: { [LAccountExtra] }
-  : many(account_extra) { $1 }
+  :: { [Commented SourceSpan (AccountExtra SourceSpan)] }
+  : indented_comments {% noTrailingComments [] $1 }
+  | indented_comments account_extra account_extras
+      { Commented $2 $1 : $3 }
 
 account_extra
   :: { LAccountExtra }
@@ -157,16 +197,48 @@ conversion_rate
 
 transaction_dec
   :: { LTransaction }
-  : timestamp descriptions many(posting) transaction_extras { sBMLL $1 $2 $3 $4 (Transaction $1 $2 $3 $4) }
+  : timestamp transaction_lines
+      { mkTransaction $1 $2 }
 
 timestamp
   :: { Located Timestamp }
   : tok_timestamp {% parseTimestamp $1 }
 
-descriptions
-  :: { Maybe (Located Description) }
-  : { Nothing }
-  | some(description) { Just (combineDescriptions $1) }
+-- The lines below the timestamp line of a transaction.
+--
+-- Note: This is one chain of productions rather than three lists, because the
+-- comments above a line have to be read before it is known which kind of line
+-- follows them.  With a list per kind of line, the parser would have to decide
+-- which list a comment belongs to before reading past it, and an arbitrary
+-- number of comments can stand between it and the line that decides:
+-- descriptions/postings and postings/extras are both reduce/reduce conflicts
+-- that way.  Chaining keeps the comments in one place per parser state.
+transaction_lines
+  :: { TransactionLines SourceSpan }
+  : indented_comments {% noTrailingComments noTransactionLines $1 }
+  | indented_comments some(description) postings_and_extras
+      { let (postings, extras) = $3
+         in TransactionLines
+              (Just (Commented (combineDescriptions $2) $1))
+              postings
+              extras
+      }
+  | indented_comments posting postings_and_extras
+      { let (postings, extras) = $3
+         in TransactionLines Nothing (Commented $2 $1 : postings) extras
+      }
+  | indented_comments transaction_extra transaction_extras
+      { TransactionLines Nothing [] (Commented $2 $1 : $3) }
+
+postings_and_extras
+  :: { ([Commented SourceSpan (Posting SourceSpan)], [Commented SourceSpan (TransactionExtra SourceSpan)]) }
+  : indented_comments {% noTrailingComments ([], []) $1 }
+  | indented_comments posting postings_and_extras
+      { let (postings, extras) = $3
+         in (Commented $2 $1 : postings, extras)
+      }
+  | indented_comments transaction_extra transaction_extras
+      { ([], Commented $2 $1 : $3) }
 
 -- TODO get the location of the pipe char in there too.
 description
@@ -216,8 +288,10 @@ cost_exp
   : conversion_rate currency_symbol { sBE $1 $2 $ CostExpression $1 $2 }
 
 transaction_extras
-  :: { [LTransactionExtra] }
-  : many(transaction_extra) { $1 }
+  :: { [Commented SourceSpan (TransactionExtra SourceSpan)] }
+  : indented_comments {% noTrailingComments [] $1 }
+  | indented_comments transaction_extra transaction_extras
+      { Commented $2 $1 : $3 }
 
 transaction_extra
   :: { LTransactionExtra }
@@ -341,6 +415,63 @@ parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Times
 
 parseAnyLine :: Token -> Located Text
 parseAnyLine t@(Located _ (TokenAnyLine text)) = sL1 t text
+
+-- | The lines of a transaction below its timestamp line.
+data TransactionLines ann = TransactionLines
+  { transactionLinesDescription :: Maybe (Commented ann Description)
+  , transactionLinesPostings :: [Commented ann (Posting ann)]
+  , transactionLinesExtras :: [Commented ann (TransactionExtra ann)]
+  }
+
+noTransactionLines :: TransactionLines ann
+noTransactionLines = TransactionLines Nothing [] []
+
+-- A comment on a line of its own belongs to the line below it, so comments left
+-- over at the end of a block belong to no line at all.
+noTrailingComments :: a -> Maybe (Located Comment) -> Alex a
+noTrailingComments emptyValue = \case
+  Nothing -> pure emptyValue
+  Just (Located l _) ->
+    alexError' l "this comment has no line below it to belong to"
+
+mkTransaction ::
+  Located Timestamp ->
+  TransactionLines SourceSpan ->
+  LTransaction
+mkTransaction lTimestamp TransactionLines {..} =
+  sBMLL
+    lTimestamp
+    (fmap commentedValue transactionLinesDescription)
+    (map commentedValue transactionLinesPostings)
+    (map commentedValue transactionLinesExtras)
+    Transaction
+      { transactionTimestamp = lTimestamp
+      , transactionDescription = transactionLinesDescription
+      , transactionPostings = transactionLinesPostings
+      , transactionExtras = transactionLinesExtras
+      }
+
+parseComment :: Token -> Located Comment
+parseComment t = sL1 t $ Comment $ case locatedValue t of
+  TokenComment text -> text
+  TokenIndentedComment text -> text
+
+-- | A run of comment lines is one comment, of one line each.
+combineComments :: [Located Comment] -> Maybe (Located Comment)
+combineComments = \case
+  [] -> Nothing
+  (c : cs) -> Just $ sBL c cs $ Comment $ T.intercalate "\n" $ map (unComment . locatedValue) (c : cs)
+
+commentDeclarations :: Maybe (Located Comment) -> [LDeclaration]
+commentDeclarations = \case
+  Nothing -> []
+  Just lc -> [sL1 lc (DeclarationComment lc)]
+
+-- Note: 'some' guarantees the list is not empty, which the type does not.
+requireComments :: [Located Comment] -> Alex (Located Comment)
+requireComments cs = case combineComments cs of
+  Nothing -> alexError "Empty run of comment lines"
+  Just lc -> pure lc
 
 combineDescriptions :: NonEmpty (Located Description) -> Located Description
 combineDescriptions dss@(d:|ds) = sBL d ds $ sconcat (NE.map locatedValue dss)

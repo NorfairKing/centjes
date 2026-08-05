@@ -1,0 +1,1 @@
+test_resources/syntax/transaction/invalid/comment-between-descriptions.cent@3:3-3:55  this comment has no line below it to belong to

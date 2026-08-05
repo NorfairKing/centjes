@@ -1,0 +1,5 @@
+2026-06-05
+  * assets:cash -5 USD
+  * expenses:coffee 5 USD
+  -- Above the extra
+  + tag deductible

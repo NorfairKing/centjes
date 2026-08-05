@@ -1,0 +1,9 @@
+2026-06-05
+  -- Comment here
+  | Example description
+  -- Comment here as well
+  * assets -5 CHF
+  -- Comment here too
+  * expenses 5 CHF
+  -- Comment here too too
+  + assert expenses = 5 CHF

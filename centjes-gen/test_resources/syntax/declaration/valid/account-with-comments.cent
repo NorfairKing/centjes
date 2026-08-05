@@ -1,0 +1,5 @@
+account assets:bank
+  -- Above the first extra
+  + tag legal
+  -- Above the second extra
+  + assert currency USD

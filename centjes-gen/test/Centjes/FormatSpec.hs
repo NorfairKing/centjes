@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -33,6 +34,26 @@ spec = do
   describe "formatModule" $ do
     it "can format any module" $
       producesValid (formatModule @())
+
+    -- These have trailing whitespace that an editor would silently strip from
+    -- a test resource file, so they are written out here instead.
+    it "keeps the declaration below a comment whose text is only whitespace" $ do
+      here <- getCurrentDir
+      m <- shouldParse parseModule here [relfile|pure-test.cent|] "--  \ncurrency USD 0.01\n"
+      formatModule m `shouldBe` "-- \ncurrency USD 0.01\n"
+
+    -- The marker keeps its space, because a bare "--" is not a comment.
+    it "reads back a comment with no text" $ do
+      here <- getCurrentDir
+      m <- shouldParse parseModule here [relfile|pure-test.cent|] "-- \n"
+      formatModule m `shouldBe` "-- \n"
+
+    -- Two empty lines are one comment whose text is a single newline, which
+    -- 'Data.Text.lines' cannot tell apart from one empty line.
+    it "keeps both lines of a comment of two empty lines" $ do
+      here <- getCurrentDir
+      m <- shouldParse parseModule here [relfile|pure-test.cent|] "-- \n-- \n"
+      formatModule m `shouldBe` "-- \n-- \n"
 
   centFilesDirSpec "test_resources/load"
   centFilesDirSpec "test_resources/compile"

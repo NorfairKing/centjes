@@ -1,0 +1,3 @@
+account assets:bank
+  + tag legal
+  -- A comment belongs to the line below it, and there is no line below this one

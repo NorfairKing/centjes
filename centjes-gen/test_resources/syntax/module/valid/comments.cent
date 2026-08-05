@@ -1,0 +1,21 @@
+import foobar
+
+-- Comment on its own
+currency USD 100
+
+account equity:starting
+  -- Comment above the account extra
+  + tag legal
+account assets:cash
+account expenses:coffee
+
+tag legal
+
+price 2023-12-20 USD 1 USD
+
+2023-12-21
+  -- Comment above the description
+  | Opening
+  -- Comment above the first posting
+  * equity:starting -100 USD
+  * assets:cash 100 USD

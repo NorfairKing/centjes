@@ -122,7 +122,7 @@ rowTransaction ::
 rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName Row {..} = do
   let transactionTimestamp = noLoc $ TimestampDay rowDate
       transactionDescription =
-        noLoc
+        noCommentsOn
           <$> Description.combine
             ( filter
                 (not . T.null . unDescription)
@@ -146,7 +146,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
   let assetsAccount = Account.negate expensesAccount
   assetsLiteral <- toLiteral assetsAccount
   let mkPosting accountName literal =
-        noLoc
+        noCommentsOn
           Posting
             { postingReal = True,
               postingAccountName = noLoc accountName,

@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           centjes-gen
-version:        0.0.0.0
+version:        0.1.0.0
 homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
@@ -512,6 +512,8 @@ extra-source-files:
     test_resources/register/valid/zero-amount-convert.txt
     test_resources/syntax/declaration/formatted/account-with-assertions.cent
     test_resources/syntax/declaration/formatted/account-with-attachment.cent
+    test_resources/syntax/declaration/formatted/account-with-comment-above-extra.cent
+    test_resources/syntax/declaration/formatted/account-with-comments.cent
     test_resources/syntax/declaration/formatted/account-with-no-virtual-assertion.cent
     test_resources/syntax/declaration/formatted/account-with-tag.cent
     test_resources/syntax/declaration/formatted/account-with-type.cent
@@ -524,8 +526,12 @@ extra-source-files:
     test_resources/syntax/declaration/formatted/signed.cent
     test_resources/syntax/declaration/formatted/tag.cent
     test_resources/syntax/declaration/formatted/transaction.cent
+    test_resources/syntax/declaration/invalid/account-trailing-comment.cent
+    test_resources/syntax/declaration/invalid/account-trailing-comment.error
     test_resources/syntax/declaration/valid/account-with-assertions.cent
     test_resources/syntax/declaration/valid/account-with-attachment.cent
+    test_resources/syntax/declaration/valid/account-with-comment-above-extra.cent
+    test_resources/syntax/declaration/valid/account-with-comments.cent
     test_resources/syntax/declaration/valid/account-with-no-virtual-assertion.cent
     test_resources/syntax/declaration/valid/account-with-tag.cent
     test_resources/syntax/declaration/valid/account-with-type.cent
@@ -539,19 +545,29 @@ extra-source-files:
     test_resources/syntax/declaration/valid/tag.cent
     test_resources/syntax/declaration/valid/transaction.cent
     test_resources/syntax/module/formatted/aligned-amounts.cent
+    test_resources/syntax/module/formatted/comment-after-transaction.cent
     test_resources/syntax/module/formatted/commented-transaction.cent
+    test_resources/syntax/module/formatted/comments.cent
     test_resources/syntax/module/formatted/empty.cent
     test_resources/syntax/module/formatted/example.cent
+    test_resources/syntax/module/formatted/import-with-spaces.cent
     test_resources/syntax/module/formatted/import.cent
     test_resources/syntax/module/formatted/multiline-comment.cent
     test_resources/syntax/module/formatted/multiple-accounts.cent
     test_resources/syntax/module/formatted/multiple-currencies.cent
     test_resources/syntax/module/formatted/multiple-imports.cent
     test_resources/syntax/module/formatted/without-newline-inbetween.cent
+    test_resources/syntax/module/invalid/indented-comment.cent
+    test_resources/syntax/module/invalid/indented-comment.error
+    test_resources/syntax/module/invalid/orphan-comment-before-declaration.cent
+    test_resources/syntax/module/invalid/orphan-comment-before-declaration.error
     test_resources/syntax/module/valid/aligned-amounts.cent
+    test_resources/syntax/module/valid/comment-after-transaction.cent
     test_resources/syntax/module/valid/commented-transaction.cent
+    test_resources/syntax/module/valid/comments.cent
     test_resources/syntax/module/valid/empty.cent
     test_resources/syntax/module/valid/example.cent
+    test_resources/syntax/module/valid/import-with-spaces.cent
     test_resources/syntax/module/valid/import.cent
     test_resources/syntax/module/valid/multiline-comment.cent
     test_resources/syntax/module/valid/multiple-accounts.cent
@@ -559,9 +575,19 @@ extra-source-files:
     test_resources/syntax/module/valid/multiple-imports.cent
     test_resources/syntax/module/valid/without-newline-inbetween.cent
     test_resources/syntax/transaction/formatted/assert-virtual.cent
+    test_resources/syntax/transaction/formatted/attachment-with-dashes.cent
+    test_resources/syntax/transaction/formatted/attachment-with-spaces.cent
     test_resources/syntax/transaction/formatted/btc-coffee.cent
+    test_resources/syntax/transaction/formatted/comment-above-description.cent
+    test_resources/syntax/transaction/formatted/comment-above-extra-without-postings.cent
+    test_resources/syntax/transaction/formatted/comment-above-extra.cent
+    test_resources/syntax/transaction/formatted/comment-above-first-posting.cent
+    test_resources/syntax/transaction/formatted/comment-above-posting.cent
+    test_resources/syntax/transaction/formatted/comments-above-in-a-row.cent
     test_resources/syntax/transaction/formatted/currency-conversion-fraction.cent
     test_resources/syntax/transaction/formatted/currency-conversion.cent
+    test_resources/syntax/transaction/formatted/description-starting-with-double-dash.cent
+    test_resources/syntax/transaction/formatted/description-with-double-dash.cent
     test_resources/syntax/transaction/formatted/example.cent
     test_resources/syntax/transaction/formatted/lot-fraction.cent
     test_resources/syntax/transaction/formatted/lot-sale.cent
@@ -575,13 +601,32 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/timestamp-with-second.cent
     test_resources/syntax/transaction/formatted/with-assertion.cent
     test_resources/syntax/transaction/formatted/with-attachment.cent
+    test_resources/syntax/transaction/formatted/with-comments.cent
     test_resources/syntax/transaction/formatted/with-percentage-fraction.cent
     test_resources/syntax/transaction/formatted/with-percentage.cent
     test_resources/syntax/transaction/formatted/with-tag.cent
+    test_resources/syntax/transaction/invalid/comment-between-descriptions.cent
+    test_resources/syntax/transaction/invalid/comment-between-descriptions.error
+    test_resources/syntax/transaction/invalid/end-of-line-comment.cent
+    test_resources/syntax/transaction/invalid/end-of-line-comment.error
+    test_resources/syntax/transaction/invalid/trailing-comment-after-timestamp.cent
+    test_resources/syntax/transaction/invalid/trailing-comment-after-timestamp.error
+    test_resources/syntax/transaction/invalid/trailing-comment.cent
+    test_resources/syntax/transaction/invalid/trailing-comment.error
     test_resources/syntax/transaction/valid/assert-virtual.cent
+    test_resources/syntax/transaction/valid/attachment-with-dashes.cent
+    test_resources/syntax/transaction/valid/attachment-with-spaces.cent
     test_resources/syntax/transaction/valid/btc-coffee.cent
+    test_resources/syntax/transaction/valid/comment-above-description.cent
+    test_resources/syntax/transaction/valid/comment-above-extra-without-postings.cent
+    test_resources/syntax/transaction/valid/comment-above-extra.cent
+    test_resources/syntax/transaction/valid/comment-above-first-posting.cent
+    test_resources/syntax/transaction/valid/comment-above-posting.cent
+    test_resources/syntax/transaction/valid/comments-above-in-a-row.cent
     test_resources/syntax/transaction/valid/currency-conversion-fraction.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
+    test_resources/syntax/transaction/valid/description-starting-with-double-dash.cent
+    test_resources/syntax/transaction/valid/description-with-double-dash.cent
     test_resources/syntax/transaction/valid/example.cent
     test_resources/syntax/transaction/valid/lot-fraction.cent
     test_resources/syntax/transaction/valid/lot-sale.cent
@@ -595,6 +640,7 @@ extra-source-files:
     test_resources/syntax/transaction/valid/timestamp-with-second.cent
     test_resources/syntax/transaction/valid/with-assertion.cent
     test_resources/syntax/transaction/valid/with-attachment.cent
+    test_resources/syntax/transaction/valid/with-comments.cent
     test_resources/syntax/transaction/valid/with-percentage-fraction.cent
     test_resources/syntax/transaction/valid/with-percentage.cent
     test_resources/syntax/transaction/valid/with-tag.cent
@@ -609,6 +655,7 @@ library
       Centjes.AccountName.Gen
       Centjes.AccountType.Gen
       Centjes.Block.Gen
+      Centjes.Comment.Gen
       Centjes.Convert.PriceGraph.Gen
       Centjes.CurrencySymbol.Gen
       Centjes.Description.Gen
@@ -653,6 +700,7 @@ test-suite centjes-test
       Centjes.AccountNameSpec
       Centjes.AccountTypeSpec
       Centjes.Command.FormatSpec
+      Centjes.CommentSpec
       Centjes.CompileSpec
       Centjes.Convert.MemoisedPriceGraphSpec
       Centjes.Convert.PriceGraphSpec

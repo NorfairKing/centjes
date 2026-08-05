@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -13,6 +14,9 @@ module Centjes.Module
     Import (..),
     LDeclaration,
     Declaration (..),
+    Comment (..),
+    Commented (..),
+    noCommentsOn,
     LCurrencyDeclaration,
     CurrencyDeclaration (..),
     CurrencySymbol (..),
@@ -74,6 +78,7 @@ where
 import Autodocodec
 import Centjes.AccountName
 import Centjes.AccountType
+import Centjes.Comment
 import Centjes.CurrencySymbol
 import Centjes.Description
 import Centjes.Location
@@ -82,7 +87,6 @@ import Centjes.Timestamp
 import Control.Arrow (left)
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Text (Text)
 import Data.Validity
 import Data.Validity.Path ()
 import Data.Validity.Text ()
@@ -124,7 +128,7 @@ data Declaration ann
     -- @
     -- -- This is a comment
     -- @
-    DeclarationComment !(GenLocated ann Text)
+    DeclarationComment !(GenLocated ann Comment)
   | -- | Currency declaration
     --
     -- @
@@ -164,6 +168,34 @@ data Declaration ann
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (Declaration ann)
+
+-- | A line of syntax, with the comment written above it.
+--
+-- A comment is a run of lines of its own.  An indented one belongs to the line
+-- below it, so a comment at the end of a block belongs to no line at all and is
+-- a parse error.  One at the first column is a 'DeclarationComment' instead, so
+-- the lines that a declaration cannot contain (an @import@, a @currency@, a
+-- @tag@, a @price@, an @account@ line and a timestamp line) hold no comment of
+-- their own.
+--
+-- @
+--   -- Comment here
+--   * assets -5 USD
+-- @
+data Commented ann a = Commented
+  { commentedValue :: !(GenLocated ann a),
+    commentedCommentAbove :: !(Maybe (GenLocated ann Comment))
+  }
+  deriving stock (Show, Generic, Functor)
+
+instance (Validity ann, Validity a) => Validity (Commented ann a)
+
+noCommentsOn :: a -> Commented () a
+noCommentsOn a =
+  Commented
+    { commentedValue = noLoc a,
+      commentedCommentAbove = Nothing
+    }
 
 type LImport = LLocated Import
 
@@ -208,7 +240,7 @@ type LAccountDeclaration = LLocated AccountDeclaration
 data AccountDeclaration ann = AccountDeclaration
   { accountDeclarationName :: !(GenLocated ann AccountName),
     accountDeclarationType :: !(Maybe (GenLocated ann AccountType)),
-    accountDeclarationExtras :: ![GenLocated ann (AccountExtra ann)]
+    accountDeclarationExtras :: ![Commented ann (AccountExtra ann)]
   }
   deriving stock (Show, Generic)
 
@@ -264,7 +296,7 @@ type LTagDeclaration = LLocated TagDeclaration
 -- @
 -- deductible
 -- @
-newtype TagDeclaration ann = TagDeclaration
+data TagDeclaration ann = TagDeclaration
   { tagDeclarationTag :: GenLocated ann Tag
   }
   deriving stock (Show, Generic)
@@ -307,6 +339,13 @@ stripPriceDeclarationAnnotation PriceDeclaration {..} =
           priceDeclarationCost = noLoc (stripCostExpressionAnnotation costExpression)
         }
 
+stripCommentedAnnotation :: (a -> b) -> Commented ann a -> Commented () b
+stripCommentedAnnotation func Commented {..} =
+  Commented
+    { commentedValue = noLoc (func (locatedValue commentedValue)),
+      commentedCommentAbove = fmap (noLoc . locatedValue) commentedCommentAbove
+    }
+
 stripCostExpressionAnnotation :: CostExpression ann -> CostExpression ()
 stripCostExpressionAnnotation CostExpression {..} =
   let Located _ conversionRate = costExpressionConversionRate
@@ -344,7 +383,7 @@ stripAccountDeclarationAnnotation AccountDeclaration {..} =
   AccountDeclaration
     { accountDeclarationName = noLoc (locatedValue accountDeclarationName),
       accountDeclarationType = fmap (noLoc . locatedValue) accountDeclarationType,
-      accountDeclarationExtras = map (noLoc . stripAccountExtraAnnotation . locatedValue) accountDeclarationExtras
+      accountDeclarationExtras = map (stripCommentedAnnotation stripAccountExtraAnnotation) accountDeclarationExtras
     }
 
 stripAccountExtraAnnotation :: AccountExtra ann -> AccountExtra ()
@@ -364,9 +403,9 @@ stripTransactionAnnotation :: Transaction ann -> Transaction ()
 stripTransactionAnnotation Transaction {..} =
   Transaction
     { transactionTimestamp = noLoc (locatedValue transactionTimestamp),
-      transactionDescription = fmap (noLoc . locatedValue) transactionDescription,
-      transactionPostings = map (noLoc . stripPostingAnnotation . locatedValue) transactionPostings,
-      transactionExtras = map (noLoc . stripTransactionExtraAnnotation . locatedValue) transactionExtras
+      transactionDescription = fmap (stripCommentedAnnotation id) transactionDescription,
+      transactionPostings = map (stripCommentedAnnotation stripPostingAnnotation) transactionPostings,
+      transactionExtras = map (stripCommentedAnnotation stripTransactionExtraAnnotation) transactionExtras
     }
 
 stripPostingAnnotation :: Posting ann -> Posting ()
@@ -439,11 +478,15 @@ type LTransaction = LLocated Transaction
 --   + tag deductible
 --   + assert assets = 0 USD
 -- @
+--
+-- Every line below the timestamp line can carry comments above it.
+-- The timestamp line cannot: a comment above a transaction is not indented, so
+-- it is a comment declaration.
 data Transaction ann = Transaction
   { transactionTimestamp :: !(GenLocated ann Timestamp),
-    transactionDescription :: !(Maybe (GenLocated ann Description)),
-    transactionPostings :: ![GenLocated ann (Posting ann)],
-    transactionExtras :: ![GenLocated ann (TransactionExtra ann)]
+    transactionDescription :: !(Maybe (Commented ann Description)),
+    transactionPostings :: ![Commented ann (Posting ann)],
+    transactionExtras :: ![Commented ann (TransactionExtra ann)]
   }
   deriving stock (Show, Generic)
 
@@ -453,7 +496,7 @@ transactionCurrencySymbols :: Transaction ann -> Set CurrencySymbol
 transactionCurrencySymbols Transaction {..} =
   S.unions $
     map
-      ( \(Located _ Posting {..}) ->
+      ( \(Commented (Located _ Posting {..}) _) ->
           S.unions
             [ S.singleton (locatedValue postingCurrencySymbol),
               maybe

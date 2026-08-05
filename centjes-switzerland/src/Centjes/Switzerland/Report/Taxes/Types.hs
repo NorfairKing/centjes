@@ -810,7 +810,7 @@ instance ToReport (TaxesError SourceSpan) where
                           AccountDeclaration
                             { accountDeclarationName = noLoc an,
                               accountDeclarationType = Nothing,
-                              accountDeclarationExtras = [noLoc $ AccountExtraTag $ noLoc $ ExtraTag $ noLoc "undeclared"]
+                              accountDeclarationExtras = [noCommentsOn $ AccountExtraTag $ noLoc $ ExtraTag $ noLoc "undeclared"]
                             }
               ]
         ]
@@ -833,7 +833,7 @@ instance ToReport (TaxesError SourceSpan) where
                           AccountDeclaration
                             { accountDeclarationName = noLoc an,
                               accountDeclarationType = Nothing,
-                              accountDeclarationExtras = [noLoc $ AccountExtraTag $ noLoc $ ExtraTag $ noLoc "undeclared"]
+                              accountDeclarationExtras = [noCommentsOn $ AccountExtraTag $ noLoc $ ExtraTag $ noLoc "undeclared"]
                             }
               ]
         ]
@@ -894,9 +894,9 @@ instance ToReport (TaxesError SourceSpan) where
                         noLoc $
                           Syntax.Transaction
                             { transactionTimestamp = noLoc $ TimestampDay $ fromGregorian (year - 1) 12 31,
-                              transactionDescription = Just $ noLoc $ Description "Opening balance",
+                              transactionDescription = Just $ noCommentsOn $ Description "Opening balance",
                               transactionPostings =
-                                [ noLoc $
+                                [ noCommentsOn $
                                     Syntax.Posting
                                       { postingReal = True,
                                         postingAccountName = noLoc "equity:starting",
@@ -905,7 +905,7 @@ instance ToReport (TaxesError SourceSpan) where
                                         postingPrice = Nothing,
                                         postingRatio = Nothing
                                       },
-                                  noLoc $
+                                  noCommentsOn $
                                     Syntax.Posting
                                       { postingReal = True,
                                         postingAccountName = noLoc an,

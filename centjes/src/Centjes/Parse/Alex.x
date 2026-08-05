@@ -78,8 +78,18 @@ $alpha = [A-Za-z]
     @day
   | @day \  @time_of_day
 
+-- Note: The '.' makes this "any character but a newline", so a file path runs
+-- to the end of its line.
 @file_path = [$alpha $digit \_ \- \: .]+
 @anyline = [^\n\r]+
+
+-- A comment is a line of its own, and runs to the end of it.
+--
+-- It is one token rather than a "--" that switches to a comment start code,
+-- because the rest of the line can be empty: a rule for it cannot match, so
+-- '$white+' would match the newline instead and leave the lexer in the comment
+-- start code, reading the next declaration as comment text.
+@line_comment = "--" \  [^\n\r\f]*
 
 @pipe = "| "
 @star = "* "
@@ -99,21 +109,22 @@ $alpha = [A-Za-z]
 @price = "price "
 @lot = "lot "
 @eq = \=
-@doubledash = "-- "
 
 tokens :-
 
 -- The 0 start code means "toplevel declaration"
 
+-- Comments
+--
+-- Only in the 0 start code: a comment is a line of its own, and every start
+-- code returns to 0 at the end of a line, so that is the only place a comment
+-- can start.
+<0> @line_comment { lexComment }
+
 -- Imports
 -- Note: 'import' is not a valid haskell identifier so we use imp instead.
 <0> @import             { lex' TokenImport `andBegin` imp }
 <imp> @file_path        { lex TokenFilePath `andBegin` 0 }
-
--- Comments
-<0> @doubledash            { lex' TokenDoubleDash `andBegin` comment }
-<comment> @anyline         { lex (TokenAnyLine . T.pack) }
-<comment> @newline         { begin 0 }
 
 -- Currency declarations
 <0> @currency               { lex' TokenCurrency `andBegin` currency }
@@ -232,6 +243,22 @@ lexTilde = lex $ \case
 lexPercent :: AlexAction Token
 lexPercent = lex' TokenPercent
 
+-- An indented comment belongs to the line below it, within the declaration it
+-- is in.  One at the first column is a declaration of its own.  The parser has
+-- no other way to tell the two apart, because the lexer throws away the
+-- newlines and the indentation.
+--
+-- The text is stripped so that formatting it back out and reading it again
+-- gives the same text.  Whitespace-only text would otherwise come back as a
+-- different string.
+lexComment :: AlexAction Token
+lexComment = lexPosM $ \(AlexPn _ _ column) s ->
+  let text = T.strip (T.pack (drop 2 s))
+   in pure $
+        if column == 1
+          then TokenComment text
+          else TokenIndentedComment text
+
 -- To improve error messages, We keep the path of the file we are
 -- lexing in our own state.
 data AlexUserState = AlexUserState
@@ -261,7 +288,8 @@ data TokenClass
   | TokenVar !Text
   | TokenDecimalLiteral !DecimalLiteral
   | TokenFloat !Double
-  | TokenDoubleDash
+  | TokenComment !Text
+  | TokenIndentedComment !Text
   | TokenPipe
   | TokenAnyLine !Text
   | TokenStar
@@ -314,7 +342,10 @@ lex :: (String -> TokenClass) -> AlexAction Token
 lex f = lexM (pure . f)
 
 lexM :: (String -> Alex TokenClass) -> AlexAction Token
-lexM f = \(p,_,_,s) i -> do
+lexM f = lexPosM (const f)
+
+lexPosM :: (AlexPosn -> String -> Alex TokenClass) -> AlexAction Token
+lexPosM f = \(p,_,_,s) i -> do
   let begin = alexSourcePosition p
   let end = begin { sourcePositionColumn = sourcePositionColumn begin + i }
   state <- alexGetUserState
@@ -325,7 +356,7 @@ lexM f = \(p,_,_,s) i -> do
           , sourceSpanBegin = begin
           , sourceSpanEnd = end
           }
-  tc <- f (take i s)
+  tc <- f p (take i s)
   return $ Located span tc
 
 -- For constructing tokens that do not depend on

@@ -1,0 +1,2 @@
+-- A comment that belongs to no line above it must start at the first column.
+  -- This one does not.

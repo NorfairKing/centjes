@@ -138,7 +138,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
   -- rowFee is the fee on top of that amount
   let transactionTimestamp = noLoc $ Timestamp.secondFromLocalTime $ fromMaybe rowStartedDate rowCompletedDate
       transactionDescription =
-        noLoc
+        noCommentsOn
           <$> Description.combine
             ( filter
                 (not . T.null . unDescription)
@@ -163,7 +163,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
     Just l -> pure $ Account.negate l
   assetsLiteral <- toLiteral assetsAccount
   let mkPosting accountName literal =
-        noLoc
+        noCommentsOn
           Posting
             { postingReal = True,
               postingAccountName = noLoc accountName,
@@ -191,7 +191,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
     balanceAccount <- fromLiteral bal
     toLiteral balanceAccount
   let transactionExtras =
-        [ noLoc $
+        [ noCommentsOn $
             TransactionAssertion $
               noLoc $
                 ExtraAssertion $
@@ -204,8 +204,8 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
         | bl <- maybeToList mbl
         ]
   pure
-    [ DeclarationComment $ noLoc $ T.pack $ "Started date: " <> formatTime defaultTimeLocale "%F %T" rowStartedDate,
-      DeclarationComment $ noLoc $ T.pack $ "Completed date: " <> maybe "" (formatTime defaultTimeLocale "%F %T") rowCompletedDate,
+    [ DeclarationComment $ noLoc $ Comment $ T.pack $ "Started date: " <> formatTime defaultTimeLocale "%F %T" rowStartedDate,
+      DeclarationComment $ noLoc $ Comment $ T.pack $ "Completed date: " <> maybe "" (formatTime defaultTimeLocale "%F %T") rowCompletedDate,
       DeclarationTransaction $ noLoc $ Transaction {..}
     ]
 

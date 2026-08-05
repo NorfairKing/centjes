@@ -361,7 +361,7 @@ instance ToReport (CompileError SourceSpan) where
                                 Nothing -> Just $ noLoc AccountTypeAssets
                                 Just _ -> Nothing,
                               accountDeclarationExtras =
-                                [ noLoc $ AccountExtraAssertion $ noLoc $ AccountAssertionVirtual $ noLoc AccountAssertionVirtualAllowed
+                                [ noCommentsOn $ AccountExtraAssertion $ noLoc $ AccountAssertionVirtual $ noLoc AccountAssertionVirtualAllowed
                                 ]
                             }
               ]
@@ -561,9 +561,9 @@ compileAccountDeclaration currencies tags (Located dl AccountDeclaration {..}) =
 compileAccountExtras ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Map Tag ann ->
-  [GenLocated ann (AccountExtra ann)] ->
+  [Commented ann (AccountExtra ann)] ->
   Validation (CompileError ann) (AccountExtras ann)
-compileAccountExtras currencies tags = foldMap (compileAccountExtra currencies tags)
+compileAccountExtras currencies tags = foldMap (compileAccountExtra currencies tags . commentedValue)
 
 compileAccountExtra ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
@@ -749,10 +749,10 @@ compileTransaction ::
     )
 compileTransaction currencies accounts tags (Located l mt) = do
   let transactionTimestamp = Module.transactionTimestamp mt
-      transactionDescription = Module.transactionDescription mt
+      transactionDescription = commentedValue <$> Module.transactionDescription mt
   postings <-
     traverse
-      (compilePosting currencies accounts l)
+      (compilePosting currencies accounts l . commentedValue)
       (Module.transactionPostings mt)
   let transactionPostings = V.fromList postings
   let prices = concatMap (compilePostingPrices transactionTimestamp) postings
@@ -825,11 +825,11 @@ compileTransactionExtras ::
   Map AccountName (GenLocated ann (Account ann)) ->
   Map Tag ann ->
   ann ->
-  [GenLocated ann (TransactionExtra ann)] ->
+  [Commented ann (TransactionExtra ann)] ->
   Validation
     (CompileError ann)
     (TransactionExtras ann)
-compileTransactionExtras currencies accounts tags l = foldMap $ compileTransactionExtra currencies accounts tags l
+compileTransactionExtras currencies accounts tags l = foldMap (compileTransactionExtra currencies accounts tags l . commentedValue)
 
 compileTransactionExtra ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->

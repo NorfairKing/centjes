@@ -4,6 +4,7 @@ module Centjes.Module.Gen where
 
 import Centjes.AccountName.Gen ()
 import Centjes.AccountType.Gen ()
+import Centjes.Comment.Gen ()
 import Centjes.CurrencySymbol.Gen ()
 import Centjes.Description.Gen ()
 import Centjes.Location.Gen
@@ -31,6 +32,10 @@ instance (GenValid ann) => GenValid (Declaration ann) where
 instance (GenValid ann) => GenValid (Import ann) where
   genValid = Import <$> genLocatedWith (genValid `suchThatMap` replaceExtension ".cent")
   shrinkValid _ = []
+
+instance (GenValid ann, GenValid a) => GenValid (Commented ann a) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (GenValid ann) => GenValid (CurrencyDeclaration ann) where
   genValid = genValidStructurallyWithoutExtraChecking

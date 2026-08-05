@@ -1,0 +1,1 @@
+test_resources/syntax/module/invalid/indented-comment.cent@2:3-2:24  parse error at token 'TokenIndentedComment "This one does not."'

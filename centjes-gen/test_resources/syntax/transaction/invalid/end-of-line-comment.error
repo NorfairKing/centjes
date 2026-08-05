@@ -1,0 +1,1 @@
+test_resources/syntax/transaction/invalid/end-of-line-comment.cent@2:25-2:25  lexical error at character '-' currently in state 10

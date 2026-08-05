@@ -37,7 +37,43 @@ Comments in centjes look like this:
 -- This is a comment
 ```
 
-There are only line comments, no block comments, and they can only appear as standalone declarations.
+A comment is a line of its own: there are no comments at the end of a line of
+syntax.
+Consecutive comment lines are one comment.
+The space after the dashes is part of the marker, so `--this` is not a comment.
+
+Inside a multi-line declaration such as a transaction, a comment must be
+indented:
+
+``` centjes
+2025-01-27
+  -- I paid in cash because the card reader was broken.
+  | I bought a coffee.
+  * assets:cash -5.00 USD
+  -- This is the good stuff.
+  * expenses:coffee 5.00 USD
+```
+
+A comment that starts at the first column always starts a new declaration, so
+indentation is what tells the two apart.
+
+An indented comment belongs to the line below it, which is where the formatter
+keeps it.
+That means a comment cannot be the last line of a declaration, because it would
+belong to no line at all.
+This is an error, because the comment has no line below it to belong to:
+
+``` plain
+2025-01-27
+  | I bought a coffee.
+  * assets:cash -5.00 USD
+  * expenses:coffee 5.00 USD
+  -- This comment has no line below it.
+```
+
+Because a description is the whole rest of its line, a `-- ` after a `|` is
+description text rather than a comment, and two description lines cannot have a
+comment between them.
 
 
 # Currency declaration

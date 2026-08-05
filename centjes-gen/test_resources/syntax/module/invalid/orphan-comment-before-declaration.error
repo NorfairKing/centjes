@@ -1,0 +1,1 @@
+test_resources/syntax/module/invalid/orphan-comment-before-declaration.cent@3:3-3:76  this comment has no line below it to belong to

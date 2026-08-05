@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           centjes
-version:        0.0.0.0
+version:        0.1.0.0
 homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
@@ -31,6 +31,7 @@ library
       Centjes.Command.NetWorth
       Centjes.Command.RatesGraph
       Centjes.Command.Register
+      Centjes.Comment
       Centjes.Compile
       Centjes.Convert
       Centjes.Convert.MemoisedPriceGraph

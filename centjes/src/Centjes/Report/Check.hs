@@ -234,7 +234,7 @@ checkAccountUsage declarations =
           let accounts =
                 S.fromList $
                   map
-                    ( \(Located _ Module.Posting {..}) ->
+                    ( \(Commented (Located _ Module.Posting {..}) _) ->
                         locatedValue postingAccountName
                     )
                     transactionPostings
@@ -259,11 +259,11 @@ checkTagUsage declarations =
                 S.unions $
                   map
                     ( \case
-                        Located _ (AccountExtraAttachment _) ->
+                        Commented (Located _ (AccountExtraAttachment _)) _ ->
                           S.empty
-                        Located _ (AccountExtraAssertion _) ->
+                        Commented (Located _ (AccountExtraAssertion _)) _ ->
                           S.empty
-                        Located _ (AccountExtraTag (Located _ (ExtraTag (Located _ tag)))) ->
+                        Commented (Located _ (AccountExtraTag (Located _ (ExtraTag (Located _ tag))))) _ ->
                           S.singleton tag
                     )
                     accountDeclarationExtras
@@ -277,11 +277,11 @@ checkTagUsage declarations =
                 S.unions $
                   map
                     ( \case
-                        Located _ (TransactionAttachment _) ->
+                        Commented (Located _ (TransactionAttachment _)) _ ->
                           S.empty
-                        Located _ (TransactionAssertion _) ->
+                        Commented (Located _ (TransactionAssertion _)) _ ->
                           S.empty
-                        Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag)))) ->
+                        Commented (Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag))))) _ ->
                           S.singleton tag
                     )
                     transactionExtras
@@ -322,28 +322,28 @@ declarationAttachments = \case
     let hasDuplicateAttachmentTag =
           any
             ( \case
-                Located _ (AccountExtraTag (Located _ (ExtraTag (Located _ tag)))) ->
+                Commented (Located _ (AccountExtraTag (Located _ (ExtraTag (Located _ tag))))) _ ->
                   tag == duplicateAttachmentTag
                 _ -> False
             )
             accountDeclarationExtras
      in if hasDuplicateAttachmentTag
           then []
-          else concatMap (accountExtraAttachments . locatedValue) accountDeclarationExtras
+          else concatMap (accountExtraAttachments . locatedValue . commentedValue) accountDeclarationExtras
   DeclarationTag _ -> []
   DeclarationPrice _ -> []
   DeclarationTransaction (Located _ Module.Transaction {..}) ->
     let hasDuplicateAttachmentTag =
           any
             ( \case
-                Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag)))) ->
+                Commented (Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag))))) _ ->
                   tag == duplicateAttachmentTag
                 _ -> False
             )
             transactionExtras
      in if hasDuplicateAttachmentTag
           then []
-          else concatMap (transactionExtraAttachments . locatedValue) transactionExtras
+          else concatMap (transactionExtraAttachments . locatedValue . commentedValue) transactionExtras
   where
     accountExtraAttachments :: AccountExtra SourceSpan -> [(Path Abs File, Path Rel File, SourceSpan)]
     accountExtraAttachments = \case
@@ -367,7 +367,7 @@ checkDeclaration = \case
 
 checkAccount :: Located (Module.AccountDeclaration SourceSpan) -> CheckerT SourceSpan ()
 checkAccount (Located al Module.AccountDeclaration {..}) = do
-  traverse_ (checkAccountExtra al . locatedValue) accountDeclarationExtras
+  traverse_ (checkAccountExtra al . locatedValue . commentedValue) accountDeclarationExtras
 
 checkAccountExtra ::
   SourceSpan ->
@@ -380,7 +380,7 @@ checkAccountExtra tl = \case
 
 checkTransaction :: Located (Module.Transaction SourceSpan) -> CheckerT SourceSpan ()
 checkTransaction (Located tl Module.Transaction {..}) = do
-  traverse_ (checkTransactionExtra tl . locatedValue) transactionExtras
+  traverse_ (checkTransactionExtra tl . locatedValue . commentedValue) transactionExtras
 
 checkTransactionExtra ::
   SourceSpan ->

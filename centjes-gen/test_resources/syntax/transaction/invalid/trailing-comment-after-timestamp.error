@@ -1,0 +1,1 @@
+test_resources/syntax/transaction/invalid/trailing-comment-after-timestamp.cent@2:3-2:44  this comment has no line below it to belong to
