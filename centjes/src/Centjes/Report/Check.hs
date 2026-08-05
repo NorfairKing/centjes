@@ -417,7 +417,9 @@ checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located
     -- The parent directory may not exist either (for example because of a typo
     -- in the path), in which case there are simply no similar files to suggest.
     mFiles <- liftIO $ forgivingAbsence $ snd <$> listDirRel (parent af)
-    let fs = take 10 . map fst . sortOn snd . mapMaybe similarity $ fromMaybe [] mFiles
+    -- Sort by name as well as penalty, because the order in which the files
+    -- are listed is filesystem-dependent.
+    let fs = take 10 . map fst . sortOn (\(p, penalty) -> (penalty, p)) . mapMaybe similarity $ fromMaybe [] mFiles
     validationTFailure $ CheckErrorMissingAttachment tl a fs
 
 checkLedger ::
