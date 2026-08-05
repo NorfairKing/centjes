@@ -1,0 +1,10 @@
+currency EUR 0.01
+currency SWDA 1
+
+account assets:bank
+account assets:broker
+
+2025-04-01
+  | Sell a lot that was never bought
+  * assets:broker   -1 SWDA lot @ 480 EUR
+  * assets:bank   +480 EUR

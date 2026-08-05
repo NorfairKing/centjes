@@ -1,0 +1,9 @@
+currency EUR 0.01
+
+account assets
+account expenses
+
+2025-01-27
+  | The lot is priced in the currency it is a lot of.
+  * assets   +1 EUR lot @ 2 EUR
+  * expenses -2 EUR

@@ -1,0 +1,18 @@
+currency EUR 0.01
+currency SWDA 1
+currency CHF 0.05
+
+account assets:broker
+account equity
+
+2025-01-27
+  | Buy one share at 100
+  * assets:broker   +1 SWDA lot @ 100 EUR
+  * equity        -100 EUR
+
+2025-02-01
+  | A zero-amount lot posting is not a trade, so it prices nothing
+  * assets:broker +0 SWDA lot @ 500 EUR
+  * equity        +0 EUR
+
+price 2025-06-30 EUR 0.95 CHF

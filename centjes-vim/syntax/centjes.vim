@@ -9,6 +9,7 @@ syntax match Keyword     /\Vaccount/
 syntax match Keyword     /\Vtag/
 syntax match Keyword     /\Vcurrency/
 syntax match Keyword     /\Vprice/
+syntax match Keyword     /\Vlot/
 syntax match Keyword     /\v\*/
 syntax match Keyword     /\v\!/
 syntax match Type        /\v(\w|[_-])+(:(\w|[_-])+)+/

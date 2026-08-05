@@ -113,7 +113,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
                       let domesticRevenueTimestamp = timestamp
                       domesticRevenueDescription <- requireDescription transactionDescription
                       domesticRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
-                      let Located _ domesticRevenueCurrency = postingCurrency p1
+                      let domesticRevenueCurrency = postingCurrency p1
                       let Located al1 account = postingAccount p1
                       domesticRevenueAmount <- requireNegative tl pl1 account
                       domesticRevenueCHFAmount <- convertDaily al1 dailyPriceGraphs day domesticRevenueCurrency vatReportCHF domesticRevenueAmount
@@ -123,7 +123,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
                         Just (Located pl2 p2) -> do
                           let Located al2 vatAccountName = postingAccountName p2
                           when (vatAccountName /= vatInputVATIncomeAccountName) $ validationTFailure $ VATErrorVATPostingNotVATAccount tl pl2
-                          let Located _ domesticRevenueVATCurrency = postingCurrency p2
+                          let domesticRevenueVATCurrency = postingCurrency p2
                           let Located _ vatAccount = postingAccount p2
                           -- TODO require that the vat currency is the same?
                           domesticRevenueVATAmount <- requireNegative tl pl2 vatAccount
@@ -162,14 +162,14 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
 
                 fmap catMaybes $
                   forM (V.toList transactionPostings) $
-                    \(Located pl Posting {..}) -> do
+                    \(Located pl p@Posting {..}) -> do
                       let Located _ accountName = postingAccountName
                       if accountName == foreignAccountName
                         then fmap Just $ do
                           let foreignRevenueTimestamp = timestamp
                           foreignRevenueEvidence <- requireEvidence tl [reldir|income|] transactionAttachments
                           foreignRevenueDescription <- requireDescription transactionDescription
-                          let Located _ foreignRevenueCurrency = postingCurrency
+                          let foreignRevenueCurrency = postingCurrency p
                           let Located al account = postingAccount
                           foreignRevenueAmount <- requireNegative tl pl account
                           foreignRevenueCHFAmount <- convertDaily al dailyPriceGraphs day foreignRevenueCurrency vatReportCHF foreignRevenueAmount
@@ -279,7 +279,7 @@ requireSumAmount amounts =
 convertDaily ::
   (Ord ann) =>
   ann ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Map Day (MemoisedPriceGraph (Commodity ann)) ->
   Day ->
   Currency ann ->
   Currency ann ->
@@ -291,7 +291,7 @@ convertDaily al dailyPrices day currencyFrom currencyTo amount =
     else case M.lookupLE day dailyPrices of
       Nothing -> validationTFailure $ VATErrorCouldNotConvert al currencyFrom currencyTo amount
       Just (_, mpg) ->
-        case MemoisedPriceGraph.lookup mpg currencyFrom currencyTo of
+        case MemoisedPriceGraph.lookup mpg (CommodityCurrency currencyFrom) (CommodityCurrency currencyTo) of
           Nothing -> validationTFailure $ VATErrorCouldNotConvert al currencyFrom currencyTo amount
           Just rate -> do
             let Located _ qfFrom = currencyQuantisationFactor currencyFrom
@@ -340,7 +340,7 @@ gatherDeductibleExpenses ::
   Ledger ann ->
   Quarter ->
   Currency ann ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Map Day (MemoisedPriceGraph (Commodity ann)) ->
   Reporter (VATError ann) [DeductibleExpense ann]
 gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPriceGraphs =
   fmap (concatMap (maybe [] NE.toList)) $
@@ -404,7 +404,7 @@ parseExpectedDeductibleExpenses ::
   (Ord ann) =>
   VATInput ->
   Map AccountName (GenLocated ann (Account ann)) ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Map Day (MemoisedPriceGraph (Commodity ann)) ->
   Currency ann ->
   GenLocated ann (Transaction ann) ->
   Reporter (VATError ann) (Maybe (NonEmpty (DeductibleExpense ann)))
@@ -430,12 +430,12 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
                   let Located _ timestamp = transactionTimestamp
                   let deductibleExpenseTimestamp = timestamp
                   let day = Timestamp.toDay timestamp
-                  let Located _ deductibleExpenseCurrency = postingCurrency p1
+                  let deductibleExpenseCurrency = postingCurrency p1
                   deductibleExpenseAmount <- requirePositive tl pl1 account
                   deductibleExpenseCHFAmount <- convertDaily al1 dailyPriceGraphs day deductibleExpenseCurrency chf deductibleExpenseAmount
                   deductibleExpenseDescription <- requireDescription transactionDescription
                   deductibleExpenseEvidence <- requireEvidence tl [reldir|deductions|] transactionAttachments
-                  let Located _ deductibleExpenseVATCurrency = postingCurrency p2
+                  let deductibleExpenseVATCurrency = postingCurrency p2
                   let Located al vatAccount = postingAccount p2
                   deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
                   deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount

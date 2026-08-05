@@ -1,6 +1,7 @@
 module Centjes.Switzerland.Report.Common
   ( withPacketDir,
     filterLedgerByPricesFile,
+    combineLots,
     DeductibleDeclaration (..),
     decideDeductible,
   )
@@ -9,7 +10,10 @@ where
 import Centjes.Ledger
 import Centjes.Location
 import Control.Monad
+import qualified Data.Map.Strict as M
 import qualified Data.Vector as V
+import Money.MultiAccount (MultiAccount)
+import qualified Money.MultiAccount as MultiAccount
 import Path
 import Path.IO
 import UnliftIO
@@ -34,6 +38,21 @@ filterLedgerByPricesFile pricesFile ledger =
           )
           (ledgerPrices ledger)
    in ledger {ledgerPrices = pricesFromFile}
+
+-- | Merge every lot of a currency back into that currency.
+--
+-- These reports have one line per currency, so two lots of one symbol are one
+-- line whose amount is their sum. Nothing if that sum is too big.
+combineLots ::
+  (Ord ann) =>
+  MultiAccount (Commodity ann) ->
+  Maybe (MultiAccount (Currency ann))
+combineLots =
+  foldM
+    (\acc (commodity, account) -> MultiAccount.addAccount acc (commodityCurrency commodity) account)
+    MultiAccount.zero
+    . M.toList
+    . MultiAccount.unMultiAccount
 
 data DeductibleDeclaration ann
   = DefinitelyDeductible ann

@@ -97,7 +97,10 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
         M.fromList
           $ map
             ( \(Located _ Price {..}) ->
-                let Located _ Currency {..} = priceCurrency
+                -- A lot converts to its underlying at one to one, so the rate
+                -- to look up is the underlying currency's.
+                let Located _ commodity = priceCommodity
+                    Currency {..} = commodityCurrency commodity
                  in (currencySymbol, currencyQuantisationFactor)
             )
           $ V.toList yearPrices
@@ -107,7 +110,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
           $ mapMaybe
             ( \(symbol, lqf) ->
                 let from = Currency symbol lqf
-                 in (,) from <$> MemoisedPriceGraph.lookup memoisedPriceGraph from taxesReportCHF
+                 in (,) from <$> MemoisedPriceGraph.lookup memoisedPriceGraph (CommodityCurrency from) (CommodityCurrency taxesReportCHF)
             )
           $ M.toList currenciesInPrices
 
@@ -133,14 +136,15 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
         Just _ -> pure Nothing
         Nothing -> do
           let assetAccountName = an
-          assetAccountBalances <- flip M.traverseWithKey (MultiAccount.unMultiAccount $ fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport) $ \c b -> do
+          combined <- requireCombinedLots $ fromMaybe MultiAccount.zero $ M.lookup an $ balanceReportBalances balanceReport
+          assetAccountBalances <- flip M.traverseWithKey (MultiAccount.unMultiAccount combined) $ \c b -> do
             positive <- requireAssetPositive al b
             converted <-
               liftValidation $
                 mapValidationFailure TaxesErrorConvertError $
                   convertMultiAccountToAccount (Just al) memoisedPriceGraph taxesReportCHF $
                     MultiAccount $
-                      M.singleton c b
+                      M.singleton (CommodityCurrency c) b
             positiveConverted <- requireAssetPositive al converted
             pure (positive, positiveConverted)
 
@@ -188,7 +192,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   let forAccountPostings a = forAccountsPostings (S.singleton a)
 
-  childrenCostsDaycare <- forAccountPostings taxesInputDaycareAccount $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+  childrenCostsDaycare <- forAccountPostings taxesInputDaycareAccount $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
     withDeductibleTag taxesInput tl lp transactionTags $ do
       let Located _ timestamp = transactionTimestamp
       let day = Timestamp.toDay timestamp
@@ -196,7 +200,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
       let Located al account = postingAccount
       daycareExpenseAmount <- requireExpensePositive al account
       let daycareExpenseTimestamp = timestamp
-      let Located _ daycareExpenseCurrency = postingCurrency
+      let daycareExpenseCurrency = postingCurrency p
       daycareExpenseCHFAmount <- convertDaily al dailyPriceGraphs day daycareExpenseCurrency taxesReportCHF daycareExpenseAmount
       ne <- requireNonEmptyEvidence tl transactionAttachments
       daycareExpenseEvidence <- forM ne $ \rf -> do
@@ -209,7 +213,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   let taxesReportChildrenCosts = ChildrenCosts {..}
 
-  taxesReportEducationExpenses <- forAccountPostings taxesInputEducationAccount $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+  taxesReportEducationExpenses <- forAccountPostings taxesInputEducationAccount $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
     withDeductibleTag taxesInput tl lp transactionTags $ do
       let Located _ timestamp = transactionTimestamp
       let day = Timestamp.toDay timestamp
@@ -217,7 +221,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
       let Located al account = postingAccount
       educationExpenseAmount <- requireExpensePositive al account
       let educationExpenseTimestamp = timestamp
-      let Located _ educationExpenseCurrency = postingCurrency
+      let educationExpenseCurrency = postingCurrency p
       educationExpenseCHFAmount <- convertDaily al dailyPriceGraphs day educationExpenseCurrency taxesReportCHF educationExpenseAmount
       ne <- requireNonEmptyEvidence tl transactionAttachments
       educationExpenseEvidence <- forM ne $ \rf -> do
@@ -230,7 +234,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportRevenues <- forMatchingPostings
     (\Account {..} Posting {..} -> postingReal && accountType == AccountTypeIncome)
-    $ \(Located tl Transaction {..}) (Located al Account {..}) (Located pl Posting {..}) -> do
+    $ \(Located tl Transaction {..}) (Located al Account {..}) (Located pl p@Posting {..}) -> do
       let mUndeclaredTag = M.lookup taxesInputTagUndeclared accountTags
       case mUndeclaredTag of
         Just _ -> pure Nothing
@@ -251,7 +255,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
               revenueDescription <- requireDescription transactionDescription
 
-              let Located _ revenueCurrency = postingCurrency
+              let revenueCurrency = postingCurrency p
               let Located al1 account = postingAccount
 
               revenueAmount <- requireNegative tl pl account
@@ -268,14 +272,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
           taxesInputThirdPillarAssetsAccount
         ]
     )
-    $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) -> withDeductibleTag taxesInput tl lp transactionTags $ do
+    $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) -> withDeductibleTag taxesInput tl lp transactionTags $ do
       let Located _ timestamp = transactionTimestamp
       let day = Timestamp.toDay timestamp
       thirdPillarContributionDescription <- requireDescription transactionDescription
       let Located al account = postingAccount
       thirdPillarContributionAmount <- requireExpensePositive al account
       let thirdPillarContributionTimestamp = timestamp
-      let Located _ thirdPillarContributionCurrency = postingCurrency
+      let thirdPillarContributionCurrency = postingCurrency p
       thirdPillarContributionCHFAmount <- convertDaily al dailyPriceGraphs day thirdPillarContributionCurrency taxesReportCHF thirdPillarContributionAmount
       ne <- requireNonEmptyEvidence tl transactionAttachments
       thirdPillarContributionEvidence <- forM ne $ \rf -> do
@@ -286,14 +290,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportTotalThirdPillarContributions <- requireSum $ map thirdPillarContributionCHFAmount taxesReportThirdPillarContributions
 
-  let makePrivateExpense (Located _ Transaction {..}) (Located _ Posting {..}) = do
+  let makePrivateExpense (Located _ Transaction {..}) (Located _ p@Posting {..}) = do
         let Located _ timestamp = transactionTimestamp
         let day = Timestamp.toDay timestamp
         privateExpenseDescription <- requireDescription transactionDescription
         let Located al account = postingAccount
         privateExpenseAmount <- requireExpensePositive al account
         let privateExpenseTimestamp = timestamp
-        let Located _ privateExpenseCurrency = postingCurrency
+        let privateExpenseCurrency = postingCurrency p
         privateExpenseCHFAmount <- convertDaily al dailyPriceGraphs day privateExpenseCurrency taxesReportCHF privateExpenseAmount
         privateExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
           let fileInTarball = [reldir|expenses/private|] </> filename rf
@@ -317,7 +321,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
               taxesInputDailyAllowanceInsuranceExpenseAccount
             ]
         )
-        ( \lt@(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+        ( \lt@(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
             Just
               <$> withDeductibleTagEither
                 taxesInput
@@ -331,7 +335,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                     let Located al account = postingAccount
                     insuranceExpenseAmount <- requireExpensePositive al account
                     let insuranceExpenseTimestamp = timestamp
-                    let Located _ insuranceExpenseCurrency = postingCurrency
+                    let insuranceExpenseCurrency = postingCurrency p
                     insuranceExpenseCHFAmount <- convertDaily al dailyPriceGraphs day insuranceExpenseCurrency taxesReportCHF insuranceExpenseAmount
                     insuranceExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
                       let fileInTarball = [reldir|expenses/insurance|] </> filename rf
@@ -346,14 +350,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
     makePartitionedExpenses homeofficeExpenseCHFAmount
       =<< forDeductableExpensePartitioned
         taxesInputHomeofficeExpenseAccounts
-        ( \(Located _ Transaction {..}) (Located _ Posting {..}) -> do
+        ( \(Located _ Transaction {..}) (Located _ p@Posting {..}) -> do
             let Located _ timestamp = transactionTimestamp
             let day = Timestamp.toDay timestamp
             homeofficeExpenseDescription <- requireDescription transactionDescription
             let Located al account = postingAccount
             homeofficeExpenseAmount <- requireExpensePositive al account
             let homeofficeExpenseTimestamp = timestamp
-            let Located _ homeofficeExpenseCurrency = postingCurrency
+            let homeofficeExpenseCurrency = postingCurrency p
             homeofficeExpenseCHFAmount <- convertDaily al dailyPriceGraphs day homeofficeExpenseCurrency taxesReportCHF homeofficeExpenseAmount
             homeofficeExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
               let fileInTarball = [reldir|expenses/homeoffice|] </> filename rf
@@ -366,14 +370,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
     makePartitionedExpenses electricityExpenseCHFAmount
       =<< forDeductableExpensePartitioned
         taxesInputElectricityExpenseAccounts
-        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+        ( \(Located tl Transaction {..}) (Located _ p@Posting {..}) -> do
             let Located _ timestamp = transactionTimestamp
             let day = Timestamp.toDay timestamp
             electricityExpenseDescription <- requireDescription transactionDescription
             let Located al account = postingAccount
             electricityExpenseAmount <- requireExpensePositive al account
             let electricityExpenseTimestamp = timestamp
-            let Located _ electricityExpenseCurrency = postingCurrency
+            let electricityExpenseCurrency = postingCurrency p
             electricityExpenseCHFAmount <- convertDaily al dailyPriceGraphs day electricityExpenseCurrency taxesReportCHF electricityExpenseAmount
             ne <- requireNonEmptyEvidence tl transactionAttachments
             electricityExpenseEvidence <- forM ne $ \rf -> do
@@ -387,14 +391,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
     makePartitionedExpenses phoneExpenseCHFAmount
       =<< forDeductableExpensePartitioned
         taxesInputPhoneExpenseAccounts
-        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+        ( \(Located tl Transaction {..}) (Located _ p@Posting {..}) -> do
             let Located _ timestamp = transactionTimestamp
             let day = Timestamp.toDay timestamp
             phoneExpenseDescription <- requireDescription transactionDescription
             let Located al account = postingAccount
             phoneExpenseAmount <- requireExpensePositive al account
             let phoneExpenseTimestamp = timestamp
-            let Located _ phoneExpenseCurrency = postingCurrency
+            let phoneExpenseCurrency = postingCurrency p
             phoneExpenseCHFAmount <- convertDaily al dailyPriceGraphs day phoneExpenseCurrency taxesReportCHF phoneExpenseAmount
             ne <- requireNonEmptyEvidence tl transactionAttachments
             phoneExpenseEvidence <- forM ne $ \rf -> do
@@ -408,14 +412,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
     makePartitionedExpenses travelExpenseCHFAmount
       =<< forDeductableExpensePartitioned
         taxesInputTravelExpenseAccounts
-        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+        ( \(Located tl Transaction {..}) (Located _ p@Posting {..}) -> do
             let Located _ timestamp = transactionTimestamp
             let day = Timestamp.toDay timestamp
             travelExpenseDescription <- requireDescription transactionDescription
             let Located al account = postingAccount
             travelExpenseAmount <- requireExpensePositive al account
             let travelExpenseTimestamp = timestamp
-            let Located _ travelExpenseCurrency = postingCurrency
+            let travelExpenseCurrency = postingCurrency p
             travelExpenseCHFAmount <- convertDaily al dailyPriceGraphs day travelExpenseCurrency taxesReportCHF travelExpenseAmount
             ne <- requireNonEmptyEvidence tl transactionAttachments
             travelExpenseEvidence <- forM ne $ \rf -> do
@@ -429,14 +433,14 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
     makePartitionedExpenses internetExpenseCHFAmount
       =<< forDeductableExpensePartitioned
         taxesInputInternetExpenseAccounts
-        ( \(Located tl Transaction {..}) (Located _ Posting {..}) -> do
+        ( \(Located tl Transaction {..}) (Located _ p@Posting {..}) -> do
             let Located _ timestamp = transactionTimestamp
             let day = Timestamp.toDay timestamp
             internetExpenseDescription <- requireDescription transactionDescription
             let Located al account = postingAccount
             internetExpenseAmount <- requireExpensePositive al account
             let internetExpenseTimestamp = timestamp
-            let Located _ internetExpenseCurrency = postingCurrency
+            let internetExpenseCurrency = postingCurrency p
             internetExpenseCHFAmount <- convertDaily al dailyPriceGraphs day internetExpenseCurrency taxesReportCHF internetExpenseAmount
             ne <- requireNonEmptyEvidence tl transactionAttachments
             internetExpenseEvidence <- forM ne $ \rf -> do
@@ -447,7 +451,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
         )
 
   let makeHealthExpenses account tarballSubdir =
-        forAccountPostings account $ \(Located tl Transaction {..}) _ lp@(Located _ Posting {..}) ->
+        forAccountPostings account $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
           withDeductibleTag taxesInput tl lp transactionTags $ do
             let Located _ timestamp = transactionTimestamp
             let day = Timestamp.toDay timestamp
@@ -455,7 +459,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
             let Located al account' = postingAccount
             healthExpenseAmount <- requireExpensePositive al account'
             let healthExpenseTimestamp = timestamp
-            let Located _ healthExpenseCurrency = postingCurrency
+            let healthExpenseCurrency = postingCurrency p
             healthExpenseCHFAmount <- convertDaily al dailyPriceGraphs day healthExpenseCurrency taxesReportCHF healthExpenseAmount
             ne <- requireNonEmptyEvidence tl transactionAttachments
             healthExpenseEvidence <- forM ne $ \rf -> do
@@ -524,6 +528,16 @@ simplifyDir f =
       fn = filename f
    in dn </> fn
 
+-- | Merge every lot of a currency back into that currency, or fail if the
+-- amounts do not add up.
+requireCombinedLots ::
+  (Ord ann) =>
+  MultiAccount (Commodity ann) ->
+  Reporter (TaxesError ann) (MultiAccount (Currency ann))
+requireCombinedLots ma = case combineLots ma of
+  Nothing -> validationTFailure TaxesErrorSum
+  Just combined -> pure combined
+
 requireDescription ::
   Maybe (GenLocated ann Description) ->
   Reporter (TaxesError ann) Description
@@ -562,7 +576,7 @@ requireNegative tl pl account =
 convertDaily ::
   (Ord ann) =>
   ann ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Map Day (MemoisedPriceGraph (Commodity ann)) ->
   Day ->
   Currency ann ->
   Currency ann ->
@@ -574,7 +588,7 @@ convertDaily al dailyPrices day currencyFrom currencyTo amount =
     else case M.lookupLE day dailyPrices of
       Nothing -> validationTFailure $ TaxesErrorCouldNotConvert al currencyFrom currencyTo amount
       Just (_, mpg) ->
-        case MemoisedPriceGraph.lookup mpg currencyFrom currencyTo of
+        case MemoisedPriceGraph.lookup mpg (CommodityCurrency currencyFrom) (CommodityCurrency currencyTo) of
           Nothing -> validationTFailure $ TaxesErrorCouldNotConvert al currencyFrom currencyTo amount
           Just rate -> do
             let Located _ qfFrom = currencyQuantisationFactor currencyFrom
@@ -657,7 +671,7 @@ produceDepreciationSchedule ::
   AccountName ->
   AccountName ->
   Ratio Natural ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Map Day (MemoisedPriceGraph (Commodity ann)) ->
   Currency ann ->
   Map AccountName (GenLocated ann (Account ann)) ->
   BalanceReport ann ->
@@ -691,13 +705,13 @@ produceDepreciationSchedule taxesInput assetAccount expenseAccount depreciationS
                 locatedValue postingAccountName == expenseAccount && postingReal
             )
             (V.toList transactionPostings)
-    forM matchingPostings $ \lp@(Located _ Posting {..}) ->
+    forM matchingPostings $ \lp@(Located _ p@Posting {..}) ->
       withDeductibleTag taxesInput tl lp transactionTags $ do
         let Located al account = postingAccount
         positive <- requireExpensePositive al account
         depreciationPurchaseDescription <- requireDescription transactionDescription
         let depreciationPurchaseTimestamp = locatedValue transactionTimestamp
-        let Located _ purchaseCurrency = postingCurrency
+        let purchaseCurrency = postingCurrency p
         let day = Timestamp.toDay depreciationPurchaseTimestamp
         depreciationPurchaseAmount <-
           convertDaily al dailyPriceGraphs day purchaseCurrency chf positive
@@ -727,7 +741,8 @@ produceDepreciationSchedule taxesInput assetAccount expenseAccount depreciationS
   pure DepreciationSchedule {..}
   where
     convertBalance al day ma = do
-      converted <- flip M.traverseWithKey (MultiAccount.unMultiAccount ma) $ \currency account -> do
+      combined <- requireCombinedLots ma
+      converted <- flip M.traverseWithKey (MultiAccount.unMultiAccount combined) $ \currency account -> do
         amount <- case account of
           Money.Positive a -> pure a
           Money.Negative _ -> validationTFailure $ TaxesErrorDepreciationNegativeBalance al assetAccount

@@ -1,0 +1,4 @@
+2025-01-27
+  | Buy two shares
+  * assets:broker 2 SWDA lot @ 500 EUR
+  * assets:bank -1000 EUR

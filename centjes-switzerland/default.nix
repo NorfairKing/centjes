@@ -25,7 +25,7 @@ mkDerivation {
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
-    aeson base centjes centjes-gen filepath genvalidity
+    aeson base centjes centjes-gen containers filepath genvalidity
     genvalidity-sydtest genvalidity-time monad-logger opt-env-conf
     opt-env-conf-test path path-io QuickCheck really-safe-money
     really-safe-money-gen sydtest sydtest-aeson text time xml-conduit

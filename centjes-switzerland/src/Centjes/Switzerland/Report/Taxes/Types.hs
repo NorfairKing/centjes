@@ -902,7 +902,7 @@ instance ToReport (TaxesError SourceSpan) where
                                         postingAccountName = noLoc "equity:starting",
                                         postingAccount = noLoc $ DecimalLiteral Nothing 0 0,
                                         postingCurrencySymbol = noLoc $ CurrencySymbol "CHF",
-                                        postingCost = Nothing,
+                                        postingPrice = Nothing,
                                         postingRatio = Nothing
                                       },
                                   noLoc $
@@ -911,7 +911,7 @@ instance ToReport (TaxesError SourceSpan) where
                                         postingAccountName = noLoc an,
                                         postingAccount = noLoc $ DecimalLiteral Nothing 0 0,
                                         postingCurrencySymbol = noLoc $ CurrencySymbol "CHF",
-                                        postingCost = Nothing,
+                                        postingPrice = Nothing,
                                         postingRatio = Nothing
                                       }
                                 ],

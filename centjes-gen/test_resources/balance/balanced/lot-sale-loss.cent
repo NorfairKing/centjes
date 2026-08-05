@@ -1,0 +1,23 @@
+currency EUR 0.01
+currency SWDA 1
+
+account assets:bank
+account assets:broker
+account equity
+account expenses:capital-losses
+
+2025-01-01
+  | Opening
+  * equity      -1000 EUR
+  * assets:bank +1000 EUR
+
+2025-01-27
+  | Buy two shares
+  * assets:broker    +2 SWDA lot @ 500 EUR
+  * assets:bank   -1000 EUR
+
+2025-04-01
+  | Sell one at a loss
+  * assets:broker             -1 SWDA lot @ 500 EUR
+  * assets:bank             +400 EUR
+  * expenses:capital-losses +100 EUR

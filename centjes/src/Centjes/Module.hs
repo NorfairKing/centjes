@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
@@ -43,6 +44,10 @@ module Centjes.Module
     Description (..),
     LPosting,
     Posting (..),
+    LPriceAnnotation,
+    PriceAnnotation (..),
+    priceAnnotationCostExpression,
+    stripPriceAnnotationAnnotation,
     LTransactionExtra,
     TransactionExtra (..),
     LExtraAttachment,
@@ -53,6 +58,10 @@ module Centjes.Module
     ExtraAssertion (..),
     LAssertion,
     Assertion (..),
+    LCommodityExpression,
+    CommodityExpression (..),
+    commodityExpressionCurrencySymbol,
+    stripCommodityExpressionAnnotation,
     LExtraTag,
     ExtraTag (..),
     LTag,
@@ -367,9 +376,16 @@ stripPostingAnnotation Posting {..} =
       postingAccountName = noLoc (locatedValue postingAccountName),
       postingAccount = noLoc (locatedValue postingAccount),
       postingCurrencySymbol = noLoc (locatedValue postingCurrencySymbol),
-      postingCost = fmap (noLoc . stripCostExpressionAnnotation . locatedValue) postingCost,
+      postingPrice = fmap (noLoc . stripPriceAnnotationAnnotation . locatedValue) postingPrice,
       postingRatio = fmap (noLoc . stripRatioExpressionAnnotation . locatedValue) postingRatio
     }
+
+stripPriceAnnotationAnnotation :: PriceAnnotation ann -> PriceAnnotation ()
+stripPriceAnnotationAnnotation =
+  let strip (Located _ ce) = noLoc (stripCostExpressionAnnotation ce)
+   in \case
+        PriceAnnotationCost ce -> PriceAnnotationCost (strip ce)
+        PriceAnnotationLot ce -> PriceAnnotationLot (strip ce)
 
 stripRatioExpressionAnnotation :: RatioExpression ann -> RatioExpression ()
 stripRatioExpressionAnnotation RatioExpression {..} =
@@ -394,8 +410,17 @@ stripExtraAssertionAnnotation :: ExtraAssertion ann -> ExtraAssertion ()
 stripExtraAssertionAnnotation (ExtraAssertion (Located _ a)) = ExtraAssertion (noLoc (stripAssertionAnnotation a))
 
 stripAssertionAnnotation :: Assertion ann -> Assertion ()
-stripAssertionAnnotation (AssertionEquals (Located _ an) (Located _ dl) (Located _ cs)) =
-  AssertionEquals (noLoc an) (noLoc dl) (noLoc cs)
+stripAssertionAnnotation (AssertionEquals (Located _ an) (Located _ dl) (Located _ ce)) =
+  AssertionEquals
+    (noLoc an)
+    (noLoc dl)
+    (noLoc (stripCommodityExpressionAnnotation ce))
+
+stripCommodityExpressionAnnotation :: CommodityExpression ann -> CommodityExpression ()
+stripCommodityExpressionAnnotation = \case
+  CommodityExpressionCurrency (Located _ cs) -> CommodityExpressionCurrency (noLoc cs)
+  CommodityExpressionLot (Located _ cs) (Located _ ce) ->
+    CommodityExpressionLot (noLoc cs) (noLoc (stripCostExpressionAnnotation ce))
 
 stripExtraTagAnnotation :: ExtraTag ann -> ExtraTag ()
 stripExtraTagAnnotation (ExtraTag (Located _ t)) = ExtraTag (noLoc t)
@@ -436,8 +461,10 @@ transactionCurrencySymbols Transaction {..} =
                     . locatedValue
                     . costExpressionCurrencySymbol
                     . locatedValue
+                    . priceAnnotationCostExpression
+                    . locatedValue
                 )
-                postingCost
+                postingPrice
             ]
       )
       transactionPostings
@@ -454,12 +481,33 @@ data Posting ann = Posting
     postingAccountName :: !(GenLocated ann AccountName),
     postingAccount :: !(GenLocated ann DecimalLiteral),
     postingCurrencySymbol :: !(GenLocated ann CurrencySymbol),
-    postingCost :: !(Maybe (GenLocated ann (CostExpression ann))),
+    postingPrice :: !(Maybe (GenLocated ann (PriceAnnotation ann))),
     postingRatio :: !(Maybe (GenLocated ann (RatioExpression ann)))
   }
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (Posting ann)
+
+type LPriceAnnotation = LLocated PriceAnnotation
+
+-- | The price annotation of a posting
+--
+-- These are alternatives in the grammar, so a posting cannot have both.
+data PriceAnnotation ann
+  = -- | @\@ 1 EUR@: convert at this rate to balance.
+    PriceAnnotationCost !(GenLocated ann (CostExpression ann))
+  | -- | @lot \@ 500 EUR@: convert at this rate to balance, and be a commodity
+    -- of its own.
+    PriceAnnotationLot !(GenLocated ann (CostExpression ann))
+  deriving stock (Show, Generic)
+
+instance (Validity ann) => Validity (PriceAnnotation ann)
+
+-- | The rate at which a price annotation converts.
+priceAnnotationCostExpression :: PriceAnnotation ann -> GenLocated ann (CostExpression ann)
+priceAnnotationCostExpression = \case
+  PriceAnnotationCost ce -> ce
+  PriceAnnotationLot ce -> ce
 
 type LCostExpression = LLocated CostExpression
 
@@ -601,14 +649,51 @@ type LAssertion = LLocated Assertion
 -- @
 -- assets = 5 USD
 -- @
+--
+-- or
+--
+-- @
+-- assets = 5 SWDA lot @ 500 EUR
+-- @
 data Assertion ann
   = AssertionEquals
       !(GenLocated ann AccountName)
       !(GenLocated ann DecimalLiteral)
-      !(GenLocated ann CurrencySymbol)
+      !(GenLocated ann (CommodityExpression ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (Assertion ann)
+
+type LCommodityExpression = LLocated CommodityExpression
+
+-- | A commodity, as written
+--
+-- @
+-- SWDA
+-- @
+--
+-- or
+--
+-- @
+-- SWDA lot @ 500 EUR
+-- @
+--
+-- The symbol and its lot are one value rather than two fields, so that they
+-- cannot drift apart.
+data CommodityExpression ann
+  = -- | Asserts the total across every lot of the symbol, so that an assertion
+    -- copied off a broker statement stays writable.
+    CommodityExpressionCurrency !(GenLocated ann CurrencySymbol)
+  | CommodityExpressionLot !(GenLocated ann CurrencySymbol) !(GenLocated ann (CostExpression ann))
+  deriving stock (Show, Generic)
+
+instance (Validity ann) => Validity (CommodityExpression ann)
+
+-- | The symbol of a commodity, disregarding any lot.
+commodityExpressionCurrencySymbol :: CommodityExpression ann -> GenLocated ann CurrencySymbol
+commodityExpressionCurrencySymbol = \case
+  CommodityExpressionCurrency lcs -> lcs
+  CommodityExpressionLot lcs _ -> lcs
 
 type LExtraTag = LLocated ExtraTag
 

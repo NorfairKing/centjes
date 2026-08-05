@@ -96,6 +96,7 @@ $alpha = [A-Za-z]
 @assert = "assert "
 @tag = "tag "
 @price = "price "
+@lot = "lot "
 @eq = \=
 @doubledash = "-- "
 
@@ -145,6 +146,9 @@ tokens :-
 
 <0> @star        { lex' TokenStar `andBegin` posting }
 <0> @bang        { lex' TokenBang `andBegin` posting }
+-- Note: @lot has to come before @var, or a lot annotation lexes as a currency
+-- symbol.  This is why a currency cannot be called 'lot'.
+<posting> @lot             { lex' TokenLot }
 <posting> @var             { lexVar }
 <posting> @decimal_literal { lexDL }
 <posting> @at              { lexAt }
@@ -170,9 +174,13 @@ tokens :-
 <assertion> "virtual-only"     { lex' TokenVirtualOnly `andBegin` 0 }
 
 -- Transaction assertions
+<assertion> @lot             { lex' TokenLot }
 <assertion> @var             { lexVar }
 <assertion> @eq              { lex' TokenEq }
 <assertion> @decimal_literal { lexDL }
+<assertion> @at              { lexAt }
+<assertion> @slash           { lexSlash }
+<assertion> @percent         { lexPercent }
 
 <assertion> @newline         { begin 0 }
 
@@ -243,6 +251,7 @@ data TokenClass
   | TokenAssert
   | TokenTag
   | TokenPrice
+  | TokenLot
   | TokenEq
   | TokenTimestamp !String
   | TokenFilePath !FilePath

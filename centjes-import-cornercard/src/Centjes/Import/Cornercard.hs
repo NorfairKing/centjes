@@ -149,7 +149,7 @@ rowTransaction currencies liabilitiesAccountName expensesAccountName incomeAccou
               postingAccountName = noLoc accountName,
               postingAccount = noLoc literal,
               postingCurrencySymbol = noLoc rowCurrency,
-              postingCost = Nothing,
+              postingPrice = Nothing,
               postingRatio = Nothing
             }
   let liabilitiesPosting = mkPosting liabilitiesAccountName liabilitiesLiteral

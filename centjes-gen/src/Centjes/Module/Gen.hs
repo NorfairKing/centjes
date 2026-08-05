@@ -84,6 +84,10 @@ instance (GenValid ann) => GenValid (Posting ann) where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
+instance (GenValid ann) => GenValid (PriceAnnotation ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
 instance (GenValid ann) => GenValid (ExtraAttachment ann) where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
@@ -93,6 +97,10 @@ instance (GenValid ann) => GenValid (Attachment ann) where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (GenValid ann) => GenValid (ExtraAssertion ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+
+instance (GenValid ann) => GenValid (CommodityExpression ann) where
   genValid = genValidStructurallyWithoutExtraChecking
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 

@@ -275,11 +275,22 @@ descriptionDocs = map (annotate SyntaxDescription . pretty . ("| " <>)) . T.line
 postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc SyntaxElement
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =
   maybe id (\pe -> (<+> lRatioExpressionDoc pe)) postingRatio $
-    maybe id (\ce -> (<+> ("@" <+> lCostExpressionDoc ce))) postingCost $
+    maybe id (\pa -> (<+> lPriceAnnotationDoc pa)) postingPrice $
       (if postingReal then "*" else "!")
         <+> maybe id (fill . getMax) mMaxAccountNameWidth (lAccountNameDoc postingAccountName)
         <+> accountDocHelper mMaxAccountWidth mMaxAccountDecimals (locatedValue postingAccount)
         <+> lCurrencySymbolDoc postingCurrencySymbol
+
+lPriceAnnotationDoc :: GenLocated l (PriceAnnotation l) -> Doc SyntaxElement
+lPriceAnnotationDoc = priceAnnotationDoc . locatedValue
+
+priceAnnotationDoc :: PriceAnnotation l -> Doc SyntaxElement
+priceAnnotationDoc = \case
+  PriceAnnotationCost ce -> "@" <+> lCostExpressionDoc ce
+  PriceAnnotationLot ce -> lotDoc ce
+
+lotDoc :: GenLocated l (CostExpression l) -> Doc SyntaxElement
+lotDoc ce = annotate SyntaxKeyword "lot" <+> "@" <+> lCostExpressionDoc ce
 
 lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc SyntaxElement
 lCostExpressionDoc (Located _ CostExpression {..}) =
@@ -331,12 +342,20 @@ extraAttachmentDoc (ExtraAttachment (Located _ (Attachment (Located _ fp)))) =
     <+> pretty (fromRelFile fp)
 
 extraAssertionDoc :: ExtraAssertion l -> Doc SyntaxElement
-extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) cs))) =
+extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals an (Located _ dl) lce))) =
   annotate SyntaxKeyword "assert"
     <+> lAccountNameDoc an
     <+> "="
     <+> accountDoc dl
-    <+> lCurrencySymbolDoc cs
+    <+> lCommodityExpressionDoc lce
+
+lCommodityExpressionDoc :: GenLocated l (CommodityExpression l) -> Doc SyntaxElement
+lCommodityExpressionDoc = commodityExpressionDoc . locatedValue
+
+commodityExpressionDoc :: CommodityExpression l -> Doc SyntaxElement
+commodityExpressionDoc = \case
+  CommodityExpressionCurrency cs -> lCurrencySymbolDoc cs
+  CommodityExpressionLot cs ce -> lCurrencySymbolDoc cs <+> lotDoc ce
 
 lExtraTagDoc :: GenLocated l (ExtraTag l) -> Doc SyntaxElement
 lExtraTagDoc = extraTagDoc . locatedValue

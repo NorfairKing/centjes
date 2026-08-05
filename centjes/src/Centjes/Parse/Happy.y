@@ -59,6 +59,7 @@ import qualified Data.Text as T
       tok_assert          { Located _ TokenAssert }
       tok_tag             { Located _ TokenTag }
       tok_price           { Located _ TokenPrice }
+      tok_lot             { Located _ TokenLot }
       tok_file_path       { Located _ (TokenFilePath _) }
       tok_eq              { Located _ TokenEq }
       tok_timestamp       { Located _ (TokenTimestamp _) }
@@ -173,16 +174,21 @@ description
 
 posting
   :: { LPosting }
-  : posting_header account_name account_exp currency_symbol optional(posting_cost) optional(posting_ratio) { sBEMM $1 $4 $5 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
+  : posting_header account_name account_exp currency_symbol optional(posting_price) optional(posting_ratio) { sBEMM $1 $4 $5 $6 $ Posting (locatedValue $1) $2 $3 $4 $5 $6 }
 
 posting_header
   :: { Located Bool }
   : tok_star { sL1 $1 True }
   | tok_bang { sL1 $1 False }
 
-posting_cost
+posting_price
+  :: { LPriceAnnotation }
+  : tok_at cost_exp { sBE $1 $2 $ PriceAnnotationCost $2 }
+  | lot_exp { sL1 $1 $ PriceAnnotationLot $1 }
+
+lot_exp
   :: { LCostExpression }
-  : tok_at cost_exp { $2 }
+  : tok_lot tok_at cost_exp { sBE $1 $3 (locatedValue $3) }
 
 posting_ratio
   :: { LRatioExpression }
@@ -232,7 +238,12 @@ extra_assertion
 
 assertion
   :: { LAssertion }
-  : account_name tok_eq account_exp currency_symbol { sBE $1 $4 $ AssertionEquals $1 $3 $4 }
+  : account_name tok_eq account_exp commodity_exp { sBE $1 $4 $ AssertionEquals $1 $3 $4 }
+
+commodity_exp
+  :: { LCommodityExpression }
+  : currency_symbol { sL1 $1 $ CommodityExpressionCurrency $1 }
+  | currency_symbol lot_exp { sBE $1 $2 $ CommodityExpressionLot $1 $2 }
 
 extra_tag
   :: { LExtraTag }

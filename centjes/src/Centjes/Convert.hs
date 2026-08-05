@@ -30,6 +30,7 @@ import Centjes.Validation
 import qualified Data.Map as M
 import Data.Map.Strict (Map)
 import Data.Maybe
+import qualified Data.Text as T
 import Data.Time
 import Data.Validity (Validity (..))
 import Data.Vector (Vector)
@@ -46,7 +47,8 @@ import qualified Money.QuantisationFactor as Money (QuantisationFactor)
 
 data ConvertError ann
   = ConvertErrorUnknownTarget !CurrencySymbol
-  | ConvertErrorMissingPrice !(Maybe ann) !(Currency ann) !(Currency ann)
+  | -- | You can convert out of a lot, but never into one.
+    ConvertErrorMissingPrice !(Maybe ann) !(Commodity ann) !(Currency ann)
   | ConvertErrorInvalidSum !(Currency ann)
   deriving (Show, Generic)
 
@@ -66,37 +68,40 @@ instance ToReport (ConvertError SourceSpan) where
     -- [tag:CONVERT_ERROR_MISSING_PRICE] At least one test per error:
     --   test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE.cent
     --   test_resources/register/error/CONVERT_ERROR_MISSING_PRICE.cent
-    ConvertErrorMissingPrice mAl (Currency fromSymbol (Located fromL _)) (Currency toSymbol (Located toL _)) ->
-      Err
-        (Just "CONVERT_ERROR_MISSING_PRICE")
-        ( unwords
-            [ "Could not convert an amount because the conversion rate from",
-              CurrencySymbol.toString fromSymbol,
-              "to",
-              CurrencySymbol.toString toSymbol,
-              "cannot be determined"
-            ]
-        )
-        ( concat
-            [ [ (toDiagnosePosition fromL, Where "from this currency"),
-                (toDiagnosePosition toL, Where "to this currency")
-              ],
-              [ (toDiagnosePosition al, This "Failed to convert this amount")
-              | al <- maybeToList mAl
-              ]
-            ]
-        )
-        []
+    ConvertErrorMissingPrice mAl fromCommodity toCurrency ->
+      let Located fromL _ = commodityQuantisationFactor fromCommodity
+          Located toL _ = currencyQuantisationFactor toCurrency
+       in Err
+            (Just "CONVERT_ERROR_MISSING_PRICE")
+            ( unwords
+                [ "Could not convert an amount because the conversion rate from",
+                  T.unpack (commodityText fromCommodity),
+                  "to",
+                  T.unpack (currencySymbolText (currencySymbol toCurrency)),
+                  "cannot be determined"
+                ]
+            )
+            ( concat
+                [ [ (toDiagnosePosition fromL, Where "from this currency"),
+                    (toDiagnosePosition toL, Where "to this currency")
+                  ],
+                  [ (toDiagnosePosition al, This "Failed to convert this amount")
+                  | al <- maybeToList mAl
+                  ]
+                ]
+            )
+            []
     -- [tag:CONVERT_ERROR_INVALID_SUM] At least one test per error:
     --   test_resources/balance/error/CONVERT_ERROR_INVALID_SUM.cent
     --   test_resources/register/error/CONVERT_ERROR_INVALID_SUM.cent
-    ConvertErrorInvalidSum (Currency _ (Located cl _)) ->
-      Err
-        (Just "CONVERT_ERROR_INVALID_SUM")
-        "Could not sum converted amounts together because the result became too big."
-        [ (toDiagnosePosition cl, Where "Trying to convert to this currency")
-        ]
-        []
+    ConvertErrorInvalidSum currency
+      | Located cl _ <- currencyQuantisationFactor currency ->
+          Err
+            (Just "CONVERT_ERROR_INVALID_SUM")
+            "Could not sum converted amounts together because the result became too big."
+            [ (toDiagnosePosition cl, Where "Trying to convert to this currency")
+            ]
+            []
 
 lookupConversionCurrency ::
   Map CurrencySymbol (GenLocated ann Money.QuantisationFactor) ->
@@ -110,19 +115,20 @@ lookupConversionCurrency currencies currencySymbolTo =
 convertMultiAccount ::
   (Ord ann) =>
   Maybe ann ->
-  MemoisedPriceGraph (Currency ann) ->
+  MemoisedPriceGraph (Commodity ann) ->
   Currency ann ->
-  Money.MultiAccount (Currency ann) ->
-  Validation (ConvertError ann) (Money.MultiAccount (Currency ann))
+  Money.MultiAccount (Commodity ann) ->
+  Validation (ConvertError ann) (Money.MultiAccount (Commodity ann))
 convertMultiAccount al graph currencyTo ma =
-  MultiAccount.fromAccount currencyTo <$> convertMultiAccountToAccount al graph currencyTo ma
+  MultiAccount.fromAccount (CommodityCurrency currencyTo)
+    <$> convertMultiAccountToAccount al graph currencyTo ma
 
 convertMultiAccountToAccount ::
   (Ord ann) =>
   Maybe ann ->
-  MemoisedPriceGraph (Currency ann) ->
+  MemoisedPriceGraph (Commodity ann) ->
   Currency ann ->
-  Money.MultiAccount (Currency ann) ->
+  Money.MultiAccount (Commodity ann) ->
   Validation (ConvertError ann) Money.Account
 convertMultiAccountToAccount al graph currencyTo ma = do
   let quantisationFactorTo :: Money.QuantisationFactor
@@ -141,49 +147,49 @@ lookupConversionRate ::
   forall ann.
   (Ord ann) =>
   Maybe ann ->
-  MemoisedPriceGraph (Currency ann) ->
+  MemoisedPriceGraph (Commodity ann) ->
   Currency ann ->
-  Currency ann ->
+  Commodity ann ->
   Validation (ConvertError ann) (Money.ConversionRate, Money.QuantisationFactor)
-lookupConversionRate al graph currencyTo currencyFrom = do
-  case MemoisedPriceGraph.lookup graph currencyFrom currencyTo of
-    Nothing -> validationFailure $ ConvertErrorMissingPrice al currencyFrom currencyTo
-    Just rate -> pure (rate, locatedValue (currencyQuantisationFactor currencyFrom))
+lookupConversionRate al graph currencyTo commodityFrom = do
+  case MemoisedPriceGraph.lookup graph commodityFrom (CommodityCurrency currencyTo) of
+    Nothing -> validationFailure $ ConvertErrorMissingPrice al commodityFrom currencyTo
+    Just rate -> pure (rate, locatedValue (commodityQuantisationFactor commodityFrom))
 
 pricesToMemoisedPriceGraph ::
   (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
-  MemoisedPriceGraph (Currency ann)
+  MemoisedPriceGraph (Commodity ann)
 pricesToMemoisedPriceGraph = MemoisedPriceGraph.fromPriceGraph . pricesToPriceGraph
 
 pricesToPriceGraph ::
   (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
-  PriceGraph Day (Currency ann)
+  PriceGraph Day (Commodity ann)
 pricesToPriceGraph = V.foldl go PriceGraph.empty
   where
     go g (Located _ Price {..}) =
-      let Located _ currencyFrom = priceCurrency
+      let Located _ commodityFrom = priceCommodity
           Located _ Cost {..} = priceCost
           Located _ rate = costConversionRate
           Located _ currencyTo = costCurrency
           Located _ timestamp = priceTimestamp
           priority = Timestamp.toDay timestamp
-       in PriceGraph.insert currencyFrom currencyTo rate priority g
+       in PriceGraph.insert commodityFrom (CommodityCurrency currencyTo) rate priority g
 
 pricesToDailyPriceGraphs ::
   (Ord ann) =>
   Vector (GenLocated ann (Price ann)) ->
-  Map Day (MemoisedPriceGraph (Currency ann))
+  Map Day (MemoisedPriceGraph (Commodity ann))
 pricesToDailyPriceGraphs = M.map MemoisedPriceGraph.fromPriceGraph . fst . V.foldl go (M.empty, PriceGraph.empty)
   where
     go (m, pg) (Located _ Price {..}) =
-      let Located _ currencyFrom = priceCurrency
+      let Located _ commodityFrom = priceCommodity
           Located _ Cost {..} = priceCost
           Located _ rate = costConversionRate
           Located _ currencyTo = costCurrency
           Located _ timestamp = priceTimestamp
           priority = Timestamp.toDay timestamp
-          pg' = PriceGraph.insert currencyFrom currencyTo rate priority pg
+          pg' = PriceGraph.insert commodityFrom (CommodityCurrency currencyTo) rate priority pg
           m' = M.insert (Timestamp.toDay timestamp) pg' m
        in (m', pg')

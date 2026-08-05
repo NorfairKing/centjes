@@ -114,6 +114,8 @@ genTransactionWith accounts currencies tags = do
 
 instance (Eq ann, GenValid ann) => GenValid (Posting ann)
 
+instance (Eq ann, GenValid ann) => GenValid (PostingPrice ann)
+
 -- Map must not be empty
 genPostingWith ::
   (GenValid ann) =>
@@ -123,13 +125,18 @@ genPostingWith ::
 genPostingWith accounts currencies = do
   postingReal <- genValid
   postingAccountName <- genLocatedWith $ chooseAccountName accounts
-  postingCurrency <- genLocatedWith $ chooseCurrency currencies
+  declared <- genLocatedWith $ chooseCurrency currencies
+  mLot <- genMLotWithCurrencies currencies (locatedValue declared)
+  postingPrice <- case mLot of
+    Just lot -> pure $ PostingPriceLot (lot <$ declared)
+    Nothing -> do
+      mCost <-
+        frequency
+          [ (1, pure Nothing),
+            (3, genMLocatedWith $ genCostWithCurrencies currencies declared)
+          ]
+      pure $ PostingPriceCurrency declared mCost
   postingAccount <- genValid
-  postingCost <-
-    frequency
-      [ (1, pure Nothing),
-        (3, genMLocatedWith $ genCostWithCurrencies currencies postingCurrency)
-      ]
   postingAmountRatio <- genValid
   pure Posting {..}
 
@@ -144,7 +151,7 @@ genAssertionWith ::
 genAssertionWith accounts currencies = do
   an <- genLocatedWith $ chooseAccountName accounts
   acc <- genValid
-  cur <- genLocatedWith $ chooseCurrency currencies
+  cur <- genLocatedWith $ chooseCommodity currencies
   pure $ AssertionEquals an acc cur
 
 instance (Eq ann, GenValid ann) => GenValid (Price ann)
@@ -155,8 +162,8 @@ genPriceWithCurrencies ::
   Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
   Gen (Maybe (Price ann))
 genPriceWithCurrencies currencies = do
-  priceCurrency <- genLocatedWith $ chooseCurrency currencies
-  mCost <- genMLocatedWith $ genCostWithCurrencies currencies priceCurrency
+  priceCommodity <- genLocatedWith $ chooseCommodity currencies
+  mCost <- genMLocatedWith $ genCostWithCurrencies currencies (commodityCurrency <$> priceCommodity)
   forM mCost $ \priceCost -> do
     priceTimestamp <- genValid
     pure Price {..}
@@ -178,7 +185,11 @@ genCostWithCurrencies currencies (Located _ referenceCurrency) = do
 
 instance (GenValid ann) => GenValid (AmountRatio ann)
 
+instance (GenValid ann) => GenValid (Commodity ann)
+
 instance (GenValid ann) => GenValid (Currency ann)
+
+instance (GenValid ann) => GenValid (Lot ann)
 
 -- Map must not be empty
 chooseAccountName ::
@@ -202,6 +213,37 @@ chooseCurrency ::
   Gen (Currency ann)
 chooseCurrency =
   fmap (uncurry Currency) . elements . M.toList
+
+-- Map must not be empty
+chooseCommodity ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Gen (Commodity ann)
+chooseCommodity currencies = do
+  currency <- chooseCurrency currencies
+  mLot <- genMLotWithCurrencies currencies currency
+  pure $ maybe (CommodityCurrency currency) CommodityLot mLot
+
+-- | Generate a lot in one of the other currencies, if there is one.
+--
+-- The basis currency has to come out of the currencies map, or the ledger it
+-- ends up in is invalid.
+genMLotWithCurrencies ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  Currency ann ->
+  Gen (Maybe (Lot ann))
+genMLotWithCurrencies currencies lotCurrency =
+  case M.toList (M.delete (currencySymbol lotCurrency) currencies) of
+    [] -> pure Nothing
+    others ->
+      frequency
+        [ (3, pure Nothing),
+          ( 1,
+            do
+              lotBasisRate <- genValid
+              lotBasisCurrency <- uncurry Currency <$> elements others
+              pure $ Just Lot {..}
+          )
+        ]
 
 -- Map must not be empty
 chooseTag :: Map Tag ann -> Gen Tag

@@ -42,11 +42,15 @@ runCentjesRatesGraph Settings {..} RatesGraphSettings {..} =
               node' (CurrencySymbol.toText currencySymbol)
             forM_ (M.toList (unPriceGraph priceGraph)) $ \(currencyFrom, toMap) ->
               forM_ (M.toList toMap) $ \(currencyTo, dir) ->
-                case dir of
-                  PriceGraph.Backward {} -> pure ()
-                  PriceGraph.Forward (rate, priority) -> do
-                    let from = currencySymbol currencyFrom
-                        to = currencySymbol currencyTo
+                case (dir, currencyFrom, currencyTo) of
+                  (PriceGraph.Backward {}, _, _) -> pure ()
+                  -- A lot is not a node of its own here: its one-to-one edge to
+                  -- the underlying would draw as a self-loop on the underlying.
+                  (PriceGraph.Forward _, CommodityLot _, _) -> pure ()
+                  (PriceGraph.Forward _, _, CommodityLot _) -> pure ()
+                  (PriceGraph.Forward (rate, priority), CommodityCurrency fromCurrency, CommodityCurrency toCurrency) -> do
+                    let from = currencySymbol fromCurrency
+                        to = currencySymbol toCurrency
                     edge
                       (CurrencySymbol.toText from)
                       (CurrencySymbol.toText to)

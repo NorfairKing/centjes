@@ -88,7 +88,7 @@ renderBalanceReportTable se br@BalanceReport {..} =
 data AccountTree ann = AccountTree
   { accountTreeName :: !Text, -- Leaf component only (e.g., "bar" for "assets:foo:bar")
     accountTreeFullName :: !AccountName, -- Full name for balance lookups
-    accountTreeFilledBalance :: !(Money.MultiAccount (Currency ann)),
+    accountTreeFilledBalance :: !(Money.MultiAccount (Commodity ann)),
     accountTreeChildren :: ![AccountTree ann]
   }
 
@@ -103,7 +103,7 @@ buildAccountForest balances =
       roots = filter (isRoot . fst) accounts
    in map (buildTree balances accounts) roots
   where
-    buildTree :: AccountBalances ann -> [(AccountName, Money.MultiAccount (Currency ann))] -> (AccountName, Money.MultiAccount (Currency ann)) -> AccountTree ann
+    buildTree :: AccountBalances ann -> [(AccountName, Money.MultiAccount (Commodity ann))] -> (AccountName, Money.MultiAccount (Commodity ann)) -> AccountTree ann
     buildTree bs allAccounts (an, bal) =
       let -- Find direct children: accounts whose parent is this account
           children = filter (\(childAn, _) -> AccountName.parent childAn == Just an) allAccounts
@@ -215,7 +215,7 @@ renderTreeContinuationText TreeRenderContext {..}
 blankChunks :: [[Chunk]] -> [[Chunk]]
 blankChunks cs = replicate (length cs) [chunk "", chunk ""]
 
-totalLines :: Max Word8 -> Money.MultiAccount (Currency ann) -> [[Chunk]]
+totalLines :: Max Word8 -> Money.MultiAccount (Commodity ann) -> [[Chunk]]
 totalLines width total =
   let totalChunks = multiAccountChunksWithWidth (Just width) total
    in hCatTable [[[fore blue $ chunk "Total"]], blankChunks totalChunks, totalChunks]

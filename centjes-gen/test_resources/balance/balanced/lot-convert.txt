@@ -1,0 +1,5 @@
+          [37mBalance[m     [37mTotal[m      
+[37massets[m                [32m1140.00[m [32mCHF[m
+[37m└─ broker[m [32m1140.00[m [32mCHF[m [32m1140.00[m [32mCHF[m
+[37mequity[m    [31m-950.00[m [31mCHF[m [31m-950.00[m [31mCHF[m
+[34mTotal[m                 [32m 190.00[m [32mCHF[m

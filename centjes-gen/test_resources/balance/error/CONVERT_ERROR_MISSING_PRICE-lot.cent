@@ -1,0 +1,11 @@
+currency CHF 0.05
+currency EUR 0.01
+currency SWDA 1
+
+account assets:broker
+account equity
+
+2025-01-27
+  | Buy two shares, with no price to value them in CHF
+  * assets:broker    +2 SWDA lot @ 500 EUR
+  * equity        -1000 EUR

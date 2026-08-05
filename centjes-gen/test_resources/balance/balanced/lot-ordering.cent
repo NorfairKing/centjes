@@ -1,0 +1,16 @@
+currency EUR 0.01
+currency AAA 1
+currency ZZZ 1
+
+account assets:broker
+account equity
+
+2025-01-27
+  | Buy a lot of AAA
+  * assets:broker    +2 AAA lot @ 500 EUR
+  * equity        -1000 EUR
+
+2025-01-28
+  | Receive plain ZZZ, whose symbol sorts after the lot's underlying
+  * assets:broker +10 ZZZ
+  * equity        -10 ZZZ

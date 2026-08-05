@@ -1,0 +1,10 @@
+currency EUR 0.01
+currency FOO 1
+
+account assets:broker
+account equity
+
+2025-01-27
+  | Buy at a lot price that is not a finite decimal
+  * assets:broker +7 FOO lot @ 1 / 7 EUR
+  * equity        -1 EUR

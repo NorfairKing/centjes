@@ -39,7 +39,6 @@ import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import qualified Data.Text as T
-import Data.Traversable
 import Data.Validity (Validity)
 import qualified Data.Vector as V
 import Error.Diagnose
@@ -68,8 +67,9 @@ data CompileError ann
   | CompileErrorTagDeclaredTwice !ann !ann !Tag
   | CompileErrorTagTooSimilar !ann !ann
   | CompileErrorCouldNotInferAccountType !ann !(GenLocated ann AccountName)
-  | CompileErrorInvalidAccountCurrency !ann !ann !ann !ann !(GenLocated ann (Currency ann)) !(Set (Currency ann))
+  | CompileErrorInvalidAccountCurrency !ann !ann !ann !ann !(GenLocated ann (Commodity ann)) !(Set (Currency ann))
   | CompileErrorCostSameCurrency !ann !ann !ann
+  | CompileErrorLotSameCurrency !ann !ann !ann
   | CompileErrorPriceSameCurrency !ann !ann !ann
   | CompileErrorInvalidPrice !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidRatio !ann !ann !(GenLocated ann (RationalExpression ann))
@@ -238,6 +238,15 @@ instance ToReport (CompileError SourceSpan) where
         [ (toDiagnosePosition pcl, This "This currency ..."),
           (toDiagnosePosition ccl, This "... is the same as this currency"),
           (toDiagnosePosition pl, Where "While trying to compile this posting")
+        ]
+        []
+    CompileErrorLotSameCurrency pl pcl ccl ->
+      Err
+        (Just "CE_LOT_SAME_CURRENCY")
+        ""
+        [ (toDiagnosePosition pcl, This "This currency ..."),
+          (toDiagnosePosition ccl, This "... is the same as this currency"),
+          (toDiagnosePosition pl, Where "While trying to compile this transaction")
         ]
         []
     CompileErrorPriceSameCurrency pdl dcl ccl ->
@@ -638,10 +647,12 @@ compilePriceDeclaration ::
   Validation (CompileError ann) (GenLocated ann (Price ann))
 compilePriceDeclaration currencies (Located pdl PriceDeclaration {..}) = do
   let priceTimestamp = priceDeclarationTimestamp
-  priceCurrency <- compileCurrencySymbol currencies pdl priceDeclarationCurrencySymbol
+  -- A price declaration names a currency, never a lot.
+  Located dcl declared <- compileCurrencySymbol currencies pdl priceDeclarationCurrencySymbol
+  let priceCommodity = Located dcl (CommodityCurrency declared)
   priceCost <- compileCostExpression currencies pdl priceDeclarationCost
   do
-    let Located dcl pCur = priceCurrency
+    let pCur = declared
     let Located ccl cCur = costCurrency (locatedValue priceCost)
     when
       ( currencySymbol pCur
@@ -733,13 +744,7 @@ compileTransaction currencies accounts tags (Located l mt) = do
       (compilePosting currencies accounts l)
       (Module.transactionPostings mt)
   let transactionPostings = V.fromList postings
-  let prices =
-        mapMaybe
-          ( \(Located pl p) -> do
-              lc <- Ledger.postingCost p
-              pure $ Located pl $ Ledger.Price transactionTimestamp (postingCurrency p) lc
-          )
-          postings
+  let prices = concatMap (compilePostingPrices transactionTimestamp) postings
   TransactionExtras {..} <- compileTransactionExtras currencies tags l (Module.transactionExtras mt)
   let transactionAttachments = V.fromList $ DList.toList transactionExtraAttachments
   let transactionAssertions = V.fromList $ DList.toList transactionExtraAssertions
@@ -748,6 +753,37 @@ compileTransaction currencies accounts tags (Located l mt) = do
     ( Located l Ledger.Transaction {..},
       prices
     )
+
+-- | The prices that a posting is evidence of.
+compilePostingPrices ::
+  GenLocated ann Timestamp ->
+  GenLocated ann (Ledger.Posting ann) ->
+  [GenLocated ann (Ledger.Price ann)]
+compilePostingPrices timestamp (Located pl p) =
+  let lCommodity@(Located cl commodity) = Ledger.postingCommodity p
+      price from cost = Located pl (Ledger.Price timestamp from cost)
+   in case commodity of
+        CommodityCurrency _ ->
+          [ price lCommodity lCost
+          | lCost <- maybeToList (Ledger.postingConversion p)
+          ]
+        CommodityLot lot ->
+          let underlying = lotCurrency lot
+              oneToOne =
+                Cost
+                  { costConversionRate = Located cl ConversionRate.oneToOne,
+                    costCurrency = Located cl underlying
+                  }
+           in price lCommodity (Located cl oneToOne)
+                :
+                -- A disposal converts at the rate that was paid back when the
+                -- lot was acquired, so it is no evidence of what the commodity
+                -- is worth on the day of the disposal.
+                [ price
+                    (Located cl (CommodityCurrency underlying))
+                    (Located cl (lotCost cl lot))
+                | locatedValue (Ledger.postingAccount p) > Account.zero
+                ]
 
 data TransactionExtras ann = TransactionExtras
   { transactionExtraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
@@ -816,25 +852,59 @@ compilePosting currencies accounts tl (Located l mp) = do
   let postingAccountName@(Located al _) = Module.postingAccountName mp
   account <- compileAccountName accounts tl postingAccountName
 
-  postingCurrency <- compileCurrencySymbol currencies tl (Module.postingCurrencySymbol mp)
-  checkAccountCurrencyAssertion tl l al account postingCurrency
+  lDeclared <- compileCurrencySymbol currencies tl (Module.postingCurrencySymbol mp)
+  postingPrice <- compilePostingPrice currencies tl lDeclared (Module.postingPrice mp)
+  let lCommodity = Ledger.postingPriceCommodity postingPrice
+  checkAccountCurrencyAssertion tl l al account lCommodity
   checkAccountVirtualAssertion tl l al account postingAccountName postingReal
 
-  let lqf = currencyQuantisationFactor (locatedValue postingCurrency)
+  let lqf = commodityQuantisationFactor (locatedValue lCommodity)
   postingAccount <- compileDecimalLiteral tl lqf (Module.postingAccount mp)
-  postingCost <- for (Module.postingCost mp) $ \ce -> do
-    lCost@(Located _ cost) <- compileCostExpression currencies tl ce
-    let Located pcl pCur = postingCurrency
-    let Located ccl cCur = costCurrency cost
-    when
-      ( currencySymbol pCur
-          == currencySymbol cCur
-      )
-      $ validationFailure
-      $ CompileErrorCostSameCurrency tl pcl ccl
-    pure lCost
   postingAmountRatio <- traverse (compileRatioExpression tl) (Module.postingRatio mp)
   pure (Located l Ledger.Posting {..})
+
+-- | Compile a posting's price annotation.
+--
+-- A @\@@ cost leaves the posting in a plain currency and becomes its cost; a
+-- lot becomes the posting's commodity and carries the rate itself.
+compilePostingPrice ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  ann ->
+  GenLocated ann (Currency ann) ->
+  Maybe (GenLocated ann (Module.PriceAnnotation ann)) ->
+  Validation (CompileError ann) (Ledger.PostingPrice ann)
+compilePostingPrice currencies tl lDeclared@(Located pcl declared) = \case
+  Nothing -> pure (Ledger.PostingPriceCurrency lDeclared Nothing)
+  Just (Located _ (Module.PriceAnnotationCost ce)) -> do
+    lCost@(Located _ cost) <- compileCostExpression currencies tl ce
+    let Located ccl costCur = costCurrency cost
+    when (currencySymbol declared == currencySymbol costCur) $
+      validationFailure $
+        CompileErrorCostSameCurrency tl pcl ccl
+    pure (Ledger.PostingPriceCurrency lDeclared (Just lCost))
+  Just (Located _ (Module.PriceAnnotationLot ce)) ->
+    Ledger.PostingPriceLot <$> compileLot currencies tl lDeclared ce
+
+-- | Compile the lot that a currency was acquired as.
+compileLot ::
+  Map CurrencySymbol (GenLocated ann QuantisationFactor) ->
+  ann ->
+  GenLocated ann (Currency ann) ->
+  GenLocated ann (Module.CostExpression ann) ->
+  Validation (CompileError ann) (GenLocated ann (Lot ann))
+compileLot currencies tl (Located pcl declared) ce = do
+  Located _ cost <- compileCostExpression currencies tl ce
+  let Located ccl costCur = costCurrency cost
+  when (currencySymbol declared == currencySymbol costCur) $
+    validationFailure $
+      CompileErrorLotSameCurrency tl pcl ccl
+  pure $
+    Located pcl $
+      Lot
+        { lotCurrency = declared,
+          lotBasisRate = locatedValue (costConversionRate cost),
+          lotBasisCurrency = costCur
+        }
 
 compileAccountName ::
   Map AccountName (GenLocated ann (Account ann)) ->
@@ -852,13 +922,15 @@ checkAccountCurrencyAssertion ::
   ann ->
   ann ->
   GenLocated ann (Account ann) ->
-  GenLocated ann (Currency ann) ->
+  GenLocated ann (Commodity ann) ->
   Validation (CompileError ann) ()
-checkAccountCurrencyAssertion tl pl al (Located adl Account {..}) lcur@(Located _ cur) =
+checkAccountCurrencyAssertion tl pl al (Located adl Account {..}) lcur@(Located _ commodity) =
   case accountCurrencies of
     Nothing -> pure ()
     Just allowedCurrencies ->
-      if S.member cur allowedCurrencies
+      -- An account that allows a currency allows every lot of it: the account
+      -- declaration has no syntax for naming a lot.
+      if S.member (commodityCurrency commodity) allowedCurrencies
         then pure ()
         else validationFailure $ CompileErrorInvalidAccountCurrency tl pl al adl lcur allowedCurrencies
 
@@ -887,9 +959,15 @@ compileTransactionAssertion ::
   ann ->
   GenLocated ann (Module.ExtraAssertion ann) ->
   Validation (CompileError ann) (GenLocated ann (Ledger.Assertion ann))
-compileTransactionAssertion currencies tl (Located l (ExtraAssertion (Located _ (Module.AssertionEquals lan ldl lqs)))) = do
-  lc <- compileCurrencySymbol currencies tl lqs
-  let lqf = currencyQuantisationFactor (locatedValue lc)
+compileTransactionAssertion currencies tl (Located l (ExtraAssertion (Located _ (Module.AssertionEquals lan ldl (Located _ commodityExpression))))) = do
+  lDeclared@(Located dcl declared) <-
+    compileCurrencySymbol currencies tl (Module.commodityExpressionCurrencySymbol commodityExpression)
+  lc <- case commodityExpression of
+    Module.CommodityExpressionCurrency _ -> pure (Located dcl (CommodityCurrency declared))
+    Module.CommodityExpressionLot _ ce -> do
+      Located lcl lot <- compileLot currencies tl lDeclared ce
+      pure (Located lcl (CommodityLot lot))
+  let lqf = commodityQuantisationFactor (locatedValue lc)
   la <- compileDecimalLiteral tl lqf ldl
   pure (Located l (Ledger.AssertionEquals lan la lc))
 
@@ -910,7 +988,7 @@ compileCurrencySymbol ::
   Validation (CompileError ann) (GenLocated ann (Currency ann))
 compileCurrencySymbol currencies tl lcs@(Located cl symbol) = case M.lookup symbol currencies of
   Nothing -> validationFailure $ CompileErrorMissingCurrency tl lcs
-  Just factor -> pure $ Located cl $ Currency {currencySymbol = symbol, currencyQuantisationFactor = factor}
+  Just factor -> pure $ Located cl $ Currency symbol factor
 
 compileDecimalLiteral ::
   ann ->

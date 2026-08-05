@@ -169,7 +169,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
               postingAccountName = noLoc accountName,
               postingAccount = noLoc literal,
               postingCurrencySymbol = noLoc rowCurrency,
-              postingCost = Nothing,
+              postingPrice = Nothing,
               postingRatio = Nothing
             }
   let assetPosting = mkPosting assetsAccountName assetsLiteral
@@ -199,7 +199,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
                     AssertionEquals
                       (noLoc assetsAccountName)
                       (noLoc bl)
-                      (noLoc rowCurrency)
+                      (noLoc (CommodityExpressionCurrency (noLoc rowCurrency)))
         | bl <- maybeToList mbl
         ]
   pure

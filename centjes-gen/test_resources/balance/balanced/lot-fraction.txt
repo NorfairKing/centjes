@@ -1,0 +1,6 @@
+          [37mBalance[m                     [37mTotal[m                    
+[37massets[m                                [32m    7[m [32mFOO lot @ 1 / 7 EUR[m
+[37m└─ broker[m [32m    7[m   [32mFOO lot @ 1 / 7 EUR[m [32m    7[m [32mFOO lot @ 1 / 7 EUR[m
+[37mequity[m    [31m-1.00[m   [31mEUR[m                 [31m-1.00[m [31mEUR[m                
+[34mTotal[m                                 [31m-1.00[m [31mEUR[m                
+                                      [32m    7[m [32mFOO lot @ 1 / 7 EUR[m

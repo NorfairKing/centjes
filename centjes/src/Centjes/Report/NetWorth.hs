@@ -48,7 +48,7 @@ data NetWorthReportConvertedData ann = NetWorthReportConvertedData
   deriving (Show)
 
 data NetWorthReportMultiCurrencyData ann = NetWorthReportMultiCurrencyData
-  { netWorthReportMultiCurrencyEntries :: !(Vector (Day, Money.MultiAccount (Currency ann))),
+  { netWorthReportMultiCurrencyEntries :: !(Vector (Day, Money.MultiAccount (Commodity ann))),
     netWorthReportMultiCurrencyBalanceReport :: !(Maybe (BalanceReport ann))
   }
   deriving (Show)
@@ -207,7 +207,7 @@ buildDaySnapshots ::
   (Ord ann) =>
   Map AccountName (GenLocated ann (Account ann)) ->
   Vector (EvaluatedEntry ann) ->
-  Map Day (AccountBalances ann, MemoisedPriceGraph (Currency ann))
+  Map Day (AccountBalances ann, MemoisedPriceGraph (Commodity ann))
 buildDaySnapshots accounts = V.foldl' go M.empty
   where
     go m = \case
@@ -231,7 +231,7 @@ buildDaySnapshots accounts = V.foldl' go M.empty
 computeDayNetWorth ::
   (Ord ann) =>
   Day ->
-  MemoisedPriceGraph (Currency ann) ->
+  MemoisedPriceGraph (Commodity ann) ->
   Currency ann ->
   AccountBalances ann ->
   Validation (NetWorthError ann) Money.Account
@@ -247,7 +247,7 @@ computeDayMultiCurrencyNetWorth ::
   (Ord ann) =>
   Day ->
   AccountBalances ann ->
-  Validation (NetWorthError ann) (Money.MultiAccount (Currency ann))
+  Validation (NetWorthError ann) (Money.MultiAccount (Commodity ann))
 computeDayMultiCurrencyNetWorth day balances =
   case MultiAccount.sum (M.elems balances) of
     Nothing -> validationFailure $ NetWorthErrorCouldNotSum day

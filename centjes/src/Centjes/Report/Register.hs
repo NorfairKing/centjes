@@ -129,7 +129,7 @@ data AmountMode = MultiCurrency | SingleCurrency
 
 -- | Type family mapping amount mode to the actual amount type
 type family AmountOf (mode :: AmountMode) ann where
-  AmountOf 'MultiCurrency ann = Money.MultiAccount (Currency ann)
+  AmountOf 'MultiCurrency ann = Money.MultiAccount (Commodity ann)
   AmountOf 'SingleCurrency ann = Money.Account
 
 -- Flat register types (Stage 1 output)
@@ -138,7 +138,7 @@ type family AmountOf (mode :: AmountMode) ann where
 -- This is the output of Stage 1, before block grouping.
 data FlatRegister ann = FlatRegister
   { flatRegisterEntries :: ![FlatEntry ann],
-    flatRegisterTotal :: !(Money.MultiAccount (Currency ann))
+    flatRegisterTotal :: !(Money.MultiAccount (Commodity ann))
   }
 
 -- | A flat entry: a transaction with its postings, price graph, and running total.
@@ -147,16 +147,16 @@ data FlatEntry ann = FlatEntry
     flatEntryDescription :: !(Maybe (GenLocated ann Description)),
     flatEntryPostings :: !(Vector (FlatPosting ann)),
     -- | The price graph at the time of this entry (for later conversion)
-    flatEntryPriceGraph :: !(MemoisedPriceGraph (Currency ann)),
+    flatEntryPriceGraph :: !(MemoisedPriceGraph (Commodity ann)),
     -- | Running total after this entry (in original currencies)
-    flatEntryRunningTotal :: !(Money.MultiAccount (Currency ann))
+    flatEntryRunningTotal :: !(Money.MultiAccount (Commodity ann))
   }
 
 -- | A flat posting with its amount and running total.
 data FlatPosting ann = FlatPosting
   { flatPosting :: !(GenLocated ann (Posting ann)),
-    flatPostingAmount :: !(Money.MultiAccount (Currency ann)),
-    flatPostingRunningTotal :: !(Money.MultiAccount (Currency ann))
+    flatPostingAmount :: !(Money.MultiAccount (Commodity ann)),
+    flatPostingRunningTotal :: !(Money.MultiAccount (Commodity ann))
   }
 
 -- Converted flat register types (Stage 2 output)
@@ -193,7 +193,7 @@ data ConvertedFlatPosting ann = ConvertedFlatPosting
 data ConvertedFlatRevaluation ann = ConvertedFlatRevaluation
   { convertedFlatRevaluationTimestamp :: !(GenLocated ann Timestamp),
     -- | The currencies whose prices changed (may be multiple for same-day prices)
-    convertedFlatRevaluationCurrencies :: !(NonEmpty (GenLocated ann (Currency ann))),
+    convertedFlatRevaluationCurrencies :: !(NonEmpty (GenLocated ann (Commodity ann))),
     convertedFlatRevaluationAmount :: !Money.Account,
     convertedFlatRevaluationRunningTotal :: !Money.Account
   }
@@ -286,7 +286,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'SingleCur
 registerEntryTotalMulti ::
   (Ord ann) =>
   RegisterEntry 'MultiCurrency ann ->
-  Maybe (Money.MultiAccount (Currency ann))
+  Maybe (Money.MultiAccount (Commodity ann))
 registerEntryTotalMulti (RegisterEntryTransaction rt) = registerTransactionTotalMulti rt
 
 -- | A revaluation entry representing gain/loss due to price changes
@@ -294,7 +294,7 @@ registerEntryTotalMulti (RegisterEntryTransaction rt) = registerTransactionTotal
 data RegisterRevaluation ann = RegisterRevaluation
   { registerRevaluationTimestamp :: !(GenLocated ann Timestamp),
     -- | The currencies whose prices changed (may be multiple for same-day prices)
-    registerRevaluationCurrencies :: !(NonEmpty (GenLocated ann (Currency ann))),
+    registerRevaluationCurrencies :: !(NonEmpty (GenLocated ann (Commodity ann))),
     -- | The gain or loss amount
     registerRevaluationAmount :: !Money.Account,
     -- | Running total across blocks after this revaluation
@@ -325,7 +325,7 @@ instance (Validity ann, Eq ann) => Validity (RegisterTransaction 'SingleCurrency
 registerTransactionTotalMulti ::
   (Ord ann) =>
   RegisterTransaction 'MultiCurrency ann ->
-  Maybe (Money.MultiAccount (Currency ann))
+  Maybe (Money.MultiAccount (Commodity ann))
 registerTransactionTotalMulti =
   MultiAccount.sum
     . fmap registerPostingAmountMulti
@@ -333,7 +333,7 @@ registerTransactionTotalMulti =
   where
     registerPostingAmountMulti ::
       RegisterPosting 'MultiCurrency ann ->
-      Money.MultiAccount (Currency ann)
+      Money.MultiAccount (Commodity ann)
     registerPostingAmountMulti RegisterPosting {..} = registerPostingAmount
 
 data RegisterPosting (mode :: AmountMode) ann = RegisterPosting
@@ -503,7 +503,7 @@ produceFlatRegister ::
   Validation (RegisterError ann) (FlatRegister ann)
 produceFlatRegister f showVirtual mBegin mEnd evaluatedLedger = do
   let go ::
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         [EvaluatedEntry ann] ->
         Validation (RegisterError ann) [FlatEntry ann]
       go _ [] = pure []
@@ -534,7 +534,7 @@ processFlatTransaction ::
   Bool ->
   Maybe Day ->
   Maybe Day ->
-  Money.MultiAccount (Currency ann) ->
+  Money.MultiAccount (Commodity ann) ->
   EvaluatedTransaction ann ->
   Validation (RegisterError ann) (Maybe (FlatEntry ann))
 processFlatTransaction f showVirtual mBegin mEnd runningTotal evaluatedTransaction =
@@ -570,7 +570,7 @@ processFlatPosting ::
   (Ord ann) =>
   Filter ->
   Bool ->
-  Money.MultiAccount (Currency ann) ->
+  Money.MultiAccount (Commodity ann) ->
   EvaluatedPosting ann ->
   Validation (RegisterError ann) (Maybe (FlatPosting ann))
 processFlatPosting f showVirtual runningTotal evaluatedPosting = do
@@ -603,7 +603,7 @@ convertFlatRegister ::
   -- | End date filter (inclusive)
   Maybe Day ->
   -- | Daily price graphs (pre-computed from evaluated ledger)
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Map Day (MemoisedPriceGraph (Commodity ann)) ->
   -- | Price declarations from the ledger
   Vector (GenLocated ann (Price ann)) ->
   -- | Flat register to convert
@@ -621,7 +621,7 @@ convertFlatRegister currencyTo mEnd prices pricesVec FlatRegister {..} = do
 
   let go ::
         Money.Account ->
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         Maybe Day ->
         [FlatEntry ann] ->
         Validation (RegisterError ann) [ConvertedFlatEntry ann]
@@ -676,20 +676,20 @@ convertFlatEntry ::
   forall ann.
   (Ord ann) =>
   Currency ann ->
-  MemoisedPriceGraph (Currency ann) ->
+  MemoisedPriceGraph (Commodity ann) ->
   Money.Account ->
-  Money.MultiAccount (Currency ann) ->
+  Money.MultiAccount (Commodity ann) ->
   FlatEntry ann ->
   Validation
     (RegisterError ann)
-    (ConvertedFlatTransaction ann, Money.Account, Money.MultiAccount (Currency ann))
+    (ConvertedFlatTransaction ann, Money.Account, Money.MultiAccount (Commodity ann))
 convertFlatEntry currencyTo priceGraph _convertedRunning rawBalances FlatEntry {..} = do
   let goPostings ::
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         [FlatPosting ann] ->
         Validation
           (RegisterError ann)
-          ([ConvertedFlatPosting ann], Money.MultiAccount (Currency ann))
+          ([ConvertedFlatPosting ann], Money.MultiAccount (Commodity ann))
       goPostings rawBal [] = pure ([], rawBal)
       goPostings rawBal (fp : fps) = do
         (converted, newRawBal) <- convertFlatPosting currencyTo priceGraph rawBal fp
@@ -718,12 +718,12 @@ convertFlatEntry currencyTo priceGraph _convertedRunning rawBalances FlatEntry {
 convertFlatPosting ::
   (Ord ann) =>
   Currency ann ->
-  MemoisedPriceGraph (Currency ann) ->
-  Money.MultiAccount (Currency ann) ->
+  MemoisedPriceGraph (Commodity ann) ->
+  Money.MultiAccount (Commodity ann) ->
   FlatPosting ann ->
   Validation
     (RegisterError ann)
-    (ConvertedFlatPosting ann, Money.MultiAccount (Currency ann))
+    (ConvertedFlatPosting ann, Money.MultiAccount (Commodity ann))
 convertFlatPosting currencyTo priceGraph rawBalances FlatPosting {..} = do
   let Located pl Posting {..} = flatPosting
       Located al _ = postingAccount
@@ -750,10 +750,12 @@ convertFlatPosting currencyTo priceGraph rawBalances FlatPosting {..} = do
           pl
           Posting
             { postingAccountName = postingAccountName,
-              postingCurrency = fmap (const currencyTo) postingCurrency,
               postingAccount = Located al converted,
               postingReal = postingReal,
-              postingCost = postingCost,
+              -- The amount has been converted, so the conversion that produced
+              -- it is spent: what is left is a plain amount in the target
+              -- currency.
+              postingPrice = PostingPriceCurrency (Located al currencyTo) Nothing,
               postingAmountRatio = postingAmountRatio
             }
 
@@ -771,19 +773,27 @@ computeRevaluations ::
   (Ord ann) =>
   Day ->
   Day ->
-  Map Day (MemoisedPriceGraph (Currency ann)) ->
+  Map Day (MemoisedPriceGraph (Commodity ann)) ->
   Vector (GenLocated ann (Price ann)) ->
   Currency ann ->
-  Money.MultiAccount (Currency ann) ->
+  Money.MultiAccount (Commodity ann) ->
   Validation (RegisterError ann) [ConvertedFlatRevaluation ann]
 computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalances = do
+  let isMarketPrice :: Price ann -> Bool
+      isMarketPrice Price {..} = case locatedValue priceCommodity of
+        -- A lot converts to its underlying at one to one, which is not a market
+        -- observation, so nothing is ever revalued by it.
+        CommodityLot _ -> False
+        CommodityCurrency _ -> True
   let relevantPrices =
         V.toList $
           V.filter
-            ( \(Located _ Price {..}) ->
+            ( \(Located _ price@Price {..}) ->
                 let Located _ ts = priceTimestamp
                     day = Timestamp.toDay ts
-                 in day > lastDay && day <= currentDay
+                 in isMarketPrice price
+                      && day > lastDay
+                      && day <= currentDay
             )
             allPrices
 
@@ -826,7 +836,7 @@ computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalan
           -- Collect any following same-day prices that have zero difference
           -- (they share the same price graph, so their totals are identical)
           let (zeroCurrencies, restPrices) = collectZeroSameDayPrices priceDay newConvertedTotal rest
-              allCurrencies = priceCurrency firstPrice :| zeroCurrencies
+              allCurrencies = priceCommodity firstPrice :| zeroCurrencies
           let reval =
                 ConvertedFlatRevaluation
                   { convertedFlatRevaluationTimestamp = priceTimestamp firstPrice,
@@ -842,7 +852,7 @@ computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalan
       Day ->
       Money.Account ->
       [GenLocated ann (Price ann)] ->
-      ([GenLocated ann (Currency ann)], [GenLocated ann (Price ann)])
+      ([GenLocated ann (Commodity ann)], [GenLocated ann (Price ann)])
     collectZeroSameDayPrices _ _ [] = ([], [])
     collectZeroSameDayPrices day currentTotal prices@(Located _ nextPrice : rest)
       | Timestamp.toDay (locatedValue (priceTimestamp nextPrice)) /= day = ([], prices)
@@ -857,7 +867,7 @@ computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalan
                   | nextTotal == currentTotal ->
                       -- Zero difference, include this currency and continue
                       let (moreCurrencies, remaining) = collectZeroSameDayPrices day currentTotal rest
-                       in (priceCurrency nextPrice : moreCurrencies, remaining)
+                       in (priceCommodity nextPrice : moreCurrencies, remaining)
                   | otherwise -> ([], prices) -- Non-zero difference, don't group
 
 -- | Group a flat register into blocks (Stage 3, multi-currency).
@@ -887,9 +897,9 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
          in timestampBlockTitle ts blockSize
 
   let convertEntry ::
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         FlatEntry ann ->
-        (RegisterEntry 'MultiCurrency ann, Money.MultiAccount (Currency ann))
+        (RegisterEntry 'MultiCurrency ann, Money.MultiAccount (Commodity ann))
       convertEntry blockRunning entry =
         let (postings, finalBlockRunning) = convertPostings blockRunning (V.toList (flatEntryPostings entry))
             regTx =
@@ -901,9 +911,9 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
          in (RegisterEntryTransaction regTx, finalBlockRunning)
 
       convertPostings ::
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         [FlatPosting ann] ->
-        ([RegisterPosting 'MultiCurrency ann], Money.MultiAccount (Currency ann))
+        ([RegisterPosting 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
       convertPostings blockRunning [] = ([], blockRunning)
       convertPostings blockRunning (fp : fps) =
         let newBlockRunning = fromMaybe blockRunning (MultiAccount.add blockRunning (flatPostingAmount fp))
@@ -920,7 +930,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
   let goBlocks ::
         Maybe Block ->
         Integer ->
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         [FlatEntry ann] ->
         [RegisterBlock 'MultiCurrency ann]
       goBlocks mCurrentBlock blockNum runningTotal entries =
@@ -980,7 +990,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
       generateEmptyBlocks ::
         Block ->
         Block ->
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         Integer ->
         [RegisterBlock 'MultiCurrency ann]
       generateEmptyBlocks current target runningTotal blockNum
@@ -991,7 +1001,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
 
       makeEmptyBlock ::
         Block ->
-        Money.MultiAccount (Currency ann) ->
+        Money.MultiAccount (Commodity ann) ->
         Integer ->
         RegisterBlock 'MultiCurrency ann
       makeEmptyBlock title runningTotal blockNum =
@@ -1005,7 +1015,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
 
       convertEntriesForBlock ::
         [FlatEntry ann] ->
-        ([RegisterEntry 'MultiCurrency ann], Money.MultiAccount (Currency ann))
+        ([RegisterEntry 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
       convertEntriesForBlock entries =
         let go _ [] = ([], MultiAccount.zero)
             go blockRunning (e : es) =
@@ -1025,9 +1035,9 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
       }
 
 computeMultiAverage ::
-  Money.MultiAccount (Currency ann) ->
+  Money.MultiAccount (Commodity ann) ->
   Integer ->
-  Money.MultiAccount (Currency ann)
+  Money.MultiAccount (Commodity ann)
 computeMultiAverage (Money.MultiAccount m) blockNum =
   Money.MultiAccount $ M.map go m
   where
@@ -1267,7 +1277,7 @@ timestampPassesDayFilter mBegin mEnd (Located _ ts) =
 buildDailyPriceGraphsFromEntries ::
   (Ord ann) =>
   Vector (EvaluatedEntry ann) ->
-  Map Day (MemoisedPriceGraph (Currency ann))
+  Map Day (MemoisedPriceGraph (Commodity ann))
 buildDailyPriceGraphsFromEntries = M.map MemoisedPriceGraph.fromPriceGraph . V.foldl' go M.empty
   where
     go m = \case

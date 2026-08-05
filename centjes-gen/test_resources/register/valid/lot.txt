@@ -1,0 +1,6 @@
+Block      Timestamp  Description    Account       Amount       Running      Total       Average    
+[37m2025-01-01[m [34m2025-01-01[m [33mOpening[m        [37massets:bank[m   [32m 1000.00[m [32mEUR[m [32m 1000.00[m [32mEUR[m [32m1000.00[m [32mEUR[m [32m1000.00[m [32mEUR[m
+[37m2025-01-27[m [34m2025-01-27[m [36mPrice: SWDA[m                  [32m    0.00[m [32mEUR[m [32m    0.00[m [32mEUR[m                        
+           [34m2025-01-27[m [33mBuy two shares[m [37massets:broker[m [32m 1000.00[m [32mEUR[m [32m 1000.00[m [32mEUR[m                        
+                                     [37massets:bank[m   [31m-1000.00[m [31mEUR[m [32m    0.00[m [32mEUR[m [32m1000.00[m [32mEUR[m [32m500.00[m  [32mEUR[m
+[37m2025-06-30[m [34m2025-06-30[m [36mPrice: SWDA[m                  [32m  200.00[m [32mEUR[m [32m  200.00[m [32mEUR[m [32m1200.00[m [32mEUR[m [32m400.00[m  [32mEUR[m

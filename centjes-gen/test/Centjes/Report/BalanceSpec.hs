@@ -9,7 +9,7 @@ import Centjes.Command.Balance (renderBalanceReport)
 import Centjes.Compile
 import Centjes.Filter (Filter (FilterSubstring))
 import Centjes.Filter.Gen ()
-import Centjes.Ledger (Currency)
+import Centjes.Ledger (Commodity)
 import Centjes.Ledger.Gen ()
 import Centjes.Load
 import Centjes.OptParse
@@ -47,7 +47,7 @@ spec = do
             -- real sum: there the report is legitimately valid.
             when (MultiAccount.sum balances /= Just wrongTotal) $
               shouldBeInvalid
-                (BalanceReport balances filled (wrongTotal :: Money.MultiAccount (Currency ())))
+                (BalanceReport balances filled (wrongTotal :: Money.MultiAccount (Commodity ())))
   describe "selectVirtual" $
     it "returns the with-virtual value iff showVirtual is True" $
       forAllValid $ \(withVirtual :: AccountBalances ()) ->

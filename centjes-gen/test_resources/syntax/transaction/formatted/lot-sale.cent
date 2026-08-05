@@ -1,0 +1,6 @@
+2025-04-01
+  | Sell one at a gain
+  * assets:broker          -1 SWDA lot @ 500 EUR
+  * assets:bank          +600 EUR
+  * income:capital-gains -100 EUR
+  + assert assets:broker = +1 SWDA lot @ 500 EUR

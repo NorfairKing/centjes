@@ -1,0 +1,4 @@
+2025-01-27
+  | Buy at a price that is not a finite decimal
+  * assets:broker 7 FOO lot @ 1 / 7 EUR
+  * assets:bank -1 EUR

@@ -175,7 +175,7 @@ produceChartReport accountTypes accountFilter currencySymbol evaluatedLedger = d
   -- The price graph in effect on each x-axis day, computed once and shared
   -- across every account rather than re-looked-up per account per day.
   let dailyPriceGraphs = pricesToDailyPriceGraphs (ledgerPrices ledger)
-  let dayPriceGraphs :: Vector (MemoisedPriceGraph (Currency ann))
+  let dayPriceGraphs :: Vector (MemoisedPriceGraph (Commodity ann))
       dayPriceGraphs =
         V.map (\day -> maybe MemoisedPriceGraph.empty snd (M.lookupLE day dailyPriceGraphs)) days
 
@@ -183,8 +183,8 @@ produceChartReport accountTypes accountFilter currencySymbol evaluatedLedger = d
   -- foreign-currency holding's line moves with the rate even on days without
   -- transactions.
   let convertWith ::
-        MemoisedPriceGraph (Currency ann) ->
-        Money.MultiAccount (Currency ann) ->
+        MemoisedPriceGraph (Commodity ann) ->
+        Money.MultiAccount (Commodity ann) ->
         Validation (ConvertError ann) Money.Account
       convertWith priceGraph =
         convertMultiAccountToAccount Nothing priceGraph currency

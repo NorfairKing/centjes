@@ -55,6 +55,26 @@ extra-source-files:
     test_resources/balance/balanced/filter-account.txt
     test_resources/balance/balanced/inclusive-ratio-explicit.cent
     test_resources/balance/balanced/inclusive-ratio-explicit.txt
+    test_resources/balance/balanced/lot-assertion.cent
+    test_resources/balance/balanced/lot-assertion.txt
+    test_resources/balance/balanced/lot-buy.cent
+    test_resources/balance/balanced/lot-buy.txt
+    test_resources/balance/balanced/lot-convert.cent
+    test_resources/balance/balanced/lot-convert.config
+    test_resources/balance/balanced/lot-convert.txt
+    test_resources/balance/balanced/lot-fraction.cent
+    test_resources/balance/balanced/lot-fraction.txt
+    test_resources/balance/balanced/lot-ordering.cent
+    test_resources/balance/balanced/lot-ordering.txt
+    test_resources/balance/balanced/lot-sale-gain.cent
+    test_resources/balance/balanced/lot-sale-gain.txt
+    test_resources/balance/balanced/lot-sale-loss.cent
+    test_resources/balance/balanced/lot-sale-loss.txt
+    test_resources/balance/balanced/lot-two-lots.cent
+    test_resources/balance/balanced/lot-two-lots.txt
+    test_resources/balance/balanced/lot-zero.cent
+    test_resources/balance/balanced/lot-zero.config
+    test_resources/balance/balanced/lot-zero.txt
     test_resources/balance/balanced/many-prices.cent
     test_resources/balance/balanced/many-prices.config
     test_resources/balance/balanced/many-prices.txt
@@ -102,6 +122,8 @@ extra-source-files:
     test_resources/balance/error/BE_CONVERSION_TOO_BIG.err
     test_resources/balance/error/BE_FILL.cent
     test_resources/balance/error/BE_FILL.err
+    test_resources/balance/error/BE_OFF_BALANCE-lot.cent
+    test_resources/balance/error/BE_OFF_BALANCE-lot.err
     test_resources/balance/error/BE_OFF_BALANCE-simple.cent
     test_resources/balance/error/BE_OFF_BALANCE-simple.err
     test_resources/balance/error/BE_OFF_BALANCE-two-currencies.cent
@@ -138,12 +160,17 @@ extra-source-files:
     test_resources/balance/error/CONVERT_ERROR_INVALID_SUM.cent
     test_resources/balance/error/CONVERT_ERROR_INVALID_SUM.config
     test_resources/balance/error/CONVERT_ERROR_INVALID_SUM.err
+    test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE-lot.cent
+    test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE-lot.config
+    test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE-lot.err
     test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE.cent
     test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE.config
     test_resources/balance/error/CONVERT_ERROR_MISSING_PRICE.err
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.cent
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.config
     test_resources/balance/error/CONVERT_ERROR_UNKNOWN_TARGET.err
+    test_resources/balance/error/EVAL_ACCOUNT_TYPE_ASSERTION-lot.cent
+    test_resources/balance/error/EVAL_ACCOUNT_TYPE_ASSERTION-lot.err
     test_resources/balance/show-virtual-price.cent
     test_resources/check/2025-01-02.txt
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.cent
@@ -206,6 +233,8 @@ extra-source-files:
     test_resources/compile/CE_INVALID_RATIONAL-negative.err
     test_resources/compile/CE_INVALID_RATIONAL-zero.cent
     test_resources/compile/CE_INVALID_RATIONAL-zero.err
+    test_resources/compile/CE_LOT_SAME_CURRENCY.cent
+    test_resources/compile/CE_LOT_SAME_CURRENCY.err
     test_resources/compile/CE_PRICE_SAME_CURRENCY.cent
     test_resources/compile/CE_PRICE_SAME_CURRENCY.err
     test_resources/compile/CE_REAL_POSTING_NOT_ALLOWED.cent
@@ -250,6 +279,7 @@ extra-source-files:
     test_resources/load/LE_IMPORT.err
     test_resources/load/LE_IMPORT_DIR.cent
     test_resources/load/LE_IMPORT_DIR.err
+    test_resources/lot/basis-only.cent
     test_resources/merge/empty-existing/existing.cent
     test_resources/merge/empty-existing/new.cent
     test_resources/merge/empty-existing/result.cent
@@ -349,6 +379,9 @@ extra-source-files:
     test_resources/register/valid/large-amounts-convert.cent
     test_resources/register/valid/large-amounts-convert.config
     test_resources/register/valid/large-amounts-convert.txt
+    test_resources/register/valid/lot.cent
+    test_resources/register/valid/lot.config
+    test_resources/register/valid/lot.txt
     test_resources/register/valid/many-currencies.cent
     test_resources/register/valid/many-currencies.config
     test_resources/register/valid/many-currencies.txt
@@ -521,6 +554,9 @@ extra-source-files:
     test_resources/syntax/transaction/formatted/currency-conversion-fraction.cent
     test_resources/syntax/transaction/formatted/currency-conversion.cent
     test_resources/syntax/transaction/formatted/example.cent
+    test_resources/syntax/transaction/formatted/lot-fraction.cent
+    test_resources/syntax/transaction/formatted/lot-sale.cent
+    test_resources/syntax/transaction/formatted/lot.cent
     test_resources/syntax/transaction/formatted/multiline-description.cent
     test_resources/syntax/transaction/formatted/only-description.cent
     test_resources/syntax/transaction/formatted/only-timestamp.cent
@@ -537,6 +573,9 @@ extra-source-files:
     test_resources/syntax/transaction/valid/currency-conversion-fraction.cent
     test_resources/syntax/transaction/valid/currency-conversion.cent
     test_resources/syntax/transaction/valid/example.cent
+    test_resources/syntax/transaction/valid/lot-fraction.cent
+    test_resources/syntax/transaction/valid/lot-sale.cent
+    test_resources/syntax/transaction/valid/lot.cent
     test_resources/syntax/transaction/valid/multiline-description.cent
     test_resources/syntax/transaction/valid/only-description.cent
     test_resources/syntax/transaction/valid/only-timestamp.cent
@@ -612,6 +651,7 @@ test-suite centjes-test
       Centjes.FormatSpec
       Centjes.LedgerSpec
       Centjes.LoadSpec
+      Centjes.LotSpec
       Centjes.MergeSpec
       Centjes.ModuleSpec
       Centjes.ParseSpec

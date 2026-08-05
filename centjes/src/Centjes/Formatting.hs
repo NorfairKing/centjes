@@ -29,21 +29,29 @@ accountNameChunk = fore white . chunk . AccountName.toText
 multiAccountMaxWidth :: Money.MultiAccount currency -> Max Word8
 multiAccountMaxWidth = foldMap accountWidth . MultiAccount.unMultiAccount
 
-multiAccountChunksWithWidth :: Maybe (Max Word8) -> Money.MultiAccount (Currency ann) -> [[Chunk]]
+multiAccountChunksWithWidth :: Maybe (Max Word8) -> Money.MultiAccount (Commodity ann) -> [[Chunk]]
 multiAccountChunksWithWidth mWidth ma =
   let accounts = MultiAccount.unMultiAccount ma
    in map
         ( \(c, acc) ->
-            let Located _ qf = currencyQuantisationFactor c
+            let Located _ qf = commodityQuantisationFactor c
                 f = fore $ if acc >= Account.zero then green else red
              in [ f $ accountChunkWithWidth mWidth qf acc,
-                  f $ currencySymbolChunk (currencySymbol c)
+                  f $ commodityChunk c
                 ]
         )
         (M.toList accounts)
 
 currencySymbolChunk :: CurrencySymbol -> Chunk
 currencySymbolChunk = fore magenta . chunk . currencySymbolText
+
+-- | Render a commodity as it is written in a posting, lot and all.
+--
+-- Two lots of the same symbol are different commodities with different
+-- balances, so rendering only the symbol would show two lines that look
+-- identical.
+commodityChunk :: Commodity ann -> Chunk
+commodityChunk = fore magenta . chunk . commodityText
 
 accountWidth :: Money.Account -> Max Word8
 accountWidth a =

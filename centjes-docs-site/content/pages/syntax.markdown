@@ -184,6 +184,61 @@ You can also describe these conversion factors with a rational fraction in case 
     * assets:bank  1.00 CHF
 ```
 
+## Lots
+
+An asset bought at a given price can be held as a lot, with `lot @`.
+A lot is its own commodity: `2 SWDA lot @ 500 EUR` never mixes with plain
+`SWDA`, nor with `SWDA lot @ 480 EUR`, so a balance report shows one line per
+price you paid.
+
+``` centjes
+2025-01-27
+    | Buy two shares
+    * assets:broker    +2 SWDA lot @ 500 EUR
+    * assets:bank   -1000 EUR
+```
+
+Like `@`, the rate is per unit, and the posting balances at that rate: the two
+shares above count as `1000 EUR`.
+
+You sell by posting a negative amount in the same lot, at the price you bought
+it for.
+That leaves the difference between what you paid and what you were paid, which
+a capital gains posting has to absorb:
+
+``` centjes
+2025-04-01
+    | Sell one at a gain
+    * assets:broker         -1 SWDA lot @ 500 EUR
+    * assets:bank          +600 EUR
+    * income:capital-gains -100 EUR
+```
+
+Capital *losses* go to an `expenses:` account rather than to `income:`, because
+a loss is a positive amount and a positive balance in an income account fails
+the account type assertion.
+
+If you sell at a price you never bought at, the lot's balance goes negative in
+an assets account and `centjes check` reports it.
+
+A lot is worth whatever the underlying commodity is worth, so declaring a price
+for `SWDA` values every lot of it.
+Until you declare one, a holding is valued at what it cost.
+
+Assertions can name a lot, or leave it out to assert the total across every lot
+of the symbol, which is what a broker statement gives you:
+
+``` centjes
+2025-02-27
+    | Buy one more, at a different price
+    * assets:broker   +1 SWDA lot @ 600 EUR
+    * assets:bank    -600 EUR
+    + assert assets:broker = +1 SWDA lot @ 600 EUR
+    + assert assets:broker = +3 SWDA
+```
+
+Because `lot` is a keyword inside a posting, a currency cannot be called `lot`.
+
 ## Percentage
 
 Postings can have an annotated percentage to express that they represent a given fraction of the previous percentage.

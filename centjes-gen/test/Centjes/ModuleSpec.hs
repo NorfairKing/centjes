@@ -9,6 +9,8 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  genValidSpec @(PriceAnnotation ())
+  genValidSpec @(CommodityExpression ())
   genValidSpec @(Posting ())
   genValidSpec @(Transaction ())
   genValidSpec @(CurrencyDeclaration ())

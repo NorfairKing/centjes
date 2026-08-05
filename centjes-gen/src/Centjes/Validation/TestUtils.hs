@@ -2,6 +2,7 @@
 
 module Centjes.Validation.TestUtils
   ( shouldValidate,
+    shouldValidateT,
     shouldFailToValidateT,
     shouldFailToValidate,
   )
@@ -17,6 +18,9 @@ shouldValidate :: (ToReport e) => Diagnostic String -> Validation e a -> IO a
 shouldValidate diag v = case checkValidationPure diag v of
   Left e -> expectationFailure $ T.unpack e
   Right a -> pure a
+
+shouldValidateT :: (ToReport e, MonadIO m) => Diagnostic String -> ValidationT e m a -> m a
+shouldValidateT diag (ValidationT f) = f >>= liftIO . shouldValidate diag
 
 shouldFailToValidateT :: (Show a, MonadIO m) => ValidationT e m a -> m (NonEmpty e)
 shouldFailToValidateT (ValidationT f) = f >>= shouldFailToValidate

@@ -1,0 +1,11 @@
+          [37mBalance[m                     [37mTotal[m                      
+[37massets[m                                [32m  400.00[m [32mEUR[m               
+[37m[m                                      [32m       2[m [32mSWDA lot @ 500 EUR[m
+[37m[m                                      [32m       1[m [32mSWDA lot @ 600 EUR[m
+[37m├─ bank[m   [32m  400.00[m [32mEUR[m                [32m  400.00[m [32mEUR[m               
+[37m└─ broker[m [32m       2[m [32mSWDA lot @ 500 EUR[m [32m       2[m [32mSWDA lot @ 500 EUR[m
+[37m   [m       [32m       1[m [32mSWDA lot @ 600 EUR[m [32m       1[m [32mSWDA lot @ 600 EUR[m
+[37mequity[m    [31m-2000.00[m [31mEUR[m                [31m-2000.00[m [31mEUR[m               
+[34mTotal[m                                 [31m-1600.00[m [31mEUR[m               
+                                      [32m       2[m [32mSWDA lot @ 500 EUR[m
+                                      [32m       1[m [32mSWDA lot @ 600 EUR[m

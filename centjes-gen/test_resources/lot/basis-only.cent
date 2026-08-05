@@ -1,0 +1,10 @@
+currency EUR 0.01
+currency SWDA 1
+
+account assets:broker
+account equity
+
+2025-01-27
+  | EUR is used nowhere but as the basis of a lot
+  * assets:broker +2 SWDA lot @ 500 EUR
+  * equity        -2 SWDA lot @ 500 EUR

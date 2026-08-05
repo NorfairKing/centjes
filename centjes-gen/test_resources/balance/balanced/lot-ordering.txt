@@ -1,0 +1,9 @@
+          [37mBalance[m                    [37mTotal[m                     
+[37massets[m                               [32m      10[m [32mZZZ[m              
+[37m[m                                     [32m       2[m [32mAAA lot @ 500 EUR[m
+[37m└─ broker[m [32m      10[m [32mZZZ[m               [32m      10[m [32mZZZ[m              
+[37m   [m       [32m       2[m [32mAAA lot @ 500 EUR[m [32m       2[m [32mAAA lot @ 500 EUR[m
+[37mequity[m    [31m-1000.00[m [31mEUR[m               [31m-1000.00[m [31mEUR[m              
+[37m[m          [31m     -10[m [31mZZZ[m               [31m     -10[m [31mZZZ[m              
+[34mTotal[m                                [31m-1000.00[m [31mEUR[m              
+                                     [32m       2[m [32mAAA lot @ 500 EUR[m

@@ -39,7 +39,7 @@ import qualified Money.MultiAccount as MultiAccount
 data BalanceReport ann = BalanceReport
   { balanceReportBalances :: !(AccountBalances ann),
     balanceReportFilledBalances :: !(AccountBalances ann),
-    balanceReportTotal :: !(Money.MultiAccount (Currency ann))
+    balanceReportTotal :: !(Money.MultiAccount (Commodity ann))
   }
   deriving (Show, Generic)
 
@@ -132,7 +132,7 @@ lastEntryState ::
   (Ord ann) =>
   Bool ->
   Vector (EvaluatedEntry ann) ->
-  Maybe (AccountBalances ann, MemoisedPriceGraph (Currency ann))
+  Maybe (AccountBalances ann, MemoisedPriceGraph (Commodity ann))
 lastEntryState showVirtual entries
   | V.null entries = Nothing
   | otherwise = Just $ case V.last entries of

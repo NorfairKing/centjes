@@ -29,7 +29,6 @@ import Centjes.Convert
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import Centjes.Convert.PriceGraph (PriceGraph)
 import qualified Centjes.Convert.PriceGraph as PriceGraph
-import Centjes.CurrencySymbol as CurrencySymbol
 import qualified Centjes.Filter as Filter
 import Centjes.Format
 import Centjes.Ledger
@@ -62,7 +61,7 @@ import qualified Numeric.DecimalLiteral as DecimalLiteral
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
-type AccountBalances ann = Map AccountName (Money.MultiAccount (Currency ann))
+type AccountBalances ann = Map AccountName (Money.MultiAccount (Commodity ann))
 
 data EvaluatedLedger ann = EvaluatedLedger
   { evaluatedLedgerSource :: !(Ledger ann),
@@ -86,13 +85,13 @@ data EvaluatedTransaction ann = EvaluatedTransaction
     -- Consumers should call 'MemoisedPriceGraph.fromPriceGraph' when they
     -- need conversion lookups; this avoids creating intermediate memoised
     -- graphs that may never be used.
-    evaluatedTransactionPriceGraph :: !(PriceGraph Day (Currency ann))
+    evaluatedTransactionPriceGraph :: !(PriceGraph Day (Commodity ann))
   }
 
 data EvaluatedPosting ann = EvaluatedPosting
   { evaluatedPostingLocated :: !(GenLocated ann (Posting ann)),
     -- | The posting amount (for this posting alone)
-    evaluatedPostingAmount :: !(Money.MultiAccount (Currency ann)),
+    evaluatedPostingAmount :: !(Money.MultiAccount (Commodity ann)),
     -- | Cumulative account balances (all accounts) including virtual postings,
     -- right after this posting has been incorporated
     evaluatedPostingBalancesWithVirtual :: !(AccountBalances ann),
@@ -100,7 +99,7 @@ data EvaluatedPosting ann = EvaluatedPosting
     -- right after this posting has been incorporated
     evaluatedPostingBalancesWithoutVirtual :: !(AccountBalances ann),
     -- | The cumulative price graph at the time of this posting
-    evaluatedPostingPriceGraph :: !(PriceGraph Day (Currency ann))
+    evaluatedPostingPriceGraph :: !(PriceGraph Day (Commodity ann))
   }
 
 data EvaluatedPrice ann = EvaluatedPrice
@@ -110,7 +109,7 @@ data EvaluatedPrice ann = EvaluatedPrice
     evaluatedPriceBalancesWithVirtual :: !(AccountBalances ann),
     evaluatedPriceBalancesWithoutVirtual :: !(AccountBalances ann),
     -- | The cumulative price graph right after this price declaration
-    evaluatedPricePriceGraph :: !(PriceGraph Day (Currency ann))
+    evaluatedPricePriceGraph :: !(PriceGraph Day (Commodity ann))
   }
 
 data EvaluatedLedgerError ann
@@ -118,19 +117,19 @@ data EvaluatedLedgerError ann
     EvaluatedLedgerErrorBalanceError !(BalanceError ann)
   | -- | Could not add transaction to running total balance
     -- [tag:EVAL_RUNNING_BALANCE]
-    EvaluatedLedgerErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Currency ann)) !(Money.MultiAccount (Currency ann))
+    EvaluatedLedgerErrorCouldNotAddTransaction !ann !AccountName !(Money.MultiAccount (Commodity ann)) !(Money.MultiAccount (Commodity ann))
   | -- | Could not add posting to account balances
     -- [tag:EVAL_ACCOUNT_TOTAL]
-    EvaluatedLedgerErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Currency ann)) !(Currency ann) !Money.Account
+    EvaluatedLedgerErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Commodity ann)) !(Commodity ann) !Money.Account
   | -- | Undeclared account encountered during assertion
     -- [tag:EVAL_UNDECLARED_ACCOUNT]
     EvaluatedLedgerErrorUndeclaredAccount !ann !AccountName
   | -- | Account type assertion failure
     -- [tag:EVAL_ACCOUNT_TYPE_ASSERTION]
-    EvaluatedLedgerErrorAccountTypeAssertion !ann !ann !AccountType !(Money.MultiAccount (Currency ann))
+    EvaluatedLedgerErrorAccountTypeAssertion !ann !ann !AccountType !(Money.MultiAccount (Commodity ann))
   | -- | Explicit assertion failure
     -- [tag:EVAL_ASSERTION]
-    EvaluatedLedgerErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Currency ann)) !(Maybe Money.Account)
+    EvaluatedLedgerErrorAssertion !ann !(GenLocated ann (Assertion ann)) !(Money.MultiAccount (Commodity ann)) !(Maybe Money.Account)
   deriving stock (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (EvaluatedLedgerError ann)
@@ -253,19 +252,19 @@ instance ToReport (EvaluatedLedgerError SourceSpan) where
         []
 
 data BalanceError ann
-  = BalanceErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Currency ann)) !(Currency ann) !Money.Account
-  | BalanceErrorCouldNotSumPostings !ann ![Money.MultiAccount (Currency ann)]
+  = BalanceErrorCouldNotAddPostings !ann !AccountName !ann !(Money.MultiAccount (Commodity ann)) !(Commodity ann) !Money.Account
+  | BalanceErrorCouldNotSumPostings !ann ![Money.MultiAccount (Commodity ann)]
   | BalanceErrorConversionTooBig !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann))
   | BalanceErrorConversionImpossibleRate !(GenLocated ann Money.Account) !(GenLocated ann (Cost ann)) !(Maybe Money.ConversionRate)
-  | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Currency ann)) ![GenLocated ann (Posting ann)]
+  | BalanceErrorTransactionOffBalance !ann !(Money.MultiAccount (Commodity ann)) ![GenLocated ann (Posting ann)]
   | BalanceErrorAmountRatioNoPrevious !ann !ann
   | BalanceErrorAmountRatioCurrency !ann !ann !ann
   | BalanceErrorAmountRatioFraction !ann !ann !ann !Bool
   | BalanceErrorAmountRatioFraction' !ann !ann !Rational
-  | BalanceErrorAmountRatio !ann !ann !ann !ann !(Currency ann) !(GenLocated ann Money.Account) !(Maybe (GenLocated ann Money.Account)) !(Maybe (GenLocated ann Rational))
+  | BalanceErrorAmountRatio !ann !ann !ann !ann !(Commodity ann) !(GenLocated ann Money.Account) !(Maybe (GenLocated ann Money.Account)) !(Maybe (GenLocated ann Rational))
   | BalanceErrorConvertError !(ConvertError ann)
   | BalanceErrorCouldNotFill
-  | BalanceErrorCouldNotSumTotal ![Money.MultiAccount (Currency ann)]
+  | BalanceErrorCouldNotSumTotal ![Money.MultiAccount (Commodity ann)]
   deriving stock (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (BalanceError ann)
@@ -336,7 +335,7 @@ instance ToReport (BalanceError SourceSpan) where
             (toDiagnosePosition s, Where $ unlines' ("By this amount:" : multiAccountLines ma))
           ]
             ++ mapMaybe
-              (\(Located _ Posting {..}) -> makePostingSuggestion ma postingCurrency postingAccount)
+              (\(Located _ p) -> makePostingSuggestion ma (postingCommodity p) (postingAccount p))
               postings
         )
         []
@@ -387,7 +386,7 @@ instance ToReport (BalanceError SourceSpan) where
         []
     -- [tag:BE_AMOUNT_RATIO] At least one test per error: test_resources/balance/error/BE_PERCENTAGE-exclusive.cent, BE_PERCENTAGE-inclusive.cent
     BalanceErrorAmountRatio s pl ppl pctl currency (Located pal computedPrevious) mComputedCurrent mComputedRatio ->
-      let Located _ qf = currencyQuantisationFactor currency
+      let Located _ qf = commodityQuantisationFactor currency
        in Err
             (Just "BE_AMOUNT_RATIO")
             "The given ratio does not match the amount it describes."
@@ -454,29 +453,28 @@ instance ToReport (BalanceError SourceSpan) where
         []
 
 makePostingSuggestion ::
-  Money.MultiAccount (Currency SourceSpan) ->
-  Located (Currency SourceSpan) ->
+  Money.MultiAccount (Commodity SourceSpan) ->
+  Located (Commodity SourceSpan) ->
   Located Money.Account ->
   Maybe (Position, Marker String)
 makePostingSuggestion total (Located cl currency) (Located al account) =
   let accountMap = MultiAccount.unMultiAccount total
-      totalCurrencies :: Set (Currency SourceSpan)
+      totalCurrencies :: Set (Commodity SourceSpan)
       totalCurrencies = M.keysSet accountMap
    in if totalCurrencies /= S.singleton currency
         then Nothing
         else do
           totalAccount <- M.lookup currency accountMap
           suggestedAccount <- Account.subtract account totalAccount
-          let qf = locatedValue (currencyQuantisationFactor currency)
+          let qf = locatedValue (commodityQuantisationFactor currency)
           suggestedLiteral <- Account.toDecimalLiteral qf suggestedAccount
-          let symbol = currencySymbol currency
           pure
             ( toDiagnosePosition $ combineSpans al cl,
               Maybe $
                 unwords
                   [ "Perhaps you meant",
                     DecimalLiteral.toString suggestedLiteral,
-                    T.unpack (currencySymbolText symbol)
+                    T.unpack (commodityText currency)
                   ]
             )
 
@@ -505,7 +503,8 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
       incorporatePosting
         (balancesForBalancing, balancesForAssertions, balancesForUser)
         ix
-        (Located pl (Posting real (Located _ an) lc@(Located _ currency) la@(Located _ account) mCost mAmountRatio)) = do
+        (Located pl posting@(Posting real (Located _ an) la@(Located _ account) _ mAmountRatio)) = do
+          let lc@(Located _ commodity) = postingCommodity posting
           for_ mAmountRatio $ \lpct@(Located pctl _) -> do
             let go i =
                   case transactionPostings V.!? pred i of
@@ -521,10 +520,10 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
           balancesForBalancing' <-
             if real
               then do
-                (convertedCurrency, convertedAccount) <- case mCost of
-                  Nothing -> pure (currency, account)
+                (convertedCommodity, convertedAccount) <- case postingConversion posting of
+                  Nothing -> pure (commodity, account)
                   Just lcost@(Located _ Cost {..}) -> do
-                    let Located _ qf = currencyQuantisationFactor currency
+                    let Located _ qf = commodityQuantisationFactor commodity
                     let Located _ newCurrency = costCurrency
                     let Located _ rate = costConversionRate
                     let Located _ qfNew = currencyQuantisationFactor newCurrency
@@ -533,20 +532,20 @@ balanceTransaction showVirtual (Located tl Transaction {..}) = do
                     if mActualRate == Just rate
                       then case mNewAccount of
                         Nothing -> validationFailure $ BalanceErrorConversionTooBig la lcost
-                        Just newAccount -> pure (newCurrency, newAccount)
+                        Just newAccount -> pure (CommodityCurrency newCurrency, newAccount)
                       else validationFailure $ BalanceErrorConversionImpossibleRate la lcost mActualRate
 
-                addAccountToBalances tl an pl convertedCurrency convertedAccount balancesForBalancing
+                addAccountToBalances tl an pl convertedCommodity convertedAccount balancesForBalancing
               else pure balancesForBalancing
 
           balancesForAssertions' <-
             if real
-              then addAccountToBalances tl an pl currency account balancesForAssertions
+              then addAccountToBalances tl an pl commodity account balancesForAssertions
               else pure balancesForAssertions
 
           balancesForUser' <-
             if real || (not real && showVirtual)
-              then addAccountToBalances tl an pl currency account balancesForUser
+              then addAccountToBalances tl an pl commodity account balancesForUser
               else pure balancesForUser
 
           pure (balancesForBalancing', balancesForAssertions', balancesForUser')
@@ -578,7 +577,7 @@ addAccountToBalances ::
   ann ->
   AccountName ->
   ann ->
-  Currency ann ->
+  Commodity ann ->
   Money.Account ->
   AccountBalances ann ->
   Validation (BalanceError ann) (AccountBalances ann)
@@ -598,7 +597,7 @@ checkAmountRatio ::
   -- Previous posting
   GenLocated ann (Posting ann) ->
   -- Current posting's currency
-  GenLocated ann (Currency ann) ->
+  GenLocated ann (Commodity ann) ->
   -- Current posting's account
   GenLocated ann Money.Account ->
   -- Current posting's ratio
@@ -611,7 +610,7 @@ checkAmountRatio
   (Located cl currency)
   (Located al thisAccount)
   (Located pctl (AmountRatio inclusive rounding (Located rl ratio))) = do
-    let Located pcl newCurrency = postingCurrency p
+    let Located pcl newCurrency = postingCommodity p
     when (newCurrency /= currency) $ validationFailure $ BalanceErrorAmountRatioCurrency tl pcl cl
     let Located pal previousAccount = postingAccount p
     if inclusive
@@ -667,7 +666,7 @@ checkAmountRatio
                   Just cT -> pure $ Just $ Located pal cT
 
           let mComputedRatio = do
-                let Located _ qf = currencyQuantisationFactor currency
+                let Located _ qf = commodityQuantisationFactor currency
                 rate <- ConversionRate.toRational <$> Account.rate qf previousAccount qf thisAccount
                 pure $ Located rl $ rate * (1 + ratio)
 
@@ -729,7 +728,7 @@ checkAmountRatio
                       Nothing -> validationFailure $ BalanceErrorAmountRatioFraction' tl al factor
                       Just cE -> pure $ Just $ Located pal cE
               let mComputedRatio = do
-                    let Located _ qf = currencyQuantisationFactor currency
+                    let Located _ qf = commodityQuantisationFactor currency
                     rate <- ConversionRate.toRational <$> Account.rate qf previousAccount qf thisAccount
                     pure $ Located rl rate
 
@@ -759,7 +758,7 @@ filterAccountBalances f =
 convertAccountBalances ::
   forall ann.
   (Ord ann) =>
-  MemoisedPriceGraph (Currency ann) ->
+  MemoisedPriceGraph (Commodity ann) ->
   Currency ann ->
   AccountBalances ann ->
   Validation (ConvertError ann) (AccountBalances ann)
@@ -775,11 +774,11 @@ fillAccountBalances bs = foldM go bs (M.toList bs)
   where
     go ::
       AccountBalances ann ->
-      (AccountName, Money.MultiAccount (Currency ann)) ->
+      (AccountName, Money.MultiAccount (Commodity ann)) ->
       Validation (BalanceError ann) (AccountBalances ann)
     go as (an, am) = foldM (go' am) as (AccountName.ancestors an)
     go' ::
-      Money.MultiAccount (Currency ann) ->
+      Money.MultiAccount (Commodity ann) ->
       AccountBalances ann ->
       AccountName ->
       Validation (BalanceError ann) (AccountBalances ann)
@@ -900,7 +899,7 @@ mergeEntries transactions prices =
 data ProcessState ann = ProcessState
   { processStateBalancesWithVirtual :: !(AccountBalances ann),
     processStateBalancesWithoutVirtual :: !(AccountBalances ann),
-    processStatePriceGraph :: !(PriceGraph Day (Currency ann))
+    processStatePriceGraph :: !(PriceGraph Day (Commodity ann))
   }
 
 processEntries ::
@@ -940,13 +939,13 @@ processEntry ::
   MergedEntry ann ->
   Validation (EvaluatedLedgerError ann) (EvaluatedEntry ann, ProcessState ann)
 processEntry state (MergedPrice lp@(Located _ Price {..})) =
-  let Located _ currencyFrom = priceCurrency
+  let Located _ commodityFrom = priceCommodity
       Located _ Cost {..} = priceCost
       Located _ rate = costConversionRate
       Located _ currencyTo = costCurrency
       Located _ timestamp = priceTimestamp
       priority = Timestamp.toDay timestamp
-      newPriceGraph = PriceGraph.insert currencyFrom currencyTo rate priority (processStatePriceGraph state)
+      newPriceGraph = PriceGraph.insert commodityFrom (CommodityCurrency currencyTo) rate priority (processStatePriceGraph state)
       newState =
         state
           { processStatePriceGraph = newPriceGraph
@@ -998,7 +997,7 @@ incorporateAccount ::
   (Ord ann) =>
   ann ->
   AccountBalances ann ->
-  (AccountName, Money.MultiAccount (Currency ann)) ->
+  (AccountName, Money.MultiAccount (Commodity ann)) ->
   Validation (EvaluatedLedgerError ann) (AccountBalances ann)
 incorporateAccount l totals (an, current) = case M.lookup an totals of
   Nothing -> pure $ M.insert an current totals
@@ -1035,10 +1034,24 @@ checkAssertion tl runningTotal a@(Located _ (AssertionEquals lan la lcs)) = do
   let Located _ expected = la
   let Located _ c = lcs
   let actualMulti = fromMaybe MultiAccount.zero $ M.lookup an runningTotal
-  let actual = fromMaybe Account.zero $ M.lookup c $ MultiAccount.unMultiAccount actualMulti
-  if actual == expected
-    then pure ()
-    else validationFailure $ EvaluatedLedgerErrorAssertion tl a actualMulti (Account.subtract actual expected)
+  let balances = MultiAccount.unMultiAccount actualMulti
+  let mActual = case c of
+        CommodityLot _ -> Just $ fromMaybe Account.zero $ M.lookup c balances
+        -- A lot-free assertion is about the currency rather than about one lot
+        -- of it, so that an assertion copied off a broker statement stays
+        -- writable once lots are in play.
+        CommodityCurrency currency ->
+          Account.sum
+            [ account
+            | (commodity, account) <- M.toList balances,
+              commodityCurrency commodity == currency
+            ]
+  case mActual of
+    Nothing -> validationFailure $ EvaluatedLedgerErrorAssertion tl a actualMulti Nothing
+    Just actual ->
+      if actual == expected
+        then pure ()
+        else validationFailure $ EvaluatedLedgerErrorAssertion tl a actualMulti (Account.subtract actual expected)
 
 buildEvaluatedPostings ::
   forall ann.
@@ -1046,7 +1059,7 @@ buildEvaluatedPostings ::
   ann ->
   AccountBalances ann ->
   AccountBalances ann ->
-  PriceGraph Day (Currency ann) ->
+  PriceGraph Day (Commodity ann) ->
   Vector (GenLocated ann (Posting ann)) ->
   Validation (EvaluatedLedgerError ann) (Vector (EvaluatedPosting ann))
 buildEvaluatedPostings tl initialWithVirtual initialWithoutVirtual priceGraph postings =
@@ -1058,20 +1071,20 @@ buildEvaluatedPostings tl initialWithVirtual initialWithoutVirtual priceGraph po
             (Int, AccountBalances ann, AccountBalances ann)
           )
       go (ix, balWithVirtual, balWithoutVirtual) =
-        let lp@(Located pl Posting {..}) = V.unsafeIndex postings ix
-            Located _ currency = postingCurrency
+        let lp@(Located pl p@Posting {..}) = V.unsafeIndex postings ix
+            Located _ commodity = postingCommodity p
             Located _ account = postingAccount
             Located _ an = postingAccountName
-            amount = MultiAccount.fromAccount currency account
+            amount = MultiAccount.fromAccount commodity account
          in do
               -- Update without-virtual balances (real postings only)
               newBalWithoutVirtual <-
                 if postingReal
-                  then addToBalances tl an pl currency account balWithoutVirtual
+                  then addToBalances tl an pl commodity account balWithoutVirtual
                   else pure balWithoutVirtual
 
               -- Update with-virtual balances (all postings)
-              newBalWithVirtual <- addToBalances tl an pl currency account balWithVirtual
+              newBalWithVirtual <- addToBalances tl an pl commodity account balWithVirtual
 
               let evaluatedPosting =
                     EvaluatedPosting
@@ -1089,7 +1102,7 @@ addToBalances ::
   ann ->
   AccountName ->
   ann ->
-  Currency ann ->
+  Commodity ann ->
   Money.Account ->
   AccountBalances ann ->
   Validation (EvaluatedLedgerError ann) (AccountBalances ann)
@@ -1102,15 +1115,15 @@ addToBalances tl an pl c a bs = case M.lookup an bs of
 
 -- Helpers for error formatting
 
-multiAccountLines :: Money.MultiAccount (Currency ann) -> [String]
+multiAccountLines :: Money.MultiAccount (Commodity ann) -> [String]
 multiAccountLines = map (uncurry accountLine) . M.toList . MultiAccount.unMultiAccount
 
-accountLine :: Currency ann -> Money.Account -> String
+accountLine :: Commodity ann -> Money.Account -> String
 accountLine c a =
-  let Located _ qf = currencyQuantisationFactor c
+  let Located _ qf = commodityQuantisationFactor c
    in unwords
         [ Account.format qf a,
-          T.unpack $ currencySymbolText $ currencySymbol c
+          T.unpack $ commodityText c
         ]
 
 unlines' :: [String] -> String

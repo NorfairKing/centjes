@@ -172,18 +172,18 @@ renderMultiTransaction maxWidth timestamp mDescription postings =
 renderMultiPosting ::
   Max Word8 ->
   Posting ann ->
-  Money.MultiAccount (Currency ann) ->
+  Money.MultiAccount (Commodity ann) ->
   [[Chunk]]
-renderMultiPosting maxWidth Posting {..} runningTotal =
+renderMultiPosting maxWidth p@Posting {..} runningTotal =
   let Located _ accountName = postingAccountName
-      Located _ Currency {..} = postingCurrency
-      Located _ quantisationFactor = currencyQuantisationFactor
+      Located _ commodity = postingCommodity p
+      Located _ quantisationFactor = commodityQuantisationFactor commodity
       Located _ acc = postingAccount
       f = fore $ if acc >= Account.zero then green else red
       postingChunks =
         [ accountNameChunk accountName,
           f $ accountChunkWithWidth (Just maxWidth) quantisationFactor acc,
-          f $ currencySymbolChunk currencySymbol
+          f $ commodityChunk commodity
         ]
       totalChunks = multiAccountChunksWithWidth (Just maxWidth) runningTotal
    in case totalChunks of
@@ -277,11 +277,11 @@ renderRevaluation ::
   [[Chunk]]
 renderRevaluation currency maxWidth RegisterRevaluation {..} =
   let Located _ ts = registerRevaluationTimestamp
-      currencySymbols = NE.map (\(Located _ cur) -> currencySymbolText (currencySymbol cur)) registerRevaluationCurrencies
+      currencyTexts = NE.map (commodityText . locatedValue) registerRevaluationCurrencies
       amountChunks = singleAccountChunksWithWidth currency (Just maxWidth) registerRevaluationAmount
       runningChunks = singleAccountChunksWithWidth currency (Just maxWidth) registerRevaluationBlockRunningTotal
       renderLines = zipAmountAndRunning amountChunks runningChunks
-      descriptionText = "Price: " <> T.intercalate ", " (NE.toList currencySymbols)
+      descriptionText = "Price: " <> T.intercalate ", " (NE.toList currencyTexts)
    in hCatTable
         [ [[timestampChunk ts]],
           [[fore cyan $ chunk descriptionText]],
@@ -340,16 +340,16 @@ renderSinglePosting ::
   Posting ann ->
   Account.Account ->
   [[Chunk]]
-renderSinglePosting currency maxWidth Posting {..} runningTotal =
+renderSinglePosting currency maxWidth p@Posting {..} runningTotal =
   let Located _ accountName = postingAccountName
-      Located _ Currency {..} = postingCurrency
-      Located _ quantisationFactor = currencyQuantisationFactor
+      Located _ postedCommodity = postingCommodity p
+      Located _ quantisationFactor = commodityQuantisationFactor postedCommodity
       Located _ acc = postingAccount
       f = fore $ if acc >= Account.zero then green else red
       postingChunks =
         [ accountNameChunk accountName,
           f $ accountChunkWithWidth (Just maxWidth) quantisationFactor acc,
-          f $ currencySymbolChunk currencySymbol
+          f $ commodityChunk postedCommodity
         ]
       totalChunks = singleAccountChunksWithWidth currency (Just maxWidth) runningTotal
    in case totalChunks of
@@ -357,10 +357,10 @@ renderSinglePosting currency maxWidth Posting {..} runningTotal =
         (cs : css) -> (postingChunks ++ cs) : map ([" ", " ", " "] ++) css
 
 singleAccountChunksWithWidth :: Currency ann -> Maybe (Max Word8) -> Account.Account -> [[Chunk]]
-singleAccountChunksWithWidth Currency {..} mMaxWidth acc =
-  let Located _ quantisationFactor = currencyQuantisationFactor
+singleAccountChunksWithWidth currency mMaxWidth acc =
+  let Located _ quantisationFactor = currencyQuantisationFactor currency
       f = fore $ if acc >= Account.zero then green else red
-   in [[f $ accountChunkWithWidth mMaxWidth quantisationFactor acc, f $ currencySymbolChunk currencySymbol]]
+   in [[f $ accountChunkWithWidth mMaxWidth quantisationFactor acc, f $ currencySymbolChunk (currencySymbol currency)]]
 
 singleAccountMaxWidth :: Currency ann -> Account.Account -> Max Word8
 singleAccountMaxWidth _ = accountWidth

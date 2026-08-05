@@ -36,15 +36,15 @@ import qualified Money.MultiAccount as MultiAccount
 data IncomeStatementReport ann = IncomeStatementReport
   { incomeStatementReportIncome :: !(AccountBalances ann),
     incomeStatementReportFilledIncome :: !(AccountBalances ann),
-    incomeStatementReportTotalIncome :: !(Money.MultiAccount (Currency ann)),
+    incomeStatementReportTotalIncome :: !(Money.MultiAccount (Commodity ann)),
     incomeStatementReportExpenses :: !(AccountBalances ann),
     incomeStatementReportFilledExpenses :: !(AccountBalances ann),
-    incomeStatementReportTotalExpenses :: !(Money.MultiAccount (Currency ann)),
+    incomeStatementReportTotalExpenses :: !(Money.MultiAccount (Commodity ann)),
     -- | Unrealized exchange gains/losses from currency conversion.
     -- This is the difference between the change in net worth (assets + liabilities)
     -- and the sum of income + expenses. Only meaningful when currency conversion is used.
-    incomeStatementReportRevaluation :: !(Maybe (Money.MultiAccount (Currency ann))),
-    incomeStatementReportNetIncome :: !(Money.MultiAccount (Currency ann))
+    incomeStatementReportRevaluation :: !(Maybe (Money.MultiAccount (Commodity ann))),
+    incomeStatementReportNetIncome :: !(Money.MultiAccount (Commodity ann))
   }
   deriving (Show, Generic)
 

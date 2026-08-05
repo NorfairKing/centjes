@@ -75,6 +75,7 @@ tests:
     - centjes
     - centjes-gen
     - centjes-switzerland
+    - containers
     - filepath
     - genvalidity
     - genvalidity-sydtest
