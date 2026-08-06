@@ -32,3 +32,11 @@
 
 * An assertion naming an account that was never declared used to pass silently.
   It is now `CE_UNDECLARED_ACCOUNT`, like every other name in the language.
+
+* The vim plugin highlights every element of the language now.  `@`, `=`, `/`,
+  `~` and `%` never were, the account types and tag names never were, and
+  `lot`, `assert virtual` and the virtual account assertions were missed when
+  they were added.
+
+  It also no longer highlights a keyword where the language has none, so
+  `account lottery` and a description mentioning `lot` read as what they are.

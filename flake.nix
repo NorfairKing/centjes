@@ -111,6 +111,10 @@
         example-switzerland-taxes = pkgs.centjesRelease.makeSwitzerlandTaxesPacket { src = ./centjes-switzerland/test_resources/example; };
         example-switzerland-vat = pkgs.centjesRelease.makeSwitzerlandVATPacket { src = ./centjes-switzerland/test_resources/example; };
         vim-plugin = pkgs.vimPlugins.centjes-vim;
+        vim-syntax = import ./nix/vim-syntax-check.nix {
+          inherit (pkgs) runCommand vim neovim;
+          src = ./centjes-vim;
+        };
         coverage-report = pkgs.dekking.makeCoverageReport {
           name = "test-coverage-report";
           packages = [

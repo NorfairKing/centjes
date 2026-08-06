@@ -1,0 +1,77 @@
+import ledger
+import banks/ubs-2024
+import my ledger
+
+-- This is a comment
+currency USD 0.01
+currency SWDA 1
+
+tag deductible
+
+account assets
+account assets:bank
+account special assets
+account liabilities:credit-card liabilities
+account other-stuff other
+account income:gifts income
+account expenses:coffee expenses
+account equity:opening equity
+account assets:cash
+  -- An indented comment, above the extra it belongs to
+  + assert currency CHF
+  + assert no-virtual
+  + attach foo.txt
+  + attach foo/bar.txt
+  + attach my bank statement.pdf
+  + attach a--b.pdf
+  + tag deductible
+account expenses:vat
+  + assert virtual-allowed
+account virtual:only
+  + assert virtual-only
+
+price 2023-12-11 CHF 1.14 USD
+price 2023-12-11 07:42 CHF 1.14 USD
+price 2023-12-11 07:42:13 CHF 1 / 7 USD
+
+2023-11-13
+  -- Above the description
+  | Coffee
+  -- Above a posting
+  * expenses:coffee +5.00 USD
+  * assets:cash     -5.00 USD
+
+2023-12-10 14:56
+  | A description mentioning lot, tag, attach, assert and import
+  | A second description line
+  * expenses:coffee +5    EUR @ 1 / 2 USD
+  * assets:cash     -5    USD ~ 0.77%
+  ! expenses:vat    +0.80 CHF ~e 77 / 100%
+  ! expenses:vat    +0.80 CHF ~i 10%
+  ! expenses:vat    +0.80 CHF ~u 10%
+  ! expenses:vat    +0.80 CHF ~d 10%
+  ! expenses:vat    +0.80 CHF ~n 10%
+  ! expenses:vat    +0.80 CHF ~iu 10%
+  ! expenses:vat    +0.80 CHF ~ed 10%
+  ! expenses:vat    +0.80 CHF ~en 10%
+  + attach receipt.pdf
+  + tag deductible
+  + assert assets:cash = -5 USD
+  + assert virtual expenses:vat = +0.80 CHF
+
+2025-01-27 14:56:53
+  | Buy two shares
+  * assets:broker    +2 SWDA lot @ 500 EUR
+  * assets:bank   -1000 EUR
+  + assert assets:broker = +2 SWDA lot @ 500 EUR
+  + assert assets:broker = +3 SWDA
+  + assert virtual assets:broker = +2 SWDA lot @ 1 / 7 EUR
+
+account lottery
+account vintage
+account importance
+account price:tagged
+
+tag tagging
+
+currency LOTS 1

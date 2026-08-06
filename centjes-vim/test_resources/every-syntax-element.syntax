@@ -1,0 +1,108 @@
+[centjesImportKeyword]import[] [centjesFilePath]ledger
+[centjesImportKeyword]import[] [centjesFilePath]banks/ubs-2024
+[centjesImportKeyword]import[] [centjesFilePath]my ledger
+
+[centjesComment]-- This is a comment
+[centjesCurrencyKeyword]currency[] [centjesCurrencySymbol]USD[] [centjesNumber]0.01
+[centjesCurrencyKeyword]currency[] [centjesCurrencySymbol]SWDA[] [centjesNumber]1
+
+[centjesTagKeyword]tag[] [centjesTagName]deductible
+
+[centjesAccountKeyword]account[] [centjesAccountName]assets
+[centjesAccountKeyword]account[] [centjesAccountName]assets:bank
+[centjesAccountKeyword]account[] [centjesAccountName]special[] [centjesAccountType]assets
+[centjesAccountKeyword]account[] [centjesAccountName]liabilities:credit-card[] [centjesAccountType]liabilities
+[centjesAccountKeyword]account[] [centjesAccountName]other-stuff[] [centjesAccountType]other
+[centjesAccountKeyword]account[] [centjesAccountName]income:gifts[] [centjesAccountType]income
+[centjesAccountKeyword]account[] [centjesAccountName]expenses:coffee[] [centjesAccountType]expenses
+[centjesAccountKeyword]account[] [centjesAccountName]equity:opening[] [centjesAccountType]equity
+[centjesAccountKeyword]account[] [centjesAccountName]assets:cash
+  [centjesComment]-- An indented comment, above the extra it belongs to
+  [centjesExtraKeyword]+[] [centjesAssertKeyword]assert[] [centjesAssertCurrencyKeyword]currency[] [centjesCurrencySymbol]CHF
+  [centjesExtraKeyword]+[] [centjesAssertKeyword]assert[] [centjesVirtualScope]no-virtual
+  [centjesExtraKeyword]+[] [centjesAttachKeyword]attach[] [centjesFilePath]foo.txt
+  [centjesExtraKeyword]+[] [centjesAttachKeyword]attach[] [centjesFilePath]foo/bar.txt
+  [centjesExtraKeyword]+[] [centjesAttachKeyword]attach[] [centjesFilePath]my bank statement.pdf
+  [centjesExtraKeyword]+[] [centjesAttachKeyword]attach[] [centjesFilePath]a--b.pdf
+  [centjesExtraKeyword]+[] [centjesExtraTagKeyword]tag[] [centjesTagName]deductible
+[centjesAccountKeyword]account[] [centjesAccountName]expenses:vat
+  [centjesExtraKeyword]+[] [centjesAssertKeyword]assert[] [centjesVirtualScope]virtual-allowed
+[centjesAccountKeyword]account[] [centjesAccountName]virtual:only
+  [centjesExtraKeyword]+[] [centjesAssertKeyword]assert[] [centjesVirtualScope]virtual-only
+
+[centjesPriceKeyword]price[] [centjesPriceTimestamp]2023-12-11[] [centjesCurrencySymbol]CHF[] [centjesNumber]1.14[] [centjesCurrencySymbol]USD
+[centjesPriceKeyword]price[] [centjesPriceTimestamp]2023-12-11 07:42[] [centjesCurrencySymbol]CHF[] [centjesNumber]1.14[] [centjesCurrencySymbol]USD
+[centjesPriceKeyword]price[] [centjesPriceTimestamp]2023-12-11 07:42:13[] [centjesCurrencySymbol]CHF[] [centjesNumber]1[] [centjesFractionOperator]/[] [centjesNumber]7[] [centjesCurrencySymbol]USD
+
+[centjesTimestamp]2023-11-13
+  [centjesComment]-- Above the description
+  [centjesDescription]| Coffee
+  [centjesComment]-- Above a posting
+  [centjesPostingKeyword]*[] [centjesAccountName]expenses:coffee[] [centjesNumber]+5.00[] [centjesCurrencySymbol]USD
+  [centjesPostingKeyword]*[] [centjesAccountName]assets:cash[]     [centjesNumber]-5.00[] [centjesCurrencySymbol]USD
+
+[centjesTimestamp]2023-12-10 14:56
+  [centjesDescription]| A description mentioning lot, tag, attach, assert and import
+  [centjesDescription]| A second description line
+  [centjesPostingKeyword]*[] [centjesAccountName]expenses:coffee[] [centjesNumber]+5[]    [centjesCurrencySymbol]EUR[] [centjesCostOperator]@[] [centjesNumber]1[] [centjesFractionOperator]/[] [centjesNumber]2[] [centjesCurrencySymbol]USD
+  [centjesPostingKeyword]*[] [centjesAccountName]assets:cash[]     [centjesNumber]-5[]    [centjesCurrencySymbol]USD[] [centjesRatioOperator]~[] [centjesNumber]0.77[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~e[] [centjesNumber]77[] [centjesFractionOperator]/[] [centjesNumber]100[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~i[] [centjesNumber]10[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~u[] [centjesNumber]10[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~d[] [centjesNumber]10[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~n[] [centjesNumber]10[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~iu[] [centjesNumber]10[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~ed[] [centjesNumber]10[centjesPercentOperator]%
+  [centjesPostingKeyword]![] [centjesAccountName]expenses:vat[]    [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF[] [centjesRatioOperator]~en[] [centjesNumber]10[centjesPercentOperator]%
+  [centjesExtraKeyword]+[] [centjesAttachKeyword]attach[] [centjesFilePath]receipt.pdf
+  [centjesExtraKeyword]+[] [centjesExtraTagKeyword]tag[] [centjesTagName]deductible
+  [centjesExtraKeyword]+[] [centjesAssertKeyword]assert[] [centjesAccountName]assets:cash[] [centjesEqualsOperator]=[] [centjesNumber]-5[] [centjesCurrencySymbol]USD
+  [centjesExtraKeyword]+[] [centjesAssertVirtualKeyword]assert virtual[] [centjesAccountName]expenses:vat[] [centjesEqualsOperator]=[] [centjesNumber]+0.80[] [centjesCurrencySymbol]CHF
+
+[centjesTimestamp]2025-01-27 14:56:53
+  [centjesDescription]| Buy two shares
+  [centjesPostingKeyword]*[] [centjesAccountName]assets:broker[]    [centjesNumber]+2[] [centjesCurrencySymbol]SWDA[] [centjesLotKeyword]lot[] [centjesCostOperator]@[] [centjesNumber]500[] [centjesCurrencySymbol]EUR
+  [centjesPostingKeyword]*[] [centjesAccountName]assets:bank[]   [centjesNumber]-1000[] [centjesCurrencySymbol]EUR
+  [centjesExtraKeyword]+[] [centjesAssertKeyword]assert[] [centjesAccountName]assets:broker[] [centjesEqualsOperator]=[] [centjesNumber]+2[] [centjesCurrencySymbol]SWDA[] [centjesLotKeyword]lot[] [centjesCostOperator]@[] [centjesNumber]500[] [centjesCurrencySymbol]EUR
+  [centjesExtraKeyword]+[] [centjesAssertKeyword]assert[] [centjesAccountName]assets:broker[] [centjesEqualsOperator]=[] [centjesNumber]+3[] [centjesCurrencySymbol]SWDA
+  [centjesExtraKeyword]+[] [centjesAssertVirtualKeyword]assert virtual[] [centjesAccountName]assets:broker[] [centjesEqualsOperator]=[] [centjesNumber]+2[] [centjesCurrencySymbol]SWDA[] [centjesLotKeyword]lot[] [centjesCostOperator]@[] [centjesNumber]1[] [centjesFractionOperator]/[] [centjesNumber]7[] [centjesCurrencySymbol]EUR
+
+[centjesAccountKeyword]account[] [centjesAccountName]lottery
+[centjesAccountKeyword]account[] [centjesAccountName]vintage
+[centjesAccountKeyword]account[] [centjesAccountName]importance
+[centjesAccountKeyword]account[] [centjesAccountName]price:tagged
+
+[centjesTagKeyword]tag[] [centjesTagName]tagging
+
+[centjesCurrencyKeyword]currency[] [centjesCurrencySymbol]LOTS[] [centjesNumber]1
+
+--- highlight links ---
+centjesAccountKeyword -> Keyword
+centjesAccountName -> Type
+centjesAccountType -> Keyword
+centjesAssertCurrencyKeyword -> Keyword
+centjesAssertKeyword -> Keyword
+centjesAssertVirtualKeyword -> Keyword
+centjesAttachKeyword -> Keyword
+centjesComment -> Comment
+centjesCostOperator -> Keyword
+centjesCurrencyKeyword -> Keyword
+centjesCurrencySymbol -> Constant
+centjesDescription -> Identifier
+centjesEqualsOperator -> Keyword
+centjesExtraKeyword -> Keyword
+centjesExtraTagKeyword -> Keyword
+centjesFilePath -> String
+centjesFractionOperator -> Constant
+centjesImportKeyword -> Keyword
+centjesLotKeyword -> Keyword
+centjesNumber -> Constant
+centjesPercentOperator -> Constant
+centjesPostingKeyword -> Keyword
+centjesPriceKeyword -> Keyword
+centjesPriceTimestamp -> Title
+centjesRatioOperator -> Keyword
+centjesTagKeyword -> Keyword
+centjesTagName -> Identifier
+centjesTimestamp -> Title
+centjesVirtualScope -> Keyword

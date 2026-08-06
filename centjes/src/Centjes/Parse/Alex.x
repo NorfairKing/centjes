@@ -83,6 +83,9 @@ $alpha = [A-Za-z]
 @file_path = [$alpha $digit \_ \- \: .]+
 @anyline = [^\n\r]+
 
+-- A new token also has to be highlighted: it needs a rule in
+-- centjes-vim/syntax/centjes.vim and a line in that plugin's test corpus.
+
 -- A comment is a line of its own, and runs to the end of it.
 --
 -- It is one token rather than a "--" that switches to a comment start code,
