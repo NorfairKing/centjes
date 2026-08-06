@@ -22,8 +22,6 @@
 
 ## Changed
 
-* The formatter strips whitespace around comment text.
-
 * A description can no longer be empty, nor contain an empty line, because
   neither can be written down.
 

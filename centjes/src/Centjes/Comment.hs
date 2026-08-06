@@ -31,11 +31,7 @@ instance Validity Comment where
         -- The lexer ends a line on these too, and 'commentLines' does not split
         -- on them, so a comment containing one could not be read back.
         declare "The comment contains no carriage returns or form feeds" $
-          not (T.any (\char -> char == '\r' || char == '\f') t),
-        -- Surrounding whitespace would not survive being read back, because the
-        -- marker is followed by a space and the rest of each line is stripped.
-        declare "No line of the comment has leading or trailing whitespace" $
-          all (\l -> T.strip l == l) (commentLines c)
+          not (T.any (\char -> char == '\r' || char == '\f') t)
       ]
 
 -- | The lines of a comment, one per @--@ line it was written as.

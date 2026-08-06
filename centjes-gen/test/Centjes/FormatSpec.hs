@@ -40,7 +40,7 @@ spec = do
     it "keeps the declaration below a comment whose text is only whitespace" $ do
       here <- getCurrentDir
       m <- shouldParse parseModule here [relfile|pure-test.cent|] "--  \ncurrency USD 0.01\n"
-      formatModule m `shouldBe` "-- \ncurrency USD 0.01\n"
+      formatModule m `shouldBe` "--  \ncurrency USD 0.01\n"
 
     -- The marker keeps its space, because a bare "--" is not a comment.
     it "reads back a comment with no text" $ do
@@ -54,6 +54,12 @@ spec = do
       here <- getCurrentDir
       m <- shouldParse parseModule here [relfile|pure-test.cent|] "-- \n-- \n"
       formatModule m `shouldBe` "-- \n-- \n"
+
+    it "keeps the whitespace within a comment" $ do
+      here <- getCurrentDir
+      let contents = "--     Indented, to line up with something.\n-- \tAfter a tab.\n-- Trailing.  \n"
+      m <- shouldParse parseModule here [relfile|pure-test.cent|] contents
+      formatModule m `shouldBe` contents
 
   centFilesDirSpec "test_resources/load"
   centFilesDirSpec "test_resources/compile"

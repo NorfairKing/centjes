@@ -13,7 +13,6 @@ instance GenValid Comment where
   genValid =
     fmap (Comment . T.intercalate "\n") $
       genListOf $
-        fmap T.strip $
-          genTextBy $
-            genValid `suchThat` (\char -> char /= '\n' && char /= '\r' && char /= '\f')
+        genTextBy $
+          genValid `suchThat` (\char -> char /= '\n' && char /= '\r' && char /= '\f')
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

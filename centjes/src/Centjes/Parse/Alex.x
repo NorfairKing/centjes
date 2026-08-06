@@ -248,12 +248,13 @@ lexPercent = lex' TokenPercent
 -- no other way to tell the two apart, because the lexer throws away the
 -- newlines and the indentation.
 --
--- The text is stripped so that formatting it back out and reading it again
--- gives the same text.  Whitespace-only text would otherwise come back as a
--- different string.
+-- Everything after the marker is the text, whitespace and all, so that a
+-- comment that lines something up keeps its alignment.  The marker is the whole
+-- "-- ", including the space: leaving that space in the text would double it
+-- when the comment is written back out.
 lexComment :: AlexAction Token
 lexComment = lexPosM $ \(AlexPn _ _ column) s ->
-  let text = T.strip (T.pack (drop 2 s))
+  let text = T.pack (drop (length "-- ") s)
    in pure $
         if column == 1
           then TokenComment text

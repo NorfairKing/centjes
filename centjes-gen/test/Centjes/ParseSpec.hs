@@ -42,6 +42,22 @@ spec = do
         ]
         `shouldBe` [Comment "One\nTwo"]
 
+  -- Only the "-- " marker is not part of the comment, so that a comment lines
+  -- something up, or draws something, exactly as it was written.
+  describe "parseModule" $
+    it "keeps the whitespace after the marker of a comment" $ do
+      here <- getCurrentDir
+      m <-
+        shouldParse
+          parseModule
+          here
+          [relfile|pure-test.cent|]
+          "--     Indented.\ncurrency USD 0.01\n"
+      [ locatedValue c
+        | Located _ (DeclarationComment c) <- moduleDeclarations m
+        ]
+        `shouldBe` [Comment "    Indented."]
+
   describe "parseTransaction" $ do
     it "reads a run of indented comment lines as one comment" $ do
       here <- getCurrentDir
