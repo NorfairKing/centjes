@@ -505,8 +505,7 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let effectiveReportingMethodOpted = Nothing
   let effectiveReportingMethodSupplies =
         [ TurnoverTaxRate
-            { -- TODO generate this decimal literal from the same TaxRate type that produced it
-              turnoverTaxRateRate = "8.1",
+            { turnoverTaxRateRate = vatRatePercentage VATRate2024Standard,
               turnoverTaxRateTurnover = standard2024TurnoverLiteral
             }
         ]

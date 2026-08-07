@@ -38,6 +38,7 @@ library:
   - path-io
   - pretty-show
   - really-safe-money
+  - scientific
   - template-haskell
   - text
   - time

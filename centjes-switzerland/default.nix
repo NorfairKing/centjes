@@ -4,9 +4,9 @@
 , genvalidity-time, http-client, http-client-tls, http-types, lib
 , monad-logger, mtl, opt-env-conf, opt-env-conf-test, path, path-io
 , pretty-show, QuickCheck, really-safe-money, really-safe-money-gen
-, sydtest, sydtest-aeson, sydtest-discover, template-haskell, text
-, time, typed-process, unliftio, validity, validity-time, vector
-, xml-conduit, zip
+, scientific, sydtest, sydtest-aeson, sydtest-discover
+, template-haskell, text, time, typed-process, unliftio, validity
+, validity-time, vector, xml-conduit, zip
 }:
 mkDerivation {
   pname = "centjes-switzerland";
@@ -19,8 +19,9 @@ mkDerivation {
     aeson aeson-pretty autodocodec base bytestring centjes conduit
     containers diagnose file-embed http-client http-client-tls
     http-types monad-logger mtl opt-env-conf path path-io pretty-show
-    really-safe-money template-haskell text time typed-process unliftio
-    validity validity-time vector xml-conduit zip
+    really-safe-money scientific template-haskell text time
+    typed-process unliftio validity validity-time vector xml-conduit
+    zip
   ];
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];

@@ -25,6 +25,7 @@ import Data.Time.Calendar.Quarter
 import Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
+import Numeric.DecimalLiteral as DecimalLiteral (toString)
 import Path
 import Text.Printf
 
@@ -197,10 +198,7 @@ vatInputDeductibleExpense DeductibleExpense {..} =
    in InputExpense {..}
 
 formatVATRate :: VATRate -> String
-formatVATRate = \case
-  VATRate2024Standard -> "8.1 %"
-  VATRate2024Reduced -> "2.6 %"
-  VATRate2024Hotel -> "3.8 %"
+formatVATRate vatRate = printf "%s %%" (DecimalLiteral.toString (vatRatePercentage vatRate))
 
 data InputRevenue = InputRevenue
   { inputRevenueDay :: !Day,

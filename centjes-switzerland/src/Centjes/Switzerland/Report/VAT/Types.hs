@@ -19,6 +19,10 @@ module Centjes.Switzerland.Report.VAT.Types
     ForeignRevenue (..),
     DeductibleExpense (..),
     VATRate (..),
+    allVATRates,
+    vatRatePercentage,
+    vatRatePercentageNumber,
+    vatRateRatio,
     VATError (..),
   )
 where
@@ -33,6 +37,8 @@ import Centjes.Validation
 import Data.Char (isDigit)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
+import Data.Scientific (Scientific)
+import qualified Data.Scientific as Scientific
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -46,6 +52,8 @@ import qualified Money.Account as Account
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
 import Money.QuantisationFactor as Money (QuantisationFactor (..))
+import Numeric.DecimalLiteral (DecimalLiteral (..))
+import qualified Numeric.DecimalLiteral as DecimalLiteral
 import OptEnvConf
 import Path
 import Text.Read (readMaybe)
@@ -358,15 +366,46 @@ instance (Validity ann, Show ann, Ord ann) => Validity (DomesticRevenue ann)
 
 -- TODO check that the rate is valid for the day?
 data VATRate
-  = -- | 8.1%
-    VATRate2024Standard
-  | -- | 2.6%
-    VATRate2024Reduced
-  | -- | 3.8%
-    VATRate2024Hotel
+  = VATRate2024Standard
+  | VATRate2024Reduced
+  | VATRate2024Hotel
   deriving (Show, Eq, Generic)
 
 instance Validity VATRate
+
+-- | Every rate a Swiss return can name.
+--
+-- Anything else on a CHF posting is a ledger that cannot be filed, so this is also what
+-- tells an importer which rates it is allowed to write down.
+allVATRates :: NonEmpty VATRate
+allVATRates = VATRate2024Standard :| [VATRate2024Reduced, VATRate2024Hotel]
+
+-- | The rate as a percentage, so 8.1 rather than 0.081.
+--
+-- The only place these numbers are written down, in the form the law and the declaration
+-- state them in.  Every other form a rate is needed in is derived from this one, exactly
+-- and without failing, rather than being a second table that could come to disagree.
+vatRatePercentage :: VATRate -> DecimalLiteral
+vatRatePercentage = \case
+  VATRate2024Standard -> "8.1"
+  VATRate2024Reduced -> "2.6"
+  VATRate2024Hotel -> "3.8"
+
+-- | The rate as a fraction, so 0.081 rather than 8.1.
+vatRateRatio :: VATRate -> Rational
+vatRateRatio vatRate = DecimalLiteral.toRational (vatRatePercentage vatRate) / 100
+
+-- | The rate as a percentage number, for anything that wants a number rather than a
+-- literal.
+--
+-- Exact and total: a decimal literal is a mantissa and a count of decimal places, which
+-- is all a 'Scientific' is either.
+vatRatePercentageNumber :: VATRate -> Scientific
+vatRatePercentageNumber vatRate = case vatRatePercentage vatRate of
+  DecimalLiteral mSign mantissa decimals ->
+    Scientific.scientific
+      (if mSign == Just False then negate (Prelude.toInteger mantissa) else Prelude.toInteger mantissa)
+      (negate (fromInteger (Prelude.toInteger decimals)))
 
 data ForeignRevenue ann = ForeignRevenue
   { foreignRevenueTimestamp :: !Timestamp,

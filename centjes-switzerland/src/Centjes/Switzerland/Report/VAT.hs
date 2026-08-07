@@ -322,17 +322,9 @@ requireRatioVATRate ::
   ann ->
   Rational ->
   Reporter (VATError ann) VATRate
-requireRatioVATRate tl pl r = case r of
-  0.081 -> pure VATRate2024Standard
-  0.026 -> pure VATRate2024Reduced
-  0.038 -> pure VATRate2024Hotel
-  _ -> validationTFailure $ VATErrorUnknownVATRate tl pl r
-
-vatRateRatio :: VATRate -> Rational
-vatRateRatio = \case
-  VATRate2024Standard -> 0.081
-  VATRate2024Reduced -> 0.026
-  VATRate2024Hotel -> 0.038
+requireRatioVATRate tl pl r = case find ((== r) . vatRateRatio) allVATRates of
+  Nothing -> validationTFailure $ VATErrorUnknownVATRate tl pl r
+  Just vatRate -> pure vatRate
 
 gatherDeductibleExpenses ::
   (Ord ann) =>
