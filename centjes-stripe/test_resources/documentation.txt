@@ -1,0 +1,291 @@
+[36mUsage: [m[33mcentjes-stripe[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m COMMAND
+
+[36mAll settings[m:
+  [34mShow this help text[m
+  switch: [37m-h[m[36m|[m[37m--help[m
+
+  [34mOutput version information[m
+  switch: [37m--version[m
+
+  [34mPath to the configuration file[m
+  option: [37m--config-file[m [33mFILE_PATH[m
+  env: [37mCENTJES_STRIPE_CONFIG_FILE[m [33mFILE_PATH[m
+
+  [34mledger file[m
+  option: [37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m
+  env: [37mCENTJES_STRIPE_LEDGER[m [33mFILE_PATH[m
+  config:
+    [37mledger[m: # [32mor null[m
+      [33m<string>[m
+  default: [33m"ledger.cent"[m
+
+[36mAll commands[m:
+  [34mImport Stripe sales, fees and payouts month by month[m
+  command: [35mimport[m
+    [34mStripe API key that can read the balance and payouts and create report runs[m
+    option: [37m--key[m [33mSECRET[m
+    option: [37m--key-file[m [33mFILE_PATH[m
+    env: [37mCENTJES_STRIPE_KEY[m [33mSECRET[m
+    env: [37mCENTJES_STRIPE_KEY_FILE[m [33mFILE_PATH[m
+    config:
+      [37mimport.key[m: # [32mor null[m
+        [33m<string>[m
+    config:
+      [37mimport.key-file[m: # [32mor null[m
+        [33m<string>[m
+  
+    [34mOutput file path, which this importer rewrites[m
+    option: [37m-o[m[36m|[m[37m--output[m [33mFILE_PATH[m
+    env: [37mCENTJES_STRIPE_OUTPUT[m [33mFILE_PATH[m
+    config:
+      [37mimport.output[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"stripe.cent"[m
+    
+    [34mThe first month to import, default: January of this year[m
+    option: [37m--begin[m [33mYYYY-MM[m
+    env: [37mCENTJES_STRIPE_BEGIN[m [33mYYYY-MM[m
+    config:
+      [37mimport.begin[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mAccount name of the Stripe balance[m
+    config:
+      [37mimport.assets-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:stripe"[m
+    
+    [34mAccount name of domestic income[m
+    config:
+      [37mimport.domestic-income-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"income:domestic"[m
+    
+    [34mAccount name of the VAT charged to customers[m
+    config:
+      [37mimport.vat-income-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"income:VAT"[m
+    
+    [34mAccount name of foreign income[m
+    config:
+      [37mimport.foreign-income-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"income:foreign"[m
+    
+    [34mAccount name of Stripe's fees[m
+    config:
+      [37mimport.fees-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:banking:stripe"[m
+    
+    [34mAccount name of money given back to customers[m
+    config:
+      [37mimport.refunds-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:refunds"[m
+    
+    [34mAccount name of the VAT paid, which is what gets reclaimed[m
+    config:
+      [37mimport.vat-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:VAT"[m
+    
+    [34mAccount name of the self-transfer that payouts go through[m
+    config:
+      [37mimport.payout-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:self-transfer:stripe-neon"[m
+    
+    [34mAccount name that the opening balance comes from[m
+    config:
+      [37mimport.opening-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"equity:starting"[m
+    
+    [34mTags for an expense transaction whose expenses carried recoverable VAT[m
+    config:
+      [37mimport.deductible-tags[m: # [32mor null[m
+        - [33m<string>[m
+    default: [33m["deductible"][m
+    
+    [34mTags for an expense transaction whose expenses carried no VAT[m
+    config:
+      [37mimport.not-vat-deductible-tags[m: # [32mor null[m
+        - [33m<string>[m
+    default: [33m["tax-deductible","not-vat-deductible"][m
+    
+    [34mThe two-letter country whose VAT this ledger owes[m
+    config:
+      [37mimport.home-country[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"CH"[m
+    
+    [34mThe percentage Stripe charges VAT on its own fees at[m
+    config:
+      [37mimport.fees-vat-rate[m: # [32mor null[m
+        [33m<number>[m
+    default: [33m8.1[m
+    
+    [34mThe currency Stripe settles in[m
+    config:
+      [37mimport.currency[m: # [32mor null[m
+        [33m<string>[m
+    default: [33mCurrencySymbol {currencySymbolText = "CHF"}[m
+    
+    [34mDirectory of the Stripe documents downloaded by hand, relative to the ledger[m
+    option: [37m--documents[m [33mDIRECTORY_PATH[m
+    env: [37mCENTJES_STRIPE_DOCUMENTS[m [33mDIRECTORY_PATH[m
+    config:
+      [37mimport.documents[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"documents"[m
+    
+    [34mDirectory to save the monthly report CSVs into, relative to the ledger[m
+    option: [37m--reports[m [33mDIRECTORY_PATH[m
+    env: [37mCENTJES_STRIPE_REPORTS[m [33mDIRECTORY_PATH[m
+    config:
+      [37mimport.reports[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"documents"[m
+    
+    [34mformatTime pattern for Stripe's monthly tax invoice, the one document no API serves[m
+    config:
+      [37mimport.fees-attachment[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"tax-invoice-%Y-%m.pdf"[m
+    
+  
+
+[36mOptions[m:
+  [37m-h[m[36m|[m[37m--help[m [34mShow this help text[m
+  [37m--version[m [34mOutput version information[m
+  [37m--config-file[m [34mPath to the configuration file[m
+  [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
+  [35mimport[m [34mImport Stripe sales, fees and payouts month by month[m
+      [37m--key[m       [34mStripe API key that can read the balance and payouts and create report runs[m                        
+      [37m--key-file[m  [34mStripe API key that can read the balance and payouts and create report runs[m                        
+      [37m-o[m[36m|[m[37m--output[m [34mOutput file path, which this importer rewrites[m                               default: [33m"stripe.cent"[m
+      [37m--begin[m     [34mThe first month to import, default: January of this year[m                                           
+      [37m--documents[m [34mDirectory of the Stripe documents downloaded by hand, relative to the ledger[m default: [33m"documents"[m  
+      [37m--reports[m   [34mDirectory to save the monthly report CSVs into, relative to the ledger[m       default: [33m"documents"[m  
+
+[36mEnvironment Variables[m:
+  [37mCENTJES_STRIPE_CONFIG_FILE[m [33mFILE_PATH[m      [34mPath to the configuration file[m                                                                       
+  [37mCENTJES_STRIPE_LEDGER[m [33mFILE_PATH[m           [34mledger file[m                                                                    default: [33m"ledger.cent"[m
+  [37mCENTJES_STRIPE_KEY[m [33mSECRET[m                 [34mStripe API key that can read the balance and payouts and create report runs[m                          
+  [37mCENTJES_STRIPE_KEY_FILE[m [33mFILE_PATH[m         [34mStripe API key that can read the balance and payouts and create report runs[m                          
+  [37mCENTJES_STRIPE_OUTPUT[m [33mFILE_PATH[m           [34mOutput file path, which this importer rewrites[m                                 default: [33m"stripe.cent"[m
+  [37mCENTJES_STRIPE_BEGIN[m [33mYYYY-MM[m              [34mThe first month to import, default: January of this year[m                                             
+  [37mCENTJES_STRIPE_DOCUMENTS[m [33mDIRECTORY_PATH[m   [34mDirectory of the Stripe documents downloaded by hand, relative to the ledger[m   default: [33m"documents"[m  
+  [37mCENTJES_STRIPE_REPORTS[m [33mDIRECTORY_PATH[m     [34mDirectory to save the monthly report CSVs into, relative to the ledger[m         default: [33m"documents"[m  
+
+[36mConfiguration Values[m:
+  [34mledger file[m
+  default: [33m"ledger.cent"[m
+  [37mledger[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mStripe API key that can read the balance and payouts and create report runs[m
+  [37mimport.key[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mStripe API key that can read the balance and payouts and create report runs[m
+  [37mimport.key-file[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mOutput file path, which this importer rewrites[m
+  default: [33m"stripe.cent"[m
+  [37mimport.output[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mThe first month to import, default: January of this year[m
+  [37mimport.begin[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of the Stripe balance[m
+  default: [33m"assets:stripe"[m
+  [37mimport.assets-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of domestic income[m
+  default: [33m"income:domestic"[m
+  [37mimport.domestic-income-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of the VAT charged to customers[m
+  default: [33m"income:VAT"[m
+  [37mimport.vat-income-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of foreign income[m
+  default: [33m"income:foreign"[m
+  [37mimport.foreign-income-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of Stripe's fees[m
+  default: [33m"expenses:banking:stripe"[m
+  [37mimport.fees-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of money given back to customers[m
+  default: [33m"expenses:refunds"[m
+  [37mimport.refunds-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of the VAT paid, which is what gets reclaimed[m
+  default: [33m"expenses:VAT"[m
+  [37mimport.vat-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name of the self-transfer that payouts go through[m
+  default: [33m"assets:self-transfer:stripe-neon"[m
+  [37mimport.payout-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mAccount name that the opening balance comes from[m
+  default: [33m"equity:starting"[m
+  [37mimport.opening-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mTags for an expense transaction whose expenses carried recoverable VAT[m
+  default: [33m["deductible"][m
+  [37mimport.deductible-tags[m:
+    # [32mor null[m
+    - [33m<string>[m
+  [34mTags for an expense transaction whose expenses carried no VAT[m
+  default: [33m["tax-deductible","not-vat-deductible"][m
+  [37mimport.not-vat-deductible-tags[m:
+    # [32mor null[m
+    - [33m<string>[m
+  [34mThe two-letter country whose VAT this ledger owes[m
+  default: [33m"CH"[m
+  [37mimport.home-country[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mThe percentage Stripe charges VAT on its own fees at[m
+  default: [33m8.1[m
+  [37mimport.fees-vat-rate[m:
+    # [32mor null[m
+    [33m<number>[m
+  [34mThe currency Stripe settles in[m
+  default: [33mCurrencySymbol {currencySymbolText = "CHF"}[m
+  [37mimport.currency[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mDirectory of the Stripe documents downloaded by hand, relative to the ledger[m
+  default: [33m"documents"[m
+  [37mimport.documents[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mDirectory to save the monthly report CSVs into, relative to the ledger[m
+  default: [33m"documents"[m
+  [37mimport.reports[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mformatTime pattern for Stripe's monthly tax invoice, the one document no API serves[m
+  default: [33m"tax-invoice-%Y-%m.pdf"[m
+  [37mimport.fees-attachment[m:
+    # [32mor null[m
+    [33m<string>[m
+

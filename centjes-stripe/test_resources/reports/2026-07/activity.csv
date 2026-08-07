@@ -1,0 +1,4 @@
+"reporting_category","currency","count","gross","fee","net"
+"charge","chf","5","1581.00","-20.00","1561.00"
+"fee","chf","1","-10.00","-0.81","-10.81"
+"total","chf","6","1571.00","-20.81","1550.19"

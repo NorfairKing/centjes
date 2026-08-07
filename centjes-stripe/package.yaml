@@ -1,0 +1,80 @@
+name: centjes-stripe
+version: 0.0.0.0
+github: "NorfairKing/centjes"
+
+extra-source-files:
+- test_resources/**/*
+- options.nix
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  dependencies:
+  - autodocodec
+  - bytestring
+  - centjes
+  - centjes-switzerland
+  - cassava
+  - conduit
+  - containers
+  - unordered-containers
+  - vector
+  - diagnose
+  - http-client
+  - http-client-tls
+  - http-types
+  - monad-logger
+  - opt-env-conf
+  - path
+  - scientific
+  - path-io
+  - really-safe-money
+  - text
+  - transformers
+  - time
+  - validity
+  - validity-text
+  - validity-time
+
+executables:
+  centjes-stripe:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - centjes-stripe
+
+tests:
+  centjes-stripe-test:
+    main: Spec.hs
+    source-dirs: test
+    build-tools: sydtest-discover
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - autodocodec
+    - bytestring
+    - centjes
+    - centjes-gen
+    - centjes-stripe
+    - conduit
+    - containers
+    - monad-logger
+    - genvalidity
+    - genvalidity-sydtest
+    - genvalidity-text
+    - genvalidity-time
+    - opt-env-conf-test
+    - path
+    - path-io
+    - really-safe-money
+    - sydtest
+    - text
+    - time

@@ -1,0 +1,4 @@
+"reporting_category","currency","count","gross","fee","net"
+"charge","chf","3","1081.00","0.00","1081.00"
+"refund","chf","1","-108.10","0.00","-108.10"
+"total","chf","4","972.90","0.00","972.90"

@@ -10,6 +10,7 @@ Multi-package Haskell monorepo:
 - `centjes-switzerland/` - Swiss tax and VAT report generation
 - `centjes-import-{cornercard,neon,revolut}/` - Bank statement importers
 - `centjes-cryptocurrencies/` - Crypto rate downloads
+- `centjes-stripe/` - Stripe sales, fees and payouts, one aggregate per month
 - `centjes-gen/` - Generators and tests
 - `centjes-docs-site/` - Yesod documentation website
 - `centjes-vim/` - Vim syntax highlighting for `.cent` files

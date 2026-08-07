@@ -1,0 +1,2 @@
+"transaction_date_start","transaction_date_end","country_code","jurisdiction_level","jurisdiction_name","tax_rate","transaction_currency","total_sales","total_tax_collected","total_taxable_sales","total_nontaxable_sales","total_sales_refunded","total_tax_refunded"
+"2026-08-05 10:00:00","2026-08-20 12:00:00","CH","country","SWITZERLAND","0.081","chf","1000.00","81.00","1000.00","0.00","100.00","8.10"

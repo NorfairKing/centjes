@@ -1,0 +1,50 @@
+2026-06-30
+  | Stripe opening balance
+  * assets:stripe   +100.00 CHF
+  * equity:starting -100.00 CHF
+
+2026-07-15
+  | Stripe payout 2026-07-15
+  * assets:self-transfer:stripe-neon +200.00 CHF
+  * assets:stripe                    -200.00 CHF
+
+2026-07-31
+  | Stripe sales 2026-07
+  * income:domestic -1000.00 CHF
+  * income:VAT        -81.00 CHF ~e 8.1%
+  * income:foreign   -500.00 CHF
+  * assets:stripe   +1581.00 CHF
+  + attach documents/stripe/reports/2026-07-31_stripe-tax-summary-2026-07.csv
+  + attach documents/stripe/reports/2026-07-31_stripe-activity-summary-2026-07.csv
+
+2026-07-31
+  | Stripe fees 2026-07
+  -- Card payments - Stripe fee
+  * expenses:banking:stripe +20.00 CHF
+  -- Stripe Tax - integration fee
+  * expenses:banking:stripe +10.00 CHF
+  * expenses:VAT             +0.81 CHF ~e 8.1%
+  * assets:stripe           -30.81 CHF
+  + attach documents/stripe/2026-07-31_tax-invoice-2026-07.pdf
+  + attach documents/stripe/reports/2026-07-31_stripe-fee-summary-2026-07.csv
+  + tag deductible
+  + assert assets:stripe = +1450.19 CHF
+
+2026-08-31
+  | Stripe sales 2026-08
+  * income:domestic -1000.00 CHF
+  * income:VAT        -81.00 CHF ~e 8.1%
+  * assets:stripe   +1081.00 CHF
+  + attach documents/stripe/reports/2026-08-31_stripe-tax-summary-2026-08.csv
+  + attach documents/stripe/reports/2026-08-31_stripe-activity-summary-2026-08.csv
+  + tag duplicate-attachment
+
+2026-08-31
+  | Stripe refunds 2026-08
+  * expenses:refunds +100.00 CHF
+  * expenses:VAT       +8.10 CHF ~e 8.1%
+  * assets:stripe    -108.10 CHF
+  + attach documents/stripe/reports/2026-08-31_stripe-tax-summary-2026-08.csv
+  + tag deductible
+  + tag duplicate-attachment
+  + assert assets:stripe = +2423.09 CHF

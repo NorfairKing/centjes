@@ -1,0 +1,128 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.38.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           centjes-stripe
+version:        0.0.0.0
+homepage:       https://github.com/NorfairKing/centjes#readme
+bug-reports:    https://github.com/NorfairKing/centjes/issues
+build-type:     Simple
+extra-source-files:
+    test_resources/declarations/ordinary.cent
+    test_resources/declarations/refunds.cent
+    test_resources/documentation.txt
+    test_resources/reports/2026-07/activity.csv
+    test_resources/reports/2026-07/balance.csv
+    test_resources/reports/2026-07/fees.csv
+    test_resources/reports/2026-07/tax.csv
+    test_resources/reports/2026-08/activity.csv
+    test_resources/reports/2026-08/balance.csv
+    test_resources/reports/2026-08/fees.csv
+    test_resources/reports/2026-08/tax.csv
+    options.nix
+
+source-repository head
+  type: git
+  location: https://github.com/NorfairKing/centjes
+
+library
+  exposed-modules:
+      Centjes.Stripe
+      Centjes.Stripe.Aggregate
+      Centjes.Stripe.API
+      Centjes.Stripe.Command.Import
+      Centjes.Stripe.Currency
+      Centjes.Stripe.Declarations
+      Centjes.Stripe.OptParse
+      Centjes.Stripe.Payout
+      Centjes.Stripe.Report
+      Centjes.Stripe.Timestamp
+  other-modules:
+      Paths_centjes_stripe
+  hs-source-dirs:
+      src
+  build-depends:
+      autodocodec
+    , base >=4.7 && <5
+    , bytestring
+    , cassava
+    , centjes
+    , centjes-switzerland
+    , conduit
+    , containers
+    , diagnose
+    , http-client
+    , http-client-tls
+    , http-types
+    , monad-logger
+    , opt-env-conf
+    , path
+    , path-io
+    , really-safe-money
+    , scientific
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , validity
+    , validity-text
+    , validity-time
+    , vector
+  default-language: Haskell2010
+
+executable centjes-stripe
+  main-is: Main.hs
+  other-modules:
+      Paths_centjes_stripe
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , centjes-stripe
+  default-language: Haskell2010
+
+test-suite centjes-stripe-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Centjes.Stripe.AggregateSpec
+      Centjes.Stripe.APISpec
+      Centjes.Stripe.Command.ImportSpec
+      Centjes.Stripe.CurrencySpec
+      Centjes.Stripe.DeclarationsSpec
+      Centjes.Stripe.Gen
+      Centjes.Stripe.OptParseSpec
+      Centjes.Stripe.PayoutSpec
+      Centjes.Stripe.ReportSpec
+      Centjes.Stripe.TimestampSpec
+      Paths_centjes_stripe
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      autodocodec
+    , base >=4.7 && <5
+    , bytestring
+    , centjes
+    , centjes-gen
+    , centjes-stripe
+    , conduit
+    , containers
+    , genvalidity
+    , genvalidity-sydtest
+    , genvalidity-text
+    , genvalidity-time
+    , monad-logger
+    , opt-env-conf-test
+    , path
+    , path-io
+    , really-safe-money
+    , sydtest
+    , text
+    , time
+  default-language: Haskell2010
