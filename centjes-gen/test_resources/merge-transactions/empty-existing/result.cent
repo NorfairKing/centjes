@@ -1,0 +1,10 @@
+2026-07-31
+  | Stripe sales 2026-07
+  * income:domestic -370.00 CHF
+  * income:VAT       -29.97 CHF ~e 8.1%
+  * assets:stripe   +399.97 CHF
+
+2026-07-31
+  | Stripe fees 2026-07
+  * expenses:banking:stripe +9.86 CHF
+  * assets:stripe           -9.86 CHF

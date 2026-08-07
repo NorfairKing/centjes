@@ -11,6 +11,7 @@ module Centjes.Report.Check
   ( doCompleteCheck,
     CheckError (..),
     checkDeclarations,
+    duplicateAttachmentTag,
   )
 where
 

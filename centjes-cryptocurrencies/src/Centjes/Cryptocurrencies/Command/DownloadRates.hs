@@ -12,7 +12,7 @@ import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Format (formatModule)
 import Centjes.Load
 import Centjes.Location
-import Centjes.Merge (extractDeclarationsFromFile, mergePriceDeclarations)
+import Centjes.Merge (mergePriceDeclarations)
 import Centjes.Module
 import Centjes.Timestamp (toDay)
 import Centjes.Validation
@@ -60,13 +60,13 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
   let outputRelFile = downloadRatesSettingOutput >>= stripProperPrefix (parent settingLedgerFile)
   let existingDeclarations = case outputRelFile of
         Nothing -> []
-        Just relFile -> extractDeclarationsFromFile relFile declarations
+        Just relFile -> declarationsFromFile relFile declarations
 
   let existingDays =
         M.fromListWith
           S.union
           [ (toDay (locatedValue (priceDeclarationTimestamp pd)), S.singleton (locatedValue (priceDeclarationCurrencySymbol pd)))
-          | Located _ (DeclarationPrice (Located _ pd)) <- existingDeclarations
+          | Located _ pd <- declarationsPrices (splitDeclarations existingDeclarations)
           ]
 
   -- A day can be skipped if we already have data for all requested symbols

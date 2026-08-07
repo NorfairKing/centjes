@@ -1,8 +1,9 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Merge
   ( mergePriceDeclarations,
-    extractDeclarationsFromFile,
+    mergeTransactionDeclarations,
   )
 where
 
@@ -11,21 +12,8 @@ import Centjes.Module
 import Centjes.Timestamp (toDay)
 import Data.List (sortOn)
 import Data.Time (Day)
-import Path
 
 {-# ANN module ("DisableMutations" :: String) #-}
-
--- | Extract declarations belonging to a specific source file from loaded declarations,
--- stripping their SourceSpan annotations.
-extractDeclarationsFromFile ::
-  Path Rel File ->
-  [GenLocated SourceSpan (Declaration SourceSpan)] ->
-  [GenLocated () (Declaration ())]
-extractDeclarationsFromFile relFile declarations =
-  [ noLoc (stripDeclarationAnnotation d)
-  | Located loc d <- declarations,
-    sourceSpanFile loc == relFile
-  ]
 
 -- | Merge new price declarations into existing declarations from a rates file.
 -- The original order of existing declarations is preserved.
@@ -35,31 +23,78 @@ mergePriceDeclarations ::
   [GenLocated () (Declaration ())] ->
   [GenLocated () (PriceDeclaration ())] ->
   Module ()
-mergePriceDeclarations existingDeclarations newPriceDeclarations =
-  Module
-    { moduleImports = [],
-      moduleDeclarations = interleave existingDeclarations (sortOn (priceDeclarationSortKey . locatedValue) newPriceDeclarations)
-    }
+mergePriceDeclarations =
+  mergeDeclarations
+    ( \case
+        DeclarationPrice (Located _ pd) -> Just (priceDeclarationSortKey pd)
+        _ -> Nothing
+    )
+    (priceDeclarationSortKey . locatedValue)
+    (\(Located _ pd) -> DeclarationPrice (noLoc pd))
 
--- | Walk through existing declarations in order, inserting new price
--- declarations at the right positions. Non-price declarations stay in place.
--- New prices that sort before the next existing price are inserted before it.
-interleave ::
+-- | Merge new transactions into a file that some importer owns.
+--
+-- Takes the whole existing module rather than only its declarations, so that a
+-- file's imports survive being added to.  Adding a month must not cost the file
+-- anything it already said.
+--
+-- Transactions sort by day only, so several transactions of the same day keep
+-- the order they were given in.  An importer that emits a day's transactions in
+-- an order its own assertions depend on gets that order back out.
+mergeTransactionDeclarations ::
+  Module () ->
+  [GenLocated () (Transaction ())] ->
+  Module ()
+mergeTransactionDeclarations existingModule newTransactions =
+  let merged =
+        mergeDeclarations
+          ( \case
+              DeclarationTransaction (Located _ t) -> Just (transactionSortKey t)
+              _ -> Nothing
+          )
+          (transactionSortKey . locatedValue)
+          (\(Located _ t) -> DeclarationTransaction (noLoc t))
+          (moduleDeclarations existingModule)
+          newTransactions
+   in merged {moduleImports = moduleImports existingModule}
+
+-- | Walk through existing declarations in order, inserting new values at the
+-- right positions.
+--
+-- Declarations that have no sort key stay in place, which is what keeps
+-- comments, currency declarations and the like where they were written.  A new
+-- value that sorts before the next keyed existing declaration is inserted
+-- before it, and one that sorts equal to it goes after it, so that re-running
+-- an importer appends rather than interleaves within a day.
+mergeDeclarations ::
+  forall a key.
+  (Ord key) =>
+  (Declaration () -> Maybe key) ->
+  (a -> key) ->
+  (a -> Declaration ()) ->
   [GenLocated () (Declaration ())] ->
-  [GenLocated () (PriceDeclaration ())] ->
-  [GenLocated () (Declaration ())]
-interleave existing [] = existing
-interleave [] new = map wrapPriceDeclaration new
-interleave (e : es) new = case locatedValue e of
-  DeclarationPrice (Located _ pd) ->
-    let key = priceDeclarationSortKey pd
-        (before, after) = span (\n -> priceDeclarationSortKey (locatedValue n) < key) new
-     in map wrapPriceDeclaration before ++ e : interleave es after
-  _ -> e : interleave es new
-
-wrapPriceDeclaration :: GenLocated () (PriceDeclaration ()) -> GenLocated () (Declaration ())
-wrapPriceDeclaration (Located _ pd) = noLoc (DeclarationPrice (noLoc pd))
+  [a] ->
+  Module ()
+mergeDeclarations existingKey newKey wrap existingDeclarations newValues =
+  let interleave ::
+        [GenLocated () (Declaration ())] ->
+        [a] ->
+        [GenLocated () (Declaration ())]
+      interleave existing [] = existing
+      interleave [] new = map (noLoc . wrap) new
+      interleave (e : es) new = case existingKey (locatedValue e) of
+        Just key ->
+          let (before, after) = span (\n -> newKey n < key) new
+           in map (noLoc . wrap) before ++ e : interleave es after
+        Nothing -> e : interleave es new
+   in Module
+        { moduleImports = [],
+          moduleDeclarations = interleave existingDeclarations (sortOn newKey newValues)
+        }
 
 priceDeclarationSortKey :: PriceDeclaration () -> (Day, CurrencySymbol)
 priceDeclarationSortKey pd =
   (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
+
+transactionSortKey :: Transaction () -> Day
+transactionSortKey t = toDay (locatedValue (transactionTimestamp t))

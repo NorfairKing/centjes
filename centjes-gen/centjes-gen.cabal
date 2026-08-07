@@ -288,6 +288,21 @@ extra-source-files:
     test_resources/load/LE_IMPORT_DIR.cent
     test_resources/load/LE_IMPORT_DIR.err
     test_resources/lot/basis-only.cent
+    test_resources/merge-transactions/empty-existing/existing.cent
+    test_resources/merge-transactions/empty-existing/new.cent
+    test_resources/merge-transactions/empty-existing/result.cent
+    test_resources/merge-transactions/interleaved-dates/existing.cent
+    test_resources/merge-transactions/interleaved-dates/new.cent
+    test_resources/merge-transactions/interleaved-dates/result.cent
+    test_resources/merge-transactions/no-new/existing.cent
+    test_resources/merge-transactions/no-new/new.cent
+    test_resources/merge-transactions/no-new/result.cent
+    test_resources/merge-transactions/same-day-appends/existing.cent
+    test_resources/merge-transactions/same-day-appends/new.cent
+    test_resources/merge-transactions/same-day-appends/result.cent
+    test_resources/merge-transactions/with-other-declarations/existing.cent
+    test_resources/merge-transactions/with-other-declarations/new.cent
+    test_resources/merge-transactions/with-other-declarations/result.cent
     test_resources/merge/empty-existing/existing.cent
     test_resources/merge/empty-existing/new.cent
     test_resources/merge/empty-existing/result.cent

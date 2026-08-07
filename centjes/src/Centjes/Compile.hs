@@ -422,28 +422,6 @@ compileDeclarations declarations = do
             declarationPrices ++ transactionPrices
   pure Ledger {..}
 
-data Declarations ann = Declarations
-  { declarationsCurrencies :: ![GenLocated ann (CurrencyDeclaration ann)],
-    declarationsAccounts :: ![GenLocated ann (AccountDeclaration ann)],
-    declarationsTags :: ![GenLocated ann (TagDeclaration ann)],
-    declarationsPrices :: ![GenLocated ann (PriceDeclaration ann)],
-    declarationsTransactions :: ![GenLocated ann (Module.Transaction ann)]
-  }
-
-splitDeclarations ::
-  [GenLocated ann (Declaration ann)] -> Declarations ann
-splitDeclarations = \case
-  [] -> Declarations [] [] [] [] []
-  (Located _ d : ds) ->
-    let tup@(Declarations cds ads tds pds ts) = splitDeclarations ds
-     in case d of
-          DeclarationComment _ -> tup
-          DeclarationCurrency c -> Declarations (c : cds) ads tds pds ts
-          DeclarationAccount a -> Declarations cds (a : ads) tds pds ts
-          DeclarationTag t -> Declarations cds ads (t : tds) pds ts
-          DeclarationPrice p -> Declarations cds ads tds (p : pds) ts
-          DeclarationTransaction t -> Declarations cds ads tds pds (t : ts)
-
 sortOnTimestamp :: (a -> GenLocated ann Timestamp) -> [GenLocated ann a] -> [GenLocated ann a]
 sortOnTimestamp getTimestamp =
   sortBy

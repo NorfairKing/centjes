@@ -1,0 +1,9 @@
+2026-06-30
+  | Stripe sales 2026-06
+  * income:foreign -100.00 CHF
+  * assets:stripe  +100.00 CHF
+
+2026-08-31
+  | Stripe sales 2026-08
+  * income:foreign -300.00 CHF
+  * assets:stripe  +300.00 CHF

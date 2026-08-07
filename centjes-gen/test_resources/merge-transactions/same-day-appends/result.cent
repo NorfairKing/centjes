@@ -1,0 +1,15 @@
+2026-07-15
+  | Stripe payout 2026-07-15
+  * assets:self-transfer:stripe-neon +100.00 CHF
+  * assets:stripe                    -100.00 CHF
+
+2026-07-15
+  | Stripe sales 2026-07
+  * income:foreign -200.00 CHF
+  * assets:stripe  +200.00 CHF
+
+2026-07-15
+  | Stripe fees 2026-07
+  * expenses:banking:stripe +9.86 CHF
+  * assets:stripe           -9.86 CHF
+  + assert assets:stripe = +90.14 CHF

@@ -14,8 +14,8 @@ import Centjes.Format (formatModule)
 import Centjes.Ledger
 import Centjes.Load
 import Centjes.Location
-import Centjes.Merge (extractDeclarationsFromFile, mergePriceDeclarations)
-import Centjes.Module (CostExpression (..), Declaration (..), PriceDeclaration (..), RationalExpression (..))
+import Centjes.Merge (mergePriceDeclarations)
+import Centjes.Module (CostExpression (..), Declarations (..), PriceDeclaration (..), RationalExpression (..), declarationsFromFile, splitDeclarations)
 import Centjes.Switzerland.OptParse
 import Centjes.Timestamp (toDay)
 import Centjes.Validation
@@ -50,13 +50,13 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
     -- Extract existing declarations from the loaded declarations that came from the destination file
     let existingDeclarations = case stripProperPrefix settingBaseDir downloadRatesSettingDestination of
           Nothing -> []
-          Just relFile -> extractDeclarationsFromFile relFile declarations
+          Just relFile -> declarationsFromFile relFile declarations
 
     -- Collect days that already have any rates in the output file
     let existingDays =
           S.fromList
             [ toDay (locatedValue (priceDeclarationTimestamp pd))
-            | Located _ (DeclarationPrice (Located _ pd)) <- existingDeclarations
+            | Located _ pd <- declarationsPrices (splitDeclarations existingDeclarations)
             ]
 
     newDeclarations <-

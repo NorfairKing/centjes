@@ -1,0 +1,18 @@
+account assets:stripe
+  + assert currency CHF
+
+-- The first month
+2026-05-31
+  | Stripe sales 2026-05
+  * income:foreign -50.00 CHF
+  * assets:stripe  +50.00 CHF
+
+2026-06-30
+  | Stripe sales 2026-06
+  * income:foreign -100.00 CHF
+  * assets:stripe  +100.00 CHF
+
+2026-07-31
+  | Stripe sales 2026-07
+  * income:foreign -200.00 CHF
+  * assets:stripe  +200.00 CHF

@@ -11,7 +11,7 @@ import qualified Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Format (formatCurrencyDeclaration, formatModule)
 import Centjes.Load
 import Centjes.Location
-import Centjes.Merge (extractDeclarationsFromFile, mergePriceDeclarations)
+import Centjes.Merge (mergePriceDeclarations)
 import Centjes.Module
 import Centjes.Stocks.OptParse
 import Centjes.Timestamp (toDay)
@@ -59,12 +59,12 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
   let outputRelFile = downloadRatesSettingOutput >>= stripProperPrefix (parent settingLedgerFile)
   let existingDeclarations = case outputRelFile of
         Nothing -> []
-        Just relFile -> extractDeclarationsFromFile relFile declarations
+        Just relFile -> declarationsFromFile relFile declarations
 
   let existingKeys =
         Set.fromList
           [ (toDay (locatedValue (priceDeclarationTimestamp pd)), locatedValue (priceDeclarationCurrencySymbol pd))
-          | Located _ (DeclarationPrice (Located _ pd)) <- existingDeclarations
+          | Located _ pd <- declarationsPrices (splitDeclarations existingDeclarations)
           ]
 
   man <- liftIO newTlsManager

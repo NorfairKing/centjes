@@ -33,6 +33,11 @@ module Centjes.Module
     LPriceDeclaration,
     PriceDeclaration (..),
     priceDeclarationCurrencySymbols,
+    Declarations (..),
+    splitDeclarations,
+    declarationsFromFile,
+    stripModuleAnnotation,
+    stripImportAnnotation,
     stripDeclarationAnnotation,
     stripPriceDeclarationAnnotation,
     LCostExpression,
@@ -43,6 +48,7 @@ module Centjes.Module
     RationalExpression (..),
     LTransaction,
     Transaction (..),
+    stripTransactionAnnotation,
     transactionCurrencySymbols,
     Timestamp (..),
     Description (..),
@@ -362,6 +368,59 @@ stripRationalExpressionAnnotation RationalExpression {..} =
       rationalExpressionDenominator = fmap (noLoc . locatedValue) rationalExpressionDenominator,
       rationalExpressionPercent = rationalExpressionPercent
     }
+
+-- | Some declarations, sorted into what kind each one is.
+--
+-- Every consumer of a ledger wants one kind at a time, and writing out the pattern match
+-- for one kind is how a caller ends up looking at the wrong list.
+data Declarations ann = Declarations
+  { declarationsCurrencies :: ![GenLocated ann (CurrencyDeclaration ann)],
+    declarationsAccounts :: ![GenLocated ann (AccountDeclaration ann)],
+    declarationsTags :: ![GenLocated ann (TagDeclaration ann)],
+    declarationsPrices :: ![GenLocated ann (PriceDeclaration ann)],
+    declarationsTransactions :: ![GenLocated ann (Transaction ann)]
+  }
+
+-- | Sort declarations by kind, keeping the order they were written in within each kind.
+--
+-- Comments belong to no kind and are dropped, so this is not a way to get a file back.
+splitDeclarations :: [GenLocated ann (Declaration ann)] -> Declarations ann
+splitDeclarations = \case
+  [] -> Declarations [] [] [] [] []
+  (Located _ d : ds) ->
+    let tup@(Declarations cds ads tds pds ts) = splitDeclarations ds
+     in case d of
+          DeclarationComment _ -> tup
+          DeclarationCurrency c -> Declarations (c : cds) ads tds pds ts
+          DeclarationAccount a -> Declarations cds (a : ads) tds pds ts
+          DeclarationTag t -> Declarations cds ads (t : tds) pds ts
+          DeclarationPrice p -> Declarations cds ads tds (p : pds) ts
+          DeclarationTransaction t -> Declarations cds ads tds pds (t : ts)
+
+-- | The declarations that were written in one file.
+--
+-- Loading a ledger flattens every file's declarations into one list, so this is how the
+-- part of it that belongs to a given file is picked back out.  An importer that owns a
+-- file needs it to read back what it wrote.
+declarationsFromFile ::
+  Path Rel File ->
+  [GenLocated SourceSpan (Declaration SourceSpan)] ->
+  [GenLocated () (Declaration ())]
+declarationsFromFile relFile declarations =
+  [ noLoc (stripDeclarationAnnotation d)
+  | Located loc d <- declarations,
+    sourceSpanFile loc == relFile
+  ]
+
+stripModuleAnnotation :: Module ann -> Module ()
+stripModuleAnnotation Module {..} =
+  Module
+    { moduleImports = map (noLoc . stripImportAnnotation . locatedValue) moduleImports,
+      moduleDeclarations = map (noLoc . stripDeclarationAnnotation . locatedValue) moduleDeclarations
+    }
+
+stripImportAnnotation :: Import ann -> Import ()
+stripImportAnnotation (Import (Located _ relFile)) = Import (noLoc relFile)
 
 stripDeclarationAnnotation :: Declaration ann -> Declaration ()
 stripDeclarationAnnotation (DeclarationComment (Located _ t)) = DeclarationComment (noLoc t)

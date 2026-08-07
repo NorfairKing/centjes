@@ -1,0 +1,4 @@
+2026-07-15
+  | Stripe payout 2026-07-15
+  * assets:self-transfer:stripe-neon +100.00 CHF
+  * assets:stripe                    -100.00 CHF
