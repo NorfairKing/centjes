@@ -39,6 +39,13 @@
     <li>
       <a href=@{CentjesImportNeonR}>
         Neon
+    <li>
+      <a href=@{CentjesStripeR}>
+        Stripe
+      <ul .menu-list>
+        <li>
+          <a href=@{CentjesStripeCommandR "import"}>
+            Import
 
   <p .menu-label>
     Reporters

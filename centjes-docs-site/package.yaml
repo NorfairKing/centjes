@@ -25,6 +25,7 @@ library:
   - centjes
   - centjes-cryptocurrencies
   - centjes-stocks
+  - centjes-stripe
   - centjes-import-cornercard
   - centjes-import-neon
   - centjes-import-revolut
