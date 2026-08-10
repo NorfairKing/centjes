@@ -1,0 +1,70 @@
+-- Four accounts that money passes through at different speeds.
+-- The emergency fund holds a foreign currency whose rate moves, and the broker
+-- spends its cash on shares whose price then moves: neither is money passing
+-- through, so both stay at the bottom, largest first.  The wallet and the
+-- checking account see the same ten dollars go out, but the wallet is tiny, so
+-- it turns over fastest and goes on top.
+currency USD 0.01
+currency EUR 0.01
+currency VWRL 1
+
+account assets:broker
+account assets:checking
+account assets:emergency
+account assets:wallet
+account equity
+account expenses
+
+price 2024-01-01 EUR 1.20 USD
+price 2024-01-01 VWRL 100 USD
+
+2024-01-01
+  | Opening
+  * assets:checking +1000 USD
+  * assets:broker    +500 USD
+  * assets:wallet     +10 USD
+  * equity          -1510 USD
+
+2024-01-01
+  | Emergency fund
+  * assets:emergency +1000 EUR
+  * equity           -1000 EUR
+
+2024-01-02
+  | Wallet
+  * assets:wallet -2 USD
+  * expenses      +2 USD
+
+price 2024-01-03 EUR 1.50 USD
+
+2024-01-03
+  | Buy shares with the cash that is already here
+  * assets:broker 5 VWRL lot @ 100 USD
+  * assets:broker -500 USD
+
+2024-01-03
+  | Wallet
+  * assets:wallet -2 USD
+  * expenses      +2 USD
+
+price 2024-01-04 VWRL 120 USD
+
+2024-01-04
+  | Wallet
+  * assets:wallet -2 USD
+  * expenses      +2 USD
+
+2024-01-05
+  | Rent
+  * assets:checking -10 USD
+  * expenses        +10 USD
+
+2024-01-05
+  | Wallet
+  * assets:wallet -2 USD
+  * expenses      +2 USD
+
+2024-01-06
+  | Wallet
+  * assets:wallet -2 USD
+  * expenses      +2 USD

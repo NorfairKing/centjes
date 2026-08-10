@@ -11,6 +11,9 @@ module Centjes.Chart.Report
     ChartSeries (..),
     ChartError (..),
     produceChartReport,
+    turnover,
+    averageHeld,
+    convertMultiAccountAtCost,
     chartReportIsNonNegative,
     sampleStepFunction,
     enumDays,
@@ -19,7 +22,7 @@ module Centjes.Chart.Report
 where
 
 import qualified Centjes.AccountName as AccountName
-import Centjes.Convert (ConvertError, convertMultiAccountToAccount, pricesToDailyPriceGraphs)
+import Centjes.Convert (ConvertError (..), convertMultiAccountToAccount, lookupConversionRate, pricesToDailyPriceGraphs)
 import Centjes.Convert.MemoisedPriceGraph (MemoisedPriceGraph)
 import qualified Centjes.Convert.MemoisedPriceGraph as MemoisedPriceGraph
 import qualified Centjes.CurrencySymbol as CurrencySymbol
@@ -31,7 +34,7 @@ import Centjes.Report.EvaluatedLedger
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad (when)
-import Data.List (transpose)
+import Data.List (sortOn, transpose)
 import qualified Data.List.NonEmpty as NE
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
@@ -49,8 +52,11 @@ import Error.Diagnose
 import GHC.Generics (Generic)
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
+import Money.ConversionRate (ConversionRate)
+import qualified Money.ConversionRate as ConversionRate
 import qualified Money.MultiAccount as Money (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
+import Money.QuantisationFactor (QuantisationFactor)
 
 -- | A backend-agnostic chart of one or more account balances over time,
 -- already projected onto a single currency.
@@ -60,6 +66,7 @@ import qualified Money.MultiAccount as MultiAccount
 data ChartReport ann = ChartReport
   { chartReportCurrency :: !(Currency ann),
     chartReportDays :: !(Vector Day),
+    -- | In the order they are meant to be stacked, bottom first.
     chartReportSeries :: !(Vector (ChartSeries ann))
   }
   deriving (Show, Generic)
@@ -114,6 +121,9 @@ instance ToReport (ChartError SourceSpan) where
 -- declared type is among the given types and which passes the filter, the
 -- cumulative (non-virtual) balance on every day in the ledger's range,
 -- converted into the given currency.
+--
+-- The series come out ordered by ascending 'turnover', so the account that
+-- money passes through slowest is stacked at the bottom.
 produceChartReport ::
   forall ann.
   (Ord ann) =>
@@ -164,13 +174,13 @@ produceChartReport accountTypes accountFilter currencySymbol evaluatedLedger = d
       Nothing -> validationFailure ChartErrorNoData
       Just dayKeys -> pure (enumDays (minimum dayKeys) (maximum dayKeys))
 
-  -- Every account that ever appears after filtering, in a stable order.
-  let accounts :: Vector AccountName
-      accounts = V.fromList (S.toList (S.unions (map M.keysSet (M.elems perDayBalances))))
+  -- Every account that ever appears after filtering.
+  let accounts :: [AccountName]
+      accounts = S.toList (S.unions (map M.keysSet (M.elems perDayBalances)))
 
   -- If nothing passes the filter there is no series to draw, which is just as
   -- much "no data" as a ledger without transactions.
-  when (V.null accounts) $ validationFailure ChartErrorNoData
+  when (null accounts) $ validationFailure ChartErrorNoData
 
   -- The price graph in effect on each x-axis day, computed once and shared
   -- across every account rather than re-looked-up per account per day.
@@ -189,14 +199,42 @@ produceChartReport accountTypes accountFilter currencySymbol evaluatedLedger = d
       convertWith priceGraph =
         convertMultiAccountToAccount Nothing priceGraph currency
 
-  series <-
-    mapValidationFailure ChartErrorConvert $
-      for accounts $ \accountName -> do
+  let sampledPerAccount :: [(AccountName, Vector (Money.MultiAccount (Commodity ann)))]
+      sampledPerAccount = flip map accounts $ \accountName ->
         -- The cumulative balance of this account on each day it changed.
         let stepMap = M.mapMaybe (M.lookup accountName) perDayBalances
-        let sampled = sampleStepFunction MultiAccount.zero days stepMap
+         in (accountName, sampleStepFunction MultiAccount.zero days stepMap)
+
+  -- Whatever prices are in force at the end, used for every day of the
+  -- ordering key rather than each day's own, so that a price moving is not
+  -- mistaken for money moving.
+  let latestPriceGraph = maybe MemoisedPriceGraph.empty snd (M.lookupMax dailyPriceGraphs)
+
+  let Located _ quantisationFactor = currencyQuantisationFactor currency
+
+  -- A band low in the stack shifts every band above it, so the accounts that
+  -- money passes through slowest belong at the bottom.  Ranking on how fast it
+  -- passes through, rather than on how much or how often, is what lets a
+  -- portfolio and a wallet be compared at all: one is counted in shares and the
+  -- other in francs, but both turn over at some rate.
+  --
+  -- Among accounts that never turn over, the largest goes lowest, so that the
+  -- chart stands on its biggest block and the slivers stay near the top.  The
+  -- account name breaks the remaining ties so that the order is total.
+  series <-
+    mapValidationFailure ChartErrorConvert $ do
+      keyed <- for sampledPerAccount $ \(accountName, sampled) -> do
         values <- V.zipWithM convertWith dayPriceGraphs sampled
-        pure ChartSeries {chartSeriesAccount = accountName, chartSeriesValues = values}
+        -- An account does not exist until it first holds something, so being
+        -- opened is not money passing through it.
+        let sinceOpened = V.dropWhile (== MultiAccount.zero) sampled
+        costs <- traverse (convertMultiAccountAtCost latestPriceGraph currency) sinceOpened
+        let held = V.map (Account.toRational quantisationFactor) costs
+        pure
+          ( (turnover held, negate (averageHeld held), accountName),
+            ChartSeries {chartSeriesAccount = accountName, chartSeriesValues = values}
+          )
+      pure $ V.fromList $ map snd $ sortOn fst keyed
 
   pure
     ChartReport
@@ -204,6 +242,65 @@ produceChartReport accountTypes accountFilter currencySymbol evaluatedLedger = d
         chartReportDays = days,
         chartReportSeries = series
       }
+
+-- | How fast money passes through an account: everything that flowed in or out
+-- over the period, over the average amount held while it did.
+--
+-- The reciprocal is how long money stays put, which is the thing being ranked:
+-- a current account turns over every few weeks, a pension turns over in
+-- decades.  Because it is a ratio it says nothing about how big the account is,
+-- so a wallet and a portfolio are compared on the same footing even though one
+-- is counted in francs and the other in shares.
+turnover :: Vector Rational -> Rational
+turnover values =
+  let held = averageHeld values
+   in if held == 0
+        then 0
+        else sum (V.map abs (V.zipWith subtract values (V.drop 1 values))) / held
+
+-- | The average of what an account held over the period, which is the
+-- denominator that makes 'turnover' a rate rather than an amount.
+averageHeld :: Vector Rational -> Rational
+averageHeld values
+  | V.null values = 0
+  | otherwise = sum (V.map abs values) / toRational (V.length values)
+
+-- | What the holdings cost, rather than what they are worth now: a lot counts
+-- at the rate it was bought at, and every currency at whichever prices the
+-- given graph holds.
+--
+-- Handing this one fixed graph is what keeps prices out of the ordering.
+-- Neither an exchange rate moving nor a share price running changes what a
+-- holding cost, and buying a share with cash the account already held leaves
+-- its cost untouched, so neither shows up as money passing through.
+convertMultiAccountAtCost ::
+  forall ann.
+  (Ord ann) =>
+  MemoisedPriceGraph (Commodity ann) ->
+  Currency ann ->
+  Money.MultiAccount (Commodity ann) ->
+  Validation (ConvertError ann) Money.Account
+convertMultiAccountAtCost priceGraph currencyTo multiAccount = do
+  let costRate :: Commodity ann -> Validation (ConvertError ann) (ConversionRate, QuantisationFactor)
+      costRate = \case
+        commodity@(CommodityCurrency _) ->
+          lookupConversionRate Nothing priceGraph currencyTo commodity
+        commodity@(CommodityLot lot) -> do
+          (rate, _) <-
+            lookupConversionRate Nothing priceGraph currencyTo (CommodityCurrency (lotBasisCurrency lot))
+          pure
+            ( ConversionRate.compose (lotBasisRate lot) rate,
+              locatedValue (commodityQuantisationFactor commodity)
+            )
+  (mResult, _) <-
+    MultiAccount.convertAllA
+      MultiAccount.RoundNearest
+      (locatedValue (currencyQuantisationFactor currencyTo))
+      costRate
+      multiAccount
+  case mResult of
+    Nothing -> validationFailure (ConvertErrorInvalidSum currencyTo)
+    Just result -> pure result
 
 -- | Sample a step function at each day on the (ascending) x-axis.
 --

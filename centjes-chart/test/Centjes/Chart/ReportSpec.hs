@@ -82,6 +82,40 @@ spec = do
           sampleStepFunction initial (V.singleton day) known
             `shouldBe` V.singleton value
 
+  describe "averageHeld" $ do
+    it "is zero for an empty series" $
+      averageHeld V.empty `shouldBe` 0
+    it "is the value itself for a series that never moves" $
+      forAllValid $ \(value :: Rational) ->
+        forAllValid $ \(days :: [Day]) ->
+          when (not (null days)) $
+            averageHeld (V.replicate (length days) value)
+              `shouldBe` abs value
+
+  describe "turnover" $ do
+    it "is zero for a series that never moves" $
+      forAllValid $ \(value :: Rational) ->
+        forAllValid $ \(days :: [Day]) ->
+          turnover (V.replicate (length days) value)
+            `shouldBe` 0
+
+    it "is the flow over the average held" $
+      -- 10 down to 0 in steps of 2: 10 flowed out of an account holding 5 on
+      -- average, so it turned over twice.
+      turnover (V.fromList [10, 8, 6, 4, 2, 0])
+        `shouldBe` 2
+
+    it "counts money coming back in as more flow, not less" $
+      turnover (V.fromList [10, 0, 10])
+        `shouldBe` 3
+
+    it "does not depend on the scale of the account" $
+      forAllValid $ \(values :: [Rational]) ->
+        forAllValid $ \(scale :: Rational) ->
+          when (scale > 0) $
+            turnover (V.fromList (map (* scale) values))
+              `shouldBe` turnover (V.fromList values)
+
   describe "produceChartReport" $
     scenarioDir "test_resources/chart/valid" $ \fp -> do
       af <- liftIO $ resolveFile' fp

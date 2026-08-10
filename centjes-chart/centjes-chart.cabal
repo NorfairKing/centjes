@@ -18,6 +18,10 @@ extra-source-files:
     test_resources/chart/error/unknown-currency.err
     test_resources/chart/valid/assets.cent
     test_resources/chart/valid/assets.txt
+    test_resources/chart/valid/opening.cent
+    test_resources/chart/valid/opening.txt
+    test_resources/chart/valid/ordering.cent
+    test_resources/chart/valid/ordering.txt
 
 source-repository head
   type: git

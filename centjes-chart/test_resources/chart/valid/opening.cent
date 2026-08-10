@@ -1,0 +1,26 @@
+-- Being opened is not money passing through.
+-- The late account only appears halfway through the chart and is never touched
+-- again, so it belongs at the bottom next to everything else that never moves.
+-- If its opening counted it would be the fastest-turning account here and go
+-- on top, and the names sort that way too, so the order is the turnover.
+currency USD 0.01
+
+account assets:early
+account assets:late
+account equity
+account expenses
+
+2024-01-01
+  | Opening early
+  * assets:early +100 USD
+  * equity       -100 USD
+
+2024-01-03
+  | Opening late
+  * assets:late +100 USD
+  * equity      -100 USD
+
+2024-01-04
+  | Spend from early
+  * assets:early -1 USD
+  * expenses     +1 USD
