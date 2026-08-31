@@ -17,23 +17,26 @@ Multi-package Haskell monorepo:
 
 ## Build & Test
 
-Uses Nix flakes + Stack:
+Uses Nix flakes + Cabal:
 
 ```bash
 # Enter dev environment
 nix develop
 
 # Build
-stack build <package>
+cabal build <package>
 
 # Test
-stack test <package>
+cabal test <package>
+
+# Treat warnings as errors
+cabal build <package> --ghc-options=-Werror
 
 # Start golden output
-stack test --test-arguments "--golden-start"
+cabal test all --test-options "--golden-start"
 
 # Reset golden output
-stack test --test-arguments "--golden-reset"
+cabal test all --test-options "--golden-reset"
 ```
 
 ## Claude-specific

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 export DEVELOPMENT=True
+export CENTJES_DOCS_SITE_LOG_LEVEL=Debug
 
-stack install centjes-docs-site \
-  --file-watch --watch-all \
-  --fast \
-  --ghc-options="-freverse-errors -j4 +RTS -A128M -n2m -RTS" \
-  --exec="./scripts/restart-docs-site.sh $@"
-
+watchexec \
+  --restart \
+  --exts hs,cabal,yaml,hamlet,julius,lucius,cassius \
+  --workdir centjes-docs-site \
+  -- cabal run centjes-docs-site -- "$@"

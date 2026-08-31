@@ -160,6 +160,7 @@
           libxml2
           pkg-config
           typst
+          watchexec
           zlib
           graphviz
           cairo

@@ -1,2 +1,8 @@
 packages: */*.cabal
+
 test-show-details: direct
+
+optimization: False
+
+program-options
+  ghc-options: -Wall -Wincomplete-uni-patterns -Wincomplete-record-updates -Wpartial-fields -Widentities -Wredundant-constraints -Wcpp-undef -Wunused-packages
