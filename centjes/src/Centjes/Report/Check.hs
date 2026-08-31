@@ -67,6 +67,7 @@ data CheckError ann
   = CheckErrorDeclarationOutOfOrder !(GenLocated ann Timestamp) !(GenLocated ann Timestamp)
   | CheckErrorMissingAttachment !ann !(Attachment ann) ![Path Rel File]
   | CheckErrorDuplicateAttachment !ann !ann !(Path Rel File)
+  | CheckErrorUnnecessaryDuplicateAttachmentTag !ann !ann
   | CheckErrorUnusedCurrency !(GenLocated ann (CurrencyDeclaration ann))
   | CheckErrorUnusedAccount !(GenLocated ann (AccountDeclaration ann))
   | CheckErrorUnusedTag !(GenLocated ann (TagDeclaration ann))
@@ -106,6 +107,14 @@ instance ToReport (CheckError SourceSpan) where
           (toDiagnosePosition l2, This "... this attachment")
         ]
         [Hint $ "If this is intentional, add '" <> T.unpack (formatTransactionExtra duplicateAttachmentExtra) <> "' to both."]
+    CheckErrorUnnecessaryDuplicateAttachmentTag dl tl ->
+      Err
+        (Just "CE_UNNECESSARY_DUPLICATE_ATTACHMENT_TAG")
+        (unwords ["Unnecessary tag:", T.unpack (tagText duplicateAttachmentTag)])
+        [ (toDiagnosePosition dl, Where "While trying to check this declaration"),
+          (toDiagnosePosition tl, This "This tag claims that an attachment is attached more than once, but none of the attachments here are.")
+        ]
+        [Hint "Either remove this tag or attach an attachment that is attached elsewhere too."]
     CheckErrorUnusedCurrency (Located dl _) ->
       Err
         (Just "CE_UNUSED_CURRENCY")
@@ -299,63 +308,123 @@ duplicateAttachmentTag = "duplicate-attachment"
 duplicateAttachmentExtra :: TransactionExtra ()
 duplicateAttachmentExtra = TransactionTag (Located () (ExtraTag (Located () duplicateAttachmentTag)))
 
+-- | Where one attachment is attached, resolved so that two attachments of the
+-- same file from different directories compare equal.
+data AttachmentOccurrence ann = AttachmentOccurrence
+  { attachmentOccurrenceAbsolutePath :: !(Path Abs File),
+    attachmentOccurrenceRelativePath :: !(Path Rel File),
+    attachmentOccurrenceLocation :: !ann
+  }
+
+-- | The attachments of a single declaration, together with the location of its
+-- 'duplicateAttachmentTag' if it has one.
+data DeclarationAttachments ann = DeclarationAttachments
+  { declarationAttachmentsDeclarationLocation :: !ann,
+    declarationAttachmentsDuplicateTagLocation :: !(Maybe ann),
+    declarationAttachmentsOccurrences :: ![AttachmentOccurrence ann]
+  }
+
 checkDuplicateAttachments :: [Declaration SourceSpan] -> CheckerT SourceSpan ()
 checkDuplicateAttachments declarations =
-  let attachments :: [(Path Abs File, Path Rel File, SourceSpan)]
-      attachments = concatMap declarationAttachments declarations
+  let perDeclaration :: [DeclarationAttachments SourceSpan]
+      perDeclaration = mapMaybe declarationAttachments declarations
+      -- Counted over every declaration, tagged ones included, so that a tag is
+      -- justified by the attachment it excuses rather than by itself.
+      occurrenceCounts :: Map (Path Abs File) Int
+      occurrenceCounts =
+        M.fromListWith (+) $
+          map (\o -> (attachmentOccurrenceAbsolutePath o, 1)) $
+            concatMap declarationAttachmentsOccurrences perDeclaration
+      isDuplicated :: AttachmentOccurrence SourceSpan -> Bool
+      isDuplicated o = M.findWithDefault 0 (attachmentOccurrenceAbsolutePath o) occurrenceCounts > 1
+      checkTag :: DeclarationAttachments SourceSpan -> CheckerT SourceSpan ()
+      checkTag da =
+        for_ (declarationAttachmentsDuplicateTagLocation da) $ \tl ->
+          unless (any isDuplicated (declarationAttachmentsOccurrences da)) $
+            validationTFailure $
+              CheckErrorUnnecessaryDuplicateAttachmentTag
+                (declarationAttachmentsDeclarationLocation da)
+                tl
+      untagged :: [AttachmentOccurrence SourceSpan]
+      untagged =
+        concatMap
+          ( \da -> case declarationAttachmentsDuplicateTagLocation da of
+              Just _ -> []
+              Nothing -> declarationAttachmentsOccurrences da
+          )
+          perDeclaration
       go ::
-        Map (Path Abs File) (Path Rel File, SourceSpan) ->
-        (Path Abs File, Path Rel File, SourceSpan) ->
-        CheckerT SourceSpan (Map (Path Abs File) (Path Rel File, SourceSpan))
-      go seen (af, rf, l2) =
-        case M.lookup af seen of
-          Nothing -> pure $ M.insert af (rf, l2) seen
-          Just (_, l1) -> do
-            validationTFailure $ CheckErrorDuplicateAttachment l1 l2 rf
+        Map (Path Abs File) (AttachmentOccurrence SourceSpan) ->
+        AttachmentOccurrence SourceSpan ->
+        CheckerT SourceSpan (Map (Path Abs File) (AttachmentOccurrence SourceSpan))
+      go seen o =
+        case M.lookup (attachmentOccurrenceAbsolutePath o) seen of
+          Nothing -> pure $ M.insert (attachmentOccurrenceAbsolutePath o) o seen
+          Just previous -> do
+            validationTFailure $
+              CheckErrorDuplicateAttachment
+                (attachmentOccurrenceLocation previous)
+                (attachmentOccurrenceLocation o)
+                (attachmentOccurrenceRelativePath o)
             pure seen
-   in foldM_ go M.empty attachments
+   in traverse_ checkTag perDeclaration *> foldM_ go M.empty untagged
 
-declarationAttachments :: Declaration SourceSpan -> [(Path Abs File, Path Rel File, SourceSpan)]
+declarationAttachments :: Declaration SourceSpan -> Maybe (DeclarationAttachments SourceSpan)
 declarationAttachments = \case
-  DeclarationComment _ -> []
-  DeclarationCurrency _ -> []
-  DeclarationAccount (Located _ Module.AccountDeclaration {..}) ->
-    let hasDuplicateAttachmentTag =
-          any
-            ( \case
-                Commented (Located _ (AccountExtraTag (Located _ (ExtraTag (Located _ tag))))) _ ->
-                  tag == duplicateAttachmentTag
-                _ -> False
-            )
-            accountDeclarationExtras
-     in if hasDuplicateAttachmentTag
-          then []
-          else concatMap (accountExtraAttachments . locatedValue . commentedValue) accountDeclarationExtras
-  DeclarationTag _ -> []
-  DeclarationPrice _ -> []
-  DeclarationTransaction (Located _ Module.Transaction {..}) ->
-    let hasDuplicateAttachmentTag =
-          any
-            ( \case
-                Commented (Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag))))) _ ->
-                  tag == duplicateAttachmentTag
-                _ -> False
-            )
-            transactionExtras
-     in if hasDuplicateAttachmentTag
-          then []
-          else concatMap (transactionExtraAttachments . locatedValue . commentedValue) transactionExtras
+  DeclarationComment _ -> Nothing
+  DeclarationCurrency _ -> Nothing
+  DeclarationTag _ -> Nothing
+  DeclarationPrice _ -> Nothing
+  DeclarationAccount (Located dl Module.AccountDeclaration {..}) ->
+    Just
+      DeclarationAttachments
+        { declarationAttachmentsDeclarationLocation = dl,
+          declarationAttachmentsDuplicateTagLocation =
+            listToMaybe $ mapMaybe (accountExtraDuplicateTag . commentedValue) accountDeclarationExtras,
+          declarationAttachmentsOccurrences =
+            mapMaybe (accountExtraAttachment . commentedValue) accountDeclarationExtras
+        }
+  DeclarationTransaction (Located dl Module.Transaction {..}) ->
+    Just
+      DeclarationAttachments
+        { declarationAttachmentsDeclarationLocation = dl,
+          declarationAttachmentsDuplicateTagLocation =
+            listToMaybe $ mapMaybe (transactionExtraDuplicateTag . commentedValue) transactionExtras,
+          declarationAttachmentsOccurrences =
+            mapMaybe (transactionExtraAttachment . commentedValue) transactionExtras
+        }
   where
-    accountExtraAttachments :: AccountExtra SourceSpan -> [(Path Abs File, Path Rel File, SourceSpan)]
-    accountExtraAttachments = \case
+    accountExtraDuplicateTag :: Located (AccountExtra SourceSpan) -> Maybe SourceSpan
+    accountExtraDuplicateTag (Located el ae) = case ae of
+      AccountExtraAttachment _ -> Nothing
+      AccountExtraAssertion _ -> Nothing
+      AccountExtraTag (Located _ (ExtraTag (Located _ tag))) ->
+        if tag == duplicateAttachmentTag then Just el else Nothing
+    transactionExtraDuplicateTag :: Located (TransactionExtra SourceSpan) -> Maybe SourceSpan
+    transactionExtraDuplicateTag (Located el te) = case te of
+      TransactionAttachment _ -> Nothing
+      TransactionAssertion _ -> Nothing
+      TransactionTag (Located _ (ExtraTag (Located _ tag))) ->
+        if tag == duplicateAttachmentTag then Just el else Nothing
+    accountExtraAttachment :: Located (AccountExtra SourceSpan) -> Maybe (AttachmentOccurrence SourceSpan)
+    accountExtraAttachment (Located _ ae) = case ae of
       AccountExtraAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located l fp))))) ->
-        [(sourceSpanBase l </> fp, fp, l)]
-      _ -> []
-    transactionExtraAttachments :: TransactionExtra SourceSpan -> [(Path Abs File, Path Rel File, SourceSpan)]
-    transactionExtraAttachments = \case
+        Just (attachmentOccurrence l fp)
+      AccountExtraAssertion _ -> Nothing
+      AccountExtraTag _ -> Nothing
+    transactionExtraAttachment :: Located (TransactionExtra SourceSpan) -> Maybe (AttachmentOccurrence SourceSpan)
+    transactionExtraAttachment (Located _ te) = case te of
       TransactionAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located l fp))))) ->
-        [(sourceSpanBase l </> fp, fp, l)]
-      _ -> []
+        Just (attachmentOccurrence l fp)
+      TransactionAssertion _ -> Nothing
+      TransactionTag _ -> Nothing
+    attachmentOccurrence :: SourceSpan -> Path Rel File -> AttachmentOccurrence SourceSpan
+    attachmentOccurrence l fp =
+      AttachmentOccurrence
+        { attachmentOccurrenceAbsolutePath = sourceSpanBase l </> fp,
+          attachmentOccurrenceRelativePath = fp,
+          attachmentOccurrenceLocation = l
+        }
 
 checkDeclaration :: Declaration SourceSpan -> CheckerT SourceSpan ()
 checkDeclaration = \case

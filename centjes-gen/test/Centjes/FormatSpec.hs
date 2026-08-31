@@ -66,6 +66,7 @@ spec = do
   centFilesDirSpec "test_resources/balance"
   centFilesDirSpec "test_resources/register"
   centFilesDirSpec "test_resources/check"
+  centFilesDirSpec "test_resources/check-valid"
   centFilesDirSpec "test_resources/lot"
   centFilesDirSpec "test_resources/virtual"
 

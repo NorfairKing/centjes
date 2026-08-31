@@ -176,6 +176,10 @@ extra-source-files:
     test_resources/balance/error/EVAL_ASSERTION-virtual.cent
     test_resources/balance/error/EVAL_ASSERTION-virtual.err
     test_resources/balance/show-virtual-price.cent
+    test_resources/check-valid/2025-01-02.txt
+    test_resources/check-valid/2025-01-03.txt
+    test_resources/check-valid/duplicate-attachment-among-others.cent
+    test_resources/check-valid/duplicate-attachment.cent
     test_resources/check/2025-01-02.txt
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.cent
     test_resources/check/CE_DECLARATION_OUT_OF_ORDER.err
@@ -189,6 +193,10 @@ extra-source-files:
     test_resources/check/CE_MISSING_ATTACHMENT_NONEXISTENT_DIR.err
     test_resources/check/CE_MISSING_ATTACHMENT_SIMILAR.cent
     test_resources/check/CE_MISSING_ATTACHMENT_SIMILAR.err
+    test_resources/check/CE_UNNECESSARY_DUPLICATE_ATTACHMENT_TAG-account.cent
+    test_resources/check/CE_UNNECESSARY_DUPLICATE_ATTACHMENT_TAG-account.err
+    test_resources/check/CE_UNNECESSARY_DUPLICATE_ATTACHMENT_TAG.cent
+    test_resources/check/CE_UNNECESSARY_DUPLICATE_ATTACHMENT_TAG.err
     test_resources/check/CE_UNUSED_ACCOUNT.cent
     test_resources/check/CE_UNUSED_ACCOUNT.err
     test_resources/check/CE_UNUSED_CURRENCY-price.cent

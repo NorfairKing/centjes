@@ -1,0 +1,9 @@
+tag duplicate-attachment
+
+2025-01-01
+  + attach 2025-01-02.txt
+  + tag duplicate-attachment
+
+2025-01-02
+  + attach 2025-01-02.txt
+  + tag duplicate-attachment

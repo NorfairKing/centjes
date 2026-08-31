@@ -27,3 +27,9 @@ spec =
             -- Try to check
             errs <- runTestLoggingT $ shouldFailToValidateT $ doCompleteCheck ds
             pure $ renderValidationErrors diag errs
+    scenarioDirRecur "test_resources/check-valid" $ \fp -> do
+      af <- liftIO $ resolveFile' fp
+      when (fileExtension af == Just ".cent") $
+        it "checks this module without errors" $ do
+          (ds, diag) <- runTestLoggingT $ loadModules af
+          void $ runTestLoggingT $ shouldValidateT diag $ doCompleteCheck ds
