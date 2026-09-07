@@ -52,7 +52,20 @@ instance Yesod App where
       widgetToPageContent $ do
         addScript $ AssetsStaticR asciinema_player_js
         addStylesheet $ AssetsStaticR asciinema_player_css
-        toWidget [lucius|:root {--bulma-code: #353535 !important}|]
+        toWidget
+          [lucius|
+            :root {
+              --bulma-code: #353535;
+            }
+            /* Nested section, box and pre paddings leave code samples too
+               narrow to read on a phone. */
+            @media screen and (max-width: 768px) {
+              .section, .box, .content pre {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+              }
+            }
+          |]
         let menu = $(widgetFile "menu")
         addReloadWidget $(widgetFile "default-body")
     withUrlRenderer $(hamletFile "templates/default-page.hamlet")

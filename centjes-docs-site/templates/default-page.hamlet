@@ -5,12 +5,15 @@ $doctype 5
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>#{pageTitle pageContent}
+
+    $# Bulma goes first so that the page's own styles can override it
+    $# without !important.
+    <link rel="stylesheet" href=@{AssetsStaticR bulma_css}>
+    <link rel="icon" href=@{AssetsStaticR favicon_ico} type="image/x-icon">
+
     ^{pageHead pageContent}
     $maybe description <- pageDescription pageContent
       <meta name="description" content=#{description}>
-
-    <link rel="stylesheet" href=@{AssetsStaticR bulma_css}>
-    <link rel="icon" href=@{AssetsStaticR favicon_ico} type="image/x-icon">
 
     $maybe verification <- appGoogleSearchConsoleVerification app
       <meta name="google-site-verification" content="#{verification}"/>
