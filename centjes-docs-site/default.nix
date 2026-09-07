@@ -29,7 +29,7 @@ mkDerivation {
   ];
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];
-  testHaskellDepends = [ base opt-env-conf-test sydtest ];
+  testHaskellDepends = [ base opt-env-conf-test sydtest text ];
   testToolDepends = [ sydtest-discover ];
   homepage = "https://github.com/NorfairKing/centjes#readme";
   license = lib.licenses.mit;

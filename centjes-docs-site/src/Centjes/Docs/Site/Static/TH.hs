@@ -222,7 +222,7 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
       _ -> error $ "Unsupported node: " <> show n
 
 renderChunksHtml :: [Chunk] -> Html
-renderChunksHtml = Html.p . Html.pre . foldMap go
+renderChunksHtml = Html.pre . foldMap go
   where
     go :: Chunk -> Html
     go c =
@@ -253,12 +253,14 @@ renderChunksHtml = Html.p . Html.pre . foldMap go
 
 renderHtmlDoc :: Doc SyntaxElement -> Html
 renderHtmlDoc doc =
-  Html.p ! HtmlA.class_ "sourceCode" $
-    Html.pre ! HtmlA.class_ "sourceCode" ! HtmlA.style "color: #774f38;" $
-      Html.code ! HtmlA.class_ "sourceCode" $
-        foldMap go $
-          treeUp . Prettyprinter.treeForm $
-            layoutPretty layoutOptions doc
+  -- Not skylighting's sourceCode classes: its stylesheet makes every direct
+  -- child span of code.sourceCode an inline-block, which swallows the line
+  -- breaks in our per-token spans.
+  Html.pre ! HtmlA.style "color: #774f38;" $
+    Html.code $
+      foldMap go $
+        treeUp . Prettyprinter.treeForm $
+          layoutPretty layoutOptions doc
   where
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
     go :: DocTree SyntaxElement -> Html

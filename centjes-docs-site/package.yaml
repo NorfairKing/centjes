@@ -84,3 +84,4 @@ tests:
     - centjes-docs-site
     - sydtest
     - opt-env-conf-test
+    - text
