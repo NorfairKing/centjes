@@ -19,6 +19,7 @@ extra-source-files:
     content/pages/centjes-import-cornercard.markdown
     content/pages/centjes-import-neon.markdown
     content/pages/centjes-import-revolut.markdown
+    content/pages/centjes-import-wise.markdown
     content/pages/centjes-stocks.markdown
     content/pages/centjes-stocks/download-rates.markdown
     content/pages/centjes-stripe.markdown
@@ -66,6 +67,7 @@ library
       Centjes.Docs.Site.Handler.CentjesImportCornercard
       Centjes.Docs.Site.Handler.CentjesImportNeon
       Centjes.Docs.Site.Handler.CentjesImportRevolut
+      Centjes.Docs.Site.Handler.CentjesImportWise
       Centjes.Docs.Site.Handler.CentjesStocks
       Centjes.Docs.Site.Handler.CentjesStripe
       Centjes.Docs.Site.Handler.CentjesSwitzerland
@@ -98,6 +100,7 @@ library
     , centjes-import-cornercard
     , centjes-import-neon
     , centjes-import-revolut
+    , centjes-import-wise
     , centjes-stocks
     , centjes-stripe
     , centjes-switzerland

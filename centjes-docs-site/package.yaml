@@ -29,6 +29,7 @@ library:
   - centjes-import-cornercard
   - centjes-import-neon
   - centjes-import-revolut
+  - centjes-import-wise
   - centjes-switzerland
   - cmark
   - containers

@@ -122,6 +122,7 @@
             "centjes-import-cornercard"
             "centjes-import-neon"
             "centjes-import-revolut"
+            "centjes-import-wise"
             "centjes-stripe"
             "centjes-switzerland"
           ];

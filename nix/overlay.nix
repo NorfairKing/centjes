@@ -207,6 +207,7 @@ with final.haskell.lib;
             centjes-import-cornercard = centjesPkg "centjes-import-cornercard";
             centjes-import-neon = centjesPkg "centjes-import-neon";
             centjes-import-revolut = centjesPkg "centjes-import-revolut";
+            centjes-import-wise = centjesPkg "centjes-import-wise";
             centjes-switzerland = (overrideCabal (centjesPkg "centjes-switzerland") (old: {
               preConfigure = ''
                 ${old.preConfigure or ""}

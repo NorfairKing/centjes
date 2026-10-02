@@ -8,7 +8,7 @@ Multi-package Haskell monorepo:
 
 - `centjes/` - Main CLI application (parser, ledger, reports)
 - `centjes-switzerland/` - Swiss tax and VAT report generation
-- `centjes-import-{cornercard,neon,revolut}/` - Bank statement importers
+- `centjes-import-{cornercard,neon,revolut,wise}/` - Bank statement importers
 - `centjes-cryptocurrencies/` - Crypto rate downloads
 - `centjes-stripe/` - Stripe sales, fees and payouts, one aggregate per month
 - `centjes-gen/` - Generators and tests
