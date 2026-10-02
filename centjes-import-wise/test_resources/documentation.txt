@@ -1,4 +1,4 @@
-[36mUsage: [m[33mcentjes-import-wise[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m COMMAND
+[36mUsage: [m[33mcentjes-import-wise[m [36m[[m[37m--config-file[m [33mFILE_PATH[m[36m][m [36m[[m[37m-l[m[36m|[m[37m--ledger[m [33mFILE_PATH[m[36m][m [33mCSV_FILE[m [36m[[m[33mCSV_FILE[m[36m][m [36m[[m[37m-o[m[36m|[m[37m--output[m [33mFILE_PATH[m[36m][m [36m[[m[37m--assets-account[m [33mACCOUNT_NAME[m[36m][m [36m[[m[37m--expenses-account[m [33mACCOUNT_NAME[m[36m][m [36m[[m[37m--income-account[m [33mACCOUNT_NAME[m[36m][m [36m[[m[37m--fees-account[m [33mACCOUNT_NAME[m[36m][m
 
 [36mAll settings[m:
   [34mShow this help text[m
@@ -19,163 +19,79 @@
       [33m<string>[m
   default: [33m"ledger.cent"[m
 
-[36mAll commands[m:
-  [34mDownload a statement for every balance[m
-  command: [35mfetch[m
-    [34mWise API token that can read your balances and statements[m
-    option: [37m--token[m [33mSECRET[m
-    option: [37m--token-file[m [33mFILE_PATH[m
-    env: [37mCENTJES_IMPORT_WISE_TOKEN[m [33mSECRET[m
-    env: [37mCENTJES_IMPORT_WISE_TOKEN_FILE[m [33mFILE_PATH[m
-    config:
-      [37mfetch.token[m: # [32mor null[m
-        [33m<string>[m
-    config:
-      [37mfetch.token-file[m: # [32mor null[m
-        [33m<string>[m
-  
-    [34mPEM file holding the private key registered with Wise, which signs its authentication challenge[m
-    option: [37m--private-key-file[m [33mFILE_PATH[m
-    env: [37mCENTJES_IMPORT_WISE_PRIVATE_KEY_FILE[m [33mFILE_PATH[m
-    config:
-      [37mfetch.private-key-file[m: # [32mor null[m
-        [33m<string>[m
-    
-    [34mBase URL of the Wise API, which the sandbox and the live API differ in[m
-    option: [37m--base-url[m [33mURL[m
-    env: [37mCENTJES_IMPORT_WISE_BASE_URL[m [33mURL[m
-    config:
-      [37mfetch.base-url[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"https://api.wise.com"[m
-    
-    [34mDirectory to download the statements into[m
-    option: [37m-d[m[36m|[m[37m--statement-directory[m [33mDIRECTORY_PATH[m
-    env: [37mCENTJES_IMPORT_WISE_STATEMENT_DIRECTORY[m [33mDIRECTORY_PATH[m
-    config:
-      [37mfetch.statement-directory[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"wise-statements"[m
-    
-    [34mOnly fetch the balances of this profile, instead of every profile[m
-    option: [37m--profile[m [33mPROFILE_ID[m
-    env: [37mCENTJES_IMPORT_WISE_PROFILE[m [33mPROFILE_ID[m
-    config:
-      [37mfetch.profile[m: # [32mor null[m
-        [33m<integer>[m # [32m64 bit signed integer[m
-    
-    [34mFirst day to fetch, which defaults to the first day of this year[m
-    option: [37m--begin[m [33mYYYY-MM-DD[m
-    env: [37mCENTJES_IMPORT_WISE_BEGIN[m [33mYYYY-MM-DD[m
-    config:
-      [37mfetch.begin[m: # [32mor null[m
-        # Day
-        [33m<string>[m
-    
-    [34mLast day to fetch, which defaults to today[m
-    option: [37m--end[m [33mYYYY-MM-DD[m
-    env: [37mCENTJES_IMPORT_WISE_END[m [33mYYYY-MM-DD[m
-    config:
-      [37mfetch.end[m: # [32mor null[m
-        # Day
-        [33m<string>[m
-    
-  
-  [34mImport downloaded or exported statements[m
-  command: [35mimport[m
-    [34mstatement to import, one per balance[m
-    argument: [33mCSV_FILE[m
-    
-    [34mstatement to import, one per balance[m
-    argument: [33mCSV_FILE[m
-    
-    [34moutput ledger file, which this importer rewrites[m
-    option: [37m-o[m[36m|[m[37m--output[m [33mFILE_PATH[m
-    env: [37mCENTJES_IMPORT_WISE_OUTPUT[m [33mFILE_PATH[m
-    config:
-      [37mimport.output[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"wise-import.cent"[m
-    
-    [34mAssets account name, which holds every currency[m
-    option: [37m--assets-account[m [33mACCOUNT_NAME[m
-    env: [37mCENTJES_IMPORT_WISE_ASSETS_ACCOUNT[m [33mACCOUNT_NAME[m
-    config:
-      [37mimport.assets-account[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"assets:wise"[m
-    
-    [34mExpenses account name[m
-    option: [37m--expenses-account[m [33mACCOUNT_NAME[m
-    env: [37mCENTJES_IMPORT_WISE_EXPENSES_ACCOUNT[m [33mACCOUNT_NAME[m
-    config:
-      [37mimport.expenses-account[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"expenses:unknown:wise"[m
-    
-    [34mIncome account name[m
-    option: [37m--income-account[m [33mACCOUNT_NAME[m
-    env: [37mCENTJES_IMPORT_WISE_INCOME_ACCOUNT[m [33mACCOUNT_NAME[m
-    config:
-      [37mimport.income-account[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"income:unknown:wise"[m
-    
-    [34mFees account name[m
-    option: [37m--fees-account[m [33mACCOUNT_NAME[m
-    env: [37mCENTJES_IMPORT_WISE_FEES_ACCOUNT[m [33mACCOUNT_NAME[m
-    config:
-      [37mimport.fees-account[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"expenses:banking:wise"[m
-    
-    [34mTags for a transaction that was charged a fee[m
-    config:
-      [37mimport.fee-tags[m: # [32mor null[m
-        - [33m<string>[m
-    default: [33m["tax-deductible","not-vat-deductible"][m
-    
-  
+  [34mstatement to import, one per balance[m
+  argument: [33mCSV_FILE[m
+
+  [34mstatement to import, one per balance[m
+  argument: [33mCSV_FILE[m
+
+  [34moutput ledger file, which this importer rewrites[m
+  option: [37m-o[m[36m|[m[37m--output[m [33mFILE_PATH[m
+  env: [37mCENTJES_IMPORT_WISE_OUTPUT[m [33mFILE_PATH[m
+  config:
+    [37moutput[m: # [32mor null[m
+      [33m<string>[m
+  default: [33m"wise-import.cent"[m
+
+  [34mAssets account name, which holds every currency[m
+  option: [37m--assets-account[m [33mACCOUNT_NAME[m
+  env: [37mCENTJES_IMPORT_WISE_ASSETS_ACCOUNT[m [33mACCOUNT_NAME[m
+  config:
+    [37massets-account[m: # [32mor null[m
+      [33m<string>[m
+  default: [33m"assets:wise"[m
+
+  [34mExpenses account name[m
+  option: [37m--expenses-account[m [33mACCOUNT_NAME[m
+  env: [37mCENTJES_IMPORT_WISE_EXPENSES_ACCOUNT[m [33mACCOUNT_NAME[m
+  config:
+    [37mexpenses-account[m: # [32mor null[m
+      [33m<string>[m
+  default: [33m"expenses:unknown:wise"[m
+
+  [34mIncome account name[m
+  option: [37m--income-account[m [33mACCOUNT_NAME[m
+  env: [37mCENTJES_IMPORT_WISE_INCOME_ACCOUNT[m [33mACCOUNT_NAME[m
+  config:
+    [37mincome-account[m: # [32mor null[m
+      [33m<string>[m
+  default: [33m"income:unknown:wise"[m
+
+  [34mFees account name[m
+  option: [37m--fees-account[m [33mACCOUNT_NAME[m
+  env: [37mCENTJES_IMPORT_WISE_FEES_ACCOUNT[m [33mACCOUNT_NAME[m
+  config:
+    [37mfees-account[m: # [32mor null[m
+      [33m<string>[m
+  default: [33m"expenses:banking:wise"[m
+
+  [34mTags for a transaction that was charged a fee[m
+  config:
+    [37mfee-tags[m: # [32mor null[m
+      - [33m<string>[m
+  default: [33m["tax-deductible","not-vat-deductible"][m
 
 [36mOptions[m:
-  [37m-h[m[36m|[m[37m--help[m [34mShow this help text[m
-  [37m--version[m [34mOutput version information[m
-  [37m--config-file[m [34mPath to the configuration file[m
-  [37m-l[m[36m|[m[37m--ledger[m [34mmain ledger file[m default: [33m"ledger.cent"[m
-  [35mfetch[m [34mDownload a statement for every balance[m
-      [37m--token[m                  [34mWise API token that can read your balances and statements[m                                                                      
-      [37m--token-file[m             [34mWise API token that can read your balances and statements[m                                                                      
-      [37m--private-key-file[m       [34mPEM file holding the private key registered with Wise, which signs its authentication challenge[m                                
-      [37m--base-url[m               [34mBase URL of the Wise API, which the sandbox and the live API differ in[m                          default: [33m"https://api.wise.com"[m
-      [37m-d[m[36m|[m[37m--statement-directory[m [34mDirectory to download the statements into[m                                                       default: [33m"wise-statements"[m     
-      [37m--profile[m                [34mOnly fetch the balances of this profile, instead of every profile[m                                                              
-      [37m--begin[m                  [34mFirst day to fetch, which defaults to the first day of this year[m                                                               
-      [37m--end[m                    [34mLast day to fetch, which defaults to today[m                                                                                     
-  [35mimport[m [34mImport downloaded or exported statements[m
-      [33mCSV_FILE[m           [34mstatement to import, one per balance[m                                             
-      [33mCSV_FILE[m           [34mstatement to import, one per balance[m                                             
-      [37m-o[m[36m|[m[37m--output[m        [34moutput ledger file, which this importer rewrites[m default: [33m"wise-import.cent"[m     
-      [37m--assets-account[m   [34mAssets account name, which holds every currency[m  default: [33m"assets:wise"[m          
-      [37m--expenses-account[m [34mExpenses account name[m                            default: [33m"expenses:unknown:wise"[m
-      [37m--income-account[m   [34mIncome account name[m                              default: [33m"income:unknown:wise"[m  
-      [37m--fees-account[m     [34mFees account name[m                                default: [33m"expenses:banking:wise"[m
+  [37m-h[m[36m|[m[37m--help[m          [34mShow this help text[m                                                              
+  [37m--version[m          [34mOutput version information[m                                                       
+  [37m--config-file[m      [34mPath to the configuration file[m                                                   
+  [37m-l[m[36m|[m[37m--ledger[m        [34mmain ledger file[m                                 default: [33m"ledger.cent"[m          
+  [33mCSV_FILE[m           [34mstatement to import, one per balance[m                                             
+  [33mCSV_FILE[m           [34mstatement to import, one per balance[m                                             
+  [37m-o[m[36m|[m[37m--output[m        [34moutput ledger file, which this importer rewrites[m default: [33m"wise-import.cent"[m     
+  [37m--assets-account[m   [34mAssets account name, which holds every currency[m  default: [33m"assets:wise"[m          
+  [37m--expenses-account[m [34mExpenses account name[m                            default: [33m"expenses:unknown:wise"[m
+  [37m--income-account[m   [34mIncome account name[m                              default: [33m"income:unknown:wise"[m  
+  [37m--fees-account[m     [34mFees account name[m                                default: [33m"expenses:banking:wise"[m
 
 [36mEnvironment Variables[m:
-  [37mCENTJES_IMPORT_WISE_CONFIG_FILE[m [33mFILE_PATH[m                [34mPath to the configuration file[m                                                                                                    
-  [37mCENTJES_IMPORT_WISE_LEDGER[m [33mFILE_PATH[m                     [34mmain ledger file[m                                                                                  default: [33m"ledger.cent"[m          
-  [37mCENTJES_IMPORT_WISE_TOKEN[m [33mSECRET[m                         [34mWise API token that can read your balances and statements[m                                                                         
-  [37mCENTJES_IMPORT_WISE_TOKEN_FILE[m [33mFILE_PATH[m                 [34mWise API token that can read your balances and statements[m                                                                         
-  [37mCENTJES_IMPORT_WISE_PRIVATE_KEY_FILE[m [33mFILE_PATH[m           [34mPEM file holding the private key registered with Wise, which signs its authentication challenge[m                                   
-  [37mCENTJES_IMPORT_WISE_BASE_URL[m [33mURL[m                         [34mBase URL of the Wise API, which the sandbox and the live API differ in[m                            default: [33m"https://api.wise.com"[m 
-  [37mCENTJES_IMPORT_WISE_STATEMENT_DIRECTORY[m [33mDIRECTORY_PATH[m   [34mDirectory to download the statements into[m                                                         default: [33m"wise-statements"[m      
-  [37mCENTJES_IMPORT_WISE_PROFILE[m [33mPROFILE_ID[m                   [34mOnly fetch the balances of this profile, instead of every profile[m                                                                 
-  [37mCENTJES_IMPORT_WISE_BEGIN[m [33mYYYY-MM-DD[m                     [34mFirst day to fetch, which defaults to the first day of this year[m                                                                  
-  [37mCENTJES_IMPORT_WISE_END[m [33mYYYY-MM-DD[m                       [34mLast day to fetch, which defaults to today[m                                                                                        
-  [37mCENTJES_IMPORT_WISE_OUTPUT[m [33mFILE_PATH[m                     [34moutput ledger file, which this importer rewrites[m                                                  default: [33m"wise-import.cent"[m     
-  [37mCENTJES_IMPORT_WISE_ASSETS_ACCOUNT[m [33mACCOUNT_NAME[m          [34mAssets account name, which holds every currency[m                                                   default: [33m"assets:wise"[m          
-  [37mCENTJES_IMPORT_WISE_EXPENSES_ACCOUNT[m [33mACCOUNT_NAME[m        [34mExpenses account name[m                                                                             default: [33m"expenses:unknown:wise"[m
-  [37mCENTJES_IMPORT_WISE_INCOME_ACCOUNT[m [33mACCOUNT_NAME[m          [34mIncome account name[m                                                                               default: [33m"income:unknown:wise"[m  
-  [37mCENTJES_IMPORT_WISE_FEES_ACCOUNT[m [33mACCOUNT_NAME[m            [34mFees account name[m                                                                                 default: [33m"expenses:banking:wise"[m
+  [37mCENTJES_IMPORT_WISE_CONFIG_FILE[m [33mFILE_PATH[m           [34mPath to the configuration file[m                                                     
+  [37mCENTJES_IMPORT_WISE_LEDGER[m [33mFILE_PATH[m                [34mmain ledger file[m                                   default: [33m"ledger.cent"[m          
+  [37mCENTJES_IMPORT_WISE_OUTPUT[m [33mFILE_PATH[m                [34moutput ledger file, which this importer rewrites[m   default: [33m"wise-import.cent"[m     
+  [37mCENTJES_IMPORT_WISE_ASSETS_ACCOUNT[m [33mACCOUNT_NAME[m     [34mAssets account name, which holds every currency[m    default: [33m"assets:wise"[m          
+  [37mCENTJES_IMPORT_WISE_EXPENSES_ACCOUNT[m [33mACCOUNT_NAME[m   [34mExpenses account name[m                              default: [33m"expenses:unknown:wise"[m
+  [37mCENTJES_IMPORT_WISE_INCOME_ACCOUNT[m [33mACCOUNT_NAME[m     [34mIncome account name[m                                default: [33m"income:unknown:wise"[m  
+  [37mCENTJES_IMPORT_WISE_FEES_ACCOUNT[m [33mACCOUNT_NAME[m       [34mFees account name[m                                  default: [33m"expenses:banking:wise"[m
 
 [36mConfiguration Values[m:
   [34mmain ledger file[m
@@ -183,70 +99,34 @@
   [37mledger[m:
     # [32mor null[m
     [33m<string>[m
-  [34mWise API token that can read your balances and statements[m
-  [37mfetch.token[m:
-    # [32mor null[m
-    [33m<string>[m
-  [34mWise API token that can read your balances and statements[m
-  [37mfetch.token-file[m:
-    # [32mor null[m
-    [33m<string>[m
-  [34mPEM file holding the private key registered with Wise, which signs its authentication challenge[m
-  [37mfetch.private-key-file[m:
-    # [32mor null[m
-    [33m<string>[m
-  [34mBase URL of the Wise API, which the sandbox and the live API differ in[m
-  default: [33m"https://api.wise.com"[m
-  [37mfetch.base-url[m:
-    # [32mor null[m
-    [33m<string>[m
-  [34mDirectory to download the statements into[m
-  default: [33m"wise-statements"[m
-  [37mfetch.statement-directory[m:
-    # [32mor null[m
-    [33m<string>[m
-  [34mOnly fetch the balances of this profile, instead of every profile[m
-  [37mfetch.profile[m:
-    # [32mor null[m
-    [33m<integer>[m # [32m64 bit signed integer[m
-  [34mFirst day to fetch, which defaults to the first day of this year[m
-  [37mfetch.begin[m:
-    # [32mor null[m
-    # Day
-    [33m<string>[m
-  [34mLast day to fetch, which defaults to today[m
-  [37mfetch.end[m:
-    # [32mor null[m
-    # Day
-    [33m<string>[m
   [34moutput ledger file, which this importer rewrites[m
   default: [33m"wise-import.cent"[m
-  [37mimport.output[m:
+  [37moutput[m:
     # [32mor null[m
     [33m<string>[m
   [34mAssets account name, which holds every currency[m
   default: [33m"assets:wise"[m
-  [37mimport.assets-account[m:
+  [37massets-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mExpenses account name[m
   default: [33m"expenses:unknown:wise"[m
-  [37mimport.expenses-account[m:
+  [37mexpenses-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mIncome account name[m
   default: [33m"income:unknown:wise"[m
-  [37mimport.income-account[m:
+  [37mincome-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mFees account name[m
   default: [33m"expenses:banking:wise"[m
-  [37mimport.fees-account[m:
+  [37mfees-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mTags for a transaction that was charged a fee[m
   default: [33m["tax-deductible","not-vat-deductible"][m
-  [37mimport.fee-tags[m:
+  [37mfee-tags[m:
     # [32mor null[m
     - [33m<string>[m
 

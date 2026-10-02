@@ -11,20 +11,11 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - autodocodec
-  - base64-bytestring
   - bytestring
   - cassava
   - centjes
   - containers
-  - crypton
-  - case-insensitive
-  - crypton-x509
-  - crypton-x509-store
   - diagnose
-  - http-client
-  - http-client-tls
-  - http-types
   - monad-logger
   - opt-env-conf
   - path
@@ -32,7 +23,6 @@ library:
   - really-safe-money
   - text
   - time
-  - transformers
   - unordered-containers
   - vector
 
