@@ -43,6 +43,7 @@ import qualified Crypto.PubKey.RSA.PKCS15 as PKCS15
 import qualified Data.ByteString as SB
 import qualified Data.ByteString.Base64 as Base64
 import qualified Data.ByteString.Lazy as LB
+import qualified Data.CaseInsensitive as CI
 import Data.Int (Int64)
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -78,7 +79,7 @@ data WiseConnection = WiseConnection
 
 data WiseApiError
   = WiseApiErrorHttp !String !HttpException
-  | WiseApiErrorStatus !String !Int !LB.ByteString
+  | WiseApiErrorStatus !String !Int !LB.ByteString ![HTTP.Header]
   | WiseApiErrorDecode !String !String
   | WiseApiErrorKeyUnreadable !FilePath !String
   | WiseApiErrorKeyNotRSA !FilePath
@@ -93,18 +94,43 @@ renderWiseApiError = \case
   -- Authorization header, which is where the token lives.  Anything that
   -- formats the request itself has to redact it.
   WiseApiErrorHttp url e -> unwords ["The request to", url, "failed:", show e]
-  WiseApiErrorStatus url status body ->
+  WiseApiErrorStatus url status body responseHeaderList ->
     unlines $
       concat
-        [ [ unwords ["The request to", url, "returned status", show status <> ":"],
-            T.unpack (TE.decodeUtf8Lenient (LB.toStrict body))
+        [ [unwords ["The request to", url, "returned status", show status <> ":"]],
+          [T.unpack (TE.decodeUtf8Lenient (LB.toStrict body)) | not (LB.null body)],
+          -- A 403 is how Wise asks for a signature, so one that did not ask is
+          -- a different thing entirely, and what it says about the approval is
+          -- what tells them apart.  Only those headers, because a response
+          -- carries a cookie as well.
+          [ unlines
+              ( concat
+                  [ [ unwords
+                        [ "This 403 did not ask for a signature: it carries no x-2fa-approval header,",
+                          "so there was no challenge to sign."
+                        ]
+                    ],
+                    [ unwords ["It said", show (CI.original name) <> ":", show value]
+                    | (name, value) <- responseHeaderList,
+                      "2fa" `SB.isInfixOf` CI.foldedCase name
+                    ],
+                    [ unwords
+                        [ "Wise only offers a challenge once a public key is registered on the account,",
+                          "and only offers statements over the API to some countries at all.",
+                          "If neither is the problem, export the statement from the website",
+                          "and run the import on the file."
+                        ]
+                    ]
+                  ]
+              )
+          | status == 403
           ],
           [ unwords
-              [ "Wise does not offer statements over the API to every country.",
-                "If this account is not in one of the countries it does,",
-                "export the statement from the website and run the import on the file."
+              [ "Wise has no such thing to give.",
+                "If this is a statement, it may be that statements over the API",
+                "are not offered for this account's country."
               ]
-          | status == 403 || status == 404
+          | status == 404
           ]
         ]
   WiseApiErrorDecode url reason ->
@@ -133,11 +159,13 @@ renderWiseApiError = \case
       ]
   WiseApiErrorChallengeRefused url ->
     unlines
-      [ unwords ["Wise refused the signature for", url <> "."],
+      [ unwords ["Wise asked for a signature for", url, "and then refused the one it got."],
         unwords
-          [ "The key this importer signed with is probably not the one registered",
-            "on the account."
-          ]
+          [ "The public key registered on the Wise account is almost certainly not",
+            "the partner of the private key this signed with.  Check which key is",
+            "uploaded under the account's public keys against the output of:"
+          ],
+        "  openssl rsa -pubout -in <the private key file>"
       ]
 
 type WiseM = ExceptT WiseApiError (LoggingT IO)
@@ -270,9 +298,13 @@ fetchSigned connection url = do
                          ]
                 }
         signedResponse <- performRequest manager url signedRequest
-        case challengeToken signedResponse of
-          Just _ -> throwE $ WiseApiErrorChallengeRefused url
-          Nothing -> responseBodyOrError url signedResponse
+        -- A second 403 is a refusal of the signature, whether or not Wise
+        -- bothered to offer another token with it.  Reading it as an ordinary
+        -- failure would blame the request rather than the key, which is the one
+        -- thing worth saying here.
+        if HTTP.statusCode (responseStatus signedResponse) == 403
+          then throwE $ WiseApiErrorChallengeRefused url
+          else responseBodyOrError url signedResponse
 
 -- | The one-time token Wise wants signed, if this response is a challenge.
 challengeToken :: Response LB.ByteString -> Maybe SB.ByteString
@@ -312,7 +344,7 @@ responseBodyOrError url response =
   let status = HTTP.statusCode (responseStatus response)
    in if status >= 200 && status < 300
         then pure (responseBody response)
-        else throwE $ WiseApiErrorStatus url status (responseBody response)
+        else throwE $ WiseApiErrorStatus url status (responseBody response) (responseHeaders response)
 
 decodeBody :: (HasCodec a) => String -> LB.ByteString -> WiseM a
 decodeBody url body = case eitherDecodeJSONViaCodec body of

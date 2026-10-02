@@ -18,6 +18,7 @@ library:
   - centjes
   - containers
   - crypton
+  - case-insensitive
   - crypton-x509
   - crypton-x509-store
   - diagnose
