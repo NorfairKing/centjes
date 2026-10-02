@@ -228,14 +228,21 @@ movementPostings settings row RowAmounts {..} = do
       currency
       rowAmountsMoved
       Nothing
-  counterPosting <-
-    posting
-      transferId
-      counterAccountName
-      rowAmountsQuantisationFactor
-      currency
-      counterAccount
-      Nothing
+  -- A row that was nothing but a fee, such as a monthly card charge, has no
+  -- other side, and a posting of nothing to an account that had nothing to do
+  -- with it would only be in the way.
+  counterPostings <-
+    if counterAccount == Account.zero
+      then pure []
+      else
+        (: [])
+          <$> posting
+            transferId
+            counterAccountName
+            rowAmountsQuantisationFactor
+            currency
+            counterAccount
+            Nothing
   -- The balance moved by the whole amount, fee and all, so the fee needs only
   -- the expense side here: the balance side of it is already in the posting
   -- above.  A conversion is the other way around, because there the balance is
@@ -247,7 +254,7 @@ movementPostings settings row RowAmounts {..} = do
       rowAmountsQuantisationFactor
       currency
       rowAmountsFee
-  pure (assetsPosting : counterPosting : fee)
+  pure (concat [[assetsPosting], counterPostings, fee])
 
 -- | Money moving between two of your own balances, which is one transaction
 -- with a currency on each side.

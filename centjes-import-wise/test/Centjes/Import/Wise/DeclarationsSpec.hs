@@ -91,6 +91,23 @@ spec = do
       parsed <- shouldParse parseModule here [relfile|wise.cent|] rendered
       formatModule (stripModuleAnnotation parsed) `shouldBe` rendered
 
+  describe "movementPostings" $ do
+    -- A monthly card charge is a row that was nothing but a fee.  A posting of
+    -- nothing to an account that had nothing to do with it would only be in the
+    -- way.
+    it "writes a row that was nothing but a fee without an empty other side" $
+      fmap
+        (map (\p -> (locatedValue (postingAccountName p), DecimalLiteral.toString (locatedValue (postingAccount p)))))
+        (postingsOf <$> validated (oneTransaction (WiseMovement feeOnly)))
+        `shouldBe` Just
+          [ ("assets:wise", "-1.34"),
+            ("expenses:banking:wise", "+1.34")
+          ]
+
+    it "still balances a row that was nothing but a fee" $
+      fmap (Account.sum . map amountOf . postingsOf) (validated (oneTransaction (WiseMovement feeOnly)))
+        `shouldBe` Just (Just Account.zero)
+
   describe "rowAmounts" $ do
     -- The amount column is the whole movement, fee and all.  Reading it as the
     -- amount before the fee would book the fee twice and leave the transaction
@@ -222,6 +239,25 @@ account :: Integer -> Account.Account
 account i = case Account.fromMinimalQuantisations i of
   Nothing -> error $ unwords ["Not a valid account in this test:", show i]
   Just a -> a
+
+oneTransaction :: WiseEvent -> Validation ImportError (Transaction ())
+oneTransaction event = case wiseTransactions testSettings currencies [event] of
+  Failure errs -> Failure errs
+  Success [t] -> Success t
+  Success transactions ->
+    error $ unwords ["Expected one transaction in this test, got", show (length transactions)]
+
+-- | A row that was nothing but a fee, such as a monthly card charge.
+feeOnly :: Row
+feeOnly =
+  conversionOut
+    { rowId = "FEE-1",
+      rowAmount = literalOf "-1.34",
+      rowRunningBalance = Nothing,
+      rowExchangeFrom = Nothing,
+      rowExchangeTo = Nothing,
+      rowTotalFees = Just (literalOf "1.34")
+    }
 
 validated :: Validation e a -> Maybe a
 validated = \case
