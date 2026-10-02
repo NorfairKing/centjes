@@ -17,6 +17,7 @@
 module Centjes.Import.Wise.API
   ( WiseApiToken (..),
     WiseSigningKey,
+    WiseConnection (..),
     readSigningKey,
     Profile (..),
     Balance (..),
@@ -66,6 +67,16 @@ newtype WiseApiToken = WiseApiToken {unWiseApiToken :: Text}
 -- No 'Show' instance, for the same reason as the token: this is the secret that
 -- lets a token read statements at all.
 newtype WiseSigningKey = WiseSigningKey RSA.PrivateKey
+
+-- | Everything a request to Wise needs besides its URL.
+data WiseConnection = WiseConnection
+  { wiseConnectionManager :: !Manager,
+    wiseConnectionToken :: !WiseApiToken,
+    -- | Absent when no key was configured, which is fine right up until Wise
+    -- asks for a signature.
+    wiseConnectionSigningKey :: !(Maybe WiseSigningKey),
+    wiseConnectionBaseUrl :: !String
+  }
 
 data WiseApiError
   = WiseApiErrorHttp !String !HttpException
@@ -178,31 +189,28 @@ readSigningKey keyFile = do
           then Left $ WiseApiErrorKeyUnreadable fp "The file holds no private key."
           else Left $ WiseApiErrorKeyNotRSA fp
 
-fetchProfiles :: Manager -> WiseApiToken -> String -> WiseM [Profile]
-fetchProfiles manager token baseUrl = do
-  let url = baseUrl <> "/v2/profiles"
-  body <- fetchSigned manager token Nothing url
+fetchProfiles :: WiseConnection -> WiseM [Profile]
+fetchProfiles connection = do
+  let url = wiseConnectionBaseUrl connection <> "/v2/profiles"
+  body <- fetchSigned connection url
   decodeBody url body
 
-fetchBalances :: Manager -> WiseApiToken -> String -> Int64 -> WiseM [Balance]
-fetchBalances manager token baseUrl profile = do
-  let url = baseUrl <> "/v4/profiles/" <> show profile <> "/balances?types=STANDARD"
-  body <- fetchSigned manager token Nothing url
+fetchBalances :: WiseConnection -> Int64 -> WiseM [Balance]
+fetchBalances connection profile = do
+  let url = wiseConnectionBaseUrl connection <> "/v4/profiles/" <> show profile <> "/balances?types=STANDARD"
+  body <- fetchSigned connection url
   decodeBody url body
 
 -- | Download one balance's statement as CSV.
 fetchStatementCsv ::
-  Manager ->
-  WiseApiToken ->
-  Maybe WiseSigningKey ->
-  String ->
+  WiseConnection ->
   Int64 ->
   Balance ->
   UTCTime ->
   UTCTime ->
   WiseM SB.ByteString
-fetchStatementCsv manager token mKey baseUrl profile balance begin end = do
-  let url = statementUrl baseUrl profile balance begin end
+fetchStatementCsv connection profile balance begin end = do
+  let url = statementUrl (wiseConnectionBaseUrl connection) profile balance begin end
   logInfoN $
     T.pack $
       unwords
@@ -210,7 +218,7 @@ fetchStatementCsv manager token mKey baseUrl profile balance begin end = do
           T.unpack (currencySymbolText (balanceCurrency balance)),
           "statement"
         ]
-  LB.toStrict <$> fetchSigned manager token mKey url
+  LB.toStrict <$> fetchSigned connection url
 
 -- | Where one balance's statement lives.
 --
@@ -246,13 +254,14 @@ apiTime = TE.encodeUtf8 . T.pack . formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:
 -- failing outright; the same request signed with the registered key is then
 -- allowed through.  Only the challenge is signed, so nothing about the request
 -- itself has to be reproduced byte for byte.
-fetchSigned :: Manager -> WiseApiToken -> Maybe WiseSigningKey -> String -> WiseM LB.ByteString
-fetchSigned manager token mKey url = do
-  initialRequest <- parseWiseRequest token url
+fetchSigned :: WiseConnection -> String -> WiseM LB.ByteString
+fetchSigned connection url = do
+  let manager = wiseConnectionManager connection
+  initialRequest <- parseWiseRequest (wiseConnectionToken connection) url
   response <- performRequest manager url initialRequest
   case challengeToken response of
     Nothing -> responseBodyOrError url response
-    Just oneTimeToken -> case mKey of
+    Just oneTimeToken -> case wiseConnectionSigningKey connection of
       Nothing -> throwE $ WiseApiErrorChallengeWithoutKey url
       Just key -> do
         signature <- either throwE pure (signChallenge key oneTimeToken)
@@ -287,12 +296,12 @@ parseWiseRequest token url = do
   request <- case parseRequest url of
     Nothing -> throwE $ WiseApiErrorDecode url "Not a URL this importer can request."
     Just r -> pure r
+  -- No Accept header: the last part of the path is what says which format Wise
+  -- answers in, and asking for JSON while asking for statement.csv is a way to
+  -- be surprised.
   pure
     request
-      { requestHeaders =
-          [ ("Authorization", TE.encodeUtf8 ("Bearer " <> unWiseApiToken token)),
-            ("Accept", "application/json")
-          ]
+      { requestHeaders = [("Authorization", TE.encodeUtf8 ("Bearer " <> unWiseApiToken token))]
       }
 
 performRequest :: Manager -> String -> Request -> WiseM (Response LB.ByteString)

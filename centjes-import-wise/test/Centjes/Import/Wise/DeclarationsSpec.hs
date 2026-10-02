@@ -91,6 +91,26 @@ spec = do
       parsed <- shouldParse parseModule here [relfile|wise.cent|] rendered
       formatModule (stripModuleAnnotation parsed) `shouldBe` rendered
 
+  describe "rowAmounts" $ do
+    -- The amount column is the whole movement, fee and all.  Reading it as the
+    -- amount before the fee would book the fee twice and leave the transaction
+    -- short by it.
+    it "takes the fee back out of what the balance moved by" $
+      fmap
+        (\amounts -> (rowAmountsMoved amounts, rowAmountsFee amounts, rowAmountsTransacted amounts))
+        (validated (rowAmounts currencies conversionOut))
+        `shouldBe` Just (account (-960015), account 4110, account (-955905))
+
+    it "transacted what moved when nothing was charged" $
+      fmap
+        rowAmountsTransacted
+        (validated (rowAmounts currencies conversionOut {rowTotalFees = Nothing}))
+        `shouldBe` Just (account (-960015))
+
+    it "cannot read a row in a currency the ledger does not declare" $
+      validated (rowAmounts currencies conversionOut {rowCurrency = CurrencySymbol "XYZ"})
+        `shouldBe` Nothing
+
   describe "conversionPrice" $ do
     -- Wise states a rate rounded to five decimals.  9559.05 EUR at 0.93977 is
     -- 8983.37 CHF, three centimes short of what actually arrived, so a
@@ -202,6 +222,11 @@ account :: Integer -> Account.Account
 account i = case Account.fromMinimalQuantisations i of
   Nothing -> error $ unwords ["Not a valid account in this test:", show i]
   Just a -> a
+
+validated :: Validation e a -> Maybe a
+validated = \case
+  Failure _ -> Nothing
+  Success a -> Just a
 
 sumAccounts :: [Account.Account] -> Account.Account
 sumAccounts accounts = case Account.sum accounts of

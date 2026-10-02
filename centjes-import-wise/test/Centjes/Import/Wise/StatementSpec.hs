@@ -139,6 +139,14 @@ spec = do
     it "refuses a statement without the columns that say what a row is" $
       decodeStatement "Date,Amount\n03-01-2025,1.00\n" `shouldSatisfy` isLeft
 
+    -- A downloaded statement starts with a byte order mark, which the CSV
+    -- parser would otherwise read as part of the first column's name, making
+    -- every column of a perfectly good statement look missing.
+    it "reads a statement that starts with a byte order mark" $
+      let row = "\nX,03-01-2025,1.00,EUR,A payment,,1.00,,,,,,,,,,,,0.00,\n"
+       in fmap (map rowId) (decodeStatement ("\xef\xbb\xbf" <> header <> row))
+            `shouldBe` Right ["X"]
+
   describe "rowIsConversionLeg" $ do
     it "says a row that exchanged one currency for another is one" $
       rowIsConversionLeg (exampleRow {rowExchangeFrom = Just (CurrencySymbol "EUR"), rowExchangeTo = Just (CurrencySymbol "CHF")})

@@ -11,6 +11,7 @@ where
 
 import Centjes.CurrencySymbol as CurrencySymbol
 import Data.ByteString (ByteString)
+import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
 import Data.Csv as Csv
 import qualified Data.HashMap.Strict as HM
@@ -66,7 +67,14 @@ rowIsConversionLeg row = case (rowExchangeFrom row, rowExchangeTo row) of
 
 decodeStatement :: ByteString -> Either String [Row]
 decodeStatement contents =
-  V.toList . snd <$> Csv.decodeByName (LB.fromStrict contents)
+  V.toList . snd <$> Csv.decodeByName (LB.fromStrict (withoutByteOrderMark contents))
+
+-- | A downloaded statement starts with a byte order mark.
+--
+-- It is part of the first header name as far as the CSV parser is concerned, so
+-- leaving it on makes every column of a perfectly good statement look missing.
+withoutByteOrderMark :: ByteString -> ByteString
+withoutByteOrderMark contents = fromMaybe contents (SB.stripPrefix "\xef\xbb\xbf" contents)
 
 instance FromNamedRecord Row where
   parseNamedRecord r =

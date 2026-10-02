@@ -76,6 +76,7 @@ test-suite centjes-import-wise-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Centjes.Import.Wise.APISpec
       Centjes.Import.Wise.DeclarationsSpec
       Centjes.Import.Wise.OptParseSpec
       Centjes.Import.Wise.PairSpec

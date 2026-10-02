@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Import.Wise.Command.Fetch
   ( runCentjesImportWiseFetch,
@@ -38,40 +39,48 @@ runCentjesImportWiseFetch FetchSettings {..} = do
           "which is before it begins."
         ]
 
-  mKey <- traverse readSigningKeyOrDie fetchSettingPrivateKeyFile
+  signingKey <- traverse readSigningKeyOrDie fetchSettingPrivateKeyFile
   ensureDir fetchSettingOutputDirectory
   manager <- newTlsManager
+  let connection =
+        WiseConnection
+          { wiseConnectionManager = manager,
+            wiseConnectionToken = fetchSettingToken,
+            wiseConnectionSigningKey = signingKey,
+            wiseConnectionBaseUrl = fetchSettingBaseUrl
+          }
 
   errOrDone <- runStderrLoggingT $ runWiseM $ do
-    profiles <- fetchProfiles manager fetchSettingToken fetchSettingBaseUrl
-    let wanted = case fetchSettingProfile of
-          Nothing -> profiles
-          Just only -> filter ((== only) . profileId) profiles
-    mapM_ (fetchProfileStatements manager mKey begin end) wanted
+    let fetchBalanceStatement :: Int64 -> Balance -> WiseM ()
+        fetchBalanceStatement profile balance = do
+          contents <- fetchStatementCsv connection profile balance (startOfDay begin) (endOfDay end)
+          fileName <- either (liftIO . die) pure (statementFileName profile balance)
+          let statementFile = fetchSettingOutputDirectory </> fileName
+          liftIO $ SB.writeFile (fromAbsFile statementFile) contents
+          logInfoN $ T.pack $ unwords ["Wrote", fromAbsFile statementFile]
+
+    let fetchProfileStatements :: Profile -> WiseM ()
+        fetchProfileStatements profile = do
+          balances <- fetchBalances connection (profileId profile)
+          mapM_ (fetchBalanceStatement (profileId profile)) balances
+
+    profiles <- fetchProfiles connection
+    wanted <- case fetchSettingProfile of
+      Nothing -> pure profiles
+      Just only -> case filter ((== only) . profileId) profiles of
+        [] ->
+          liftIO $
+            die $
+              unlines
+                [ unwords ["This token can see no profile", show only <> "."],
+                  unwords ("It can see:" : map (show . profileId) profiles)
+                ]
+        found -> pure found
+    mapM_ fetchProfileStatements wanted
 
   case errOrDone of
     Left err -> die $ renderWiseApiError err
     Right () -> pure ()
-  where
-    fetchProfileStatements manager mKey begin end profile = do
-      balances <- fetchBalances manager fetchSettingToken fetchSettingBaseUrl (profileId profile)
-      mapM_ (fetchBalanceStatement manager mKey begin end profile) balances
-
-    fetchBalanceStatement manager mKey begin end profile balance = do
-      contents <-
-        fetchStatementCsv
-          manager
-          fetchSettingToken
-          mKey
-          fetchSettingBaseUrl
-          (profileId profile)
-          balance
-          (startOfDay begin)
-          (endOfDay end)
-      fileName <- either (liftIO . die) pure (statementFileName (profileId profile) balance)
-      let statementFile = fetchSettingOutputDirectory </> fileName
-      liftIO $ SB.writeFile (fromAbsFile statementFile) contents
-      logInfoN $ T.pack $ unwords ["Wrote", fromAbsFile statementFile]
 
 readSigningKeyOrDie :: Path Abs File -> IO WiseSigningKey
 readSigningKeyOrDie keyFile = do
@@ -83,7 +92,9 @@ readSigningKeyOrDie keyFile = do
 -- | What to call the file a balance's statement is downloaded into.
 --
 -- The profile is in the name as well as the currency, because one token can
--- reach a personal and a business profile and both can hold the same currency.
+-- reach a personal and a business profile and both can hold the same currency,
+-- and two statements that overwrote each other would look like one balance that
+-- lost half its history.
 statementFileName :: Int64 -> Balance -> Either String (Path Rel File)
 statementFileName profile balance =
   let name =

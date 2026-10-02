@@ -10,7 +10,6 @@ module Centjes.Import.Wise.Declarations
   ( DeclarationSettings (..),
     ImportError (..),
     wiseTransactions,
-    eventTransaction,
     RowAmounts (..),
     rowAmounts,
     conversionPrice,
