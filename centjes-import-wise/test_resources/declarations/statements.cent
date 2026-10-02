@@ -1,0 +1,41 @@
+2025-01-03
+  | Received money from A Friend
+  | Baby gift
+  * assets:wise         +50.00 EUR
+  * income:unknown:wise -50.00 EUR
+  + assert assets:wise = +1406.00 EUR
+
+2025-01-08
+  | Card transaction of 450.85 EUR issued by Trainline
+  | Trainline
+  * assets:wise           -450.85 EUR
+  * expenses:unknown:wise +450.85 EUR
+  + assert assets:wise = +955.15 EUR
+
+2025-01-15
+  | Received money from Boozt AB
+  | Invoice 2024-12
+  * assets:wise         +8645.00 EUR
+  * income:unknown:wise -8645.00 EUR
+  + assert assets:wise = +9600.15 EUR
+
+2025-01-15
+  | Converted 9559.05 EUR to 8983.40 CHF
+  * assets:wise           -9559.05 EUR @ 898340 / 955905 CHF
+  * assets:wise           +8983.40 CHF
+  * assets:wise             -41.10 EUR
+  * expenses:banking:wise   +41.10 EUR
+  + assert assets:wise = +0.00 EUR
+  + assert assets:wise = +8983.40 CHF
+  + tag tax-deductible
+  + tag not-vat-deductible
+
+2025-01-16
+  | Sent money to Neon
+  | Transfer to Neon
+  * assets:wise           -8983.40 CHF
+  * expenses:unknown:wise +8982.06 CHF
+  * expenses:banking:wise    +1.34 CHF
+  + assert assets:wise = +0.00 CHF
+  + tag tax-deductible
+  + tag not-vat-deductible

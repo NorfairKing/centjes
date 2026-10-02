@@ -1,0 +1,103 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.38.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           centjes-import-wise
+version:        0.0.0.0
+homepage:       https://github.com/NorfairKing/centjes#readme
+bug-reports:    https://github.com/NorfairKing/centjes/issues
+build-type:     Simple
+extra-source-files:
+    test_resources/declarations/statements.cent
+    test_resources/documentation.txt
+    test_resources/statements/CHF.csv
+    test_resources/statements/EUR.csv
+
+source-repository head
+  type: git
+  location: https://github.com/NorfairKing/centjes
+
+library
+  exposed-modules:
+      Centjes.Import.Wise
+      Centjes.Import.Wise.API
+      Centjes.Import.Wise.Command.Fetch
+      Centjes.Import.Wise.Command.Import
+      Centjes.Import.Wise.Declarations
+      Centjes.Import.Wise.OptParse
+      Centjes.Import.Wise.Pair
+      Centjes.Import.Wise.Statement
+  other-modules:
+      Paths_centjes_import_wise
+  hs-source-dirs:
+      src
+  build-depends:
+      autodocodec
+    , base >=4.7 && <5
+    , base64-bytestring
+    , bytestring
+    , cassava
+    , centjes
+    , containers
+    , crypton
+    , crypton-x509
+    , crypton-x509-store
+    , diagnose
+    , http-client
+    , http-client-tls
+    , http-types
+    , monad-logger
+    , opt-env-conf
+    , path
+    , path-io
+    , really-safe-money
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , vector
+  default-language: Haskell2010
+
+executable centjes-import-wise
+  main-is: Main.hs
+  other-modules:
+      Paths_centjes_import_wise
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , centjes-import-wise
+  default-language: Haskell2010
+
+test-suite centjes-import-wise-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Centjes.Import.Wise.DeclarationsSpec
+      Centjes.Import.Wise.OptParseSpec
+      Centjes.Import.Wise.PairSpec
+      Centjes.Import.Wise.StatementSpec
+      Paths_centjes_import_wise
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:
+      sydtest-discover:sydtest-discover
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , centjes
+    , centjes-gen
+    , centjes-import-wise
+    , containers
+    , opt-env-conf-test
+    , path
+    , path-io
+    , really-safe-money
+    , sydtest
+    , text
+    , time
+  default-language: Haskell2010

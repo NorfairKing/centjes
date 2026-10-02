@@ -1,0 +1,5 @@
+TransferWise ID,Date,Amount,Currency,Description,Payment Reference,Running Balance,Exchange From,Exchange To,Exchange Rate,Payer Name,Payee Name,Payee Account Number,Merchant,Card Last Four Digits,Card Holder Full Name,Attachment,Note,Total fees,Exchange To Amount
+TRANSFER-1,03-01-2025,50.00,EUR,Received money from A Friend,Baby gift,1406.00,,,,A Friend,,,,,,,,0.00,
+CARD-1,08-01-2025,-450.85,EUR,Card transaction of 450.85 EUR issued by Trainline,,955.15,,,,,,,Trainline,1234,A Cardholder,,,0.00,
+TRANSFER-2,15-01-2025,8645.00,EUR,Received money from Boozt AB,Invoice 2024-12,9600.15,,,,Boozt AB,,,,,,,,0.00,
+CONVERSION-1,15-01-2025,-9600.15,EUR,Converted 9559.05 EUR to 8983.40 CHF,,0.00,EUR,CHF,0.93977,,,,,,,,,41.10,8983.40

@@ -1,0 +1,70 @@
+name: centjes-import-wise
+version: 0.0.0.0
+github: "NorfairKing/centjes"
+
+extra-source-files:
+- test_resources/**/*
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  dependencies:
+  - autodocodec
+  - base64-bytestring
+  - bytestring
+  - cassava
+  - centjes
+  - containers
+  - crypton
+  - crypton-x509
+  - crypton-x509-store
+  - diagnose
+  - http-client
+  - http-client-tls
+  - http-types
+  - monad-logger
+  - opt-env-conf
+  - path
+  - path-io
+  - really-safe-money
+  - text
+  - time
+  - transformers
+  - unordered-containers
+  - vector
+
+executables:
+  centjes-import-wise:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - centjes-import-wise
+
+tests:
+  centjes-import-wise-test:
+    main: Spec.hs
+    source-dirs: test
+    build-tools: sydtest-discover
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - bytestring
+    - centjes
+    - centjes-gen
+    - centjes-import-wise
+    - containers
+    - opt-env-conf-test
+    - path
+    - path-io
+    - really-safe-money
+    - sydtest
+    - text
+    - time
