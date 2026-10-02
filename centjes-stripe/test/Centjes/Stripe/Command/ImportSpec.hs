@@ -14,8 +14,10 @@ import Centjes.Stripe.Aggregate
 import Centjes.Stripe.Command.Import
 import Centjes.Stripe.Report
 import Centjes.Stripe.Timestamp
+import Centjes.Validation
 import Conduit
 import Control.Monad.Logger (runNoLoggingT)
+import Data.Maybe (isJust)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -144,6 +146,62 @@ spec = do
 
     it "passes nothing on when the very first month is held back" $ do
       through <- monthsThrough [(monthOf 2026 6, Just [relfile|tax-invoice.pdf|]), (monthOf 2026 7, Nothing)]
+      through `shouldBe` []
+
+  -- A month that cannot be aggregated is a month to stop at, not a run to throw away.
+  -- The months before it reconciled on Stripe's own figures and belong in the file; what
+  -- to do about the failing one, by hand or by waiting, is a separate question.
+  describe "untilMonthFails" $ do
+    let monthOf :: Integer -> Int -> StripeMonth
+        monthOf year month =
+          StripeMonth
+            { stripeMonthMonth = YearMonth year month,
+              stripeMonthDomesticRevenues = [],
+              stripeMonthForeignRevenue = Nothing,
+              stripeMonthRevenueWithNoTaxRow = Account.zero,
+              stripeMonthFees = [],
+              stripeMonthPayouts = [],
+              stripeMonthOpeningBalance = Account.zero,
+              stripeMonthClosingBalance = Account.zero
+            }
+    let failing :: Int -> Validation ImportError StripeMonth
+        failing month =
+          validationFailure
+            ( ImportErrorAggregate
+                (StripeErrorDoesNotReconcile (YearMonth 2026 month) Account.zero Account.zero)
+            )
+    let monthsThrough :: [Validation ImportError StripeMonth] -> IO (Bool, [Month])
+        monthsThrough months = do
+          (stopped, through) <-
+            runNoLoggingT $
+              runConduit $
+                fuseBoth
+                  (yieldMany months .| untilMonthFails)
+                  (mapC stripeMonthMonth .| sinkList)
+          pure (isJust stopped, through)
+
+    it "passes on every month that aggregates" $ do
+      (stopped, through) <- monthsThrough [pure (monthOf 2026 6), pure (monthOf 2026 7)]
+      through `shouldBe` [YearMonth 2026 6, YearMonth 2026 7]
+      stopped `shouldBe` False
+
+    it "stops at a month that does not aggregate" $ do
+      (stopped, through) <- monthsThrough [pure (monthOf 2026 6), failing 7]
+      through `shouldBe` [YearMonth 2026 6]
+      stopped `shouldBe` True
+
+    -- The bug this came from: September not reconciling threw August away too, and August
+    -- had reconciled on Stripe's own figures.
+    it "keeps the months before a failing one rather than throwing the run away" $ do
+      (_, through) <- monthsThrough [pure (monthOf 2026 7), pure (monthOf 2026 8), failing 9]
+      through `shouldBe` [YearMonth 2026 7, YearMonth 2026 8]
+
+    it "stops rather than skipping, so nothing after a failing month gets through" $ do
+      (_, through) <- monthsThrough [pure (monthOf 2026 6), failing 7, pure (monthOf 2026 8)]
+      through `shouldBe` [YearMonth 2026 6]
+
+    it "passes nothing on when the very first month fails" $ do
+      (_, through) <- monthsThrough [failing 6, pure (monthOf 2026 7)]
       through `shouldBe` []
 
   describe "monthsAlreadyImported" $ do

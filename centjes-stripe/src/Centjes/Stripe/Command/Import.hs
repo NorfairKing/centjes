@@ -10,6 +10,7 @@ module Centjes.Stripe.Command.Import
     monthsToImport,
     transactionsToAdd,
     untilEvidenceMissing,
+    untilMonthFails,
   )
 where
 
@@ -37,6 +38,7 @@ import qualified Data.ByteString as SB
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.Conduit.Combinators as C
 import Data.Either (partitionEithers)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Map (Map)
 import qualified Data.Map.Strict as M
 import Data.Set (Set)
@@ -165,28 +167,32 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
   mapM_ (uncurry logNotYet) held
 
   -- One pipeline from the months worth asking about to the module to write.  A stage only
-  -- runs when the next one asks it to, which is what makes 'untilEvidenceMissing' below
-  -- stop the months after a held-back one from being fetched at all.
-  merged <-
+  -- runs when the next one asks it to, which is what makes 'untilMonthFails' and
+  -- 'untilEvidenceMissing' below stop the months after a stopped-at one from being fetched
+  -- at all.
+  (stoppedAt, merged) <-
     runConduit $
-      yieldMany wanted
-        .| C.mapM (monthReports man importSettingKey stripeCurrency ledgerDirectory importSettingReportsDirectory)
-        .| C.mapM
-          ( liftValidation
-              . mapValidationFailure ImportErrorAggregate
-              . aggregateMonth
-                AggregateSettings
-                  { aggregateSettingHomeCountry = Text.toUpper importSettingHomeCountry,
-                    aggregateSettingVATRates = swissVATRates,
-                    aggregateSettingCurrency = stripeCurrency,
-                    aggregateSettingFeesVATRate = importSettingFeesVATRatePercentage / 100
-                  }
-                quantisationFactor
-          )
-        .| C.mapM (evidenceFor importSettings ledgerDirectory)
-        .| untilEvidenceMissing
-        .| C.iterM warnAbout
-        .| sinkModule importSettings quantisationFactor alreadyThere existingModule
+      fuseBoth
+        ( yieldMany wanted
+            .| C.mapM (monthReports man importSettingKey stripeCurrency ledgerDirectory importSettingReportsDirectory)
+            .| C.map
+              ( mapValidationFailure ImportErrorAggregate
+                  . aggregateMonth
+                    AggregateSettings
+                      { aggregateSettingHomeCountry = Text.toUpper importSettingHomeCountry,
+                        aggregateSettingVATRates = swissVATRates,
+                        aggregateSettingCurrency = stripeCurrency,
+                        aggregateSettingFeesVATRate = importSettingFeesVATRatePercentage / 100
+                      }
+                    quantisationFactor
+              )
+            .| untilMonthFails
+        )
+        ( C.mapM (evidenceFor importSettings ledgerDirectory)
+            .| untilEvidenceMissing
+            .| C.iterM warnAbout
+            .| sinkModule importSettings quantisationFactor alreadyThere existingModule
+        )
 
   -- Only the bytes that differ get written.  This is the file the user owns, and a run
   -- with nothing to add has no business touching it.
@@ -194,6 +200,11 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
   case M.lookup outputRelFile fileMap of
     Just (onDisk, _) | onDisk == output -> logInfoN $ Text.pack $ unwords ["Leaving", fromRelFile outputRelFile, "alone."]
     _ -> liftIO $ SB.writeFile (fromAbsFile importSettingOutput) (TE.encodeUtf8 output)
+
+  -- Only after the months that did come through are safely on disk, because a month that
+  -- stopped the run should not cost the ones before it.  The run still ends in failure, so
+  -- that a scripted one cannot mistake a stopped import for a complete one.
+  maybe (pure ()) (liftValidation . Failure) stoppedAt
 
 -- | Turn the months that are being written into the module to write.
 --
@@ -278,6 +289,24 @@ untilEvidenceMissing =
               "would leave the next one's balance assertion short.",
               "The invoice is in the Stripe dashboard under Settings, Reporting and documents."
             ]
+
+-- | Stop at the first month that cannot be aggregated, keeping the ones before it.
+--
+-- Stopping rather than skipping is the rule 'untilEvidenceMissing' follows, and for the
+-- same reason: a gap would leave the next month's balance assertion short.  Failing the
+-- whole run instead would be worse than either, because the months before the failing one
+-- reconciled on Stripe's own figures and have nothing wrong with them.  The failure comes
+-- back out so the run can still end loudly once the file is written.
+untilMonthFails ::
+  (Monad m) =>
+  ConduitT (Validation ImportError StripeMonth) StripeMonth m (Maybe (NonEmpty ImportError))
+untilMonthFails =
+  await >>= \case
+    Nothing -> pure Nothing
+    Just (Failure errors) -> pure (Just errors)
+    Just (Success month) -> do
+      yield month
+      untilMonthFails
 
 -- | The one thing about a month that nothing here can check.
 --
