@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -51,7 +50,6 @@ import qualified Data.Text.Encoding as TE
 import Data.Time
 import Data.X509 (PrivKey (..))
 import Data.X509.File (readKeyFile)
-import GHC.Generics (Generic)
 import Network.HTTP.Client as HTTP
 import Network.HTTP.Types as HTTP
 import Path
@@ -153,7 +151,6 @@ data Profile = Profile
     -- | @PERSONAL@ or @BUSINESS@.
     profileType :: !Text
   }
-  deriving (Show, Eq, Generic)
 
 instance HasCodec Profile where
   codec =
@@ -167,7 +164,6 @@ data Balance = Balance
   { balanceId :: !Int64,
     balanceCurrency :: !CurrencySymbol
   }
-  deriving (Show, Eq, Generic)
 
 instance HasCodec Balance where
   codec =
