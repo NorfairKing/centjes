@@ -1,0 +1,33 @@
+currency CHF 0.01
+
+account equity:starting
+account assets:bank
+  + attach bank-statement.txt
+account assets:movables
+  + tag undeclared
+  + attach movables-balance.txt
+account assets:machinery
+  + tag undeclared
+  + attach machinery-balance.txt
+account income:domestic
+account income:VAT
+
+tag deductible
+tag not-deductible
+tag undeclared
+
+2023-12-31
+  | Opening balances
+  * equity:starting -10000 CHF
+  * assets:bank 10000 CHF
+  * assets:movables 0 CHF
+  * assets:machinery 0 CHF
+
+-- The VAT is a real posting with an exclusive ratio: the customer paid it on
+-- top of the thousand, so the revenue posting beside it is net of tax.
+2024-01-07
+  | Foobar Dec
+  * assets:bank 1081 CHF
+  * income:domestic -1000 CHF
+  * income:VAT -81 CHF ~e 8.1 %
+  + attach foobar-dec.txt

@@ -42,6 +42,14 @@ extra-source-files:
     test_resources/example/taxes.xml
     test_resources/example/test_resources/documentation.txt
     test_resources/example/vat.xml
+    test_resources/net-vat/bank-statement.txt
+    test_resources/net-vat/foobar-dec.txt
+    test_resources/net-vat/ledger.cent
+    test_resources/net-vat/machinery-balance.txt
+    test_resources/net-vat/movables-balance.txt
+    test_resources/net-vat/switzerland.yaml
+    test_resources/net-vat/taxes.xml
+    test_resources/net-vat/vat.xml
     options.nix
 data-files:
     assets/schemas/catalog.xml

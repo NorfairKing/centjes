@@ -16,6 +16,7 @@ module Centjes.Switzerland.Report.VAT.Types
     renderVATIdReference,
     vatIdToken,
     DomesticRevenue (..),
+    GrossOrNet (..),
     ForeignRevenue (..),
     DeductibleExpense (..),
     VATRate (..),
@@ -296,6 +297,11 @@ data VATReport ann = VATReport
     -- Leistungen zum Normalsatz 8.1%
     vatReportDomesticRevenue2024 :: !Money.Amount,
     vatReport2024StandardRateVATRevenue :: !Money.Amount,
+    -- | Whether the turnover figures above contain the VAT on them.
+    --
+    -- Every domestic revenue in the quarter has to agree on this, because the
+    -- declaration has one such flag for all of them.
+    vatReportGrossOrNet :: !GrossOrNet,
     -- | 399
     --
     -- Total geschuldete Steuer (Ziff. 301 bis Ziff. 382)
@@ -339,6 +345,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (VATReport ann) where
         declare "The total 2024 standard rate VAT revenue is the total of VAT amounts of the revenues" $
           Amount.sum (map domesticRevenueVATCHFAmount (filter ((== VATRate2024Standard) . domesticRevenueVATRate) vatReportDomesticRevenues))
             == Just vatReport2024StandardRateVATRevenue,
+        declare "Every domestic revenue agrees with the declared gross or net" $
+          all ((== vatReportGrossOrNet) . domesticRevenueGrossOrNet) vatReportDomesticRevenues,
         declare "The total vat is the sum of all the vat fields" $
           Amount.sum [vatReport2024StandardRateVATRevenue] == Just vatReportTotalVATRevenue,
         declare "The total vat deductions is the sum of all vat deductions" $
@@ -357,12 +365,31 @@ data DomesticRevenue ann = DomesticRevenue
     domesticRevenueVATCurrency :: !(Currency ann),
     domesticRevenueVATCHFAmount :: !Money.Amount,
     domesticRevenueVATRate :: !VATRate,
+    domesticRevenueGrossOrNet :: !GrossOrNet,
     -- | Evidence in tarball
     domesticRevenueEvidence :: !(NonEmpty (Path Rel File))
   }
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (DomesticRevenue ann)
+
+-- | Whether a turnover figure already contains the VAT on it.
+--
+-- The ESTV never receives the tax on a turnover line, only the turnover and
+-- the rate, so this is what decides whether it computes the tax on top of that
+-- figure or out of it.  Getting it wrong does not fail anywhere: the
+-- declaration is accepted and the tax is quietly off by the rate.
+--
+-- It follows from how the ledger books the revenue rather than from a setting.
+-- A VAT posting written with an inclusive ratio (@~@) names a part of the
+-- revenue posting beside it, which makes that posting gross; one written with
+-- an exclusive ratio (@~e@) is money on top of it, which makes it net.
+data GrossOrNet
+  = Gross
+  | Net
+  deriving (Show, Eq, Generic)
+
+instance Validity GrossOrNet
 
 -- TODO check that the rate is valid for the day?
 data VATRate
@@ -452,6 +479,7 @@ data VATError ann
   | VATErrorVATPostingNotVATAccount !ann !ann
   | VATErrorNoVATPercentage !ann
   | VATErrorUnknownVATRate !ann !ann !Rational
+  | VATErrorMixedGrossAndNetRevenue
   | VATErrorDeductibleAndNotDeductible !ann !ann !ann
   | VATErrorRedundantlyDeclared !ann !ann !ann
   | VATErrorDeductibleNoExpenses !ann !ann
@@ -543,6 +571,14 @@ instance ToReport (VATError SourceSpan) where
           (toDiagnosePosition tl, Where "in this transaction")
         ]
         []
+    VATErrorMixedGrossAndNetRevenue ->
+      Err
+        Nothing
+        "Domestic revenue in this quarter is booked both gross and net of VAT"
+        []
+        [ "Some VAT posting uses an inclusive ratio (~), which makes the revenue beside it gross, and another uses an exclusive one (~e), which makes it net.",
+          "The declaration says gross or net once, for every turnover figure in it, so one quarter cannot do both."
+        ]
     VATErrorDeductibleAndNotDeductible tl tagl nottagl ->
       Err
         Nothing

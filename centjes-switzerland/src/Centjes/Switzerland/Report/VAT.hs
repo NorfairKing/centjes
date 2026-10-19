@@ -16,6 +16,7 @@ module Centjes.Switzerland.Report.VAT
     renderVATIdReference,
     vatIdToken,
     DomesticRevenue (..),
+    GrossOrNet (..),
     ForeignRevenue (..),
     DeductibleExpense (..),
     VATRate (..),
@@ -129,7 +130,8 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
                           domesticRevenueVATAmount <- requireNegative tl pl2 vatAccount
                           domesticRevenueVATCHFAmount <- convertDaily al2 dailyPriceGraphs day domesticRevenueVATCurrency vatReportCHF domesticRevenueVATAmount
 
-                          domesticRevenueVATRate <- requirePercentageVATRate tl (postingAmountRatio p2)
+                          (domesticRevenueVATRate, domesticRevenueGrossOrNet) <-
+                            requirePercentageVATRate tl (postingAmountRatio p2)
                           pure DomesticRevenue {..}
                     else pure Nothing
           else pure []
@@ -150,6 +152,16 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
           domesticRevenueCHFAmount
           (filter ((== VATRate2024Standard) . domesticRevenueVATRate) vatReportDomesticRevenues)
       )
+
+  -- A quarter with no domestic revenue has nothing to say either way, and the
+  -- ESTV asks for net where there is a choice.
+  vatReportGrossOrNet <-
+    case map domesticRevenueGrossOrNet vatReportDomesticRevenues of
+      [] -> pure Net
+      grossOrNet : rest ->
+        if all (== grossOrNet) rest
+          then pure grossOrNet
+          else validationTFailure VATErrorMixedGrossAndNetRevenue
 
   let foreignRevenuesOfAccount foreignAccountName = fmap concat $
         forM (V.toList ledgerTransactions) $
@@ -304,18 +316,20 @@ convertDaily al dailyPrices day currencyFrom currencyTo amount =
 requirePercentageRate ::
   ann ->
   Maybe (GenLocated ann (AmountRatio ann)) ->
-  Reporter (VATError ann) (ann, Rational)
+  Reporter (VATError ann) (ann, Rational, GrossOrNet)
 requirePercentageRate tl = \case
   Nothing -> validationTFailure $ VATErrorNoVATPercentage tl
-  Just (Located pl (AmountRatio _ _ (Located _ r))) -> pure (pl, r)
+  Just (Located pl (AmountRatio inclusive _ (Located _ r))) ->
+    pure (pl, r, if inclusive then Gross else Net)
 
 requirePercentageVATRate ::
   ann ->
   Maybe (GenLocated ann (AmountRatio ann)) ->
-  Reporter (VATError ann) VATRate
+  Reporter (VATError ann) (VATRate, GrossOrNet)
 requirePercentageVATRate tl mp = do
-  (pl, r) <- requirePercentageRate tl mp
-  requireRatioVATRate tl pl r
+  (pl, r, grossOrNet) <- requirePercentageRate tl mp
+  vatRate <- requireRatioVATRate tl pl r
+  pure (vatRate, grossOrNet)
 
 requireRatioVATRate ::
   ann ->
@@ -431,7 +445,10 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
                   let Located al vatAccount = postingAccount p2
                   deductibleExpenseVATAmount <- requirePositive tl pl2 vatAccount
                   deductibleExpenseVATCHFAmount <- convertDaily al dailyPriceGraphs day deductibleExpenseVATCurrency chf deductibleExpenseVATAmount
-                  (percl, reportedVATRate) <- requirePercentageRate pl2 $ postingAmountRatio p2
+                  -- Input tax is declared as a tax amount rather than as a
+                  -- turnover, so whether the expense beside it is gross or net
+                  -- never reaches the declaration.
+                  (percl, reportedVATRate, _) <- requirePercentageRate pl2 $ postingAmountRatio p2
                   deductibleExpenseVATRate <-
                     if deductibleExpenseVATCurrency == chf
                       then vatRateRatio <$> requireRatioVATRate tl percl reportedVATRate

@@ -1,5 +1,6 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -309,7 +310,7 @@ data EffectiveReportingMethod = EffectiveReportingMethod
     -- 1 = Netto--
     -- 2 = Brutto
     -- @
-    effectiveReportingMethodGross :: !Bool,
+    effectiveReportingMethodGrossOrNet :: !GrossOrNet,
     -- | `opted`
     --
     -- Ziffer 205
@@ -388,7 +389,7 @@ instance ToElement EffectiveReportingMethod where
     ech0217Element
       "effectiveReportingMethod"
       $ concat
-        [ [NodeElement $ ech0217Element "grossOrNet" [NodeContent "2"]],
+        [ [NodeElement $ ech0217Element "grossOrNet" [NodeContent $ grossOrNetToken effectiveReportingMethodGrossOrNet]],
           [NodeElement $ ech0217Element "opted" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodOpted],
           map
             (NodeElement . ech0217Element "suppliesPerTaxRate" . toNodes)
@@ -402,6 +403,11 @@ instance ToElement EffectiveReportingMethod where
           [NodeElement $ ech0217Element "inputTaxCorrections" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxCorrections],
           [NodeElement $ ech0217Element "inputTaxReductions" [decimalLiteralNode dl] | dl <- maybeToList effectiveReportingMethodInputTaxReductions]
         ]
+
+grossOrNetToken :: GrossOrNet -> Text
+grossOrNetToken = \case
+  Net -> "1"
+  Gross -> "2"
 
 -- | `turnoverTaxRateType`
 --
@@ -499,8 +505,7 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let turnoverComputationVariousDeduction = Nothing
   let xmlReportTurnoverComputation = TurnoverComputation {..}
   standard2024TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2024
-  -- TODO what is this?
-  let effectiveReportingMethodGross = True
+  let effectiveReportingMethodGrossOrNet = vatReportGrossOrNet
   -- TODO what is this?
   let effectiveReportingMethodOpted = Nothing
   let effectiveReportingMethodSupplies =

@@ -28,6 +28,8 @@ instance GenValid VATId where
 
 instance GenValid VATRate
 
+instance GenValid GrossOrNet
+
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DomesticRevenue ann) where
   genValid = do
     dr <- genValidStructurallyWithoutExtraChecking
@@ -62,6 +64,15 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (DeductibleExpense ann) w
 instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
   genValid = do
     genValidStructurallyWithoutExtraChecking
+      `suchThatMap` ( \vr ->
+                        pure $
+                          vr
+                            { vatReportDomesticRevenues =
+                                map
+                                  (\dr -> dr {domesticRevenueGrossOrNet = vatReportGrossOrNet vr})
+                                  (vatReportDomesticRevenues vr)
+                            }
+                    )
       `suchThatMap` ( \vr -> do
                         totalDomesticRevenues <-
                           Amount.sum
