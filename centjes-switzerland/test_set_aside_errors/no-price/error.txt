@@ -1,0 +1,4 @@
+[0;91;1m[error][0m: No price for "BTC" on or before 2026-10-30
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Add a price for BTC on or before that day, in CHF or in a currency with a price in CHF.[0m
+[0;90;1m─────╯[0m

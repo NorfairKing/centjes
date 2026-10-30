@@ -11,9 +11,11 @@ module Centjes.Switzerland.OptParse
     VATSettings (..),
     TaxesSettings (..),
     DownloadRatesSettings (..),
+    SetAsideSettings (..),
   )
 where
 
+import Centjes.Switzerland.Report.SetAside.Types (SetAsideInput (..))
 import Centjes.Switzerland.Report.Taxes.Types (TaxesInput (..))
 import Centjes.Switzerland.Report.VAT.Types (VATInput (..))
 import Data.Time
@@ -21,6 +23,8 @@ import OptEnvConf
 import Path
 import Path.IO
 import Paths_centjes_switzerland (version)
+import Text.Colour (TerminalCapabilities)
+import Text.Colour.Capabilities.FromEnv (getTerminalCapabilitiesFromEnv)
 
 getInstructions :: IO Instructions
 getInstructions = runSettingsParser version "generate reports for swiss taxes"
@@ -105,6 +109,7 @@ data Dispatch
   = DispatchTaxes !TaxesSettings
   | DispatchVAT !VATSettings
   | DispatchDownloadRates !DownloadRatesSettings
+  | DispatchSetAside !SetAsideSettings
 
 instance HasParser Dispatch where
   settingsParser = parseDispatch
@@ -115,7 +120,8 @@ parseDispatch =
   commands
     [ command "taxes" "produce a tax report" $ DispatchTaxes <$> settingsParser,
       command "vat" "produce a VAT report" $ DispatchVAT <$> settingsParser,
-      command "download-rates" "Download exchange rates" $ DispatchDownloadRates <$> settingsParser
+      command "download-rates" "Download exchange rates" $ DispatchDownloadRates <$> settingsParser,
+      command "set-aside" "compare what is set aside for taxes with what they will cost" $ DispatchSetAside <$> settingsParser
     ]
 
 data TaxesSettings = TaxesSettings
@@ -219,3 +225,18 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
         short 'o'
       ]
   pure DownloadRatesSettings {..}
+
+data SetAsideSettings = SetAsideSettings
+  { setAsideSettingInput :: !SetAsideInput,
+    setAsideSettingTerminalCapabilities :: !TerminalCapabilities
+  }
+
+instance HasParser SetAsideSettings where
+  settingsParser = parseSetAsideSettings
+
+{-# ANN parseSetAsideSettings ("NOCOVER" :: String) #-}
+parseSetAsideSettings :: Parser SetAsideSettings
+parseSetAsideSettings = do
+  setAsideSettingInput <- settingsParser
+  setAsideSettingTerminalCapabilities <- runIO getTerminalCapabilitiesFromEnv
+  pure SetAsideSettings {..}

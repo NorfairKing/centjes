@@ -1,0 +1,4 @@
+[0;91;1m[error][0m: No CHF currency declared
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Declare it with: currency CHF 0.01[0m
+[0;90;1m─────╯[0m

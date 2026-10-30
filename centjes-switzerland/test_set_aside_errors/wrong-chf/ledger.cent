@@ -1,0 +1,12 @@
+currency CHF 1
+
+tag taxable
+
+account equity:starting
+account assets:bank
+  + tag taxable
+
+2025-12-31
+  | Opening balance, in whole francs
+  * equity:starting -1000 CHF
+  * assets:bank      1000 CHF

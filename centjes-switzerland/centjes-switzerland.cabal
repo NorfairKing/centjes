@@ -50,6 +50,57 @@ extra-source-files:
     test_resources/net-vat/switzerland.yaml
     test_resources/net-vat/taxes.xml
     test_resources/net-vat/vat.xml
+    test_set_aside/covered/currency-rates.cent
+    test_set_aside/covered/ledger.cent
+    test_set_aside/covered/market-rates.cent
+    test_set_aside/covered/report.txt
+    test_set_aside/covered/switzerland.yaml
+    test_set_aside/exact/ledger.cent
+    test_set_aside/exact/report.txt
+    test_set_aside/exact/switzerland.yaml
+    test_set_aside/example/currency-rates.cent
+    test_set_aside/example/ledger.cent
+    test_set_aside/example/market-rates.cent
+    test_set_aside/example/report.txt
+    test_set_aside/example/switzerland.yaml
+    test_set_aside/short/ledger.cent
+    test_set_aside/short/report.txt
+    test_set_aside/short/switzerland.yaml
+    test_set_aside_errors/convert/error.txt
+    test_set_aside_errors/convert/ledger.cent
+    test_set_aside_errors/convert/switzerland.yaml
+    test_set_aside_errors/no-cantonal-rates/error.txt
+    test_set_aside_errors/no-cantonal-rates/ledger.cent
+    test_set_aside_errors/no-cantonal-rates/switzerland.yaml
+    test_set_aside_errors/no-cantonal-rates/year
+    test_set_aside_errors/no-chf/error.txt
+    test_set_aside_errors/no-chf/ledger.cent
+    test_set_aside_errors/no-chf/switzerland.yaml
+    test_set_aside_errors/no-municipal-steuerfuss/error.txt
+    test_set_aside_errors/no-municipal-steuerfuss/ledger.cent
+    test_set_aside_errors/no-municipal-steuerfuss/switzerland.yaml
+    test_set_aside_errors/no-official-rate-before/currency-rates.cent
+    test_set_aside_errors/no-official-rate-before/error.txt
+    test_set_aside_errors/no-official-rate-before/ledger.cent
+    test_set_aside_errors/no-official-rate-before/switzerland.yaml
+    test_set_aside_errors/no-price/error.txt
+    test_set_aside_errors/no-price/ledger.cent
+    test_set_aside_errors/no-price/switzerland.yaml
+    test_set_aside_errors/overflow/error.txt
+    test_set_aside_errors/overflow/ledger.cent
+    test_set_aside_errors/overflow/switzerland.yaml
+    test_set_aside_errors/tagged-both/error.txt
+    test_set_aside_errors/tagged-both/ledger.cent
+    test_set_aside_errors/tagged-both/switzerland.yaml
+    test_set_aside_errors/undeclared-account/error.txt
+    test_set_aside_errors/undeclared-account/ledger.cent
+    test_set_aside_errors/undeclared-account/switzerland.yaml
+    test_set_aside_errors/untagged-wealth/error.txt
+    test_set_aside_errors/untagged-wealth/ledger.cent
+    test_set_aside_errors/untagged-wealth/switzerland.yaml
+    test_set_aside_errors/wrong-chf/error.txt
+    test_set_aside_errors/wrong-chf/ledger.cent
+    test_set_aside_errors/wrong-chf/switzerland.yaml
     options.nix
 data-files:
     assets/schemas/catalog.xml
@@ -66,10 +117,13 @@ library
       Centjes.Switzerland
       Centjes.Switzerland.Command
       Centjes.Switzerland.Command.DownloadRates
+      Centjes.Switzerland.Command.SetAside
       Centjes.Switzerland.Command.Taxes
       Centjes.Switzerland.Command.VAT
       Centjes.Switzerland.OptParse
       Centjes.Switzerland.Report.Common
+      Centjes.Switzerland.Report.SetAside
+      Centjes.Switzerland.Report.SetAside.Types
       Centjes.Switzerland.Report.Taxes
       Centjes.Switzerland.Report.Taxes.ETax
       Centjes.Switzerland.Report.Taxes.Types
@@ -110,6 +164,9 @@ library
     , path-io
     , pretty-show
     , really-safe-money
+    , safe-coloured-text
+    , safe-coloured-text-layout
+    , safe-coloured-text-terminfo
     , scientific
     , template-haskell
     , text
@@ -139,8 +196,11 @@ test-suite centjes-switzerland-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Centjes.Switzerland.Command.SetAsideSpec
       Centjes.Switzerland.OptParseSpec
       Centjes.Switzerland.Report.CommonSpec
+      Centjes.Switzerland.Report.SetAside.TypesSpec
+      Centjes.Switzerland.Report.SetAsideSpec
       Centjes.Switzerland.Report.Taxes.ETaxSpec
       Centjes.Switzerland.Report.Taxes.Gen
       Centjes.Switzerland.Report.TaxesSpec
@@ -175,6 +235,7 @@ test-suite centjes-switzerland-test
     , path-io
     , really-safe-money
     , really-safe-money-gen
+    , safe-coloured-text
     , sydtest
     , sydtest-aeson
     , text

@@ -1,0 +1,4 @@
+[0;91;1m[error][0m: No Zürich wealth tax tariff and cantonal Steuerfuss are known for 2028
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Add them to zurichMarriedWealthTariff and zurichCantonalSteuerfuss in centjes-switzerland.[0m
+[0;90;1m─────╯[0m

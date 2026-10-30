@@ -1,0 +1,85 @@
+import currency-rates
+import market-rates
+
+currency USD 0.01
+currency CHF 0.01
+currency STOCK 1
+currency BTC 0.00000001
+
+tag taxable
+tag not-taxable
+
+account equity:starting
+account assets:bank
+  + tag taxable
+account assets:broker
+  + tag taxable
+account assets:crypto
+  + tag taxable
+account assets:joint
+  + tag taxable
+account assets:pillar-3a
+  + tag not-taxable
+account assets:sva
+  + tag taxable
+account assets:federal
+  + tag taxable
+account assets:wealth-tax
+  + tag taxable
+account expenses:cantonal
+account income:foreign
+account income:domestic
+
+2025-12-31
+  | Opening balances
+  * equity:starting  -950000 CHF
+  * assets:bank       700000 CHF
+  * assets:joint      200000 CHF
+  * assets:pillar-3a   50000 CHF
+
+2025-12-31
+  | Opening securities and coins
+  * equity:starting -10 STOCK
+  * assets:broker    10 STOCK
+  * equity:starting -1 BTC
+  * assets:crypto    1 BTC
+
+2026-03-01
+  | Foreign client
+  * assets:bank                 10000 USD
+  * income:foreign             -10000 USD
+
+2026-04-01
+  | Domestic client
+  * assets:bank                  5000 CHF
+  * income:domestic             -5000 CHF
+
+2026-07-01
+  | Save for SVA
+  * assets:bank -2000 CHF
+  * assets:sva   2000 CHF
+
+2026-07-01
+  | Cantonal pre-payment
+  * assets:bank       -3000 CHF
+  * expenses:cantonal  3000 CHF
+
+2026-07-01
+  | Save for federal taxes
+  * assets:bank    -300 CHF
+  * assets:federal  300 CHF
+
+2026-07-01
+  | Save for wealth tax
+  * assets:bank       -1400 CHF
+  * assets:wealth-tax  1400 CHF
+
+2025-12-31
+  | Saved for SVA last year, which still counts
+  * assets:bank -100 CHF
+  * assets:sva   100 CHF
+
+2026-11-15
+  | Saved for federal taxes after the valuation day, which does not count yet
+  * assets:bank    -50 CHF
+  * assets:federal  50 CHF

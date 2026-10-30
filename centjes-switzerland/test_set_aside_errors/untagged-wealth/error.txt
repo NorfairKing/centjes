@@ -1,0 +1,9 @@
+[0;91;1m[error][0m: This account has a balance but is not tagged as taxable wealth or not: assets:bank
+     [0;90;1m╭──▶[0m [0;32;1mledger.cent@4:1-4:20[0m
+     [0;90;1m│[0m
+[0;90;1m   4 │[0m [0;91;1ma[0m[0;91;1mc[0m[0;91;1mc[0m[0;91;1mo[0m[0;91;1mu[0m[0;91;1mn[0m[0;91;1mt[0m[0;91;1m [0m[0;91;1ma[0m[0;91;1ms[0m[0;91;1ms[0m[0;91;1me[0m[0;91;1mt[0m[0;91;1ms[0m[0;91;1m:[0m[0;91;1mb[0m[0;91;1ma[0m[0;91;1mn[0m[0;91;1mk[0m
+     [0;90;1m•[0m [0;91m┬[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m[0;91m─[0m
+     [0;90;1m•[0m [0;91m╰╸[0m [0;91mdeclared here[0m
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Tag it with the tag-taxable or the tag-not-taxable tag of the set-aside wealth settings.[0m
+[0;90;1m─────╯[0m

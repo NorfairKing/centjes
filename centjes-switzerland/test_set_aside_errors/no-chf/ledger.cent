@@ -1,0 +1,12 @@
+currency USD 0.01
+
+tag taxable
+
+account equity:starting
+account assets:bank
+  + tag taxable
+
+2025-12-31
+  | Opening balance, in a ledger without CHF
+  * equity:starting -1000 USD
+  * assets:bank      1000 USD

@@ -5,6 +5,8 @@ github: "NorfairKing/centjes"
 extra-source-files:
 - assets/**/*
 - test_resources/**/*
+- test_set_aside/**/*
+- test_set_aside_errors/**/*
 - options.nix
 
 data-files:
@@ -38,6 +40,9 @@ library:
   - path-io
   - pretty-show
   - really-safe-money
+  - safe-coloured-text
+  - safe-coloured-text-layout
+  - safe-coloured-text-terminfo
   - scientific
   - template-haskell
   - text
@@ -88,6 +93,7 @@ tests:
     - path-io
     - really-safe-money
     - really-safe-money-gen
+    - safe-coloured-text
     - really-safe-money-gen
     - sydtest
     - sydtest-aeson

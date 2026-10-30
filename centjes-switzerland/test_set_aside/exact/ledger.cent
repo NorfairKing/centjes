@@ -1,0 +1,60 @@
+currency CHF 0.01
+
+tag taxable
+
+account equity:starting
+account assets:bank
+  + tag taxable
+account assets:savings:first
+  + tag taxable
+account assets:savings:second
+  + tag taxable
+account liabilities:loan:house
+  + tag taxable
+account liabilities:loan:studyar
+  + tag taxable
+account liabilities:loan:study
+  + tag taxable
+account liabilities:loan:family
+  + tag taxable
+account assets:sva
+  + tag taxable
+account assets:federal
+  + tag taxable
+account expenses:cantonal
+account income:domestic
+
+2025-12-31
+  | Opening balance, under the tax-free wealth
+  * equity:starting -10000 CHF
+  * assets:bank      10000 CHF
+
+2025-12-31
+  | Savings and loans
+  * equity:starting     -84000 CHF
+  * assets:savings:first     60000 CHF
+  * assets:savings:second     60000 CHF
+  * liabilities:loan:house   -9000 CHF
+  * liabilities:loan:studyar   -9000 CHF
+  * liabilities:loan:study   -9000 CHF
+  * liabilities:loan:family   -9000 CHF
+
+2026-04-01
+  | Domestic client
+  * assets:bank                  5000 CHF
+  * income:domestic             -5000 CHF
+
+2026-07-01
+  | Save for SVA
+  * assets:bank -600 CHF
+  * assets:sva   600 CHF
+
+2026-07-01
+  | Cantonal pre-payment
+  * assets:bank       -400 CHF
+  * expenses:cantonal  400 CHF
+
+2026-07-01
+  | Save for federal taxes
+  * assets:bank    -100 CHF
+  * assets:federal  100 CHF

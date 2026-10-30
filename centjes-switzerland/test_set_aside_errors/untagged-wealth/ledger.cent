@@ -1,0 +1,9 @@
+currency CHF 0.01
+
+account equity:starting
+account assets:bank
+
+2025-12-31
+  | Opening balance, on an account without a wealth tag
+  * equity:starting -1000 CHF
+  * assets:bank      1000 CHF

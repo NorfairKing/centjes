@@ -1,0 +1,8 @@
+-- Last year's Kursliste value, which must not count for this year.
+price 2025-12-31 STOCK 90 USD
+
+price 2026-01-01 USD 0.80 CHF
+price 2026-06-01 USD 0.90 CHF
+price 2026-10-29 USD 0.85 CHF
+-- After the valuation day, so it must not count.
+price 2026-11-15 USD 0.70 CHF

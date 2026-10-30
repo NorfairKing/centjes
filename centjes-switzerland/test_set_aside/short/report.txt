@@ -1,0 +1,31 @@
+Wealth tax 2026, on wealth of 2026-10-30                     
+  Taxable wealth                                549000.00 CHF
+  Simple wealth tax                                267.00 CHF
+  Cantonal Steuerfuss                     95 %    -253.65 CHF
+  Municipal Steuerfuss                   119 %    -317.73 CHF
+  assets:wealth-tax                                100.00 CHF
+[1m  Surplus[m                                         -471.38 CHF
+                                                             
+SVA 2026                                                     
+  Revenue                                        50000.00 CHF
+  liabilities:taxes:sva                   12 %   -6000.00 CHF
+[1m  Surplus[m                                        -6000.00 CHF
+                                                             
+Cantonal 2026                                                
+  Revenue                                        50000.00 CHF
+  liabilities:taxes:cantonal               8 %   -4000.00 CHF
+  expenses:cantonal                               1000.00 CHF
+[1m  Surplus[m                                        -3000.00 CHF
+                                                             
+Federal 2026                                                 
+  Revenue                                        50000.00 CHF
+  liabilities:taxes:federal                2 %   -1000.00 CHF
+  assets:federal                                   500.00 CHF
+[1m  Surplus[m                                         -500.00 CHF
+                                                             
+
+To do
+  Wealth tax: save 500.00 CHF (471.38 CHF short), into assets:wealth-tax.
+  SVA: save 6000.00 CHF (6000.00 CHF short).
+  Cantonal: pre-pay 3000.00 CHF (3000.00 CHF short), booked on expenses:cantonal.
+  Federal: save 500.00 CHF (500.00 CHF short), into assets:federal.

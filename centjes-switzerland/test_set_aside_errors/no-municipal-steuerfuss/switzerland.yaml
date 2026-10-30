@@ -1,0 +1,9 @@
+set-aside:
+  sva:
+    rate: 0.12
+  cantonal:
+    rate: 0.08
+  federal:
+    rate: 0.02
+  wealth:
+    municipality: 1

@@ -1,0 +1,6 @@
+price 2026-10-28 BTC 50000 CHF
+price 2026-10-29 STOCK 100 USD
+-- The ESTV's rate for the same pair must win over this one.
+price 2026-10-29 USD 0.95 CHF
+-- After the valuation day, so it must not count.
+price 2026-11-01 BTC 99999 CHF

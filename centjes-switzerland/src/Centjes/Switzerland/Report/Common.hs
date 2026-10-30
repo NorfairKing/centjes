@@ -4,6 +4,7 @@ module Centjes.Switzerland.Report.Common
     combineLots,
     DeductibleDeclaration (..),
     decideDeductible,
+    dayInYear,
   )
 where
 
@@ -11,6 +12,7 @@ import Centjes.Ledger
 import Centjes.Location
 import Control.Monad
 import qualified Data.Map.Strict as M
+import Data.Time
 import qualified Data.Vector as V
 import Money.MultiAccount (MultiAccount)
 import qualified Money.MultiAccount as MultiAccount
@@ -84,3 +86,8 @@ decideDeductible
       (Just ly, _, _, Just ln) -> AmbiguouslyDeclared ly ln
       (Nothing, Nothing, Just ly, Just ln) -> AmbiguouslyDeclared ly ln
       (Nothing, Just ln, Just ly, _) -> AmbiguouslyDeclared ly ln
+
+dayInYear :: Year -> Day -> Bool
+dayInYear year day =
+  let (y, _, _) = toGregorian day
+   in y == year

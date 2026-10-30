@@ -1,0 +1,17 @@
+currency CHF 0.01
+currency USD 0.01
+currency STOCK 1
+
+tag taxable
+
+account equity:starting
+account assets:broker
+  + tag taxable
+
+-- Priced in USD, without any price from USD to CHF.
+price 2026-10-01 STOCK 100 USD
+
+2025-12-31
+  | Opening securities
+  * equity:starting -10 STOCK
+  * assets:broker    10 STOCK

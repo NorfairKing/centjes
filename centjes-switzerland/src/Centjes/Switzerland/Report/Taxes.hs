@@ -516,11 +516,6 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   pure TaxesReport {..}
 
-dayInYear :: Integer -> Day -> Bool
-dayInYear year day =
-  let (y, _, _) = toGregorian day
-   in y == year
-
 simplifyDir :: Path Rel File -> Path Rel File
 simplifyDir f =
   let pn = parent f

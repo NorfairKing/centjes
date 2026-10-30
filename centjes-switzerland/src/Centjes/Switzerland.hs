@@ -10,3 +10,4 @@ runCentjesSwitzerland = do
     DispatchTaxes taxesSettings -> runCentjesSwitzerlandTaxes settings taxesSettings
     DispatchVAT taxesSettings -> runCentjesSwitzerlandVAT settings taxesSettings
     DispatchDownloadRates downloadRatesSettings -> runCentjesSwitzerlandDownloadRates settings downloadRatesSettings
+    DispatchSetAside setAsideSettings -> runCentjesSwitzerlandSetAside settings setAsideSettings

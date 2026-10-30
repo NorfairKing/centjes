@@ -1,0 +1,4 @@
+[0;91;1m[error][0m: The set-aside settings mention an account that the ledger does not declare: assets:sva
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Declare it in the ledger, or remove it from the set-aside settings.[0m
+[0;90;1m─────╯[0m

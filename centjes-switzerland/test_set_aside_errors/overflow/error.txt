@@ -1,0 +1,1 @@
+[0;91;1m[error][0m: Amounts too large to add up

@@ -1,0 +1,13 @@
+currency CHF 0.01
+currency BTC 0.00000001
+
+tag taxable
+
+account equity:starting
+account assets:crypto
+  + tag taxable
+
+2025-12-31
+  | Opening coins, without any price
+  * equity:starting -1 BTC
+  * assets:crypto    1 BTC

@@ -1,0 +1,16 @@
+import currency-rates
+
+currency CHF 0.01
+currency USD 0.01
+
+tag taxable
+
+account equity:starting
+account assets:bank
+  + tag taxable
+account income:foreign
+
+2026-01-05
+  | Foreign client, paid before the first ESTV rate
+  * assets:bank     1000 USD
+  * income:foreign -1000 USD

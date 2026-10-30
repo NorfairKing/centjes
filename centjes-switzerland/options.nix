@@ -211,6 +211,101 @@
     description = "the quarter to produce the report for";
     type = lib.types.nullOr lib.types.unspecified;
   };
+  set-aside = lib.mkOption {
+    default = { };
+    type = lib.types.submodule {
+      options = {
+        cantonal = lib.mkOption {
+          default = { };
+          type = lib.types.submodule {
+            options = {
+              rate = lib.mkOption {
+                default = null;
+                description = "the share of revenue that is set aside for this tax, between 0 and 1";
+                type = lib.types.nullOr lib.types.number;
+              };
+              reserves = lib.mkOption {
+                default = null;
+                description = "the accounts that money for this tax is moved or paid into";
+                type = lib.types.nullOr (lib.types.listOf lib.types.str);
+              };
+            };
+          };
+        };
+        federal = lib.mkOption {
+          default = { };
+          type = lib.types.submodule {
+            options = {
+              rate = lib.mkOption {
+                default = null;
+                description = "the share of revenue that is set aside for this tax, between 0 and 1";
+                type = lib.types.nullOr lib.types.number;
+              };
+              reserves = lib.mkOption {
+                default = null;
+                description = "the accounts that money for this tax is moved or paid into";
+                type = lib.types.nullOr (lib.types.listOf lib.types.str);
+              };
+            };
+          };
+        };
+        sva = lib.mkOption {
+          default = { };
+          type = lib.types.submodule {
+            options = {
+              rate = lib.mkOption {
+                default = null;
+                description = "the share of revenue that is set aside for this tax, between 0 and 1";
+                type = lib.types.nullOr lib.types.number;
+              };
+              reserves = lib.mkOption {
+                default = null;
+                description = "the accounts that money for this tax is moved or paid into";
+                type = lib.types.nullOr (lib.types.listOf lib.types.str);
+              };
+            };
+          };
+        };
+        tag-undeclared = lib.mkOption {
+          default = null;
+          description = "tag of income accounts that are not revenue";
+          type = lib.types.nullOr lib.types.str;
+        };
+        wealth = lib.mkOption {
+          default = { };
+          type = lib.types.submodule {
+            options = {
+              municipality = lib.mkOption {
+                default = null;
+                description = "the municipality you live in, by its number from the Federal Statistical Office, for its Steuerfuss";
+                type = lib.types.nullOr lib.types.int;
+              };
+              owned = lib.mkOption {
+                default = null;
+                description = "accounts shared with someone who is taxed separately, and the share of them that is yours, between 0 and 1";
+                type = lib.types.nullOr (lib.types.attrsOf lib.types.number);
+              };
+              reserves = lib.mkOption {
+                default = null;
+                description = "the accounts that money for wealth tax is moved into";
+                type = lib.types.nullOr (lib.types.listOf lib.types.str);
+              };
+              tag-not-taxable = lib.mkOption {
+                default = null;
+                description = "tag of asset and liability accounts that do not count as wealth, like a third pillar";
+                type = lib.types.nullOr lib.types.str;
+              };
+              tag-taxable = lib.mkOption {
+                default = null;
+                description = "tag of asset and liability accounts that count as wealth";
+                type = lib.types.nullOr lib.types.str;
+              };
+            };
+          };
+        };
+      };
+    };
+  };
   tag-deductible = lib.mkOption {
     default = null;
     description = "tag to use for deductible purchases";

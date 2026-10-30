@@ -1,0 +1,41 @@
+currency CHF 0.01
+
+tag taxable
+
+account equity:starting
+account assets:bank
+  + tag taxable
+account assets:federal
+  + tag taxable
+account assets:wealth-tax
+  + tag taxable
+account expenses:cantonal
+account income:domestic
+account liabilities:taxes:sva
+  + assert virtual-only
+
+2025-12-31
+  | Opening balance
+  * equity:starting -500000 CHF
+  * assets:bank      500000 CHF
+
+2026-04-01
+  | Domestic client, with a virtual posting that must not count
+  * assets:bank                 50000 CHF
+  * income:domestic            -50000 CHF
+  ! liabilities:taxes:sva          -1 CHF
+
+2026-07-01
+  | Cantonal pre-payment
+  * assets:bank       -1000 CHF
+  * expenses:cantonal  1000 CHF
+
+2026-07-01
+  | Save for federal taxes
+  * assets:bank    -500 CHF
+  * assets:federal  500 CHF
+
+2026-07-01
+  | Save for wealth tax
+  * assets:bank      -100 CHF
+  * assets:wealth-tax 100 CHF

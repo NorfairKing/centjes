@@ -1,0 +1,4 @@
+[0;91;1m[error][0m: No Steuerfuss is known for municipality 1 in 2026
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Add it to zurichMunicipalSteuerfuss in centjes-switzerland.[0m
+[0;90;1m─────╯[0m
