@@ -25,6 +25,7 @@ extra-source-files:
     content/pages/centjes-stripe/import.markdown
     content/pages/centjes-switzerland.markdown
     content/pages/centjes-switzerland/download-rates.markdown
+    content/pages/centjes-switzerland/set-aside.markdown
     content/pages/centjes-switzerland/taxes.markdown
     content/pages/centjes-switzerland/vat.markdown
     content/pages/centjes.markdown
@@ -121,6 +122,8 @@ library
     , template-haskell-reload
     , text
     , th-lift-instances
+    , time
+    , vector
     , wai-extra
     , warp
     , yesod

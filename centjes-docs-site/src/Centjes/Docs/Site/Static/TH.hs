@@ -22,6 +22,8 @@ import Centjes.Parse
 import Centjes.Report.Balance
 import Centjes.Report.EvaluatedLedger
 import Centjes.Report.Register
+import Centjes.Switzerland.Command.SetAside (renderSetAsideReport)
+import Centjes.Switzerland.Report.SetAside
 import Centjes.Validation
 import Data.Data
 import qualified Data.Map as M
@@ -30,6 +32,8 @@ import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
+import Data.Time (fromGregorian)
+import qualified Data.Vector as V
 import Instances.TH.Lift ()
 import Language.Haskell.TH.Syntax
 import Path
@@ -208,6 +212,21 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                                   [ renderHtmlDoc $ moduleDoc lmodule,
                                     renderChunksHtml $ renderAnyRegister register
                                   ]
+                          "set-aside" ->
+                            let setAsideReport =
+                                  assertValidates $
+                                    produceSetAsideReport
+                                      docsSetAsideInput
+                                      (fromGregorian 2026 12 31)
+                                      SetAsidePrices
+                                        { setAsidePricesOfficial = V.empty,
+                                          setAsidePricesMarket = ledgerPrices ledger
+                                        }
+                                      ledger
+                             in mconcat
+                                  [ renderHtmlDoc $ moduleDoc lmodule,
+                                    renderChunksHtml $ renderSetAsideReport setAsideReport
+                                  ]
                           c -> error $ unlines ["Unknown centjes command: " <> show c]
           _ ->
             let tokenizerConfig = TokenizerConfig {syntaxMap = defaultSyntaxMap, traceOutput = False}
@@ -220,6 +239,40 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
              in Html.div ! HtmlA.style (B.textValue $ T.pack $ styleToCss espresso) $
                   Skylighting.formatHtmlBlock Skylighting.defaultFormatOpts sourceLines
       _ -> error $ "Unsupported node: " <> show n
+
+-- [check:tag DocsSetAsideInput] Keep the example configuration on the
+-- set-aside docs page the same as this one.
+--
+-- The settings of the set-aside example on the docs page, for the year 2026.
+docsSetAsideInput :: SetAsideInput
+docsSetAsideInput =
+  SetAsideInput
+    { setAsideInputYear = 2026,
+      setAsideInputTagUndeclared = "undeclared",
+      setAsideInputSocialSecurity =
+        SetAsideTax
+          { setAsideTaxRate = 0.12,
+            setAsideTaxReserveAccounts = ["assets:sva"]
+          },
+      setAsideInputCantonal =
+        SetAsideTax
+          { setAsideTaxRate = 0.08,
+            setAsideTaxReserveAccounts = ["expenses:taxes:cantonal"]
+          },
+      setAsideInputFederal =
+        SetAsideTax
+          { setAsideTaxRate = 0.02,
+            setAsideTaxReserveAccounts = ["assets:federal"]
+          },
+      setAsideInputWealth =
+        SetAsideWealth
+          { setAsideWealthMunicipality = Municipality 261,
+            setAsideWealthTagTaxable = "taxable",
+            setAsideWealthTagNotTaxable = "not-taxable",
+            setAsideWealthOwnedShares = M.empty,
+            setAsideWealthReserveAccounts = ["assets:wealth-tax"]
+          }
+    }
 
 renderChunksHtml :: [Chunk] -> Html
 renderChunksHtml = Html.pre . foldMap go

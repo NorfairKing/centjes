@@ -62,6 +62,9 @@
           <a href=@{CentjesSwitzerlandCommandR "vat"}>
             VAT
         <li>
+          <a href=@{CentjesSwitzerlandCommandR "set-aside"}>
+            Set Aside
+        <li>
           <a href=@{CentjesSwitzerlandCommandR "download-rates"}>
             Download Rates
 

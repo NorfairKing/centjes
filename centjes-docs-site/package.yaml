@@ -50,6 +50,8 @@ library:
   - template-haskell-reload
   - text
   - th-lift-instances
+  - time
+  - vector
   - wai-extra
   - warp
   - yesod

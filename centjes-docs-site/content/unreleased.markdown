@@ -20,6 +20,15 @@
   An account declared `virtual-only` had no assertable balance at all before
   this.
 
+* `centjes-switzerland set-aside`, which compares what is set aside for this
+  year's SVA, cantonal, federal and wealth taxes with what they will cost, and
+  ends with what to save or pre-pay.
+  SVA and income taxes cost a configured share of revenue: income accounts
+  without the `undeclared` tag.
+  The Zürich wealth tax is computed from asset and liability accounts tagged
+  `taxable`, valued at the ESTV's rates, and every such account with a balance
+  must be tagged `taxable` or `not-taxable`.
+
 ## Changed
 
 * A description can no longer be empty, nor contain an empty line, because

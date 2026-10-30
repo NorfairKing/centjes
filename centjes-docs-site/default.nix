@@ -7,8 +7,9 @@
 , prometheus-ghc-stats, prometheus-wai, safe-coloured-text
 , shakespeare, skylighting, sydtest, sydtest-discover
 , template-haskell, template-haskell-reload, text
-, th-lift-instances, wai-extra, warp, yesod, yesod-autoreload
-, yesod-sitemap, yesod-static, yesod-static-remote
+, th-lift-instances, time, vector, wai-extra, warp, yesod
+, yesod-autoreload, yesod-sitemap, yesod-static
+, yesod-static-remote
 }:
 mkDerivation {
   pname = "centjes-docs-site";
@@ -24,8 +25,8 @@ mkDerivation {
     filepath fsnotify opt-env-conf path path-io prettyprinter
     prometheus prometheus-ghc-stats prometheus-wai safe-coloured-text
     shakespeare skylighting template-haskell template-haskell-reload
-    text th-lift-instances wai-extra warp yesod yesod-autoreload
-    yesod-sitemap yesod-static yesod-static-remote
+    text th-lift-instances time vector wai-extra warp yesod
+    yesod-autoreload yesod-sitemap yesod-static yesod-static-remote
   ];
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];
