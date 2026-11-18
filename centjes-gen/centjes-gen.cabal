@@ -178,6 +178,7 @@ extra-source-files:
     test_resources/balance/show-virtual-price.cent
     test_resources/check-valid/2025-01-02.txt
     test_resources/check-valid/2025-01-03.txt
+    test_resources/check-valid/account-used-by-assertion.cent
     test_resources/check-valid/duplicate-attachment-among-others.cent
     test_resources/check-valid/duplicate-attachment.cent
     test_resources/check/2025-01-02.txt

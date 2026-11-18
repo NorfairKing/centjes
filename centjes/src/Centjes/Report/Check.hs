@@ -241,14 +241,27 @@ checkAccountUsage declarations =
         DeclarationTag _ -> t
         DeclarationPrice _ -> t
         DeclarationTransaction (Located _ Module.Transaction {..}) ->
-          let accounts =
-                S.fromList $
-                  map
-                    ( \(Commented (Located _ Module.Posting {..}) _) ->
-                        locatedValue postingAccountName
-                    )
-                    transactionPostings
-           in (ds, S.union accounts us)
+          let postedAccounts =
+                map
+                  ( \(Commented (Located _ Module.Posting {..}) _) ->
+                      locatedValue postingAccountName
+                  )
+                  transactionPostings
+              -- Asserting a balance uses the account too: a reserve that has
+              -- been declared ahead of its first posting can be asserted to
+              -- be empty.
+              assertedAccounts =
+                mapMaybe
+                  ( \case
+                      Commented (Located _ (TransactionAssertion (Located _ (ExtraAssertion (Located _ (Module.AssertionEquals _ (Located _ an) _ _)))))) _ ->
+                        Just an
+                      Commented (Located _ (TransactionAttachment _)) _ ->
+                        Nothing
+                      Commented (Located _ (TransactionTag _)) _ ->
+                        Nothing
+                  )
+                  transactionExtras
+           in (ds, S.union (S.fromList (postedAccounts ++ assertedAccounts)) us)
 
       (declared, used) = foldl' go (M.empty, S.empty) declarations
       unuseds = M.difference declared $ M.fromSet (const ()) used
