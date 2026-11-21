@@ -272,7 +272,7 @@ data ThirdPillarLine = ThirdPillarLine
     thirdPillarLineBusinessExpenses :: !Money.Amount,
     -- | What SVA costs according to its set-aside rate, negative.
     --
-    -- That rate over-estimates SVA, which keeps the limit on the safe side.
+    -- A rate that over-estimates SVA keeps the limit on the safe side.
     thirdPillarLineSocialSecurity :: !Money.Account,
     thirdPillarLineNetEarnedIncome :: !Money.Account,
     thirdPillarLineLimit :: !ThirdPillarLimit,
