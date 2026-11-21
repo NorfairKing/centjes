@@ -49,3 +49,7 @@
 
   It also no longer highlights a keyword where the language has none, so
   `account lottery` and a description mentioning `lot` read as what they are.
+
+* `centjes-switzerland taxes` read the `first-name` setting as the last name
+  and `last-name` as the first name, so the eTax file and the packet had them
+  the wrong way around.

@@ -115,13 +115,13 @@ parseTaxesInput :: Parser TaxesInput
 parseTaxesInput = do
   taxesInputLastName <-
     setting
-      [ help "your first name",
-        conf "first-name"
+      [ help "your last name",
+        conf "last-name"
       ]
   taxesInputFirstName <-
     setting
-      [ help "your last name",
-        conf "last-name"
+      [ help "your first name",
+        conf "first-name"
       ]
   taxesInputInsuredPersonNumber <-
     setting

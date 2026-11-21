@@ -53,14 +53,14 @@
 [36mAll commands[m:
   [34mproduce a tax report[m
   command: [35mtaxes[m
-    [34myour first name[m
-    config:
-      [37mfirst-name[m: # [32mor null[m
-        [33m<string>[m
-    
     [34myour last name[m
     config:
       [37mlast-name[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34myour first name[m
+    config:
+      [37mfirst-name[m: # [32mor null[m
         [33m<string>[m
     
     [34mThe AHV identifier.[m
@@ -540,12 +540,12 @@
   [37mCENTJES_SWITZERLAND_CLEAN[m [33mBOOL[m                  [34mClean the packet directory[m                                                             
 
 [36mConfiguration Values[m:
-  [34myour first name[m
-  [37mfirst-name[m:
-    # [32mor null[m
-    [33m<string>[m
   [34myour last name[m
   [37mlast-name[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34myour first name[m
+  [37mfirst-name[m:
     # [32mor null[m
     [33m<string>[m
   [34mThe AHV identifier.[m
