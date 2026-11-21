@@ -227,6 +227,11 @@ thirdPillarMaximum = \case
 -- | The share of the net earned income that someone who is self-employed and
 -- not in a pension fund can pay into the third pillar, up to the maximum in
 -- CHF (Art. 7 Abs. 1 lit. b BVV 3).
+--
+-- The net earned income is the profit per the tax declaration, after the
+-- personal AHV/IV/EO contributions, and a loss allows no contribution at all
+-- (ESTV Kreisschreiben Nr. 18a, Ziff. 5.5):
+-- https://www.estv.admin.ch/dam/estv/de/dokumente/dbst/kreisschreiben/dbst-ks-2025-1-018a-dv.pdf.download.pdf/dbst-ks-2025-1-018a-dv.pdf
 thirdPillarLimit :: Integer -> Account.Account -> Maybe ThirdPillarLimit
 thirdPillarLimit maximumCHF netEarnedIncome = do
   let rate :: Scientific

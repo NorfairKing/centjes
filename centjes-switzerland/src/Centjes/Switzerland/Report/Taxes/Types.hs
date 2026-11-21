@@ -9,6 +9,7 @@
 
 module Centjes.Switzerland.Report.Taxes.Types
   ( TaxesInput (..),
+    taxesInputWithDefaults,
     PartitionedExpenseAccounts (..),
     TaxesReport (..),
     taxesReportTotalBusinessExpenses,
@@ -111,9 +112,58 @@ instance Validity TaxesInput
 instance HasParser TaxesInput where
   settingsParser = parseTaxesInput
 
+-- | The settings of a person for a year, with every other setting at the
+-- default that the settings parser uses.
+taxesInputWithDefaults :: Text -> Text -> Text -> Year -> TaxesInput
+taxesInputWithDefaults taxesInputLastName taxesInputFirstName taxesInputInsuredPersonNumber taxesInputYear =
+  let partitioned :: AccountName -> AccountName -> PartitionedExpenseAccounts
+      partitioned partitionedExpenseAccountsBusiness partitionedExpenseAccountsPrivate =
+        PartitionedExpenseAccounts {..}
+   in TaxesInput
+        { taxesInputLastName = taxesInputLastName,
+          taxesInputFirstName = taxesInputFirstName,
+          taxesInputInsuredPersonNumber = taxesInputInsuredPersonNumber,
+          taxesInputYear = taxesInputYear,
+          taxesInputTagUndeclared = "undeclared",
+          taxesInputTagDeductible = "deductible",
+          taxesInputTagNotDeductible = "not-deductible",
+          taxesInputTagTaxDeductible = "tax-deductible",
+          taxesInputTagNotTaxDeductible = "not-tax-deductible",
+          taxesInputThirdPillarAssetsAccount = "assets:third-pillar",
+          taxesInputThirdPillarInsuranceExpensesAccount = "expenses:insurance:third-pillar",
+          taxesInputHomeofficeExpenseAccounts = partitioned "expenses:rent:homeoffice" "expenses:rent:private",
+          taxesInputAccidentInsuranceExpenseAccount = "expenses:insurance:accident",
+          taxesInputDailyAllowanceInsuranceExpenseAccount = "expenses:insurance:daily-allowance",
+          taxesInputElectricityExpenseAccounts = partitioned "expenses:electricity:homeoffice" "expenses:electricity:private",
+          taxesInputPhoneExpenseAccounts = partitioned "expenses:phone:professional" "expenses:phone:private",
+          taxesInputTravelExpenseAccounts = partitioned "expenses:travel:professional" "expenses:travel:private",
+          taxesInputInternetExpenseAccounts = partitioned "expenses:internet:homeoffice" "expenses:internet:private",
+          taxesInputHealthInsurancePremiumsAccount = "expenses:insurance:health",
+          taxesInputHealthOtherAccount = "expenses:health:other",
+          taxesInputHealthDentistAccount = "expenses:health:dentist",
+          taxesInputHealthDoctorAccount = "expenses:health:doctor",
+          taxesInputHealthHospitalAccount = "expenses:health:hospital",
+          taxesInputHealthTherapyAccount = "expenses:health:therapy",
+          taxesInputDaycareAccount = "expenses:daycare",
+          taxesInputEducationAccount = "expenses:education",
+          taxesInputMovablesAssetsAccount = "assets:movables",
+          taxesInputMovablesExpensesAccount = "expenses:movables",
+          -- Declining-balance depreciation for Mobilien (movable property), per
+          -- ESTV Merkblatt A/1995 Geschäftliche Betriebe:
+          -- https://www.estv.admin.ch/dam/estv/de/dokumente/dbst/merkblaetter/dbst-mb-a-1995-geschbetriebe-de.pdf
+          taxesInputMovablesDepreciationRate = 25 % 100,
+          taxesInputMachineryAssetsAccount = "assets:machinery",
+          taxesInputMachineryExpensesAccount = "expenses:machinery",
+          -- Declining-balance depreciation for Maschinen (machinery), per the same
+          -- Merkblatt.
+          taxesInputMachineryDepreciationRate = 40 % 100
+        }
+
 {-# ANN parseTaxesInput ("NOCOVER" :: String) #-}
 parseTaxesInput :: Parser TaxesInput
 parseTaxesInput = do
+  -- Only the settings that have a default are read from this.
+  let defaults = taxesInputWithDefaults "" "" "" 0
   taxesInputLastName <-
     setting
       [ help "your first name",
@@ -147,202 +197,191 @@ parseTaxesInput = do
       [ help "tag to use for undeclared asset accounts",
         reader $ eitherReader Tag.fromString,
         conf "tag-undeclared",
-        value "undeclared"
+        value (taxesInputTagUndeclared defaults)
       ]
   taxesInputTagDeductible <-
     setting
       [ help "tag to use for deductible purchases",
         reader $ eitherReader Tag.fromString,
         conf "tag-deductible",
-        value "deductible"
+        value (taxesInputTagDeductible defaults)
       ]
   taxesInputTagNotDeductible <-
     setting
       [ help "tag to use for non-deductible purchases",
         reader $ eitherReader Tag.fromString,
         conf "tag-not-deductible",
-        value "not-deductible"
+        value (taxesInputTagNotDeductible defaults)
       ]
   taxesInputTagTaxDeductible <-
     setting
       [ help "tag to use for tax-deductible purchases",
         reader $ eitherReader Tag.fromString,
         conf "tag-tax-deductible",
-        value "tax-deductible"
+        value (taxesInputTagTaxDeductible defaults)
       ]
   taxesInputTagNotTaxDeductible <-
     setting
       [ help "tag to use for non-tax-deductible purchases",
         reader $ eitherReader Tag.fromString,
         conf "tag-not-tax-deductible",
-        value "not-tax-deductible"
+        value (taxesInputTagNotTaxDeductible defaults)
       ]
   taxesInputThirdPillarAssetsAccount <-
     setting
       [ help "the account to use for third pillar assets",
         reader $ maybeReader AccountName.fromString,
         conf "third-pillar-assets-account",
-        value "assets:third-pillar"
+        value (taxesInputThirdPillarAssetsAccount defaults)
       ]
   taxesInputThirdPillarInsuranceExpensesAccount <-
     setting
       [ help "the account to use for third pillar insurance expenses",
         reader $ maybeReader AccountName.fromString,
         conf "third-pillar-insurance-expenses-account",
-        value "expenses:insurance:third-pillar"
+        value (taxesInputThirdPillarInsuranceExpensesAccount defaults)
       ]
   taxesInputAccidentInsuranceExpenseAccount <-
     setting
       [ help "the account to use for accident insurance expenses",
         reader $ maybeReader AccountName.fromString,
         conf "accident-insurance-expenses-account",
-        value "expenses:insurance:accident"
+        value (taxesInputAccidentInsuranceExpenseAccount defaults)
       ]
   taxesInputDailyAllowanceInsuranceExpenseAccount <-
     setting
       [ help "the account to use for daily allowance insurance expenses",
         reader $ maybeReader AccountName.fromString,
         conf "daily-allowance-insurance-expenses-account",
-        value "expenses:insurance:daily-allowance"
+        value (taxesInputDailyAllowanceInsuranceExpenseAccount defaults)
       ]
   taxesInputHomeofficeExpenseAccounts <-
     parsePartitionedExpenseAccounts
       "homeoffice"
       "homeoffice-expenses-account"
-      "expenses:rent:homeoffice"
       "homeoffice-private-expenses-account"
-      "expenses:rent:private"
+      (taxesInputHomeofficeExpenseAccounts defaults)
   taxesInputElectricityExpenseAccounts <-
     parsePartitionedExpenseAccounts
       "electricity"
       "electricity-expenses-account"
-      "expenses:electricity:homeoffice"
       "electricity-private-expenses-account"
-      "expenses:electricity:private"
+      (taxesInputElectricityExpenseAccounts defaults)
   taxesInputPhoneExpenseAccounts <-
     parsePartitionedExpenseAccounts
       "phone"
       "phone-expenses-account"
-      "expenses:phone:professional"
       "phone-private-expenses-account"
-      "expenses:phone:private"
+      (taxesInputPhoneExpenseAccounts defaults)
   taxesInputTravelExpenseAccounts <-
     parsePartitionedExpenseAccounts
       "travel"
       "travel-expenses-account"
-      "expenses:travel:professional"
       "travel-private-expenses-account"
-      "expenses:travel:private"
+      (taxesInputTravelExpenseAccounts defaults)
   taxesInputInternetExpenseAccounts <-
     parsePartitionedExpenseAccounts
       "internet"
       "internet-expenses-account"
-      "expenses:internet:homeoffice"
       "internet-private-expenses-account"
-      "expenses:internet:private"
+      (taxesInputInternetExpenseAccounts defaults)
   taxesInputHealthInsurancePremiumsAccount <-
     setting
       [ help "the account to use for health insurance premiums",
         reader $ maybeReader AccountName.fromString,
         conf "health-insurance-premiums-account",
-        value "expenses:insurance:health"
+        value (taxesInputHealthInsurancePremiumsAccount defaults)
       ]
   taxesInputHealthOtherAccount <-
     setting
       [ help "the account to use for other health expenses",
         reader $ maybeReader AccountName.fromString,
         conf "health-other-account",
-        value "expenses:health:other"
+        value (taxesInputHealthOtherAccount defaults)
       ]
   taxesInputHealthDentistAccount <-
     setting
       [ help "the account to use for dentist expenses",
         reader $ maybeReader AccountName.fromString,
         conf "health-dentist-account",
-        value "expenses:health:dentist"
+        value (taxesInputHealthDentistAccount defaults)
       ]
   taxesInputHealthDoctorAccount <-
     setting
       [ help "the account to use for doctor and prescription expenses",
         reader $ maybeReader AccountName.fromString,
         conf "health-doctor-account",
-        value "expenses:health:doctor"
+        value (taxesInputHealthDoctorAccount defaults)
       ]
   taxesInputHealthHospitalAccount <-
     setting
       [ help "the account to use for hospital stay expenses",
         reader $ maybeReader AccountName.fromString,
         conf "health-hospital-account",
-        value "expenses:health:hospital"
+        value (taxesInputHealthHospitalAccount defaults)
       ]
   taxesInputHealthTherapyAccount <-
     setting
       [ help "the account to use for therapy and cure expenses",
         reader $ maybeReader AccountName.fromString,
         conf "health-therapy-account",
-        value "expenses:health:therapy"
+        value (taxesInputHealthTherapyAccount defaults)
       ]
   taxesInputDaycareAccount <-
     setting
       [ help "the account to use for daycare expenses",
         reader $ maybeReader AccountName.fromString,
         conf "daycare-account",
-        value "expenses:daycare"
+        value (taxesInputDaycareAccount defaults)
       ]
   taxesInputEducationAccount <-
     setting
       [ help "the account to use for education expenses",
         reader $ maybeReader AccountName.fromString,
         conf "education-account",
-        value "expenses:education"
+        value (taxesInputEducationAccount defaults)
       ]
   taxesInputMovablesAssetsAccount <-
     setting
       [ help "the account to use for movables assets",
         reader $ maybeReader AccountName.fromString,
         conf "movables-assets-account",
-        value "assets:movables"
+        value (taxesInputMovablesAssetsAccount defaults)
       ]
   taxesInputMovablesExpensesAccount <-
     setting
       [ help "the expenses account for movables purchases",
         reader $ maybeReader AccountName.fromString,
         conf "movables-expenses-account",
-        value "expenses:movables"
+        value (taxesInputMovablesExpensesAccount defaults)
       ]
-  -- Declining-balance depreciation rate for Mobilien (movable property).
-  -- Default 25% per ESTV Merkblatt A/1995 Geschäftliche Betriebe:
-  -- https://www.estv.admin.ch/dam/estv/de/dokumente/dbst/merkblaetter/dbst-mb-a-1995-geschbetriebe-de.pdf
   taxesInputMovablesDepreciationRate <-
     setting
       [ help "the depreciation rate for movables (e.g. 0.25 for 25%)",
         reader $ eitherReader parseDepreciationRate,
         confWith "movables-depreciation-rate" depreciationRateCodec,
-        value (25 % 100)
+        value (taxesInputMovablesDepreciationRate defaults)
       ]
   taxesInputMachineryAssetsAccount <-
     setting
       [ help "the account to use for machinery assets",
         reader $ maybeReader AccountName.fromString,
         conf "machinery-assets-account",
-        value "assets:machinery"
+        value (taxesInputMachineryAssetsAccount defaults)
       ]
   taxesInputMachineryExpensesAccount <-
     setting
       [ help "the expenses account for machinery purchases",
         reader $ maybeReader AccountName.fromString,
         conf "machinery-expenses-account",
-        value "expenses:machinery"
+        value (taxesInputMachineryExpensesAccount defaults)
       ]
-  -- Declining-balance depreciation rate for Maschinen (machinery).
-  -- Default 40% per ESTV Merkblatt A/1995 Geschäftliche Betriebe:
-  -- https://www.estv.admin.ch/dam/estv/de/dokumente/dbst/merkblaetter/dbst-mb-a-1995-geschbetriebe-de.pdf
   taxesInputMachineryDepreciationRate <-
     setting
       [ help "the depreciation rate for machinery (e.g. 0.4 for 40%)",
         reader $ eitherReader parseDepreciationRate,
         confWith "machinery-depreciation-rate" depreciationRateCodec,
-        value (40 % 100)
+        value (taxesInputMachineryDepreciationRate defaults)
       ]
   pure TaxesInput {..}
 
@@ -350,24 +389,23 @@ parseTaxesInput = do
 parsePartitionedExpenseAccounts ::
   String ->
   String ->
-  AccountName ->
   String ->
-  AccountName ->
+  PartitionedExpenseAccounts ->
   Parser PartitionedExpenseAccounts
-parsePartitionedExpenseAccounts category businessKey businessDefault privateKey privateDefault = do
+parsePartitionedExpenseAccounts category businessKey privateKey defaults = do
   partitionedExpenseAccountsBusiness <-
     setting
       [ help $ "the account to use for " <> category <> " expenses",
         reader $ maybeReader AccountName.fromString,
         conf businessKey,
-        value businessDefault
+        value (partitionedExpenseAccountsBusiness defaults)
       ]
   partitionedExpenseAccountsPrivate <-
     setting
       [ help $ "the account to use for private " <> category <> " expenses",
         reader $ maybeReader AccountName.fromString,
         conf privateKey,
-        value privateDefault
+        value (partitionedExpenseAccountsPrivate defaults)
       ]
   pure PartitionedExpenseAccounts {..}
 

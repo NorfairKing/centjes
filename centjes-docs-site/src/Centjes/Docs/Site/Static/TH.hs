@@ -24,12 +24,11 @@ import Centjes.Report.EvaluatedLedger
 import Centjes.Report.Register
 import Centjes.Switzerland.Command.SetAside (renderSetAsideReport)
 import Centjes.Switzerland.Report.SetAside
-import Centjes.Switzerland.Report.Taxes.Types (PartitionedExpenseAccounts (..), TaxesInput (..))
+import Centjes.Switzerland.Report.Taxes.Types (TaxesInput (..), taxesInputWithDefaults)
 import Centjes.Validation
 import Data.Data
 import qualified Data.Map as M
 import Data.Maybe
-import Data.Ratio ((%))
 import Data.Semigroup
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -282,46 +281,9 @@ docsSetAsideInput =
 -- third pillar account, and the defaults otherwise.
 docsTaxesInput :: TaxesInput
 docsTaxesInput =
-  let partitioned :: AccountName -> AccountName -> PartitionedExpenseAccounts
-      partitioned business private =
-        PartitionedExpenseAccounts
-          { partitionedExpenseAccountsBusiness = business,
-            partitionedExpenseAccountsPrivate = private
-          }
-   in TaxesInput
-        { taxesInputLastName = "Doe",
-          taxesInputFirstName = "John",
-          taxesInputInsuredPersonNumber = "7561111222233",
-          taxesInputYear = 2026,
-          taxesInputTagUndeclared = "undeclared",
-          taxesInputTagDeductible = "deductible",
-          taxesInputTagNotDeductible = "not-deductible",
-          taxesInputTagTaxDeductible = "tax-deductible",
-          taxesInputTagNotTaxDeductible = "not-tax-deductible",
-          taxesInputThirdPillarAssetsAccount = "assets:pillar-3a",
-          taxesInputThirdPillarInsuranceExpensesAccount = "expenses:insurance:third-pillar",
-          taxesInputHomeofficeExpenseAccounts = partitioned "expenses:rent:homeoffice" "expenses:rent:private",
-          taxesInputAccidentInsuranceExpenseAccount = "expenses:insurance:accident",
-          taxesInputDailyAllowanceInsuranceExpenseAccount = "expenses:insurance:daily-allowance",
-          taxesInputElectricityExpenseAccounts = partitioned "expenses:electricity:homeoffice" "expenses:electricity:private",
-          taxesInputPhoneExpenseAccounts = partitioned "expenses:phone:professional" "expenses:phone:private",
-          taxesInputTravelExpenseAccounts = partitioned "expenses:travel:professional" "expenses:travel:private",
-          taxesInputInternetExpenseAccounts = partitioned "expenses:internet:homeoffice" "expenses:internet:private",
-          taxesInputHealthInsurancePremiumsAccount = "expenses:insurance:health",
-          taxesInputHealthOtherAccount = "expenses:health:other",
-          taxesInputHealthDentistAccount = "expenses:health:dentist",
-          taxesInputHealthDoctorAccount = "expenses:health:doctor",
-          taxesInputHealthHospitalAccount = "expenses:health:hospital",
-          taxesInputHealthTherapyAccount = "expenses:health:therapy",
-          taxesInputDaycareAccount = "expenses:daycare",
-          taxesInputEducationAccount = "expenses:education",
-          taxesInputMovablesAssetsAccount = "assets:movables",
-          taxesInputMovablesExpensesAccount = "expenses:movables",
-          taxesInputMovablesDepreciationRate = 25 % 100,
-          taxesInputMachineryAssetsAccount = "assets:machinery",
-          taxesInputMachineryExpensesAccount = "expenses:machinery",
-          taxesInputMachineryDepreciationRate = 40 % 100
-        }
+  (taxesInputWithDefaults "Doe" "John" "7561111222233" 2026)
+    { taxesInputThirdPillarAssetsAccount = "assets:pillar-3a"
+    }
 
 renderChunksHtml :: [Chunk] -> Html
 renderChunksHtml = Html.pre . foldMap go
