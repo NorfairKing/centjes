@@ -265,9 +265,8 @@ data WealthTaxBasis = WealthTaxBasis
 
 -- | How much can still be paid into the third pillar.
 --
--- The revenue, the business expenses and the SVA add up to the net earned
--- income, and the limit and the contributions add up to the room that is
--- left.
+-- The revenue minus the business expenses and SVA is the net earned income,
+-- and the limit minus the contributions is the room that is left.
 data ThirdPillarLine = ThirdPillarLine
   { -- | Every business expense that the taxes report declares, together.
     thirdPillarLineBusinessExpenses :: !Money.Amount,
@@ -425,11 +424,11 @@ instance ToReport (SetAsideError SourceSpan) where
         (unwords ["No Steuerfuss is known for municipality", show m, "in", show y])
         []
         [Hint "Add it to zurichMunicipalSteuerfuss in centjes-switzerland."]
-    SetAsideErrorTaxes e -> toReport e
     SetAsideErrorNoThirdPillarMaximum y ->
       Err
         Nothing
         (unwords ["No maximum third pillar contribution is known for", show y])
         []
         [Hint "Add it to thirdPillarMaximum in centjes-switzerland."]
+    SetAsideErrorTaxes e -> toReport e
     SetAsideErrorOverflow -> Err Nothing "Amounts too large to add up" [] []
