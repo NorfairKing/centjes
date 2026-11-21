@@ -402,7 +402,7 @@
   };
   vat-expenses-account = lib.mkOption {
     default = null;
-    description = "Account name of your the VAT you've paid";
+    description = "the account of the VAT paid on purchases";
     type = lib.types.nullOr lib.types.str;
   };
   vat-id = lib.mkOption {
