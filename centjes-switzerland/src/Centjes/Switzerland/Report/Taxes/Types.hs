@@ -297,8 +297,8 @@ parseTaxesInput = do
       (taxesInputInternetExpenseAccounts defaults)
   taxesInputVATExpensesAccount <-
     setting
-      [ help "the account of the VAT paid on purchases, the same one as for the VAT report",
-        reader $ maybeReader AccountName.fromString,
+      [ help "the account of the VAT paid on purchases",
+        reader $ eitherReader AccountName.fromStringOrError,
         conf "vat-expenses-account",
         value (taxesInputVATExpensesAccount defaults)
       ]

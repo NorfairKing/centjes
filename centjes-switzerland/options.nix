@@ -397,7 +397,7 @@
   };
   vat-expenses-account = lib.mkOption {
     default = null;
-    description = "the account of the VAT paid on purchases, the same one as for the VAT report";
+    description = "the account of the VAT paid on purchases";
     type = lib.types.nullOr lib.types.str;
   };
   vat-id = lib.mkOption {

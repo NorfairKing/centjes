@@ -469,8 +469,8 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
             pure InternetExpense {..}
         )
 
-  -- Every expense account that a category above claims, and the ones that
-  -- are not expenses of the business at all.
+  -- Every expense account that a category claims, and the ones that are not
+  -- expenses of the business at all.
   let claimedExpenseAccounts :: S.Set AccountName
       claimedExpenseAccounts =
         S.fromList $

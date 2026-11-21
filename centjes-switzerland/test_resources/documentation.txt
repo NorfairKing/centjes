@@ -189,7 +189,7 @@
         [33m<string>[m
     default: [33m"expenses:internet:private"[m
     
-    [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+    [34mthe account of the VAT paid on purchases[m
     config:
       [37mvat-expenses-account[m: # [32mor null[m
         [33m<string>[m
@@ -384,7 +384,7 @@
         [33m<string>[m
     default: [33m"income:VAT"[m
     
-    [34mAccount name of your the VAT you've paid[m
+    [34mthe account of the VAT paid on purchases[m
     config:
       [37mvat-expenses-account[m: # [32mor null[m
         [33m<string>[m
@@ -640,7 +640,7 @@
         [33m<string>[m
     default: [33m"expenses:internet:private"[m
     
-    [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+    [34mthe account of the VAT paid on purchases[m
     config:
       [37mvat-expenses-account[m: # [32mor null[m
         [33m<string>[m
@@ -891,7 +891,7 @@
   [37minternet-private-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
-  [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+  [34mthe account of the VAT paid on purchases[m
   default: [33m"expenses:VAT"[m
   [37mvat-expenses-account[m:
     # [32mor null[m
@@ -1046,7 +1046,7 @@
   [37mvat-income-account[m:
     # [32mor null[m
     [33m<string>[m
-  [34mAccount name of your the VAT you've paid[m
+  [34mthe account of the VAT paid on purchases[m
   default: [33m"expenses:VAT"[m
   [37mvat-expenses-account[m:
     # [32mor null[m
@@ -1242,7 +1242,7 @@
   [37minternet-private-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
-  [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+  [34mthe account of the VAT paid on purchases[m
   default: [33m"expenses:VAT"[m
   [37mvat-expenses-account[m:
     # [32mor null[m
