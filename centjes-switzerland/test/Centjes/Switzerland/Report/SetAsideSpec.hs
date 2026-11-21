@@ -28,14 +28,14 @@ spec = do
         `shouldBe` Just (Negative (Amount.fromMinimalQuantisations 200))
 
   describe "thirdPillarMaximum" $ do
+    it "is 36'288 CHF for 2025" $
+      thirdPillarMaximum 2025 `shouldBe` Just 36288
+
     it "is 36'288 CHF for 2026" $
       thirdPillarMaximum 2026 `shouldBe` Just 36288
 
     it "is 36'864 CHF for 2027" $
       thirdPillarMaximum 2027 `shouldBe` Just 36864
-
-    it "is 36'288 CHF for 2025" $
-      thirdPillarMaximum 2025 `shouldBe` Just 36288
 
     it "does not know years before 2025" $
       thirdPillarMaximum 2024 `shouldBe` Nothing
