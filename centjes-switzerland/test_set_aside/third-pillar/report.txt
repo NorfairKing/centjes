@@ -22,12 +22,12 @@ Federal 2026
                                                              
 Pillar 3a 2026                                               
   Revenue                                        98000.00 CHF
-  Business expenses                              -1800.00 CHF
+  Business expenses                              -4800.00 CHF
   SVA                                           -11760.00 CHF
-[1m  Net earned income[m                              84440.00 CHF
-  Limit                                   20 %   16888.00 CHF
+[1m  Net earned income[m                              81440.00 CHF
+  Limit                                   20 %   16288.00 CHF
   Contributions                                  -7000.00 CHF
-[1m  Room left[m                                       9888.00 CHF
+[1m  Room left[m                                       9288.00 CHF
                                                              
 
 To do
@@ -35,4 +35,4 @@ To do
   SVA: save 11800.00 CHF (11760.00 CHF short).
   Cantonal: pre-pay 7900.00 CHF (7840.00 CHF short).
   Federal: save 2000.00 CHF (1960.00 CHF short).
-  Pillar 3a: pay in 9800.00 CHF (9888.00 CHF left), into assets:pillar-3a, before the end of the year.
+  Pillar 3a: pay in 9200.00 CHF (9288.00 CHF left), into assets:pillar-3a, before the end of the year.

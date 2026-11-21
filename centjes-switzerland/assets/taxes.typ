@@ -214,6 +214,19 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 #expense_section("Insurance (Versicherungen)", input.insurance_expenses)
 
+=== Other business expenses (Übriger Geschäftsaufwand)
+
+The business expenses on every other expense account.
+
+#if input.other_business_expenses.len() > 0 {
+  amount_table(
+    input.other_business_expenses,
+    input.total_other_business_expenses,
+  )
+} else [
+  No other business expenses.
+]
+
 == Education and professional development (Aus- und Weiterbildungskosten)
 
 #if input.education_expenses.len() > 0 {
@@ -223,6 +236,17 @@ All income is reported in CHF, using the exchange of the day of the transaction.
   )
 } else [
   No education expenses.
+]
+
+== Donations (Freiwillige Zuwendungen)
+
+#if input.donations.len() > 0 {
+  amount_table(
+    input.donations,
+    input.total_donations,
+  )
+} else [
+  No donations.
 ]
 
 == Third pillar (Säule 3a)

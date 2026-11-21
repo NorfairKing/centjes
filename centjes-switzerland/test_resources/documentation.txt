@@ -189,6 +189,18 @@
         [33m<string>[m
     default: [33m"expenses:internet:private"[m
     
+    [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+    config:
+      [37mvat-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:VAT"[m
+    
+    [34mthe account to use for donations[m
+    config:
+      [37mdonations-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:charity"[m
+    
     [34mthe account to use for health insurance premiums[m
     config:
       [37mhealth-insurance-premiums-account[m: # [32mor null[m
@@ -628,6 +640,18 @@
         [33m<string>[m
     default: [33m"expenses:internet:private"[m
     
+    [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+    config:
+      [37mvat-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:VAT"[m
+    
+    [34mthe account to use for donations[m
+    config:
+      [37mdonations-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:charity"[m
+    
     [34mthe account to use for health insurance premiums[m
     config:
       [37mhealth-insurance-premiums-account[m: # [32mor null[m
@@ -865,6 +889,16 @@
   [34mthe account to use for private internet expenses[m
   default: [33m"expenses:internet:private"[m
   [37minternet-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+  default: [33m"expenses:VAT"[m
+  [37mvat-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for donations[m
+  default: [33m"expenses:charity"[m
+  [37mdonations-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for health insurance premiums[m
@@ -1206,6 +1240,16 @@
   [34mthe account to use for private internet expenses[m
   default: [33m"expenses:internet:private"[m
   [37minternet-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+  default: [33m"expenses:VAT"[m
+  [37mvat-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for donations[m
+  default: [33m"expenses:charity"[m
+  [37mdonations-account[m:
     # [32mor null[m
     [33m<string>[m
   [34mthe account to use for health insurance premiums[m

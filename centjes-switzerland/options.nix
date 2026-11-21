@@ -39,6 +39,11 @@
     description = "Account name of your domestic income";
     type = lib.types.nullOr lib.types.str;
   };
+  donations-account = lib.mkOption {
+    default = null;
+    description = "the account to use for donations";
+    type = lib.types.nullOr lib.types.str;
+  };
   download-rates = lib.mkOption {
     default = { };
     type = lib.types.submodule {
@@ -392,7 +397,7 @@
   };
   vat-expenses-account = lib.mkOption {
     default = null;
-    description = "Account name of your the VAT you've paid";
+    description = "the account of the VAT paid on purchases, the same one as for the VAT report";
     type = lib.types.nullOr lib.types.str;
   };
   vat-id = lib.mkOption {

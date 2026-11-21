@@ -8,6 +8,7 @@ currency BTC 0.00000001
 
 tag taxable
 tag not-taxable
+tag not-deductible
 tag undeclared
 
 account equity:starting
@@ -81,6 +82,7 @@ account income:domestic
   | Cantonal pre-payment
   * assets:bank       -1500 CHF
   * expenses:cantonal  1500 CHF
+  + tag not-deductible
 
 2026-07-01
   | Save for federal taxes

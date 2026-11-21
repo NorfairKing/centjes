@@ -74,9 +74,11 @@ account income:gifts
   + tag deductible
 
 2026-06-15
-  | Cloud bill, which the taxes report does not declare as a business expense
+  | Cloud bill, an other business expense
   * assets:bank    -3000 CHF
   * expenses:cloud  3000 CHF
+  + tag deductible
+  + attach evidence.txt
 
 2026-08-01
   | Transfer from another third pillar, which is not a contribution

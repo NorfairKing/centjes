@@ -2,6 +2,7 @@ currency CHF 0.01
 
 tag taxable
 tag not-taxable
+tag not-deductible
 
 account equity:starting
 account assets:pillar-3a
@@ -37,6 +38,7 @@ account liabilities:taxes:sva
   | Cantonal pre-payment
   * assets:bank       -1000 CHF
   * expenses:cantonal  1000 CHF
+  + tag not-deductible
 
 2026-07-01
   | Save for federal taxes

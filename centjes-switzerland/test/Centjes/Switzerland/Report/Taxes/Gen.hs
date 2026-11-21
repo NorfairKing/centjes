@@ -71,6 +71,14 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         pure $ tr {taxesReportInternetExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
+                        totalOtherBusinessExpenses <- Amount.sum (map otherBusinessExpenseCHFAmount (taxesReportOtherBusinessExpenses tr))
+                        pure $ tr {taxesReportTotalOtherBusinessExpenses = totalOtherBusinessExpenses}
+                    )
+      `suchThatMap` ( \tr -> do
+                        totalDonations <- Amount.sum (map donationCHFAmount (taxesReportDonations tr))
+                        pure $ tr {taxesReportTotalDonations = totalDonations}
+                    )
+      `suchThatMap` ( \tr -> do
                         fixed <- fixHealthCostsTotals (taxesReportHealthCosts tr)
                         pure $ tr {taxesReportHealthCosts = fixed}
                     )
@@ -239,6 +247,19 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (InternetExpense ann) whe
           internetExpenseCHFAmount = chfAmount
         }
 
+instance (Show ann, Ord ann, GenValid ann) => GenValid (OtherBusinessExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { otherBusinessExpenseAmount = amount,
+          otherBusinessExpenseCHFAmount = chfAmount
+        }
+
 instance (Show ann, Ord ann, GenValid ann) => GenValid (HealthExpense ann) where
   shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
   genValid = do
@@ -276,6 +297,19 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (EducationExpense ann) wh
       r
         { educationExpenseAmount = amount,
           educationExpenseCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (Donation ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { donationAmount = amount,
+          donationCHFAmount = chfAmount
         }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DepreciationPurchase ann) where
