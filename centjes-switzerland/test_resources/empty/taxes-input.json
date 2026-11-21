@@ -4,6 +4,7 @@
         "daycare": [],
         "total_daycare": "0.00"
     },
+    "donations": [],
     "education_expenses": [],
     "electricity_expenses": {
         "business_expenses": [],
@@ -71,13 +72,7 @@
         "purchases": [],
         "total_purchases": "0.00"
     },
-    "other_business_expenses": {
-        "business_expenses": [],
-        "private_expenses": [],
-        "total_business_expenses": "0.00",
-        "total_expenses": "0.00",
-        "total_private_expenses": "0.00"
-    },
+    "other_business_expenses": [],
     "phone_expenses": {
         "business_expenses": [],
         "private_expenses": [],
@@ -89,7 +84,9 @@
     "revenues": [],
     "third_pillar_contributions": [],
     "total_assets": "0.00",
+    "total_donations": "0.00",
     "total_education_expenses": "0.00",
+    "total_other_business_expenses": "0.00",
     "total_revenues": "0.00",
     "total_third_pillar_contributions": "0.00",
     "travel_expenses": {

@@ -14,12 +14,15 @@
 
   A currency can no longer be called `lot`.
 
-* `centjes-switzerland taxes` can declare business expenses that no other
-  category covers, like software subscriptions or bank fees, from the accounts
-  in `other-business-expenses-accounts`.
+* `centjes-switzerland taxes` declares the business expenses on every expense
+  account that no other category claims, like software subscriptions or bank
+  fees, as other business expenses (Übriger Geschäftsaufwand).
   Each transaction says with its tags whether it is a business expense, like
-  in the other categories, and the packet lists them as other business
-  expenses (Übriger Geschäftsaufwand).
+  in the other categories, so every expense in the year needs one of those
+  tags now.
+  The VAT expenses account (`vat-expenses-account`) is not a business expense.
+  Donations (`donations-account`, default `expenses:charity`) are a deduction
+  of their own.
 
 * `+ assert virtual`, which asserts the balance that includes virtual postings.
   Plain `+ assert` still counts only real postings, so what an assertion means

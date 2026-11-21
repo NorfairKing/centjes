@@ -1,0 +1,70 @@
+currency CHF 0.01
+
+account equity:starting
+account assets:bank
+  + tag undeclared
+account assets:movables
+  + tag undeclared
+  + attach movables-balance.txt
+account assets:machinery
+  + tag undeclared
+  + attach machinery-balance.txt
+account expenses:cloud
+account expenses:banking
+account expenses:groceries
+account expenses:charity
+account expenses:rent:private
+account expenses:VAT
+
+tag deductible
+tag not-deductible
+tag tax-deductible
+tag not-vat-deductible
+tag undeclared
+tag duplicate-attachment
+
+2023-12-31
+  | Opening balances
+  * equity:starting -10000 CHF
+  * assets:bank      10000 CHF
+  * assets:movables      0 CHF
+  * assets:machinery     0 CHF
+
+2024-02-01
+  | Cloud bill, a business expense on an account no category claims
+  * assets:bank    -108.10 CHF
+  * expenses:cloud  100.00 CHF
+  * expenses:VAT      8.10 CHF ~e 8.1%
+  + attach receipt.txt
+  + tag deductible
+  + tag duplicate-attachment
+
+2024-02-02
+  | Bank fee without VAT
+  * assets:bank      -5 CHF
+  * expenses:banking  5 CHF
+  + attach receipt.txt
+  + tag tax-deductible
+  + tag not-vat-deductible
+  + tag duplicate-attachment
+
+2024-02-03
+  | Groceries, which are private
+  * assets:bank        -50 CHF
+  * expenses:groceries  50 CHF
+  + tag not-deductible
+
+2024-02-04
+  | Rent, on an account that the home office category claims
+  * assets:bank           -2000 CHF
+  * expenses:rent:private  2000 CHF
+  + tag not-deductible
+
+2024-02-05
+  | Donation, a deduction of its own
+  * assets:bank       -200 CHF
+  * expenses:charity   200 CHF
+  + attach receipt.txt
+  + tag tax-deductible
+  + tag not-vat-deductible
+  + tag duplicate-attachment

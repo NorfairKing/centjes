@@ -211,20 +211,18 @@ taxesReportInput TaxesReport {..} =
           )
           taxesReportInternetExpenses
       inputOtherBusinessExpenses =
-        convertPartitionedExpenses
-          ( \OtherBusinessExpense {..} ->
-              let inputOtherBusinessExpenseDay = Timestamp.toDay otherBusinessExpenseTimestamp
-                  inputOtherBusinessExpenseDescription = Description.toText otherBusinessExpenseDescription
-                  inputOtherBusinessExpenseAmount =
-                    AmountWithCurrency
-                      { amountWithCurrencyAmount = formatAmount otherBusinessExpenseCurrency otherBusinessExpenseAmount,
-                        amountWithCurrencyCurrency = currencySymbol otherBusinessExpenseCurrency
-                      }
-                  inputOtherBusinessExpenseCHFAmount = formatChfAmount otherBusinessExpenseCHFAmount
-                  inputOtherBusinessExpenseEvidence = otherBusinessExpenseEvidence
-               in OtherBusinessExpenseInput {..}
-          )
-          taxesReportOtherBusinessExpenses
+        flip map taxesReportOtherBusinessExpenses $ \OtherBusinessExpense {..} ->
+          let inputOtherBusinessExpenseDay = Timestamp.toDay otherBusinessExpenseTimestamp
+              inputOtherBusinessExpenseDescription = Description.toText otherBusinessExpenseDescription
+              inputOtherBusinessExpenseAmount =
+                AmountWithCurrency
+                  { amountWithCurrencyAmount = formatAmount otherBusinessExpenseCurrency otherBusinessExpenseAmount,
+                    amountWithCurrencyCurrency = currencySymbol otherBusinessExpenseCurrency
+                  }
+              inputOtherBusinessExpenseCHFAmount = formatChfAmount otherBusinessExpenseCHFAmount
+              inputOtherBusinessExpenseEvidence = otherBusinessExpenseEvidence
+           in OtherBusinessExpenseInput {..}
+      inputTotalOtherBusinessExpenses = formatChfAmount taxesReportTotalOtherBusinessExpenses
       convertHealthExpenses = map $ \HealthExpense {..} ->
         let inputHealthExpenseDay = Timestamp.toDay healthExpenseTimestamp
             inputHealthExpenseDescription = Description.toText healthExpenseDescription
@@ -280,6 +278,18 @@ taxesReportInput TaxesReport {..} =
             inputEducationExpenseEvidence = educationExpenseEvidence
          in EducationExpenseInput {..}
       inputTotalEducationExpenses = formatChfAmount taxesReportTotalEducationExpenses
+      inputDonations = flip map taxesReportDonations $ \Donation {..} ->
+        let inputDonationDay = Timestamp.toDay donationTimestamp
+            inputDonationDescription = Description.toText donationDescription
+            inputDonationAmount =
+              AmountWithCurrency
+                { amountWithCurrencyAmount = formatAmount donationCurrency donationAmount,
+                  amountWithCurrencyCurrency = currencySymbol donationCurrency
+                }
+            inputDonationCHFAmount = formatChfAmount donationCHFAmount
+            inputDonationEvidence = donationEvidence
+         in DonationInput {..}
+      inputTotalDonations = formatChfAmount taxesReportTotalDonations
       inputMovables = convertDepreciationSchedule taxesReportMovables
       inputMachinery = convertDepreciationSchedule taxesReportMachinery
    in Input {..}
@@ -304,10 +314,13 @@ data Input = Input
     inputPhoneExpenses :: !(PartitionedExpensesInput PhoneExpenseInput),
     inputTravelExpenses :: !(PartitionedExpensesInput TravelExpenseInput),
     inputInternetExpenses :: !(PartitionedExpensesInput InternetExpenseInput),
-    inputOtherBusinessExpenses :: !(PartitionedExpensesInput OtherBusinessExpenseInput),
+    inputOtherBusinessExpenses :: ![OtherBusinessExpenseInput],
+    inputTotalOtherBusinessExpenses :: !FormattedAmount,
     inputHealthCosts :: !HealthCostsInput,
     inputEducationExpenses :: ![EducationExpenseInput],
     inputTotalEducationExpenses :: !FormattedAmount,
+    inputDonations :: ![DonationInput],
+    inputTotalDonations :: !FormattedAmount,
     inputMovables :: !DepreciationScheduleInput,
     inputMachinery :: !DepreciationScheduleInput
   }
@@ -353,12 +366,18 @@ instance HasCodec Input where
           .= inputInternetExpenses
         <*> requiredField "other_business_expenses" "other business expenses"
           .= inputOtherBusinessExpenses
+        <*> requiredField "total_other_business_expenses" "total other business expenses"
+          .= inputTotalOtherBusinessExpenses
         <*> requiredField "health_costs" "health costs"
           .= inputHealthCosts
         <*> requiredField "education_expenses" "education expenses"
           .= inputEducationExpenses
         <*> requiredField "total_education_expenses" "total education expenses"
           .= inputTotalEducationExpenses
+        <*> requiredField "donations" "donations"
+          .= inputDonations
+        <*> requiredField "total_donations" "total donations"
+          .= inputTotalDonations
         <*> requiredField "movables" "movables depreciation schedule"
           .= inputMovables
         <*> requiredField "machinery" "machinery depreciation schedule"
@@ -772,6 +791,29 @@ instance HasCodec EducationExpenseInput where
           .= inputEducationExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputEducationExpenseEvidence
+
+data DonationInput = DonationInput
+  { inputDonationDay :: !Day,
+    inputDonationDescription :: !Text,
+    inputDonationAmount :: !AmountWithCurrency,
+    inputDonationCHFAmount :: !FormattedAmount,
+    inputDonationEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec DonationInput where
+  codec =
+    object "DonationInput" $
+      DonationInput
+        <$> requiredField "day" "day of donation"
+          .= inputDonationDay
+        <*> requiredField "description" "description of donation"
+          .= inputDonationDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputDonationAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputDonationCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputDonationEvidence
 
 data DepreciationScheduleInput = DepreciationScheduleInput
   { depreciationScheduleInputDepreciationRate :: !String,

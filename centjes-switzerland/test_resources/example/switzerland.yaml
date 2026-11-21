@@ -8,7 +8,3 @@ expenses: []
 
 vat-income: income:vat
 
-other-business-expenses-accounts:
-- expenses:bank
-- expenses:coffee
-- expenses:hardware

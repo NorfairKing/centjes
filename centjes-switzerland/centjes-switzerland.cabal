@@ -53,6 +53,14 @@ extra-source-files:
     test_resources/net-vat/taxes-input.json
     test_resources/net-vat/taxes.xml
     test_resources/net-vat/vat.xml
+    test_resources/other-expenses/ledger.cent
+    test_resources/other-expenses/machinery-balance.txt
+    test_resources/other-expenses/movables-balance.txt
+    test_resources/other-expenses/receipt.txt
+    test_resources/other-expenses/switzerland.yaml
+    test_resources/other-expenses/taxes-input.json
+    test_resources/other-expenses/taxes.xml
+    test_resources/other-expenses/vat.xml
     test_set_aside/covered/currency-rates.cent
     test_set_aside/covered/ledger.cent
     test_set_aside/covered/market-rates.cent

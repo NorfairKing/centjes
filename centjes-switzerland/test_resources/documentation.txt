@@ -189,11 +189,17 @@
         [33m<string>[m
     default: [33m"expenses:internet:private"[m
     
-    [34maccounts of business expenses that no other category covers, like software subscriptions or bank fees[m
+    [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
     config:
-      [37mother-business-expenses-accounts[m: # [32mor null[m
-        - [33m<string>[m
-    default: [33m[][m
+      [37mvat-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:VAT"[m
+    
+    [34mthe account to use for donations[m
+    config:
+      [37mdonations-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:charity"[m
     
     [34mthe account to use for health insurance premiums[m
     config:
@@ -658,11 +664,16 @@
   [37minternet-private-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
-  [34maccounts of business expenses that no other category covers, like software subscriptions or bank fees[m
-  default: [33m[][m
-  [37mother-business-expenses-accounts[m:
+  [34mthe account of the VAT paid on purchases, the same one as for the VAT report[m
+  default: [33m"expenses:VAT"[m
+  [37mvat-expenses-account[m:
     # [32mor null[m
-    - [33m<string>[m
+    [33m<string>[m
+  [34mthe account to use for donations[m
+  default: [33m"expenses:charity"[m
+  [37mdonations-account[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mthe account to use for health insurance premiums[m
   default: [33m"expenses:insurance:health"[m
   [37mhealth-insurance-premiums-account[m:

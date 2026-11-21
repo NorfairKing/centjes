@@ -22,6 +22,7 @@
         "daycare": [],
         "total_daycare": "0.00"
     },
+    "donations": [],
     "education_expenses": [],
     "electricity_expenses": {
         "business_expenses": [],
@@ -89,73 +90,44 @@
         "purchases": [],
         "total_purchases": "0.00"
     },
-    "other_business_expenses": {
-        "business_expenses": [
-            {
-                "amount": {
-                    "formatted": "5000.00",
-                    "symbol": "CHF"
-                },
-                "amount_chf": "5000.00",
-                "day": "2024-01-02",
-                "description": "Computer",
-                "evidence": [
-                    "expenses/other/receipt-computer.txt"
-                ]
+    "other_business_expenses": [
+        {
+            "amount": {
+                "formatted": "5000.00",
+                "symbol": "CHF"
             },
-            {
-                "amount": {
-                    "formatted": "0.50",
-                    "symbol": "CHF"
-                },
-                "amount_chf": "0.50",
-                "day": "2024-01-05",
-                "description": "Example with transaction cost",
-                "evidence": [
-                    "expenses/other/receipt-coffee.txt"
-                ]
+            "amount_chf": "5000.00",
+            "day": "2024-01-02",
+            "description": "Computer",
+            "evidence": [
+                "expenses/other/receipt-computer.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "0.50",
+                "symbol": "CHF"
             },
-            {
-                "amount": {
-                    "formatted": "5.00",
-                    "symbol": "CHF"
-                },
-                "amount_chf": "5.00",
-                "day": "2024-01-05",
-                "description": "Example with transaction cost",
-                "evidence": [
-                    "expenses/other/receipt-coffee.txt"
-                ]
-            }
-        ],
-        "private_expenses": [
-            {
-                "amount": {
-                    "formatted": "5.00",
-                    "symbol": "CHF"
-                },
-                "amount_chf": "5.00",
-                "day": "2024-01-03",
-                "description": "Coffee",
-                "evidence": [
-                    "expenses/private/receipt-coffee.txt"
-                ]
+            "amount_chf": "0.50",
+            "day": "2024-01-05",
+            "description": "Example with transaction cost",
+            "evidence": [
+                "expenses/other/receipt-coffee.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "5.00",
+                "symbol": "CHF"
             },
-            {
-                "amount": {
-                    "formatted": "5.00",
-                    "symbol": "CHF"
-                },
-                "amount_chf": "5.00",
-                "day": "2024-01-04",
-                "description": "Coffee",
-                "evidence": []
-            }
-        ],
-        "total_business_expenses": "5005.50",
-        "total_expenses": "5015.50",
-        "total_private_expenses": "10.00"
-    },
+            "amount_chf": "5.00",
+            "day": "2024-01-05",
+            "description": "Example with transaction cost",
+            "evidence": [
+                "expenses/other/receipt-coffee.txt"
+            ]
+        }
+    ],
     "phone_expenses": {
         "business_expenses": [],
         "private_expenses": [],
@@ -254,7 +226,9 @@
     ],
     "third_pillar_contributions": [],
     "total_assets": "11632.22",
+    "total_donations": "0.00",
     "total_education_expenses": "0.00",
+    "total_other_business_expenses": "5005.50",
     "total_revenues": "6435.60",
     "total_third_pillar_contributions": "0.00",
     "travel_expenses": {
