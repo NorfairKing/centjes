@@ -22,6 +22,7 @@ module Centjes.Switzerland.Report.Taxes.Types
     PhoneExpense (..),
     TravelExpense (..),
     InternetExpense (..),
+    OtherBusinessExpense (..),
     HealthExpense (..),
     HealthCosts (..),
     DaycareExpense (..),
@@ -88,6 +89,10 @@ data TaxesInput = TaxesInput
     taxesInputPhoneExpenseAccounts :: !PartitionedExpenseAccounts,
     taxesInputTravelExpenseAccounts :: !PartitionedExpenseAccounts,
     taxesInputInternetExpenseAccounts :: !PartitionedExpenseAccounts,
+    -- | Accounts of business expenses that no other category covers, like
+    -- software subscriptions or bank fees.
+    -- Each transaction says with its tags whether it is a business expense.
+    taxesInputOtherBusinessExpenseAccounts :: ![AccountName],
     taxesInputHealthInsurancePremiumsAccount :: !AccountName,
     taxesInputHealthOtherAccount :: !AccountName,
     taxesInputHealthDentistAccount :: !AccountName,
@@ -239,6 +244,12 @@ parseTaxesInput = do
       "expenses:internet:homeoffice"
       "internet-private-expenses-account"
       "expenses:internet:private"
+  taxesInputOtherBusinessExpenseAccounts <-
+    setting
+      [ help "accounts of business expenses that no other category covers, like software subscriptions or bank fees",
+        conf "other-business-expenses-accounts",
+        value []
+      ]
   taxesInputHealthInsurancePremiumsAccount <-
     setting
       [ help "the account to use for health insurance premiums",
@@ -417,6 +428,7 @@ data TaxesReport ann = TaxesReport
     taxesReportPhoneExpenses :: !(PartitionedExpenses (PhoneExpense ann) ann),
     taxesReportTravelExpenses :: !(PartitionedExpenses (TravelExpense ann) ann),
     taxesReportInternetExpenses :: !(PartitionedExpenses (InternetExpense ann) ann),
+    taxesReportOtherBusinessExpenses :: !(PartitionedExpenses (OtherBusinessExpense ann) ann),
     taxesReportHealthCosts :: !(HealthCosts ann),
     taxesReportEducationExpenses :: ![EducationExpense ann],
     taxesReportTotalEducationExpenses :: !Money.Amount,
@@ -441,6 +453,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
         validatePartitionedExpenses "phone" phoneExpenseCHFAmount taxesReportPhoneExpenses,
         validatePartitionedExpenses "travel" travelExpenseCHFAmount taxesReportTravelExpenses,
         validatePartitionedExpenses "internet" internetExpenseCHFAmount taxesReportInternetExpenses,
+        validatePartitionedExpenses "other business" otherBusinessExpenseCHFAmount taxesReportOtherBusinessExpenses,
         validateHealthCosts taxesReportHealthCosts,
         declare "the education expenses sum to the total education expenses" $
           Amount.sum (map educationExpenseCHFAmount taxesReportEducationExpenses) == Just taxesReportTotalEducationExpenses,
@@ -593,6 +606,19 @@ data InternetExpense ann = InternetExpense
   deriving (Show, Generic)
 
 instance (Validity ann, Show ann, Ord ann) => Validity (InternetExpense ann)
+
+data OtherBusinessExpense ann = OtherBusinessExpense
+  { otherBusinessExpenseTimestamp :: !Timestamp,
+    otherBusinessExpenseDescription :: !Description,
+    otherBusinessExpenseAmount :: !Money.Amount,
+    otherBusinessExpenseCurrency :: !(Currency ann),
+    otherBusinessExpenseCHFAmount :: !Money.Amount,
+    -- | Evidence in tarball
+    otherBusinessExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+  deriving (Show, Generic)
+
+instance (Validity ann, Show ann, Ord ann) => Validity (OtherBusinessExpense ann)
 
 data HealthExpense ann = HealthExpense
   { healthExpenseTimestamp :: !Timestamp,

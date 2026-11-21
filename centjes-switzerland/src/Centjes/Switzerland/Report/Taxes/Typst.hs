@@ -210,6 +210,21 @@ taxesReportInput TaxesReport {..} =
                in InternetExpenseInput {..}
           )
           taxesReportInternetExpenses
+      inputOtherBusinessExpenses =
+        convertPartitionedExpenses
+          ( \OtherBusinessExpense {..} ->
+              let inputOtherBusinessExpenseDay = Timestamp.toDay otherBusinessExpenseTimestamp
+                  inputOtherBusinessExpenseDescription = Description.toText otherBusinessExpenseDescription
+                  inputOtherBusinessExpenseAmount =
+                    AmountWithCurrency
+                      { amountWithCurrencyAmount = formatAmount otherBusinessExpenseCurrency otherBusinessExpenseAmount,
+                        amountWithCurrencyCurrency = currencySymbol otherBusinessExpenseCurrency
+                      }
+                  inputOtherBusinessExpenseCHFAmount = formatChfAmount otherBusinessExpenseCHFAmount
+                  inputOtherBusinessExpenseEvidence = otherBusinessExpenseEvidence
+               in OtherBusinessExpenseInput {..}
+          )
+          taxesReportOtherBusinessExpenses
       convertHealthExpenses = map $ \HealthExpense {..} ->
         let inputHealthExpenseDay = Timestamp.toDay healthExpenseTimestamp
             inputHealthExpenseDescription = Description.toText healthExpenseDescription
@@ -289,6 +304,7 @@ data Input = Input
     inputPhoneExpenses :: !(PartitionedExpensesInput PhoneExpenseInput),
     inputTravelExpenses :: !(PartitionedExpensesInput TravelExpenseInput),
     inputInternetExpenses :: !(PartitionedExpensesInput InternetExpenseInput),
+    inputOtherBusinessExpenses :: !(PartitionedExpensesInput OtherBusinessExpenseInput),
     inputHealthCosts :: !HealthCostsInput,
     inputEducationExpenses :: ![EducationExpenseInput],
     inputTotalEducationExpenses :: !FormattedAmount,
@@ -335,6 +351,8 @@ instance HasCodec Input where
           .= inputTravelExpenses
         <*> requiredField "internet_expenses" "internet expenses"
           .= inputInternetExpenses
+        <*> requiredField "other_business_expenses" "other business expenses"
+          .= inputOtherBusinessExpenses
         <*> requiredField "health_costs" "health costs"
           .= inputHealthCosts
         <*> requiredField "education_expenses" "education expenses"
@@ -604,6 +622,29 @@ instance HasCodec InternetExpenseInput where
           .= inputInternetExpenseCHFAmount
         <*> requiredField "evidence" "evidence"
           .= inputInternetExpenseEvidence
+
+data OtherBusinessExpenseInput = OtherBusinessExpenseInput
+  { inputOtherBusinessExpenseDay :: !Day,
+    inputOtherBusinessExpenseDescription :: !Text,
+    inputOtherBusinessExpenseAmount :: !AmountWithCurrency,
+    inputOtherBusinessExpenseCHFAmount :: !FormattedAmount,
+    inputOtherBusinessExpenseEvidence :: !(NonEmpty (Path Rel File))
+  }
+
+instance HasCodec OtherBusinessExpenseInput where
+  codec =
+    object "OtherBusinessExpenseInput" $
+      OtherBusinessExpenseInput
+        <$> requiredField "day" "day of other business expense"
+          .= inputOtherBusinessExpenseDay
+        <*> requiredField "description" "description of other business expense"
+          .= inputOtherBusinessExpenseDescription
+        <*> requiredField "amount" "amount in original currency"
+          .= inputOtherBusinessExpenseAmount
+        <*> requiredField "amount_chf" "amount in chf"
+          .= inputOtherBusinessExpenseCHFAmount
+        <*> requiredField "evidence" "evidence"
+          .= inputOtherBusinessExpenseEvidence
 
 data HealthExpenseInput = HealthExpenseInput
   { inputHealthExpenseDay :: !Day,

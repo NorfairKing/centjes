@@ -186,6 +186,11 @@
     description = "The organisation's legal name";
     type = lib.types.nullOr lib.types.str;
   };
+  other-business-expenses-accounts = lib.mkOption {
+    default = null;
+    description = "accounts of business expenses that no other category covers, like software subscriptions or bank fees";
+    type = lib.types.nullOr (lib.types.listOf lib.types.str);
+  };
   person-name = lib.mkOption {
     default = null;
     description = "Your legal name";

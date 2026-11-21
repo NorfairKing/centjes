@@ -214,6 +214,11 @@ All income is reported in CHF, using the exchange of the day of the transaction.
 
 #expense_section("Insurance (Versicherungen)", input.insurance_expenses)
 
+#expense_section(
+  "Other business expenses (Übriger Geschäftsaufwand)",
+  input.other_business_expenses,
+)
+
 == Education and professional development (Aus- und Weiterbildungskosten)
 
 #if input.education_expenses.len() > 0 {

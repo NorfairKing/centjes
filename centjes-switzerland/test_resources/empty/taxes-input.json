@@ -1,0 +1,103 @@
+{
+    "assets": [],
+    "children_costs": {
+        "daycare": [],
+        "total_daycare": "0.00"
+    },
+    "education_expenses": [],
+    "electricity_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "first_name": "Doe",
+    "health_costs": {
+        "dentist": [],
+        "doctor": [],
+        "hospital": [],
+        "insurance_premiums": [],
+        "other": [],
+        "therapy": [],
+        "total_dentist": "0.00",
+        "total_doctor": "0.00",
+        "total_hospital": "0.00",
+        "total_insurance_premiums": "0.00",
+        "total_other": "0.00",
+        "total_therapy": "0.00"
+    },
+    "homeoffice_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "insurance_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "internet_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "last_name": "John",
+    "machinery": {
+        "closing_balance": "0.00",
+        "depreciation": "0.00",
+        "depreciation_rate": "40%",
+        "opening_balance": "0.00",
+        "opening_balance_evidence": [
+            "depreciation/machinery/machinery-balance.txt"
+        ],
+        "purchases": [],
+        "total_purchases": "0.00"
+    },
+    "movables": {
+        "closing_balance": "0.00",
+        "depreciation": "0.00",
+        "depreciation_rate": "25%",
+        "opening_balance": "0.00",
+        "opening_balance_evidence": [
+            "depreciation/movables/movables-balance.txt"
+        ],
+        "purchases": [],
+        "total_purchases": "0.00"
+    },
+    "other_business_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "phone_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "rates": {},
+    "revenues": [],
+    "third_pillar_contributions": [],
+    "total_assets": "0.00",
+    "total_education_expenses": "0.00",
+    "total_revenues": "0.00",
+    "total_third_pillar_contributions": "0.00",
+    "travel_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "year": 2024
+}

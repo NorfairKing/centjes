@@ -71,6 +71,10 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (TaxesReport ann) where
                         pure $ tr {taxesReportInternetExpenses = fixed}
                     )
       `suchThatMap` ( \tr -> do
+                        fixed <- fixPartitionedExpensesTotals otherBusinessExpenseCHFAmount (taxesReportOtherBusinessExpenses tr)
+                        pure $ tr {taxesReportOtherBusinessExpenses = fixed}
+                    )
+      `suchThatMap` ( \tr -> do
                         fixed <- fixHealthCostsTotals (taxesReportHealthCosts tr)
                         pure $ tr {taxesReportHealthCosts = fixed}
                     )
@@ -237,6 +241,19 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (InternetExpense ann) whe
       r
         { internetExpenseAmount = amount,
           internetExpenseCHFAmount = chfAmount
+        }
+
+instance (Show ann, Ord ann, GenValid ann) => GenValid (OtherBusinessExpense ann) where
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
+  genValid = do
+    r <- genValidStructurallyWithoutExtraChecking
+    -- If this number is too small, that's a VERY good problem.
+    amount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
+    pure $
+      r
+        { otherBusinessExpenseAmount = amount,
+          otherBusinessExpenseCHFAmount = chfAmount
         }
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (HealthExpense ann) where

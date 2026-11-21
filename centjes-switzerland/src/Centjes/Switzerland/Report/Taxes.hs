@@ -450,6 +450,37 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
             pure InternetExpense {..}
         )
 
+  taxesReportOtherBusinessExpenses <-
+    makePartitionedExpenses otherBusinessExpenseCHFAmount
+      . partitionEithers
+      =<< forAccountsPostings
+        (S.fromList taxesInputOtherBusinessExpenseAccounts)
+        ( \lt@(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
+            Just
+              <$> withDeductibleTagEither
+                taxesInput
+                tl
+                lp
+                transactionTags
+                ( do
+                    let Located _ timestamp = transactionTimestamp
+                    let day = Timestamp.toDay timestamp
+                    otherBusinessExpenseDescription <- requireDescription transactionDescription
+                    let Located al account = postingAccount
+                    otherBusinessExpenseAmount <- requireExpensePositive al account
+                    let otherBusinessExpenseTimestamp = timestamp
+                    let otherBusinessExpenseCurrency = postingCurrency p
+                    otherBusinessExpenseCHFAmount <- convertDaily al dailyPriceGraphs day otherBusinessExpenseCurrency taxesReportCHF otherBusinessExpenseAmount
+                    ne <- requireNonEmptyEvidence tl transactionAttachments
+                    otherBusinessExpenseEvidence <- forM ne $ \rf -> do
+                      let fileInTarball = [reldir|expenses/other|] </> filename rf
+                      includeFile fileInTarball rf
+                      pure fileInTarball
+                    pure OtherBusinessExpense {..}
+                )
+                (makePrivateExpense lt lp)
+        )
+
   let makeHealthExpenses account tarballSubdir =
         forAccountPostings account $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
           withDeductibleTag taxesInput tl lp transactionTags $ do
