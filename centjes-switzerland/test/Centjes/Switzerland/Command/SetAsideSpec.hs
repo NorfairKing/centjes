@@ -94,6 +94,7 @@ data SetAsideErrorKind
   | KindNoCantonalRates
   | KindNoMunicipalSteuerfuss
   | KindNoThirdPillarMaximum
+  | KindUndeclaredThirdPillarAccount
   | KindTaxes
   | KindOverflow
   deriving (Show, Eq, Enum, Bounded)
@@ -113,6 +114,7 @@ setAsideErrorKind = \case
   SetAsideErrorNoCantonalRates _ -> KindNoCantonalRates
   SetAsideErrorNoMunicipalSteuerfuss _ _ -> KindNoMunicipalSteuerfuss
   SetAsideErrorNoThirdPillarMaximum _ -> KindNoThirdPillarMaximum
+  SetAsideErrorUndeclaredThirdPillarAccount _ -> KindUndeclaredThirdPillarAccount
   SetAsideErrorTaxes _ -> KindTaxes
   SetAsideErrorOverflow -> KindOverflow
 
@@ -129,5 +131,6 @@ errorScenario = \case
   KindNoCantonalRates -> "no-cantonal-rates"
   KindNoMunicipalSteuerfuss -> "no-municipal-steuerfuss"
   KindNoThirdPillarMaximum -> "no-third-pillar-maximum"
+  KindUndeclaredThirdPillarAccount -> "undeclared-third-pillar-account"
   KindTaxes -> "taxes"
   KindOverflow -> "overflow"

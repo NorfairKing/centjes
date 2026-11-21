@@ -1,0 +1,4 @@
+[0;91;1m[error][0m: The third pillar account of the taxes settings is not declared in the ledger: assets:third-pillar
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Declare it in the ledger, or set third-pillar-assets-account to the account that contributions are paid into.[0m
+[0;90;1m─────╯[0m

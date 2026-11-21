@@ -4,8 +4,12 @@ currency CHF 0.01
 currency USD 0.01
 
 tag taxable
+tag not-taxable
 
 account equity:starting
+account assets:pillar-3a
+  + attach evidence.txt
+  + tag not-taxable
 account assets:sva
   + attach evidence.txt
   + tag taxable

@@ -117,6 +117,9 @@ extra-source-files:
     test_set_aside_errors/undeclared-account/error.txt
     test_set_aside_errors/undeclared-account/ledger.cent
     test_set_aside_errors/undeclared-account/switzerland.yaml
+    test_set_aside_errors/undeclared-third-pillar-account/error.txt
+    test_set_aside_errors/undeclared-third-pillar-account/ledger.cent
+    test_set_aside_errors/undeclared-third-pillar-account/switzerland.yaml
     test_set_aside_errors/untagged-wealth/error.txt
     test_set_aside_errors/untagged-wealth/ledger.cent
     test_set_aside_errors/untagged-wealth/switzerland.yaml

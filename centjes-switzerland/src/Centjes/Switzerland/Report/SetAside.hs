@@ -96,6 +96,11 @@ produceSetAsideReport SetAsideInput {..} taxesInput today prices ledger@Ledger {
   (setAsideReportWealthTaxBasis, wealthTaxRows) <-
     computeWealthTax chf setAsideInputYear valuationDay setAsideInputWealth prices ledgerAccounts ledgerTransactions
 
+  let thirdPillarAccount = taxesInputThirdPillarAssetsAccount taxesInput
+  unless (M.member thirdPillarAccount ledgerAccounts) $
+    validationFailure $
+      SetAsideErrorUndeclaredThirdPillarAccount thirdPillarAccount
+
   -- The taxes command only converts with the ESTV's prices.
   (taxesReport, _) <-
     mapValidationFailure SetAsideErrorTaxes $
@@ -126,7 +131,7 @@ produceSetAsideReport SetAsideInput {..} taxesInput today prices ledger@Ledger {
     maybe (validationFailure SetAsideErrorOverflow) pure $
       shareOfRevenue (setAsideTaxRate setAsideInputSocialSecurity) setAsideReportRevenue
   setAsideReportThirdPillar <-
-    computeThirdPillar thirdPillarMaximumCHF socialSecurity (taxesInputThirdPillarAssetsAccount taxesInput) taxesReport
+    computeThirdPillar thirdPillarMaximumCHF socialSecurity thirdPillarAccount taxesReport
   let line :: [SetAsideRow] -> [AccountName] -> Validation (SetAsideError ann) SetAsideLine
       line owedRows reserveAccounts = do
         reserveRows <- forM reserveAccounts $ \an -> SetAsideRowReserve an <$> reserveBalance an

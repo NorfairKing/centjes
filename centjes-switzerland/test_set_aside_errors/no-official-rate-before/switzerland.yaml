@@ -1,6 +1,7 @@
 first-name: John
 last-name: Doe
 ahv-id: '7561111222233'
+third-pillar-assets-account: assets:pillar-3a
 
 set-aside:
   sva:

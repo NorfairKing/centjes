@@ -367,6 +367,9 @@ data SetAsideError ann
     SetAsideErrorNoCantonalRates !Year
   | SetAsideErrorNoMunicipalSteuerfuss !Municipality !Year
   | SetAsideErrorNoThirdPillarMaximum !Year
+  | -- | The account that the to-do list says to pay third pillar contributions
+    -- into.
+    SetAsideErrorUndeclaredThirdPillarAccount !AccountName
   | SetAsideErrorTaxes !(TaxesError ann)
   | SetAsideErrorOverflow
 
@@ -430,5 +433,11 @@ instance ToReport (SetAsideError SourceSpan) where
         (unwords ["No maximum third pillar contribution is known for", show y])
         []
         [Hint "Add it to thirdPillarMaximum in centjes-switzerland."]
+    SetAsideErrorUndeclaredThirdPillarAccount an ->
+      Err
+        Nothing
+        (unwords ["The third pillar account of the taxes settings is not declared in the ledger:", AccountName.toString an])
+        []
+        [Hint "Declare it in the ledger, or set third-pillar-assets-account to the account that contributions are paid into."]
     SetAsideErrorTaxes e -> toReport e
     SetAsideErrorOverflow -> Err Nothing "Amounts too large to add up" [] []
