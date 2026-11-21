@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Centjes.Switzerland.Command.SetAsideSpec (spec) where
 
@@ -31,9 +32,10 @@ spec = sequential $ do
         goldenTextFile (fp <> "report.txt") $ do
           dir <- resolveDir' fp
           withCurrentDir dir $ withArgs [] $ do
-            input <-
+            (input, taxesInput) <-
               runParser version "centjes-switzerland set-aside-tests" $
-                withConfigurableYamlConfig (OptEnvConf.runIO (resolveFile' "switzerland.yaml")) settingsParser
+                withConfigurableYamlConfig (OptEnvConf.runIO (resolveFile' "switzerland.yaml")) $
+                  (,) <$> settingsParser <*> settingsParser
             ledgerFile <- resolveFile dir "ledger.cent"
             (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
             ledger <- shouldValidate diag $ compileDeclarations declarations
@@ -41,7 +43,7 @@ spec = sequential $ do
             let today = fromGregorian 2026 10 30
             report <-
               shouldValidate diag $
-                produceSetAsideReport input {setAsideInputYear = 2026} today (splitPrices pricesFile ledger) ledger
+                produceSetAsideReport input {setAsideInputYear = 2026} taxesInput today (splitPrices pricesFile ledger) ledger
             pure $ renderChunksText WithoutColours $ renderSetAsideReport report
 
   describe "produceSetAsideReport" $ do
@@ -57,9 +59,10 @@ spec = sequential $ do
         goldenTextFile (fp <> "error.txt") $ do
           dir <- resolveDir' fp
           withCurrentDir dir $ withArgs [] $ do
-            input <-
+            (input, taxesInput) <-
               runParser version "centjes-switzerland set-aside-tests" $
-                withConfigurableYamlConfig (OptEnvConf.runIO (resolveFile' "switzerland.yaml")) settingsParser
+                withConfigurableYamlConfig (OptEnvConf.runIO (resolveFile' "switzerland.yaml")) $
+                  (,) <$> settingsParser <*> settingsParser
             -- A scenario can be about another year than the default one.
             yearFile <- resolveFile dir "year"
             mYear <- forgivingAbsence $ readFile (fromAbsFile yearFile)
@@ -71,7 +74,7 @@ spec = sequential $ do
             ledger <- shouldValidate diag $ compileDeclarations declarations
             pricesFile <- parseRelFile "currency-rates.cent"
             let today = fromGregorian 2026 10 30
-            case produceSetAsideReport input {setAsideInputYear = year} today (splitPrices pricesFile ledger) ledger of
+            case produceSetAsideReport input {setAsideInputYear = year} taxesInput today (splitPrices pricesFile ledger) ledger of
               Success _ -> expectationFailure "the report should have failed"
               Failure errs -> do
                 map setAsideErrorKind (NE.toList errs) `shouldBe` [kind]
@@ -90,6 +93,8 @@ data SetAsideErrorKind
   | KindTaggedBoth
   | KindNoCantonalRates
   | KindNoMunicipalSteuerfuss
+  | KindNoThirdPillarMaximum
+  | KindTaxes
   | KindOverflow
   deriving (Show, Eq, Enum, Bounded)
 
@@ -107,6 +112,8 @@ setAsideErrorKind = \case
   SetAsideErrorTaggedBoth _ _ _ -> KindTaggedBoth
   SetAsideErrorNoCantonalRates _ -> KindNoCantonalRates
   SetAsideErrorNoMunicipalSteuerfuss _ _ -> KindNoMunicipalSteuerfuss
+  SetAsideErrorNoThirdPillarMaximum _ -> KindNoThirdPillarMaximum
+  SetAsideErrorTaxes _ -> KindTaxes
   SetAsideErrorOverflow -> KindOverflow
 
 errorScenario :: SetAsideErrorKind -> FilePath
@@ -121,4 +128,6 @@ errorScenario = \case
   KindTaggedBoth -> "tagged-both"
   KindNoCantonalRates -> "no-cantonal-rates"
   KindNoMunicipalSteuerfuss -> "no-municipal-steuerfuss"
+  KindNoThirdPillarMaximum -> "no-third-pillar-maximum"
+  KindTaxes -> "taxes"
   KindOverflow -> "overflow"

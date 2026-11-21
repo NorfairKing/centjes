@@ -11,6 +11,7 @@ module Centjes.Switzerland.Report.Taxes.Types
   ( TaxesInput (..),
     PartitionedExpenseAccounts (..),
     TaxesReport (..),
+    taxesReportTotalBusinessExpenses,
     PartitionedExpenses (..),
     PrivateExpense (..),
     AssetAccount (..),
@@ -446,6 +447,25 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
           Amount.sum (map educationExpenseCHFAmount taxesReportEducationExpenses) == Just taxesReportTotalEducationExpenses,
         validateChildrenCosts taxesReportChildrenCosts
       ]
+
+-- | The total of every business expense that the report declares, in CHF,
+-- which is what comes off the revenue to make the profit.
+-- Nothing if it is too big to add up.
+taxesReportTotalBusinessExpenses :: TaxesReport ann -> Maybe Money.Amount
+-- Matching every field positionally makes a new field fail to compile here,
+-- because it may be a business expense.
+taxesReportTotalBusinessExpenses taxesReport@(TaxesReport _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) =
+  let TaxesReport {..} = taxesReport
+   in Amount.sum
+        [ partitionedExpensesTotalBusinessExpenses taxesReportInsuranceExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportHomeofficeExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportElectricityExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportPhoneExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportTravelExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportInternetExpenses,
+          depreciationScheduleDepreciation taxesReportMovables,
+          depreciationScheduleDepreciation taxesReportMachinery
+        ]
 
 validatePartitionedExpenses ::
   String ->

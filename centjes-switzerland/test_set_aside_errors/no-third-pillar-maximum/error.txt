@@ -1,0 +1,4 @@
+[0;91;1m[error][0m: No maximum third pillar contribution is known for 2028
+     [0;90;1m•[0m
+     [0;90;1m│[0m [0;96mHint: Add it to thirdPillarMaximum in centjes-switzerland.[0m
+[0;90;1m─────╯[0m

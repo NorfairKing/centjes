@@ -26,6 +26,7 @@ import qualified Data.Text as T
 import Data.Time
 import qualified Data.Vector as V
 import Data.Word
+import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
 import qualified Money.Amount as Amount
 import Money.QuantisationFactor (QuantisationFactor (..))
@@ -43,7 +44,7 @@ runCentjesSwitzerlandSetAside Settings {..} SetAsideSettings {..} =
       report <-
         liftIO $
           checkValidation diag $
-            produceSetAsideReport setAsideSettingInput today (splitPrices settingPricesFile ledger) ledger
+            produceSetAsideReport setAsideSettingInput setAsideSettingTaxesInput today (splitPrices settingPricesFile ledger) ledger
       liftIO $
         putChunksLocaleWith setAsideSettingTerminalCapabilities $
           renderSetAsideReport report
@@ -68,9 +69,14 @@ renderSetAsideReport SetAsideReport {..} =
       year = T.pack (show setAsideReportYear)
       taxLines :: [SetAsideLine]
       taxLines = [setAsideReportWealthTax, setAsideReportSocialSecurity, setAsideReportCantonal, setAsideReportFederal]
+      thirdPillarRows :: [ThirdPillarRow]
+      thirdPillarRows = thirdPillarLineRows setAsideReportRevenue setAsideReportThirdPillar
       percentageWidth :: Int
       percentageWidth =
-        maximum (0 : [T.length percentage | SetAsideLine {..} <- taxLines, Just percentage <- map rowPercentage setAsideLineRows])
+        maximum $
+          0
+            : [T.length percentage | SetAsideLine {..} <- taxLines, Just percentage <- map rowPercentage setAsideLineRows]
+            ++ [T.length percentage | ThirdPillarRow {..} <- thirdPillarRows, Just percentage <- [thirdPillarRowPercentage]]
       amountWidth :: Max Word8
       amountWidth =
         foldMap accountWidth $
@@ -78,6 +84,7 @@ renderSetAsideReport SetAsideReport {..} =
             : wealthTaxBasisTaxableWealth
             : wealthTaxBasisSimpleTax
             : concatMap (\SetAsideLine {..} -> setAsideLineSurplus : map setAsideRowAmount setAsideLineRows) taxLines
+            ++ map thirdPillarRowAmount thirdPillarRows
       row :: Chunk -> Maybe T.Text -> Money.Account -> [Chunk]
       row label mPercentage account =
         [ label,
@@ -88,13 +95,15 @@ renderSetAsideReport SetAsideReport {..} =
         ]
       emptyRow :: [Chunk]
       emptyRow = replicate 5 ""
+      title :: T.Text -> [Chunk]
+      title t = fore yellow (chunk t) : replicate 4 ""
       section :: T.Text -> [[Chunk]] -> SetAsideLine -> [[Chunk]]
-      section title basisRows SetAsideLine {..} =
+      section sectionTitle basisRows SetAsideLine {..} =
         concat
-          [ [fore yellow (chunk title) : replicate 4 ""],
+          [ [title sectionTitle],
             basisRows,
             map (\r -> row (indented (rowLabel r)) (rowPercentage r) (setAsideRowAmount r)) setAsideLineRows,
-            [ row ((fore white . bold) "  Surplus") Nothing setAsideLineSurplus,
+            [ row (total "Surplus") Nothing setAsideLineSurplus,
               emptyRow
             ]
           ]
@@ -102,6 +111,11 @@ renderSetAsideReport SetAsideReport {..} =
       revenueRow = row (indented "Revenue") Nothing setAsideReportRevenue
       wealthTaxTitle :: T.Text
       wealthTaxTitle = T.concat ["Wealth tax ", year, ", on wealth of ", T.pack (show wealthTaxBasisDay)]
+      thirdPillarSection :: [[Chunk]]
+      thirdPillarSection =
+        title (T.unwords ["Pillar 3a", year])
+          : map (\ThirdPillarRow {..} -> row thirdPillarRowLabel thirdPillarRowPercentage thirdPillarRowAmount) thirdPillarRows
+          ++ [emptyRow]
       rows :: [[Chunk]]
       rows =
         concat
@@ -113,11 +127,67 @@ renderSetAsideReport SetAsideReport {..} =
               setAsideReportWealthTax,
             section (T.unwords ["SVA", year]) [revenueRow] setAsideReportSocialSecurity,
             section (T.unwords ["Cantonal", year]) [revenueRow] setAsideReportCantonal,
-            section (T.unwords ["Federal", year]) [revenueRow] setAsideReportFederal
+            section (T.unwords ["Federal", year]) [revenueRow] setAsideReportFederal,
+            thirdPillarSection
           ]
    in renderTable (table (map (map pure) rows))
         ++ ["\n", fore yellow "To do", "\n"]
         ++ renderActions setAsideReportActions setAsideReportSurpluses
+        ++ renderThirdPillarAction setAsideReportThirdPillar
+
+data ThirdPillarRow = ThirdPillarRow
+  { thirdPillarRowLabel :: !Chunk,
+    thirdPillarRowPercentage :: !(Maybe T.Text),
+    thirdPillarRowAmount :: !Money.Account
+  }
+
+-- | The rows down to the net earned income add up to it, and the rows from
+-- the limit down add up to the room that is left.
+thirdPillarLineRows :: Money.Account -> ThirdPillarLine -> [ThirdPillarRow]
+thirdPillarLineRows revenue ThirdPillarLine {..} =
+  [ ThirdPillarRow (indented "Revenue") Nothing revenue,
+    ThirdPillarRow (indented "Business expenses") Nothing (negative thirdPillarLineBusinessExpenses),
+    ThirdPillarRow (indented "SVA") Nothing thirdPillarLineSocialSecurity,
+    ThirdPillarRow (total "Net earned income") Nothing thirdPillarLineNetEarnedIncome,
+    case thirdPillarLineLimit of
+      ThirdPillarLimitShare rate amount -> ThirdPillarRow (indented "Limit") (Just (T.pack (showPercentage rate))) amount
+      ThirdPillarLimitMaximum amount -> ThirdPillarRow (indented "Limit, the maximum") Nothing amount,
+    ThirdPillarRow (indented "Contributions") Nothing (negative thirdPillarLineContributions),
+    ThirdPillarRow (total "Room left") Nothing thirdPillarLineRoom
+  ]
+
+-- | Without turning zero into a negative zero that renders as -0.00.
+negative :: Amount.Amount -> Money.Account
+negative amount =
+  if amount == Amount.zero
+    then Account.zero
+    else Account.Negative amount
+
+-- | How much to pay into the third pillar, rounded down so that it fits.
+renderThirdPillarAction :: ThirdPillarLine -> [Chunk]
+renderThirdPillarAction ThirdPillarLine {..} =
+  let format :: Amount.Amount -> T.Text
+      format = T.pack . Amount.format chfQuantisationFactor
+      account :: T.Text
+      account = AccountName.toText thirdPillarLineAccount
+   in case thirdPillarLineRoom of
+        Account.Positive room
+          | roundDownToHundreds room == Amount.zero -> ["  Pillar 3a: nothing left to pay in.\n"]
+          | otherwise ->
+              [ "  Pillar 3a: pay in ",
+                fore green $ chunk $ format $ roundDownToHundreds room,
+                chunk $ T.concat [" CHF (", format room, " CHF left), into "],
+                fore white (chunk account),
+                ", before the end of the year.\n"
+              ]
+        Account.Negative excess ->
+          [ "  Pillar 3a: ",
+            fore red $ chunk $ format excess,
+            " CHF more paid in than can be deducted.\n"
+          ]
+
+total :: T.Text -> Chunk
+total t = (fore white . bold) $ chunk $ T.concat ["  ", t]
 
 rowLabel :: SetAsideRow -> T.Text
 rowLabel = \case

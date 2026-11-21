@@ -13,7 +13,6 @@ spec = do
       duplicateSetAsideAccounts
         SetAsideInput
           { setAsideInputYear = 2026,
-            setAsideInputTagUndeclared = "undeclared",
             setAsideInputSocialSecurity =
               SetAsideTax
                 { setAsideTaxRate = 0.12,
@@ -44,7 +43,6 @@ spec = do
       duplicateSetAsideAccounts
         SetAsideInput
           { setAsideInputYear = 2026,
-            setAsideInputTagUndeclared = "undeclared",
             setAsideInputSocialSecurity =
               SetAsideTax
                 { setAsideTaxRate = 0.12,
@@ -75,7 +73,6 @@ spec = do
       duplicateSetAsideAccounts
         SetAsideInput
           { setAsideInputYear = 2026,
-            setAsideInputTagUndeclared = "undeclared",
             setAsideInputSocialSecurity =
               SetAsideTax
                 { setAsideTaxRate = 0.12,

@@ -1,0 +1,15 @@
+currency CHF 0.01
+
+tag taxable
+tag not-taxable
+
+account equity:starting
+account assets:bank
+  + tag taxable
+account assets:pillar-3a
+  + tag not-taxable
+
+2027-12-31
+  | Opening balance
+  * equity:starting -1000 CHF
+  * assets:bank      1000 CHF

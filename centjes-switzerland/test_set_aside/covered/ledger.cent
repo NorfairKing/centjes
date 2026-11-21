@@ -7,24 +7,34 @@ currency STOCK 1
 currency BTC 0.00000001
 
 tag taxable
+tag undeclared
 tag not-taxable
 
 account equity:starting
 account assets:bank
+  + attach evidence.txt
   + tag taxable
 account assets:broker
+  + attach evidence.txt
   + tag taxable
 account assets:crypto
+  + attach evidence.txt
+  + tag undeclared
   + tag taxable
 account assets:joint
+  + attach evidence.txt
   + tag taxable
 account assets:pillar-3a
+  + attach evidence.txt
   + tag not-taxable
 account assets:sva
+  + attach evidence.txt
   + tag taxable
 account assets:federal
+  + attach evidence.txt
   + tag taxable
 account assets:wealth-tax
+  + attach evidence.txt
   + tag taxable
 account expenses:cantonal
 account income:foreign
@@ -48,11 +58,13 @@ account income:domestic
   | Foreign client
   * assets:bank                 10000 USD
   * income:foreign             -10000 USD
+  + attach evidence.txt
 
 2026-04-01
   | Domestic client
   * assets:bank                  5000 CHF
   * income:domestic             -5000 CHF
+  + attach evidence.txt
 
 2026-07-01
   | Save for SVA
@@ -83,3 +95,14 @@ account income:domestic
   | Saved for federal taxes after the valuation day, which does not count yet
   * assets:bank    -50 CHF
   * assets:federal  50 CHF
+
+account assets:movables
+  + attach evidence.txt
+account assets:machinery
+  + attach evidence.txt
+
+2025-12-31
+  | Nothing to depreciate
+  * assets:movables  0 CHF
+  * assets:machinery 0 CHF
+  * equity:starting  0 CHF

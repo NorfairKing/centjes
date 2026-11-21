@@ -228,6 +228,9 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
 
 data SetAsideSettings = SetAsideSettings
   { setAsideSettingInput :: !SetAsideInput,
+    -- | The settings of the taxes report, which set-aside produces for its
+    -- revenue, business expenses and third pillar contributions.
+    setAsideSettingTaxesInput :: !TaxesInput,
     setAsideSettingTerminalCapabilities :: !TerminalCapabilities
   }
 
@@ -238,5 +241,6 @@ instance HasParser SetAsideSettings where
 parseSetAsideSettings :: Parser SetAsideSettings
 parseSetAsideSettings = do
   setAsideSettingInput <- settingsParser
+  setAsideSettingTaxesInput <- settingsParser
   setAsideSettingTerminalCapabilities <- runIO getTerminalCapabilitiesFromEnv
   pure SetAsideSettings {..}

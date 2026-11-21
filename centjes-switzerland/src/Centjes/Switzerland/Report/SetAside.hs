@@ -16,6 +16,9 @@ module Centjes.Switzerland.Report.SetAside
     produceSetAsideReport,
     shareOfRevenue,
     roundUpToHundreds,
+    roundDownToHundreds,
+    thirdPillarMaximum,
+    thirdPillarLimit,
     zurichMarriedWealthTariff,
     simpleWealthTax,
     zurichCantonalSteuerfuss,
@@ -30,6 +33,9 @@ import Centjes.Ledger
 import Centjes.Location
 import Centjes.Switzerland.Report.Common
 import Centjes.Switzerland.Report.SetAside.Types
+import Centjes.Switzerland.Report.Taxes (produceTaxesReport)
+import Centjes.Switzerland.Report.Taxes.Types
+import Centjes.Switzerland.Reporter (runReporter)
 import qualified Centjes.Timestamp as Timestamp
 import Centjes.Validation
 import Control.Monad
@@ -48,15 +54,20 @@ import qualified Money.MultiAccount as MultiAccount
 import qualified Money.QuantisationFactor as QuantisationFactor
 
 -- | Today is only used to value wealth while the year still runs.
+--
+-- The revenue, the business expenses and the third pillar contributions come
+-- from the taxes report of the year, so that set-aside counts what the tax
+-- declaration will, and fails where the tax declaration would.
 produceSetAsideReport ::
   forall ann.
   (Ord ann) =>
   SetAsideInput ->
+  TaxesInput ->
   Day ->
   SetAsidePrices ann ->
   Ledger ann ->
   Validation (SetAsideError ann) SetAsideReport
-produceSetAsideReport SetAsideInput {..} today prices Ledger {..} = do
+produceSetAsideReport SetAsideInput {..} taxesInput today prices ledger@Ledger {..} = do
   chf <- case M.lookup (CurrencySymbol "CHF") ledgerCurrencies of
     Nothing -> validationFailure SetAsideErrorNoCHF
     Just lqf@(Located _ qf) ->
@@ -76,13 +87,23 @@ produceSetAsideReport SetAsideInput {..} today prices Ledger {..} = do
       validationFailure $
         SetAsideErrorUndeclaredAccount an
 
+  thirdPillarMaximumCHF <-
+    maybe (validationFailure $ SetAsideErrorNoThirdPillarMaximum setAsideInputYear) pure $
+      thirdPillarMaximum setAsideInputYear
+
   let valuationDay :: Day
       valuationDay = min today (fromGregorian setAsideInputYear 12 31)
   (setAsideReportWealthTaxBasis, wealthTaxRows) <-
     computeWealthTax chf setAsideInputYear valuationDay setAsideInputWealth prices ledgerAccounts ledgerTransactions
 
-  -- Income in another currency is taxed at the rate of the day it came in,
-  -- and the ESTV's daily rates are the ones the tax declaration uses.
+  -- The taxes command only converts with the ESTV's prices.
+  (taxesReport, _) <-
+    mapValidationFailure SetAsideErrorTaxes $
+      runReporter $
+        produceTaxesReport
+          taxesInput {taxesInputYear = setAsideInputYear}
+          ledger {ledgerPrices = setAsidePricesOfficial prices}
+
   let officialDailyPriceGraphs = pricesToDailyPriceGraphs (setAsidePricesOfficial prices)
   let realPostings :: [(Day, Posting ann)]
       realPostings =
@@ -92,8 +113,6 @@ produceSetAsideReport SetAsideInput {..} today prices Ledger {..} = do
           Located _ posting <- V.toList transactionPostings,
           postingReal posting
         ]
-  let yearPostings :: [(Day, Posting ann)]
-      yearPostings = filter (dayInYear setAsideInputYear . fst) realPostings
   -- Money set aside in earlier years still counts, as long as it has not
   -- been spent.
   let reserveBalance :: AccountName -> Validation (SetAsideError ann) Account.Account
@@ -102,19 +121,12 @@ produceSetAsideReport SetAsideInput {..} today prices Ledger {..} = do
           chf
           officialDailyPriceGraphs
           [(day, p) | (day, p) <- realPostings, day <= valuationDay, locatedValue (postingAccountName p) == an]
-  -- Revenue is income that the taxes report declares.
-  let isRevenue :: AccountName -> Bool
-      isRevenue an = case M.lookup an ledgerAccounts of
-        Just (Located _ Account {..}) ->
-          accountType == AccountTypeIncome && not (M.member setAsideInputTagUndeclared accountTags)
-        Nothing -> False
-  income <-
-    sumPostingsInCHF
-      chf
-      officialDailyPriceGraphs
-      [(day, p) | (day, p) <- yearPostings, isRevenue (locatedValue (postingAccountName p))]
-  -- Income is booked as negative.
-  let setAsideReportRevenue = negateAccount income
+  let setAsideReportRevenue = Account.fromAmount (taxesReportTotalRevenues taxesReport)
+  socialSecurity <-
+    maybe (validationFailure SetAsideErrorOverflow) pure $
+      shareOfRevenue (setAsideTaxRate setAsideInputSocialSecurity) setAsideReportRevenue
+  setAsideReportThirdPillar <-
+    computeThirdPillar thirdPillarMaximumCHF socialSecurity (taxesInputThirdPillarAssetsAccount taxesInput) taxesReport
   let line :: [SetAsideRow] -> [AccountName] -> Validation (SetAsideError ann) SetAsideLine
       line owedRows reserveAccounts = do
         reserveRows <- forM reserveAccounts $ \an -> SetAsideRowReserve an <$> reserveBalance an
@@ -159,6 +171,77 @@ shareOfRevenue :: Scientific -> Account.Account -> Maybe Account.Account
 shareOfRevenue rate revenue =
   Account.fromMinimalQuantisations $
     round (toRational rate * fromInteger (Account.toMinimalQuantisations revenue))
+
+-- | How much can still be paid into the third pillar this year.
+--
+-- The net earned income is the revenue minus the business expenses and SVA.
+computeThirdPillar ::
+  -- | The maximum for the year, in CHF
+  Integer ->
+  -- | SVA, positive
+  Account.Account ->
+  -- | Where contributions are paid into
+  AccountName ->
+  TaxesReport ann ->
+  Validation (SetAsideError ann) ThirdPillarLine
+computeThirdPillar maximumCHF socialSecurity thirdPillarLineAccount taxesReport = do
+  thirdPillarLineBusinessExpenses <-
+    maybe (validationFailure SetAsideErrorOverflow) pure $
+      taxesReportTotalBusinessExpenses taxesReport
+  let thirdPillarLineSocialSecurity = negateAccount socialSecurity
+  let thirdPillarLineContributions = taxesReportTotalThirdPillarContributions taxesReport
+  thirdPillarLineNetEarnedIncome <-
+    requireSum
+      [ Account.fromAmount (taxesReportTotalRevenues taxesReport),
+        negateAccount (Account.fromAmount thirdPillarLineBusinessExpenses),
+        thirdPillarLineSocialSecurity
+      ]
+  thirdPillarLineLimit <- maybe (validationFailure SetAsideErrorOverflow) pure $ thirdPillarLimit maximumCHF thirdPillarLineNetEarnedIncome
+  thirdPillarLineRoom <-
+    requireSum
+      [ thirdPillarLimitAmount thirdPillarLineLimit,
+        negateAccount (Account.fromAmount thirdPillarLineContributions)
+      ]
+  pure ThirdPillarLine {..}
+
+-- | The most that someone who is self-employed and not in a pension fund can
+-- pay into the third pillar in a year, in CHF.
+--
+-- It is 40% of the upper limit of the BVG (Art. 7 Abs. 1 lit. b BVV 3), so
+-- it moves when that does, and the BSV announces it each October.
+thirdPillarMaximum :: Year -> Maybe Integer
+thirdPillarMaximum = \case
+  -- https://www.efd.admin.ch/de/nsb?id=102377
+  2025 -> Just 36288
+  -- https://www.bsv.admin.ch/de/beitrag-3-sauele
+  2026 -> Just 36288
+  -- https://www.bsv.admin.ch/de/newnsb/6ck3kzVxBNQ4
+  2027 -> Just 36864
+  _ -> Nothing
+
+-- | The share of the net earned income that someone who is self-employed and
+-- not in a pension fund can pay into the third pillar, up to the maximum in
+-- CHF (Art. 7 Abs. 1 lit. b BVV 3).
+thirdPillarLimit :: Integer -> Account.Account -> Maybe ThirdPillarLimit
+thirdPillarLimit maximumCHF netEarnedIncome = do
+  let rate :: Scientific
+      rate = 0.2
+  maximumAmount <- Account.fromMinimalQuantisations (maximumCHF * 100)
+  share <- case netEarnedIncome of
+    Account.Negative _ -> pure Account.zero
+    Account.Positive _ -> shareOfRevenue rate netEarnedIncome
+  pure $
+    if Account.toMinimalQuantisations share > Account.toMinimalQuantisations maximumAmount
+      then ThirdPillarLimitMaximum maximumAmount
+      else ThirdPillarLimitShare rate share
+
+-- | Round CHF down to whole hundreds, to have a round amount to transfer that
+-- is not too much.
+roundDownToHundreds :: Amount.Amount -> Amount.Amount
+roundDownToHundreds amount =
+  let hundred :: Word64
+      hundred = 100 * 100
+   in Amount.fromMinimalQuantisations (Amount.toMinimalQuantisations amount `div` hundred * hundred)
 
 -- | Round CHF up to whole hundreds, to have a round amount to transfer that
 -- is at least enough.

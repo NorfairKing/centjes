@@ -60,7 +60,7 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
       val <- runValidationT $ doCompleteCheck declarations
       void $ liftIO $ checkValidation diag val
 
-      validation <- liftIO $ runValidationT $ runReporter $ produceVATReport vatSettingInput ledger
+      let validation = runReporter $ produceVATReport vatSettingInput ledger
       (vatReport, reportFiles) <- liftIO $ checkValidation diag validation
 
       let includedFiles = M.union reportFiles centjesFiles

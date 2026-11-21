@@ -425,12 +425,6 @@
     [34mthe year to check the set-asides of, default: this year[m
     option: [37m--year[m [33mYYYY[m
     
-    [34mtag of income accounts that are not revenue[m
-    config:
-      [37mset-aside.tag-undeclared[m: # [32mor null[m
-        [33m<string>[m
-    default: [33m"undeclared"[m
-    
     [34mthe share of revenue that is set aside for this tax, between 0 and 1[m
     config:
       [37mset-aside.sva.rate[m: # [32mor null[m
@@ -498,6 +492,226 @@
         - [33m<string>[m
     default: [33m[][m
     
+    [34myour first name[m
+    config:
+      [37mfirst-name[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34myour last name[m
+    config:
+      [37mlast-name[m: # [32mor null[m
+        [33m<string>[m
+    
+    [34mThe AHV identifier.[m
+    config:
+      [37mahv-id[m: # [32mor null[m
+        [33m<string>[m
+    example: [33m7461111222233[m
+    
+    [34mthe year to produce the report for[m
+    option: [37m--year[m [33mYYYY[m
+    config:
+      [37myear[m: # [32mor null[m
+        [33m<integer>[m
+    
+    [34mtag to use for undeclared asset accounts[m
+    config:
+      [37mtag-undeclared[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"undeclared"[m
+    
+    [34mtag to use for deductible purchases[m
+    config:
+      [37mtag-deductible[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"deductible"[m
+    
+    [34mtag to use for non-deductible purchases[m
+    config:
+      [37mtag-not-deductible[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"not-deductible"[m
+    
+    [34mtag to use for tax-deductible purchases[m
+    config:
+      [37mtag-tax-deductible[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"tax-deductible"[m
+    
+    [34mtag to use for non-tax-deductible purchases[m
+    config:
+      [37mtag-not-tax-deductible[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"not-tax-deductible"[m
+    
+    [34mthe account to use for third pillar assets[m
+    config:
+      [37mthird-pillar-assets-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:third-pillar"[m
+    
+    [34mthe account to use for third pillar insurance expenses[m
+    config:
+      [37mthird-pillar-insurance-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:insurance:third-pillar"[m
+    
+    [34mthe account to use for accident insurance expenses[m
+    config:
+      [37maccident-insurance-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:insurance:accident"[m
+    
+    [34mthe account to use for daily allowance insurance expenses[m
+    config:
+      [37mdaily-allowance-insurance-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:insurance:daily-allowance"[m
+    
+    [34mthe account to use for homeoffice expenses[m
+    config:
+      [37mhomeoffice-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:rent:homeoffice"[m
+    
+    [34mthe account to use for private homeoffice expenses[m
+    config:
+      [37mhomeoffice-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:rent:private"[m
+    
+    [34mthe account to use for electricity expenses[m
+    config:
+      [37melectricity-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:electricity:homeoffice"[m
+    
+    [34mthe account to use for private electricity expenses[m
+    config:
+      [37melectricity-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:electricity:private"[m
+    
+    [34mthe account to use for phone expenses[m
+    config:
+      [37mphone-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:phone:professional"[m
+    
+    [34mthe account to use for private phone expenses[m
+    config:
+      [37mphone-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:phone:private"[m
+    
+    [34mthe account to use for travel expenses[m
+    config:
+      [37mtravel-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:travel:professional"[m
+    
+    [34mthe account to use for private travel expenses[m
+    config:
+      [37mtravel-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:travel:private"[m
+    
+    [34mthe account to use for internet expenses[m
+    config:
+      [37minternet-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:internet:homeoffice"[m
+    
+    [34mthe account to use for private internet expenses[m
+    config:
+      [37minternet-private-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:internet:private"[m
+    
+    [34mthe account to use for health insurance premiums[m
+    config:
+      [37mhealth-insurance-premiums-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:insurance:health"[m
+    
+    [34mthe account to use for other health expenses[m
+    config:
+      [37mhealth-other-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:other"[m
+    
+    [34mthe account to use for dentist expenses[m
+    config:
+      [37mhealth-dentist-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:dentist"[m
+    
+    [34mthe account to use for doctor and prescription expenses[m
+    config:
+      [37mhealth-doctor-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:doctor"[m
+    
+    [34mthe account to use for hospital stay expenses[m
+    config:
+      [37mhealth-hospital-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:hospital"[m
+    
+    [34mthe account to use for therapy and cure expenses[m
+    config:
+      [37mhealth-therapy-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:health:therapy"[m
+    
+    [34mthe account to use for daycare expenses[m
+    config:
+      [37mdaycare-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:daycare"[m
+    
+    [34mthe account to use for education expenses[m
+    config:
+      [37meducation-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:education"[m
+    
+    [34mthe account to use for movables assets[m
+    config:
+      [37mmovables-assets-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:movables"[m
+    
+    [34mthe expenses account for movables purchases[m
+    config:
+      [37mmovables-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:movables"[m
+    
+    [34mthe depreciation rate for movables (e.g. 0.25 for 25%)[m
+    config:
+      [37mmovables-depreciation-rate[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m1 % 4[m
+    
+    [34mthe account to use for machinery assets[m
+    config:
+      [37mmachinery-assets-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"assets:machinery"[m
+    
+    [34mthe expenses account for machinery purchases[m
+    config:
+      [37mmachinery-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:machinery"[m
+    
+    [34mthe depreciation rate for machinery (e.g. 0.4 for 40%)[m
+    config:
+      [37mmachinery-depreciation-rate[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m2 % 5[m
+    
   
 
 [36mOptions[m:
@@ -518,6 +732,7 @@
       [37m--output[m[36m|[m[37m-o[m [34mWhere to put the resulting file[m                       
   [35mset-aside[m [34mcompare what is set aside for taxes with what they will cost[m
       [37m--year[m [34mthe year to check the set-asides of, default: this year[m
+      [37m--year[m [34mthe year to produce the report for[m                     
   [37m--base-dir[m [34mbase directory[m
   [37m-l[m[36m|[m[37m--ledger[m [34mledger file[m default: [33m"ledger.cent"[m
   [37m--prices[m [34mprices file[m default: [33m"currency-rates.cent"[m
@@ -825,11 +1040,6 @@
   [37mdownload-rates.output[m:
     # [32mor null[m
     [33m<string>[m
-  [34mtag of income accounts that are not revenue[m
-  default: [33m"undeclared"[m
-  [37mset-aside.tag-undeclared[m:
-    # [32mor null[m
-    [33m<string>[m
   [34mthe share of revenue that is set aside for this tax, between 0 and 1[m
   example: [33m0.12[m
   [37mset-aside.sva.rate[m:
@@ -886,6 +1096,188 @@
   [37mset-aside.wealth.reserves[m:
     # [32mor null[m
     - [33m<string>[m
+  [34myour first name[m
+  [37mfirst-name[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34myour last name[m
+  [37mlast-name[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mThe AHV identifier.[m
+  example: [33m7461111222233[m
+  [37mahv-id[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe year to produce the report for[m
+  [37myear[m:
+    # [32mor null[m
+    [33m<integer>[m
+  [34mtag to use for undeclared asset accounts[m
+  default: [33m"undeclared"[m
+  [37mtag-undeclared[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for deductible purchases[m
+  default: [33m"deductible"[m
+  [37mtag-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for non-deductible purchases[m
+  default: [33m"not-deductible"[m
+  [37mtag-not-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for tax-deductible purchases[m
+  default: [33m"tax-deductible"[m
+  [37mtag-tax-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mtag to use for non-tax-deductible purchases[m
+  default: [33m"not-tax-deductible"[m
+  [37mtag-not-tax-deductible[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for third pillar assets[m
+  default: [33m"assets:third-pillar"[m
+  [37mthird-pillar-assets-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for third pillar insurance expenses[m
+  default: [33m"expenses:insurance:third-pillar"[m
+  [37mthird-pillar-insurance-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for accident insurance expenses[m
+  default: [33m"expenses:insurance:accident"[m
+  [37maccident-insurance-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for daily allowance insurance expenses[m
+  default: [33m"expenses:insurance:daily-allowance"[m
+  [37mdaily-allowance-insurance-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for homeoffice expenses[m
+  default: [33m"expenses:rent:homeoffice"[m
+  [37mhomeoffice-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for private homeoffice expenses[m
+  default: [33m"expenses:rent:private"[m
+  [37mhomeoffice-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for electricity expenses[m
+  default: [33m"expenses:electricity:homeoffice"[m
+  [37melectricity-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for private electricity expenses[m
+  default: [33m"expenses:electricity:private"[m
+  [37melectricity-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for phone expenses[m
+  default: [33m"expenses:phone:professional"[m
+  [37mphone-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for private phone expenses[m
+  default: [33m"expenses:phone:private"[m
+  [37mphone-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for travel expenses[m
+  default: [33m"expenses:travel:professional"[m
+  [37mtravel-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for private travel expenses[m
+  default: [33m"expenses:travel:private"[m
+  [37mtravel-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for internet expenses[m
+  default: [33m"expenses:internet:homeoffice"[m
+  [37minternet-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for private internet expenses[m
+  default: [33m"expenses:internet:private"[m
+  [37minternet-private-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for health insurance premiums[m
+  default: [33m"expenses:insurance:health"[m
+  [37mhealth-insurance-premiums-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for other health expenses[m
+  default: [33m"expenses:health:other"[m
+  [37mhealth-other-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for dentist expenses[m
+  default: [33m"expenses:health:dentist"[m
+  [37mhealth-dentist-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for doctor and prescription expenses[m
+  default: [33m"expenses:health:doctor"[m
+  [37mhealth-doctor-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for hospital stay expenses[m
+  default: [33m"expenses:health:hospital"[m
+  [37mhealth-hospital-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for therapy and cure expenses[m
+  default: [33m"expenses:health:therapy"[m
+  [37mhealth-therapy-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for daycare expenses[m
+  default: [33m"expenses:daycare"[m
+  [37mdaycare-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for education expenses[m
+  default: [33m"expenses:education"[m
+  [37meducation-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for movables assets[m
+  default: [33m"assets:movables"[m
+  [37mmovables-assets-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe expenses account for movables purchases[m
+  default: [33m"expenses:movables"[m
+  [37mmovables-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe depreciation rate for movables (e.g. 0.25 for 25%)[m
+  default: [33m1 % 4[m
+  [37mmovables-depreciation-rate[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for machinery assets[m
+  default: [33m"assets:machinery"[m
+  [37mmachinery-assets-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe expenses account for machinery purchases[m
+  default: [33m"expenses:machinery"[m
+  [37mmachinery-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe depreciation rate for machinery (e.g. 0.4 for 40%)[m
+  default: [33m2 % 5[m
+  [37mmachinery-depreciation-rate[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mbase directory[m
   [37mbase-dir[m:
     # [32mor null[m

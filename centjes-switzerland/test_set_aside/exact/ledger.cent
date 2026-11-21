@@ -4,10 +4,13 @@ tag taxable
 
 account equity:starting
 account assets:bank
+  + attach evidence.txt
   + tag taxable
 account assets:savings:first
+  + attach evidence.txt
   + tag taxable
 account assets:savings:second
+  + attach evidence.txt
   + tag taxable
 account liabilities:loan:house
   + tag taxable
@@ -18,8 +21,10 @@ account liabilities:loan:study
 account liabilities:loan:family
   + tag taxable
 account assets:sva
+  + attach evidence.txt
   + tag taxable
 account assets:federal
+  + attach evidence.txt
   + tag taxable
 account expenses:cantonal
 account income:domestic
@@ -43,6 +48,7 @@ account income:domestic
   | Domestic client
   * assets:bank                  5000 CHF
   * income:domestic             -5000 CHF
+  + attach evidence.txt
 
 2026-07-01
   | Save for SVA
@@ -58,3 +64,14 @@ account income:domestic
   | Save for federal taxes
   * assets:bank    -100 CHF
   * assets:federal  100 CHF
+
+account assets:movables
+  + attach evidence.txt
+account assets:machinery
+  + attach evidence.txt
+
+2025-12-31
+  | Nothing to depreciate
+  * assets:movables  0 CHF
+  * assets:machinery 0 CHF
+  * equity:starting  0 CHF

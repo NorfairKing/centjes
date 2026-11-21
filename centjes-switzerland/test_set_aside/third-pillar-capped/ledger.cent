@@ -1,0 +1,44 @@
+currency CHF 0.01
+
+tag taxable
+tag not-taxable
+tag deductible
+tag not-deductible
+
+account equity:starting
+account assets:bank
+  + attach evidence.txt
+  + tag taxable
+account assets:pillar-3a
+  + attach evidence.txt
+  + tag not-taxable
+account income:domestic
+
+2025-12-31
+  | Opening balance
+  * equity:starting -100000 CHF
+  * assets:bank      100000 CHF
+
+2026-04-01
+  | Domestic client, enough to reach the maximum
+  * assets:bank       300000 CHF
+  * income:domestic  -300000 CHF
+  + attach evidence.txt
+
+2026-09-01
+  | Contribution, more than the maximum
+  * assets:bank      -40000 CHF
+  * assets:pillar-3a  40000 CHF
+  + tag deductible
+  + attach evidence.txt
+
+account assets:movables
+  + attach evidence.txt
+account assets:machinery
+  + attach evidence.txt
+
+2025-12-31
+  | Nothing to depreciate
+  * assets:movables  0 CHF
+  * assets:machinery 0 CHF
+  * equity:starting  0 CHF

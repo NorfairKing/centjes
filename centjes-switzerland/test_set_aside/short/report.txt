@@ -23,9 +23,19 @@ Federal 2026
   assets:federal                                   500.00 CHF
 [1m  Surplus[m                                         -500.00 CHF
                                                              
+Pillar 3a 2026                                               
+  Revenue                                        50000.00 CHF
+  Business expenses                                  0.00 CHF
+  SVA                                            -6000.00 CHF
+[1m  Net earned income[m                              44000.00 CHF
+  Limit                                   20 %    8800.00 CHF
+  Contributions                                      0.00 CHF
+[1m  Room left[m                                       8800.00 CHF
+                                                             
 
 To do
   Wealth tax: save 500.00 CHF (471.38 CHF short), into assets:wealth-tax.
   SVA: save 6000.00 CHF (6000.00 CHF short).
   Cantonal: pre-pay 3000.00 CHF (3000.00 CHF short), booked on expenses:cantonal.
   Federal: save 500.00 CHF (500.00 CHF short), into assets:federal.
+  Pillar 3a: pay in 8800.00 CHF (8800.00 CHF left), into assets:pillar-3a, before the end of the year.
