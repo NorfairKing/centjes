@@ -56,6 +56,7 @@ tag undeclared
 tag taxable
 tag not-taxable
 tag deductible
+tag not-deductible
 
 account equity:opening-balances
 account assets:bank
@@ -112,6 +113,7 @@ account income:gifts
     * assets:federal                  1000 CHF
     * assets:wealth-tax               1000 CHF
     * expenses:taxes:cantonal         2000 CHF
+    + tag not-deductible
 
 2026-07-31
     | Rent, a quarter of which is for the home office
