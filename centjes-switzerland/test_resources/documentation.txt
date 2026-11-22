@@ -189,6 +189,18 @@
         [33m<string>[m
     default: [33m"expenses:internet:private"[m
     
+    [34mthe account of the VAT paid on purchases[m
+    config:
+      [37mvat-expenses-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:VAT"[m
+    
+    [34mthe account to use for donations[m
+    config:
+      [37mdonations-account[m: # [32mor null[m
+        [33m<string>[m
+    default: [33m"expenses:charity"[m
+    
     [34mthe account to use for health insurance premiums[m
     config:
       [37mhealth-insurance-premiums-account[m: # [32mor null[m
@@ -372,7 +384,7 @@
         [33m<string>[m
     default: [33m"income:VAT"[m
     
-    [34mAccount name of your the VAT you've paid[m
+    [34mthe account of the VAT paid on purchases[m
     config:
       [37mvat-expenses-account[m: # [32mor null[m
         [33m<string>[m
@@ -652,6 +664,16 @@
   [37minternet-private-expenses-account[m:
     # [32mor null[m
     [33m<string>[m
+  [34mthe account of the VAT paid on purchases[m
+  default: [33m"expenses:VAT"[m
+  [37mvat-expenses-account[m:
+    # [32mor null[m
+    [33m<string>[m
+  [34mthe account to use for donations[m
+  default: [33m"expenses:charity"[m
+  [37mdonations-account[m:
+    # [32mor null[m
+    [33m<string>[m
   [34mthe account to use for health insurance premiums[m
   default: [33m"expenses:insurance:health"[m
   [37mhealth-insurance-premiums-account[m:
@@ -797,7 +819,7 @@
   [37mvat-income-account[m:
     # [32mor null[m
     [33m<string>[m
-  [34mAccount name of your the VAT you've paid[m
+  [34mthe account of the VAT paid on purchases[m
   default: [33m"expenses:VAT"[m
   [37mvat-expenses-account[m:
     # [32mor null[m

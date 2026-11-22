@@ -232,6 +232,25 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
   taxesReportTotalEducationExpenses <- requireSum $ map educationExpenseCHFAmount taxesReportEducationExpenses
 
+  taxesReportDonations <- forAccountPostings taxesInputDonationsAccount $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
+    withDeductibleTag taxesInput tl lp transactionTags $ do
+      let Located _ timestamp = transactionTimestamp
+      let day = Timestamp.toDay timestamp
+      donationDescription <- requireDescription transactionDescription
+      let Located al account = postingAccount
+      donationAmount <- requireExpensePositive al account
+      let donationTimestamp = timestamp
+      let donationCurrency = postingCurrency p
+      donationCHFAmount <- convertDaily al dailyPriceGraphs day donationCurrency taxesReportCHF donationAmount
+      ne <- requireNonEmptyEvidence tl transactionAttachments
+      donationEvidence <- forM ne $ \rf -> do
+        let fileInTarball = [reldir|expenses/donations|] </> filename rf
+        includeFile fileInTarball rf
+        pure fileInTarball
+      pure Donation {..}
+
+  taxesReportTotalDonations <- requireSum $ map donationCHFAmount taxesReportDonations
+
   taxesReportRevenues <- forMatchingPostings
     (\Account {..} Posting {..} -> postingReal && accountType == AccountTypeIncome)
     $ \(Located tl Transaction {..}) (Located al Account {..}) (Located pl p@Posting {..}) -> do
@@ -449,6 +468,60 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
               pure fileInTarball
             pure InternetExpense {..}
         )
+
+  -- Every expense account that a category claims, and the ones that are not
+  -- expenses of the business at all.
+  let claimedExpenseAccounts :: S.Set AccountName
+      claimedExpenseAccounts =
+        S.fromList $
+          [ taxesInputThirdPillarInsuranceExpensesAccount,
+            taxesInputAccidentInsuranceExpenseAccount,
+            taxesInputDailyAllowanceInsuranceExpenseAccount,
+            taxesInputHealthInsurancePremiumsAccount,
+            taxesInputHealthOtherAccount,
+            taxesInputHealthDentistAccount,
+            taxesInputHealthDoctorAccount,
+            taxesInputHealthHospitalAccount,
+            taxesInputHealthTherapyAccount,
+            taxesInputDaycareAccount,
+            taxesInputEducationAccount,
+            taxesInputDonationsAccount,
+            taxesInputMovablesExpensesAccount,
+            taxesInputMachineryExpensesAccount,
+            taxesInputVATExpensesAccount
+          ]
+            ++ concatMap
+              (\PartitionedExpenseAccounts {..} -> [partitionedExpenseAccountsBusiness, partitionedExpenseAccountsPrivate])
+              [ taxesInputHomeofficeExpenseAccounts,
+                taxesInputElectricityExpenseAccounts,
+                taxesInputPhoneExpenseAccounts,
+                taxesInputTravelExpenseAccounts,
+                taxesInputInternetExpenseAccounts
+              ]
+  taxesReportOtherBusinessExpenses <-
+    forMatchingPostings
+      ( \Account {..} Posting {..} ->
+          postingReal
+            && accountType == AccountTypeExpenses
+            && not (S.member (locatedValue postingAccountName) claimedExpenseAccounts)
+      )
+      $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->
+        withDeductibleTag taxesInput tl lp transactionTags $ do
+          let Located _ timestamp = transactionTimestamp
+          let day = Timestamp.toDay timestamp
+          otherBusinessExpenseDescription <- requireDescription transactionDescription
+          let Located al account = postingAccount
+          otherBusinessExpenseAmount <- requireExpensePositive al account
+          let otherBusinessExpenseTimestamp = timestamp
+          let otherBusinessExpenseCurrency = postingCurrency p
+          otherBusinessExpenseCHFAmount <- convertDaily al dailyPriceGraphs day otherBusinessExpenseCurrency taxesReportCHF otherBusinessExpenseAmount
+          ne <- requireNonEmptyEvidence tl transactionAttachments
+          otherBusinessExpenseEvidence <- forM ne $ \rf -> do
+            let fileInTarball = [reldir|expenses/other|] </> filename rf
+            includeFile fileInTarball rf
+            pure fileInTarball
+          pure OtherBusinessExpense {..}
+  taxesReportTotalOtherBusinessExpenses <- requireSum $ map otherBusinessExpenseCHFAmount taxesReportOtherBusinessExpenses
 
   let makeHealthExpenses account tarballSubdir =
         forAccountPostings account $ \(Located tl Transaction {..}) _ lp@(Located _ p@Posting {..}) ->

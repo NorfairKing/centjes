@@ -1,0 +1,242 @@
+{
+    "assets": [
+        {
+            "balance": "11632.22",
+            "balances": {
+                "CHF": {
+                    "converted": "7984.50",
+                    "original": "7984.50"
+                },
+                "USD": {
+                    "converted": "3647.72",
+                    "original": "4000.00"
+                }
+            },
+            "evidence": [
+                "assets/bank-statement.txt"
+            ],
+            "name": "assets:bank"
+        }
+    ],
+    "children_costs": {
+        "daycare": [],
+        "total_daycare": "0.00"
+    },
+    "donations": [],
+    "education_expenses": [],
+    "electricity_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "first_name": "John",
+    "health_costs": {
+        "dentist": [],
+        "doctor": [],
+        "hospital": [],
+        "insurance_premiums": [],
+        "other": [],
+        "therapy": [],
+        "total_dentist": "0.00",
+        "total_doctor": "0.00",
+        "total_hospital": "0.00",
+        "total_insurance_premiums": "0.00",
+        "total_other": "0.00",
+        "total_therapy": "0.00"
+    },
+    "homeoffice_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "insurance_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "internet_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "last_name": "Doe",
+    "machinery": {
+        "closing_balance": "0.00",
+        "depreciation": "0.00",
+        "depreciation_rate": "40%",
+        "opening_balance": "0.00",
+        "opening_balance_evidence": [
+            "depreciation/machinery/machinery-balance.txt"
+        ],
+        "purchases": [],
+        "total_purchases": "0.00"
+    },
+    "movables": {
+        "closing_balance": "0.00",
+        "depreciation": "0.00",
+        "depreciation_rate": "25%",
+        "opening_balance": "0.00",
+        "opening_balance_evidence": [
+            "depreciation/movables/movables-balance.txt"
+        ],
+        "purchases": [],
+        "total_purchases": "0.00"
+    },
+    "other_business_expenses": [
+        {
+            "amount": {
+                "formatted": "5000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "5000.00",
+            "day": "2024-01-02",
+            "description": "Computer",
+            "evidence": [
+                "expenses/other/receipt-computer.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "0.50",
+                "symbol": "CHF"
+            },
+            "amount_chf": "0.50",
+            "day": "2024-01-05",
+            "description": "Example with transaction cost",
+            "evidence": [
+                "expenses/other/receipt-coffee.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "5.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "5.00",
+            "day": "2024-01-05",
+            "description": "Example with transaction cost",
+            "evidence": [
+                "expenses/other/receipt-coffee.txt"
+            ]
+        }
+    ],
+    "phone_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "rates": {
+        "USD": "0.9119"
+    },
+    "revenues": [
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "1000.00",
+            "day": "2024-01-07",
+            "description": "Foobar Dec",
+            "evidence": [
+                "income/foobar-dec.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-01-07",
+            "description": "Quux Dec",
+            "evidence": [
+                "income/quux-dec.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "1000.00",
+            "day": "2024-02-07",
+            "description": "Foobar Jan",
+            "evidence": [
+                "income/foobar-jan.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-02-07",
+            "description": "Quux Jan",
+            "evidence": [
+                "income/quux-jan.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "CHF"
+            },
+            "amount_chf": "1000.00",
+            "day": "2024-03-07",
+            "description": "Foobar Feb",
+            "evidence": [
+                "income/foobar-feb.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-03-07",
+            "description": "Quux Feb",
+            "evidence": [
+                "income/quux-feb.txt"
+            ]
+        },
+        {
+            "amount": {
+                "formatted": "1000.00",
+                "symbol": "USD"
+            },
+            "amount_chf": "858.90",
+            "day": "2024-03-07",
+            "description": "Joe Feb",
+            "evidence": [
+                "income/joe-feb.txt"
+            ]
+        }
+    ],
+    "third_pillar_contributions": [],
+    "total_assets": "11632.22",
+    "total_donations": "0.00",
+    "total_education_expenses": "0.00",
+    "total_other_business_expenses": "5005.50",
+    "total_revenues": "6435.60",
+    "total_third_pillar_contributions": "0.00",
+    "travel_expenses": {
+        "business_expenses": [],
+        "private_expenses": [],
+        "total_business_expenses": "0.00",
+        "total_expenses": "0.00",
+        "total_private_expenses": "0.00"
+    },
+    "year": 2024
+}

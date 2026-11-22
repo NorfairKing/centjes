@@ -20,6 +20,7 @@ extra-source-files:
     test_resources/empty/machinery-balance.txt
     test_resources/empty/movables-balance.txt
     test_resources/empty/switzerland.yaml
+    test_resources/empty/taxes-input.json
     test_resources/empty/taxes.xml
     test_resources/empty/vat.xml
     test_resources/example/bank-statement.txt
@@ -39,6 +40,7 @@ extra-source-files:
     test_resources/example/receipt-coffee.txt
     test_resources/example/receipt-computer.txt
     test_resources/example/switzerland.yaml
+    test_resources/example/taxes-input.json
     test_resources/example/taxes.xml
     test_resources/example/test_resources/documentation.txt
     test_resources/example/vat.xml
@@ -48,8 +50,17 @@ extra-source-files:
     test_resources/net-vat/machinery-balance.txt
     test_resources/net-vat/movables-balance.txt
     test_resources/net-vat/switzerland.yaml
+    test_resources/net-vat/taxes-input.json
     test_resources/net-vat/taxes.xml
     test_resources/net-vat/vat.xml
+    test_resources/other-expenses/ledger.cent
+    test_resources/other-expenses/machinery-balance.txt
+    test_resources/other-expenses/movables-balance.txt
+    test_resources/other-expenses/receipt.txt
+    test_resources/other-expenses/switzerland.yaml
+    test_resources/other-expenses/taxes-input.json
+    test_resources/other-expenses/taxes.xml
+    test_resources/other-expenses/vat.xml
     test_set_aside/covered/currency-rates.cent
     test_set_aside/covered/ledger.cent
     test_set_aside/covered/market-rates.cent
@@ -203,6 +214,7 @@ test-suite centjes-switzerland-test
       Centjes.Switzerland.Report.SetAsideSpec
       Centjes.Switzerland.Report.Taxes.ETaxSpec
       Centjes.Switzerland.Report.Taxes.Gen
+      Centjes.Switzerland.Report.Taxes.TypstSpec
       Centjes.Switzerland.Report.TaxesSpec
       Centjes.Switzerland.Report.VAT.EMWSTSpec
       Centjes.Switzerland.Report.VAT.Gen

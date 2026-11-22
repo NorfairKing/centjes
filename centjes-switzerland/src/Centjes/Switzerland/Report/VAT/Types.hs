@@ -230,7 +230,7 @@ parseVATInput = do
       ]
   vatInputVATExpensesAccountName <-
     setting
-      [ help "Account name of your the VAT you've paid",
+      [ help "the account of the VAT paid on purchases",
         reader $ eitherReader AccountName.fromStringOrError,
         conf "vat-expenses-account",
         value "expenses:VAT"
