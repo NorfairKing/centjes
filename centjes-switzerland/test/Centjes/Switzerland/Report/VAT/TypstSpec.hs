@@ -8,7 +8,6 @@ import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.VAT
 import Centjes.Switzerland.Reporter
 import Centjes.Switzerland.TestUtils
-import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad.Logger
 import Data.Aeson
@@ -37,7 +36,7 @@ spec = sequential $
 
           let vatInput = vatSettingInput {vatInputQuarter = YearQuarter 2024 Q1}
 
-          validation <- runValidationT $ runReporter $ produceVATReport vatInput ledger
+          let validation = runReporter $ produceVATReport vatInput ledger
           (vatReport, _) <- shouldValidate diag validation
           let input = vatReportInput vatReport
 

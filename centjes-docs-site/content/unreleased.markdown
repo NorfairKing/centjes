@@ -33,11 +33,17 @@
 * `centjes-switzerland set-aside`, which compares what is set aside for this
   year's SVA, cantonal, federal and wealth taxes with what they will cost, and
   ends with what to save or pre-pay.
-  SVA and income taxes cost a configured share of revenue: income accounts
-  without the `undeclared` tag.
+  SVA and income taxes cost a configured share of the revenue that the taxes
+  report declares.
   The Zürich wealth tax is computed from asset and liability accounts tagged
   `taxable`, valued at the ESTV's rates, and every such account with a balance
   must be tagged `taxable` or `not-taxable`.
+  It also shows how much can still be paid into the third pillar by someone
+  who is self-employed and not in a pension fund: a fifth of the revenue minus
+  business expenses and SVA, up to the year's maximum, minus the year's
+  contributions.
+  It computes the year's taxes report for these figures, with the settings of
+  the `taxes` command, so it fails wherever the tax declaration would.
 
 ## Changed
 

@@ -23,6 +23,16 @@ Federal 2026
   assets:federal                                  100.00 CHF
 [1m  Surplus[m                                           0.00 CHF
                                                             
+Pillar 3a 2026                                              
+  Revenue                                        5000.00 CHF
+  Business expenses                                 0.00 CHF
+  SVA                                            -600.00 CHF
+[1m  Net earned income[m                              4400.00 CHF
+  Limit                                   20 %    880.00 CHF
+  Contributions                                     0.00 CHF
+[1m  Room left[m                                       880.00 CHF
+                                                            
 
 To do
   Nothing to set aside, every tax has enough.
+  Pillar 3a: pay in 800.00 CHF (880.00 CHF left), into assets:pillar-3a, before the end of the year.

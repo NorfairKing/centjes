@@ -1,0 +1,29 @@
+currency CHF 0.01
+
+tag taxable
+tag not-taxable
+
+account equity:starting
+account assets:pillar-3a
+  + attach evidence.txt
+  + tag not-taxable
+account assets:bank
+  + attach evidence.txt
+  + tag taxable
+account assets:movables
+  + attach evidence.txt
+account assets:machinery
+  + attach evidence.txt
+account income:domestic
+
+2025-12-31
+  | Opening balances
+  * equity:starting  -1000 CHF
+  * assets:bank       1000 CHF
+  * assets:movables      0 CHF
+  * assets:machinery     0 CHF
+
+2026-04-01
+  | Revenue without evidence, which the taxes report refuses
+  * assets:bank      5000 CHF
+  * income:domestic -5000 CHF

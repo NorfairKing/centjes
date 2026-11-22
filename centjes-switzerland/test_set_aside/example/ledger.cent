@@ -8,22 +8,31 @@ currency BTC 0.00000001
 
 tag taxable
 tag not-taxable
+tag not-deductible
 tag undeclared
 
 account equity:starting
 account assets:bank
+  + attach evidence.txt
   + tag taxable
 account assets:broker
+  + attach evidence.txt
   + tag taxable
 account assets:crypto
+  + attach evidence.txt
+  + tag undeclared
   + tag taxable
 account assets:joint
+  + attach evidence.txt
   + tag taxable
 account assets:pillar-3a
+  + attach evidence.txt
   + tag not-taxable
 account assets:sva
+  + attach evidence.txt
   + tag taxable
 account assets:federal
+  + attach evidence.txt
   + tag taxable
 account expenses:cantonal
 account income:foreign
@@ -50,16 +59,19 @@ account income:domestic
   | Foreign client, on a sub-account of a revenue account
   * assets:bank                 10000 USD
   * income:foreign:acme        -10000 USD
+  + attach evidence.txt
 
 2026-04-01
   | Domestic client
   * assets:bank                  5000 CHF
   * income:domestic             -5000 CHF
+  + attach evidence.txt
 
 2026-05-01
   | Gift, which is not revenue
   * assets:bank   1000 CHF
   * income:gifts -1000 CHF
+  + attach evidence.txt
 
 2026-07-01
   | Save for SVA
@@ -70,8 +82,20 @@ account income:domestic
   | Cantonal pre-payment
   * assets:bank       -1500 CHF
   * expenses:cantonal  1500 CHF
+  + tag not-deductible
 
 2026-07-01
   | Save for federal taxes
   * assets:bank    -300 CHF
   * assets:federal  300 CHF
+
+account assets:movables
+  + attach evidence.txt
+account assets:machinery
+  + attach evidence.txt
+
+2025-12-31
+  | Nothing to depreciate
+  * assets:movables  0 CHF
+  * assets:machinery 0 CHF
+  * equity:starting  0 CHF

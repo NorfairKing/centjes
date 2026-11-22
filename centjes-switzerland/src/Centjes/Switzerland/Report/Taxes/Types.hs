@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
@@ -11,6 +12,7 @@ module Centjes.Switzerland.Report.Taxes.Types
   ( TaxesInput (..),
     PartitionedExpenseAccounts (..),
     TaxesReport (..),
+    taxesReportTotalBusinessExpenses,
     PartitionedExpenses (..),
     PrivateExpense (..),
     AssetAccount (..),
@@ -59,6 +61,7 @@ import Data.Validity
 import Data.Validity.Time ()
 import Error.Diagnose
 import GHC.Generics (Generic (..))
+import Language.Haskell.TH.Syntax (Lift)
 import Money.Account as Money (Account (..))
 import Money.Amount as Money (Amount (..))
 import qualified Money.Amount as Amount
@@ -111,7 +114,7 @@ data TaxesInput = TaxesInput
     taxesInputMachineryExpensesAccount :: !AccountName,
     taxesInputMachineryDepreciationRate :: !(Ratio Natural)
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, Lift)
 
 instance Validity TaxesInput
 
@@ -413,7 +416,7 @@ data PartitionedExpenseAccounts = PartitionedExpenseAccounts
   { partitionedExpenseAccountsBusiness :: !AccountName,
     partitionedExpenseAccountsPrivate :: !AccountName
   }
-  deriving (Show, Generic)
+  deriving (Show, Generic, Lift)
 
 instance Validity PartitionedExpenseAccounts
 
@@ -478,6 +481,26 @@ instance (Validity ann, Show ann, Ord ann) => Validity (TaxesReport ann) where
           Amount.sum (map donationCHFAmount taxesReportDonations) == Just taxesReportTotalDonations,
         validateChildrenCosts taxesReportChildrenCosts
       ]
+
+-- | The total of every business expense that the report declares, in CHF,
+-- which is what comes off the revenue to make the profit.
+-- Nothing if it is too big to add up.
+taxesReportTotalBusinessExpenses :: TaxesReport ann -> Maybe Money.Amount
+-- Matching every field positionally makes a new field fail to compile here,
+-- because it may be a business expense.
+taxesReportTotalBusinessExpenses taxesReport@(TaxesReport _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) =
+  let TaxesReport {..} = taxesReport
+   in Amount.sum
+        [ partitionedExpensesTotalBusinessExpenses taxesReportInsuranceExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportHomeofficeExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportElectricityExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportPhoneExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportTravelExpenses,
+          partitionedExpensesTotalBusinessExpenses taxesReportInternetExpenses,
+          taxesReportTotalOtherBusinessExpenses,
+          depreciationScheduleDepreciation taxesReportMovables,
+          depreciationScheduleDepreciation taxesReportMachinery
+        ]
 
 validatePartitionedExpenses ::
   String ->

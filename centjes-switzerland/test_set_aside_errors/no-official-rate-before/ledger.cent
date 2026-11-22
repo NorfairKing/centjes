@@ -4,13 +4,27 @@ currency CHF 0.01
 currency USD 0.01
 
 tag taxable
+tag not-taxable
 
 account equity:starting
-account assets:bank
+account assets:pillar-3a
+  + attach evidence.txt
+  + tag not-taxable
+account assets:sva
+  + attach evidence.txt
   + tag taxable
-account income:foreign
+account assets:movables
+  + attach evidence.txt
+account assets:machinery
+  + attach evidence.txt
+
+2025-12-31
+  | Nothing to depreciate
+  * assets:movables  0 CHF
+  * assets:machinery 0 CHF
+  * equity:starting  0 CHF
 
 2026-01-05
-  | Foreign client, paid before the first ESTV rate
-  * assets:bank     1000 USD
-  * income:foreign -1000 USD
+  | Saved for SVA in dollars, before the first ESTV rate
+  * equity:starting -1000 USD
+  * assets:sva       1000 USD

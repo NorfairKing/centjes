@@ -1,13 +1,21 @@
 currency CHF 0.01
 
 tag taxable
+tag not-taxable
+tag not-deductible
 
 account equity:starting
+account assets:pillar-3a
+  + attach evidence.txt
+  + tag not-taxable
 account assets:bank
+  + attach evidence.txt
   + tag taxable
 account assets:federal
+  + attach evidence.txt
   + tag taxable
 account assets:wealth-tax
+  + attach evidence.txt
   + tag taxable
 account expenses:cantonal
 account income:domestic
@@ -24,11 +32,13 @@ account liabilities:taxes:sva
   * assets:bank                 50000 CHF
   * income:domestic            -50000 CHF
   ! liabilities:taxes:sva          -1 CHF
+  + attach evidence.txt
 
 2026-07-01
   | Cantonal pre-payment
   * assets:bank       -1000 CHF
   * expenses:cantonal  1000 CHF
+  + tag not-deductible
 
 2026-07-01
   | Save for federal taxes
@@ -39,3 +49,14 @@ account liabilities:taxes:sva
   | Save for wealth tax
   * assets:bank      -100 CHF
   * assets:wealth-tax 100 CHF
+
+account assets:movables
+  + attach evidence.txt
+account assets:machinery
+  + attach evidence.txt
+
+2025-12-31
+  | Nothing to depreciate
+  * assets:movables  0 CHF
+  * assets:machinery 0 CHF
+  * equity:starting  0 CHF

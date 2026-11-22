@@ -81,6 +81,7 @@ library
       Centjes.Docs.Site.ModuleDocs.TH
       Centjes.Docs.Site.OptParse
       Centjes.Docs.Site.Static
+      Centjes.Docs.Site.Static.TaxesInput
       Centjes.Docs.Site.Static.TH
       Centjes.Docs.Site.Widget
   other-modules:

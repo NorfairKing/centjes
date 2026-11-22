@@ -1,6 +1,13 @@
+first-name: John
+last-name: Doe
+ahv-id: '7561111222233'
+third-pillar-assets-account: assets:pillar-3a
+
 set-aside:
   sva:
     rate: 0.12
+    reserves:
+    - assets:sva
   cantonal:
     rate: 0.08
   federal:

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
@@ -32,11 +33,12 @@ import Data.Validity.Path ()
 import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import Language.Haskell.TH.Syntax (Lift)
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
 newtype AccountName = AccountName {unAccountName :: NonEmpty Text}
-  deriving stock (Eq, Generic)
+  deriving stock (Eq, Generic, Lift)
 
 instance Show AccountName where
   show = show . toString

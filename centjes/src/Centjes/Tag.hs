@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -24,11 +25,12 @@ import Data.Validity.Path ()
 import Data.Validity.Text
 import Data.Validity.Time ()
 import GHC.Generics (Generic)
+import Language.Haskell.TH.Syntax (Lift)
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
 newtype Tag = Tag {tagText :: Text}
-  deriving stock (Eq, Ord, Generic)
+  deriving stock (Eq, Ord, Generic, Lift)
   deriving newtype (Show)
 
 instance Validity Tag where

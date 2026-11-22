@@ -62,21 +62,39 @@ extra-source-files:
     test_resources/other-expenses/taxes.xml
     test_resources/other-expenses/vat.xml
     test_set_aside/covered/currency-rates.cent
+    test_set_aside/covered/evidence.txt
     test_set_aside/covered/ledger.cent
     test_set_aside/covered/market-rates.cent
     test_set_aside/covered/report.txt
     test_set_aside/covered/switzerland.yaml
+    test_set_aside/exact/evidence.txt
     test_set_aside/exact/ledger.cent
     test_set_aside/exact/report.txt
     test_set_aside/exact/switzerland.yaml
     test_set_aside/example/currency-rates.cent
+    test_set_aside/example/evidence.txt
     test_set_aside/example/ledger.cent
     test_set_aside/example/market-rates.cent
     test_set_aside/example/report.txt
     test_set_aside/example/switzerland.yaml
+    test_set_aside/short/evidence.txt
     test_set_aside/short/ledger.cent
     test_set_aside/short/report.txt
     test_set_aside/short/switzerland.yaml
+    test_set_aside/third-pillar-almost-full/currency-rates.cent
+    test_set_aside/third-pillar-almost-full/evidence.txt
+    test_set_aside/third-pillar-almost-full/ledger.cent
+    test_set_aside/third-pillar-almost-full/report.txt
+    test_set_aside/third-pillar-almost-full/switzerland.yaml
+    test_set_aside/third-pillar-capped/evidence.txt
+    test_set_aside/third-pillar-capped/ledger.cent
+    test_set_aside/third-pillar-capped/report.txt
+    test_set_aside/third-pillar-capped/switzerland.yaml
+    test_set_aside/third-pillar/currency-rates.cent
+    test_set_aside/third-pillar/evidence.txt
+    test_set_aside/third-pillar/ledger.cent
+    test_set_aside/third-pillar/report.txt
+    test_set_aside/third-pillar/switzerland.yaml
     test_set_aside_errors/convert/error.txt
     test_set_aside_errors/convert/ledger.cent
     test_set_aside_errors/convert/switzerland.yaml
@@ -92,20 +110,32 @@ extra-source-files:
     test_set_aside_errors/no-municipal-steuerfuss/switzerland.yaml
     test_set_aside_errors/no-official-rate-before/currency-rates.cent
     test_set_aside_errors/no-official-rate-before/error.txt
+    test_set_aside_errors/no-official-rate-before/evidence.txt
     test_set_aside_errors/no-official-rate-before/ledger.cent
     test_set_aside_errors/no-official-rate-before/switzerland.yaml
     test_set_aside_errors/no-price/error.txt
     test_set_aside_errors/no-price/ledger.cent
     test_set_aside_errors/no-price/switzerland.yaml
+    test_set_aside_errors/no-third-pillar-maximum/error.txt
+    test_set_aside_errors/no-third-pillar-maximum/ledger.cent
+    test_set_aside_errors/no-third-pillar-maximum/switzerland.yaml
+    test_set_aside_errors/no-third-pillar-maximum/year
     test_set_aside_errors/overflow/error.txt
     test_set_aside_errors/overflow/ledger.cent
     test_set_aside_errors/overflow/switzerland.yaml
     test_set_aside_errors/tagged-both/error.txt
     test_set_aside_errors/tagged-both/ledger.cent
     test_set_aside_errors/tagged-both/switzerland.yaml
+    test_set_aside_errors/taxes/error.txt
+    test_set_aside_errors/taxes/evidence.txt
+    test_set_aside_errors/taxes/ledger.cent
+    test_set_aside_errors/taxes/switzerland.yaml
     test_set_aside_errors/undeclared-account/error.txt
     test_set_aside_errors/undeclared-account/ledger.cent
     test_set_aside_errors/undeclared-account/switzerland.yaml
+    test_set_aside_errors/undeclared-third-pillar-account/error.txt
+    test_set_aside_errors/undeclared-third-pillar-account/ledger.cent
+    test_set_aside_errors/undeclared-third-pillar-account/switzerland.yaml
     test_set_aside_errors/untagged-wealth/error.txt
     test_set_aside_errors/untagged-wealth/ledger.cent
     test_set_aside_errors/untagged-wealth/switzerland.yaml

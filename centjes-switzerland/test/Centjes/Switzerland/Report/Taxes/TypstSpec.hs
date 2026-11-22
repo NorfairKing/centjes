@@ -8,7 +8,6 @@ import Centjes.Switzerland.OptParse
 import Centjes.Switzerland.Report.Taxes
 import Centjes.Switzerland.Reporter
 import Centjes.Switzerland.TestUtils
-import Centjes.Validation
 import Centjes.Validation.TestUtils
 import Control.Monad.Logger
 import Data.Aeson
@@ -39,7 +38,7 @@ spec = sequential $
 
           let taxesInput = taxesSettingInput {taxesInputYear = 2024}
 
-          validation <- runValidationT $ runReporter $ produceTaxesReport taxesInput ledger
+          let validation = runReporter $ produceTaxesReport taxesInput ledger
           (taxesReport, _) <- shouldValidate diag validation
 
           pure $ toJSON $ taxesReportInput taxesReport

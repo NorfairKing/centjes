@@ -1,0 +1,38 @@
+Wealth tax 2026, on wealth of 2026-10-30                     
+  Taxable wealth                                360000.00 CHF
+  Simple wealth tax                                 99.50 CHF
+  Cantonal Steuerfuss                     95 %     -94.52 CHF
+  Municipal Steuerfuss                   119 %    -118.40 CHF
+[1m  Surplus[m                                         -212.92 CHF
+                                                             
+SVA 2026                                                     
+  Revenue                                       300000.00 CHF
+  liabilities:taxes:sva                   12 %  -36000.00 CHF
+[1m  Surplus[m                                       -36000.00 CHF
+                                                             
+Cantonal 2026                                                
+  Revenue                                       300000.00 CHF
+  liabilities:taxes:cantonal               8 %  -24000.00 CHF
+[1m  Surplus[m                                       -24000.00 CHF
+                                                             
+Federal 2026                                                 
+  Revenue                                       300000.00 CHF
+  liabilities:taxes:federal                2 %   -6000.00 CHF
+[1m  Surplus[m                                        -6000.00 CHF
+                                                             
+Pillar 3a 2026                                               
+  Revenue                                       300000.00 CHF
+  Business expenses                                  0.00 CHF
+  SVA                                           -36000.00 CHF
+[1m  Net earned income[m                             264000.00 CHF
+  Limit, the maximum                             36288.00 CHF
+  Contributions                                 -40000.00 CHF
+[1m  Room left[m                                      -3712.00 CHF
+                                                             
+
+To do
+  Wealth tax: save 300.00 CHF (212.92 CHF short).
+  SVA: save 36000.00 CHF (36000.00 CHF short).
+  Cantonal: pre-pay 24000.00 CHF (24000.00 CHF short).
+  Federal: save 6000.00 CHF (6000.00 CHF short).
+  Pillar 3a: 3712.00 CHF more paid in than can be deducted.

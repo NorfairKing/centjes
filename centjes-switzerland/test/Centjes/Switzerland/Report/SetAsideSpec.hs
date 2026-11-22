@@ -2,6 +2,7 @@ module Centjes.Switzerland.Report.SetAsideSpec (spec) where
 
 import Centjes.Switzerland.Report.SetAside
 import Money.Account (Account (..))
+import qualified Money.Account as Account
 import qualified Money.Amount as Amount
 import Test.QuickCheck (choose, elements, forAll)
 import Test.Syd
@@ -25,6 +26,54 @@ spec = do
     it "is negative for negative revenue" $
       shareOfRevenue 0.02 (Negative (Amount.fromMinimalQuantisations 10000))
         `shouldBe` Just (Negative (Amount.fromMinimalQuantisations 200))
+
+  describe "thirdPillarMaximum" $ do
+    it "is 36'288 CHF for 2025" $
+      thirdPillarMaximum 2025 `shouldBe` Just 36288
+
+    it "is 36'288 CHF for 2026" $
+      thirdPillarMaximum 2026 `shouldBe` Just 36288
+
+    it "is 36'864 CHF for 2027" $
+      thirdPillarMaximum 2027 `shouldBe` Just 36864
+
+    it "does not know years before 2025" $
+      thirdPillarMaximum 2024 `shouldBe` Nothing
+
+  describe "thirdPillarLimit" $ do
+    it "is a fifth of the net earned income" $
+      thirdPillarLimit 36288 (Positive (Amount.fromMinimalQuantisations 7893700))
+        `shouldBe` Just (ThirdPillarLimitShare 0.2 (Positive (Amount.fromMinimalQuantisations 1578740)))
+
+    it "is the maximum when a fifth would be more" $
+      thirdPillarLimit 36288 (Positive (Amount.fromMinimalQuantisations 20000000))
+        `shouldBe` Just (ThirdPillarLimitMaximum (Positive (Amount.fromMinimalQuantisations 3628800)))
+
+    it "is a fifth when that is exactly the maximum" $
+      thirdPillarLimit 36288 (Positive (Amount.fromMinimalQuantisations 18144000))
+        `shouldBe` Just (ThirdPillarLimitShare 0.2 (Positive (Amount.fromMinimalQuantisations 3628800)))
+
+    it "is zero for a loss" $
+      thirdPillarLimit 36288 (Negative (Amount.fromMinimalQuantisations 100000))
+        `shouldBe` Just (ThirdPillarLimitShare 0.2 (Positive Amount.zero))
+
+    it "never exceeds the maximum and never is negative" $
+      forAll (choose (-100000000, 100000000)) $ \rappen ->
+        case Account.fromMinimalQuantisations rappen >>= thirdPillarLimit 36288 of
+          Nothing -> expectationFailure "should not overflow"
+          Just limit ->
+            Account.toMinimalQuantisations (thirdPillarLimitAmount limit)
+              `shouldSatisfy` (\amount -> amount >= 0 && amount <= 3628800)
+
+  describe "roundDownToHundreds" $ do
+    it "rounds room down to the hundred below" $
+      roundDownToHundreds (Amount.fromMinimalQuantisations 1578740) `shouldBe` Amount.fromMinimalQuantisations 1570000
+
+    it "keeps a whole hundred" $
+      roundDownToHundreds (Amount.fromMinimalQuantisations 90000) `shouldBe` Amount.fromMinimalQuantisations 90000
+
+    it "rounds less than a hundred down to zero" $
+      roundDownToHundreds (Amount.fromMinimalQuantisations 9999) `shouldBe` Amount.zero
 
   describe "roundUpToHundreds" $ do
     it "rounds a shortfall up to the next hundred" $

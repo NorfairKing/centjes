@@ -271,11 +271,6 @@
             };
           };
         };
-        tag-undeclared = lib.mkOption {
-          default = null;
-          description = "tag of income accounts that are not revenue";
-          type = lib.types.nullOr lib.types.str;
-        };
         wealth = lib.mkOption {
           default = { };
           type = lib.types.submodule {

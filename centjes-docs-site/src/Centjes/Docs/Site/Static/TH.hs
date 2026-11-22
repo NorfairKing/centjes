@@ -13,6 +13,7 @@ import CMark as MD
 import Centjes.Command.Balance (renderBalanceReport)
 import Centjes.Command.Register (renderAnyRegister)
 import Centjes.Compile
+import Centjes.Docs.Site.Static.TaxesInput (docsTaxesInput)
 import Centjes.Filter
 import Centjes.Format
 import Centjes.Load (diagFromFileMap)
@@ -217,6 +218,7 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                                   assertValidates $
                                     produceSetAsideReport
                                       docsSetAsideInput
+                                      docsTaxesInput
                                       (fromGregorian 2026 12 31)
                                       SetAsidePrices
                                         { setAsidePricesOfficial = V.empty,
@@ -248,7 +250,6 @@ docsSetAsideInput :: SetAsideInput
 docsSetAsideInput =
   SetAsideInput
     { setAsideInputYear = 2026,
-      setAsideInputTagUndeclared = "undeclared",
       setAsideInputSocialSecurity =
         SetAsideTax
           { setAsideTaxRate = 0.12,

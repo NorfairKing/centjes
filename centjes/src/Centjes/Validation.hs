@@ -58,9 +58,6 @@ liftValidation v = ValidationT $ pure v
 validationTFailure :: (Applicative m) => e -> ValidationT e m a
 validationTFailure = ValidationT . pure . validationFailure
 
-transformValidationT :: (m (Validation e a) -> n (Validation f b)) -> ValidationT e m a -> ValidationT f n b
-transformValidationT func (ValidationT t) = ValidationT $ func t
-
 data Validation e a
   = Failure !(NonEmpty e)
   | Success !a

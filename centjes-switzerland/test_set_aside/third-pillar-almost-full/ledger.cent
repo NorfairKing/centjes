@@ -1,0 +1,101 @@
+import currency-rates
+
+currency CHF 0.01
+currency USD 0.01
+
+tag taxable
+tag not-taxable
+tag undeclared
+tag deductible
+tag not-deductible
+
+account equity:starting
+account assets:bank
+  + attach evidence.txt
+  + tag taxable
+account assets:pillar-3a
+  + attach evidence.txt
+  + tag not-taxable
+account assets:old-pillar-3a
+  + attach evidence.txt
+  + tag not-taxable
+account assets:movables
+  + attach evidence.txt
+  + tag taxable
+account assets:machinery
+  + attach evidence.txt
+  + tag taxable
+account expenses:rent:homeoffice
+account expenses:rent:private
+account expenses:cloud
+account expenses:insurance:third-pillar
+account income:foreign
+account income:domestic
+account income:gifts
+  + tag undeclared
+
+2025-12-31
+  | Opening balances
+  * equity:starting      -302000 CHF
+  * assets:bank           280000 CHF
+  * assets:old-pillar-3a   20000 CHF
+  * assets:machinery        2000 CHF
+  * assets:movables            0 CHF
+
+2025-12-31
+  | Last year's contribution, which does not count for this year
+  * assets:bank      -7000 CHF
+  * assets:pillar-3a  7000 CHF
+  + tag deductible
+  + attach evidence.txt
+
+2026-03-01
+  | Foreign client, at 0.80
+  * assets:bank      10000 USD
+  * income:foreign  -10000 USD
+  + attach evidence.txt
+
+2026-04-01
+  | Domestic client
+  * assets:bank      90000 CHF
+  * income:domestic -90000 CHF
+  + attach evidence.txt
+
+2026-05-01
+  | Gift, which is not revenue
+  * assets:bank   1000 CHF
+  * income:gifts -1000 CHF
+
+2026-06-01
+  | Rent, a quarter of which is for the home office
+  * assets:bank              -4000 CHF
+  * expenses:rent:homeoffice  1000 CHF
+  * expenses:rent:private     3000 CHF
+  + tag deductible
+
+2026-06-15
+  | Cloud bill, an other business expense
+  * assets:bank    -3000 CHF
+  * expenses:cloud  3000 CHF
+  + tag deductible
+  + attach evidence.txt
+
+2026-08-01
+  | Transfer from another third pillar, which is not a contribution
+  * assets:old-pillar-3a -20000 CHF
+  * assets:pillar-3a      20000 CHF
+  + tag not-deductible
+
+2026-09-01
+  | Contribution, which leaves less than a round amount of room
+  * assets:bank      -14238 CHF
+  * assets:pillar-3a  14238 CHF
+  + tag deductible
+  + attach evidence.txt
+
+2026-10-01
+  | Third pillar insurance premium
+  * assets:bank                       -2000 CHF
+  * expenses:insurance:third-pillar    2000 CHF
+  + tag deductible
+  + attach evidence.txt

@@ -20,6 +20,9 @@ module Centjes.Switzerland.Report.SetAside.Types
     setAsideRowAmount,
     showPercentage,
     WealthTaxBasis (..),
+    ThirdPillarLine (..),
+    ThirdPillarLimit (..),
+    thirdPillarLimitAmount,
     SetAsidePrices (..),
     SetAsideSurplus (..),
     SetAsideAction (..),
@@ -32,6 +35,7 @@ import qualified Centjes.AccountName as AccountName
 import Centjes.Convert
 import Centjes.Ledger
 import Centjes.Location
+import Centjes.Switzerland.Report.Taxes.Types (TaxesError)
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
 import Data.Map (Map)
@@ -51,9 +55,6 @@ import Text.Read (readMaybe)
 
 data SetAsideInput = SetAsideInput
   { setAsideInputYear :: !Year,
-    -- | The tag of income accounts that are not revenue, like gifts.
-    -- It is the taxes report's tag for income that is not declared.
-    setAsideInputTagUndeclared :: !Tag,
     setAsideInputSocialSecurity :: !SetAsideTax,
     setAsideInputCantonal :: !SetAsideTax,
     setAsideInputFederal :: !SetAsideTax,
@@ -117,20 +118,13 @@ parseSetAsideInput = do
           ],
         runIO $ (\d -> let (y, _, _) = toGregorian d in y) . utctDay <$> getCurrentTime
       ]
-  (setAsideInputTagUndeclared, setAsideInputSocialSecurity, setAsideInputCantonal, setAsideInputFederal, setAsideInputWealth) <-
+  (setAsideInputSocialSecurity, setAsideInputCantonal, setAsideInputFederal, setAsideInputWealth) <-
     subConfig_ "set-aside" $ do
-      tagUndeclared <-
-        setting
-          [ help "tag of income accounts that are not revenue",
-            reader $ eitherReader Tag.fromString,
-            conf "tag-undeclared",
-            value "undeclared"
-          ]
       socialSecurity <- subConfig_ "sva" parseSetAsideTax
       cantonal <- subConfig_ "cantonal" parseSetAsideTax
       federal <- subConfig_ "federal" parseSetAsideTax
       wealth <- subConfig_ "wealth" parseSetAsideWealth
-      pure (tagUndeclared, socialSecurity, cantonal, federal, wealth)
+      pure (socialSecurity, cantonal, federal, wealth)
   pure SetAsideInput {..}
 
 -- | How much is set aside for one tax, and where.
@@ -254,6 +248,7 @@ data SetAsideReport = SetAsideReport
     setAsideReportSocialSecurity :: !SetAsideLine,
     setAsideReportCantonal :: !SetAsideLine,
     setAsideReportFederal :: !SetAsideLine,
+    setAsideReportThirdPillar :: !ThirdPillarLine,
     setAsideReportActions :: ![SetAsideAction],
     setAsideReportSurpluses :: ![SetAsideSurplus]
   }
@@ -267,6 +262,39 @@ data WealthTaxBasis = WealthTaxBasis
     -- | The einfache Staatssteuer, which each Steuerfuss is a percentage of.
     wealthTaxBasisSimpleTax :: !Money.Account
   }
+
+-- | How much can still be paid into the third pillar.
+--
+-- The revenue minus the business expenses and SVA is the net earned income,
+-- and the limit minus the contributions is the room that is left.
+data ThirdPillarLine = ThirdPillarLine
+  { -- | Every business expense that the taxes report declares, together.
+    thirdPillarLineBusinessExpenses :: !Money.Amount,
+    -- | What SVA costs according to its set-aside rate, negative.
+    --
+    -- A rate that over-estimates SVA keeps the limit on the safe side.
+    thirdPillarLineSocialSecurity :: !Money.Account,
+    thirdPillarLineNetEarnedIncome :: !Money.Account,
+    thirdPillarLineLimit :: !ThirdPillarLimit,
+    thirdPillarLineContributions :: !Money.Amount,
+    -- | Where to pay in.
+    thirdPillarLineAccount :: !AccountName,
+    -- | Negative when more was paid in than can be deducted.
+    thirdPillarLineRoom :: !Money.Account
+  }
+
+-- | The most that can be paid into the third pillar in a year.
+data ThirdPillarLimit
+  = -- | A share of the net earned income, and that share.
+    ThirdPillarLimitShare !Scientific !Money.Account
+  | -- | The maximum for the year, when the share would be more.
+    ThirdPillarLimitMaximum !Money.Account
+  deriving (Show, Eq)
+
+thirdPillarLimitAmount :: ThirdPillarLimit -> Money.Account
+thirdPillarLimitAmount = \case
+  ThirdPillarLimitShare _ amount -> amount
+  ThirdPillarLimitMaximum amount -> amount
 
 -- | The rows of one tax, which add up to its surplus: negative when less is
 -- set aside than the tax will cost.
@@ -338,6 +366,11 @@ data SetAsideError ann
   | -- | The wealth tariff and the cantonal Steuerfuss, which change together.
     SetAsideErrorNoCantonalRates !Year
   | SetAsideErrorNoMunicipalSteuerfuss !Municipality !Year
+  | SetAsideErrorNoThirdPillarMaximum !Year
+  | -- | The account that the to-do list says to pay third pillar contributions
+    -- into.
+    SetAsideErrorUndeclaredThirdPillarAccount !AccountName
+  | SetAsideErrorTaxes !(TaxesError ann)
   | SetAsideErrorOverflow
 
 instance ToReport (SetAsideError SourceSpan) where
@@ -394,4 +427,17 @@ instance ToReport (SetAsideError SourceSpan) where
         (unwords ["No Steuerfuss is known for municipality", show m, "in", show y])
         []
         [Hint "Add it to zurichMunicipalSteuerfuss in centjes-switzerland."]
+    SetAsideErrorNoThirdPillarMaximum y ->
+      Err
+        Nothing
+        (unwords ["No maximum third pillar contribution is known for", show y])
+        []
+        [Hint "Add it to thirdPillarMaximum in centjes-switzerland."]
+    SetAsideErrorUndeclaredThirdPillarAccount an ->
+      Err
+        Nothing
+        (unwords ["The third pillar account of the taxes settings is not declared in the ledger:", AccountName.toString an])
+        []
+        [Hint "Declare it in the ledger, or set third-pillar-assets-account to the account that contributions are paid into."]
+    SetAsideErrorTaxes e -> toReport e
     SetAsideErrorOverflow -> Err Nothing "Amounts too large to add up" [] []
