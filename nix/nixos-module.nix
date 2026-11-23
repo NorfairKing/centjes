@@ -34,9 +34,7 @@ in
             config = mkOption {
               description = "Typed settings passed by config file";
               default = { };
-              type = types.submodule {
-                options = import ../centjes-docs-site/options.nix { inherit lib; };
-              };
+              type = import ../centjes-docs-site/options.nix { inherit lib; };
             };
             extraConfig = mkOption {
               description = "The contents of the config file, as an attribute set. This will be translated to Yaml and put in the right place along with the rest of the options defined in this submodule.";

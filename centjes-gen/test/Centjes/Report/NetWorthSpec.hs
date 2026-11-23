@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -28,8 +29,9 @@ import Text.Colour
 spec :: Spec
 spec = do
   describe "produceNetWorthReport" $ do
-    scenarioDir "test_resources/net-worth/valid" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let netWorthValidDir = [reldir|test_resources/net-worth/valid|]
+    scenarioDir netWorthValidDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (netWorthValidDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         reportFile <- liftIO $ replaceExtension ".txt" af
         configFile <- liftIO $ replaceExtension ".config" af
@@ -67,8 +69,9 @@ spec = do
 
                 pure $ renderChunksText termCaps $ renderNetWorthReport report
 
-    scenarioDir "test_resources/net-worth/error" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let netWorthErrorDir = [reldir|test_resources/net-worth/error|]
+    scenarioDir netWorthErrorDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (netWorthErrorDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         resultFile <- liftIO $ replaceExtension ".err" af
         configFile <- liftIO $ replaceExtension ".config" af

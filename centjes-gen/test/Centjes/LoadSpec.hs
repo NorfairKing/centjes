@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.LoadSpec (spec) where
@@ -16,8 +17,9 @@ import Test.Syd
 spec :: Spec
 spec =
   describe "loadModulesOrErr" $ do
-    scenarioDir "test_resources/load" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let loadDir = [reldir|test_resources/load|]
+    scenarioDir loadDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (loadDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         resultFile <- liftIO $ replaceExtension ".err" af
         it "shows the same error when checking this module" $ do

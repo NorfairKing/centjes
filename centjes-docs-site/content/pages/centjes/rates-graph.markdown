@@ -1,5 +1,5 @@
 ---
-title: Format
+title: Rates graph
 description: Documentation about the centjes rates-graph command, for graphing exchange rates.
 ---
 

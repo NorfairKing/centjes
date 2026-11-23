@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -45,8 +46,9 @@ spec = do
                     Success evaluatedLedger ->
                       shouldBeValid $ produceIncomeStatementReport @() f mBegin mEnd mCur showVirtual evaluatedLedger
 
-    scenarioDirRecur "test_resources/income-statement/valid" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let incomeStatementValidDir = [reldir|test_resources/income-statement/valid|]
+    scenarioDirRecur incomeStatementValidDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (incomeStatementValidDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         reportFile <- liftIO $ replaceExtension ".txt" af
         configFile <- liftIO $ replaceExtension ".config" af
@@ -91,8 +93,9 @@ spec = do
                 shouldBeValid report
                 pure $ renderChunksText termCaps $ renderIncomeStatementReport incomeStatementSettingShowEmpty report
 
-    scenarioDir "test_resources/income-statement/error" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let incomeStatementErrorDir = [reldir|test_resources/income-statement/error|]
+    scenarioDir incomeStatementErrorDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (incomeStatementErrorDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         resultFile <- liftIO $ replaceExtension ".err" af
         configFile <- liftIO $ replaceExtension ".config" af

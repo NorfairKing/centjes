@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Centjes.MergeSpec (spec) where
 
 import Centjes.Format (formatModule)
@@ -15,9 +17,10 @@ import Test.Syd
 
 spec :: Spec
 spec = do
-  describe "mergePriceDeclarations" $
-    scenarioDirRecur "test_resources/merge" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+  describe "mergePriceDeclarations" $ do
+    let mergeDir = [reldir|test_resources/merge|]
+    scenarioDirRecur mergeDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (mergeDir </> fp)
       when (fileExtension af == Just ".cent" && toFilePath (filename af) == "existing.cent") $ do
         newFile <- liftIO $ replaceExtension ".cent" =<< resolveFile (parent af) "new"
         resultFile <- liftIO $ replaceExtension ".cent" =<< resolveFile (parent af) "result"
@@ -36,9 +39,10 @@ spec = do
                     declarationsPrices (splitDeclarations (moduleDeclarations newModule))
             pure $ formatModule $ mergePriceDeclarations existingDeclarations newDeclarations
 
-  describe "mergeTransactionDeclarations" $
-    scenarioDirRecur "test_resources/merge-transactions" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+  describe "mergeTransactionDeclarations" $ do
+    let mergeTransactionsDir = [reldir|test_resources/merge-transactions|]
+    scenarioDirRecur mergeTransactionsDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (mergeTransactionsDir </> fp)
       when (fileExtension af == Just ".cent" && toFilePath (filename af) == "existing.cent") $ do
         newFile <- liftIO $ replaceExtension ".cent" =<< resolveFile (parent af) "new"
         resultFile <- liftIO $ replaceExtension ".cent" =<< resolveFile (parent af) "result"

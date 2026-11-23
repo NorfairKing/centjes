@@ -142,7 +142,7 @@
             hpack.enable = true;
             ormolu.enable = true;
             nixpkgs-fmt.enable = true;
-            nixpkgs-fmt.excludes = [ ".*/default.nix" ];
+            nixpkgs-fmt.excludes = [ ".*/default.nix" ".*/options.nix" ];
             deadnix.enable = true;
             deadnix.excludes = [ ".*/default.nix" ];
             cabal2nix.enable = true;

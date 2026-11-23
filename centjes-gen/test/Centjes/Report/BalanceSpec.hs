@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -98,8 +99,9 @@ spec = do
         [BalanceErrorCouldNotSumTotal amounts] -> length amounts `shouldBe` 2
         _ -> expectationFailure "expected a single BalanceErrorCouldNotSumTotal carrying the two kept balances"
 
-    scenarioDirRecur "test_resources/balance/balanced" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let balanceBalancedDir = [reldir|test_resources/balance/balanced|]
+    scenarioDirRecur balanceBalancedDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (balanceBalancedDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         reportFile <- liftIO $ replaceExtension ".txt" af
         configFile <- liftIO $ replaceExtension ".config" af
@@ -143,8 +145,9 @@ spec = do
                 shouldBeValid br
                 pure $ renderChunksText termCaps $ renderBalanceReport balanceSettingShowEmpty br
 
-    scenarioDir "test_resources/balance/error" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let balanceErrorDir = [reldir|test_resources/balance/error|]
+    scenarioDir balanceErrorDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (balanceErrorDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         resultFile <- liftIO $ replaceExtension ".err" af
         configFile <- liftIO $ replaceExtension ".config" af

@@ -3,88 +3,111 @@
 # centjes:test/Centjes/OptParseSpec.hs:13
 # To update this it, run the test with --golden-reset
 { lib }:
-{
+let
+  definedSubmodule = required: declarations: definedType required (lib.types.submodule {
+    options = declarations;
+  });
+  definedType = required: submodule: submodule // {
+    emptyValue = { };
+    functor = submodule.functor // {
+      name = "definedSubmodule";
+    };
+    merge = submodule.merge // {
+      v2 = args: let
+        configValue = name: lib.getAttr name merged.value;
+        isDefined = name: (lib.getAttr name options).isDefined;
+        merged = submodule.merge.v2 args;
+        options = merged.valueMeta.configuration.options;
+        requiredValue = name: if isDefined name then configValue name else throw (lib.concatStrings [
+          "The option `"
+          (lib.showOption (lib.getAttr name options).loc)
+          "' is required but was not defined."
+        ]);
+      in
+      merged // {
+        value = lib.genAttrs required requiredValue // lib.genAttrs (lib.filter isDefined (lib.attrNames (lib.removeAttrs options ["_module"]))) configValue;
+      };
+    };
+    substSubModules = modules: definedType required (submodule.substSubModules modules);
+    typeMerge = _: null;
+  };
+in
+definedSubmodule [] {
   balance = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        convert = lib.mkOption {
-          default = null;
-          description = "Currency to convert to";
-          type = lib.types.nullOr lib.types.str;
-        };
-        filter = lib.mkOption {
-          default = null;
-          description = "filter";
-          type = lib.types.nullOr lib.types.anything;
-        };
-        show-empty = lib.mkOption {
-          default = null;
-          description = "Show empty balances instead of hiding them";
-          type = lib.types.nullOr lib.types.bool;
-        };
-        virtual = lib.mkOption {
-          default = null;
-          description = "Show virtual postings too";
-          type = lib.types.nullOr lib.types.bool;
-        };
-        year = lib.mkOption {
-          default = null;
-          description = "Balance at the end of the given year";
-          type = lib.types.nullOr lib.types.int;
-        };
+    type = definedSubmodule [] {
+      convert = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Currency to convert to";
+        type = lib.types.nullOr lib.types.str;
+      };
+      filter = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "filter";
+        type = lib.types.nullOr lib.types.anything;
+      };
+      show-empty = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `false`";
+        description = "Show empty balances instead of hiding them";
+        type = lib.types.nullOr lib.types.bool;
+      };
+      virtual = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `false`";
+        description = "Show virtual postings too";
+        type = lib.types.nullOr lib.types.bool;
+      };
+      year = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Balance at the end of the given year";
+        type = lib.types.nullOr lib.types.int;
       };
     };
   };
   income-statement = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        begin = lib.mkOption {
-          default = null;
-          description = "Begin date (inclusive), in YYYY-MM-DD format";
-          type = lib.types.nullOr lib.types.str;
-        };
-        convert = lib.mkOption {
-          default = null;
-          description = "Currency to convert to";
-          type = lib.types.nullOr lib.types.str;
-        };
-        end = lib.mkOption {
-          default = null;
-          description = "End date (inclusive), in YYYY-MM-DD format";
-          type = lib.types.nullOr lib.types.str;
-        };
-        filter = lib.mkOption {
-          default = null;
-          description = "filter";
-          type = lib.types.nullOr lib.types.anything;
-        };
-        show-empty = lib.mkOption {
-          default = null;
-          description = "Show empty balances instead of hiding them";
-          type = lib.types.nullOr lib.types.bool;
-        };
-        virtual = lib.mkOption {
-          default = null;
-          description = "Show virtual postings too";
-          type = lib.types.nullOr lib.types.bool;
-        };
-        year = lib.mkOption {
-          default = null;
-          description = "Filter to the given year";
-          type = lib.types.nullOr lib.types.int;
-        };
+    type = definedSubmodule [] {
+      begin = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Begin date (inclusive), in YYYY-MM-DD format\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      convert = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Currency to convert to";
+        type = lib.types.nullOr lib.types.str;
+      };
+      end = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "End date (inclusive), in YYYY-MM-DD format\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      filter = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "filter";
+        type = lib.types.nullOr lib.types.anything;
+      };
+      show-empty = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `false`";
+        description = "Show empty balances instead of hiding them";
+        type = lib.types.nullOr lib.types.bool;
+      };
+      virtual = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `false`";
+        description = "Show virtual postings too";
+        type = lib.types.nullOr lib.types.bool;
+      };
+      year = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Filter to the given year";
+        type = lib.types.nullOr lib.types.int;
       };
     };
   };
   ledger = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"ledger.cent\"`";
     description = "ledger file";
     type = lib.types.nullOr lib.types.str;
   };
   log-level = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"Info\"`";
     description = "Minimal severity of log messages";
     type = lib.types.nullOr (lib.types.enum [
       "Debug"
@@ -94,76 +117,70 @@
     ]);
   };
   net-worth = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        begin = lib.mkOption {
-          default = null;
-          description = "Begin date (inclusive), in YYYY-MM-DD format";
-          type = lib.types.nullOr lib.types.str;
-        };
-        convert = lib.mkOption {
-          default = null;
-          description = "Currency to convert to";
-          type = lib.types.nullOr lib.types.str;
-        };
-        end = lib.mkOption {
-          default = null;
-          description = "End date (inclusive), in YYYY-MM-DD format";
-          type = lib.types.nullOr lib.types.str;
-        };
-        year = lib.mkOption {
-          default = null;
-          description = "Filter to the given year";
-          type = lib.types.nullOr lib.types.int;
-        };
+    type = definedSubmodule [] {
+      begin = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Begin date (inclusive), in YYYY-MM-DD format\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      convert = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Currency to convert to";
+        type = lib.types.nullOr lib.types.str;
+      };
+      end = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "End date (inclusive), in YYYY-MM-DD format\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      year = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Filter to the given year";
+        type = lib.types.nullOr lib.types.int;
       };
     };
   };
   register = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        begin = lib.mkOption {
-          default = null;
-          description = "Begin date (inclusive), in YYYY-MM-DD format";
-          type = lib.types.nullOr lib.types.str;
-        };
-        block = lib.mkOption {
-          default = null;
-          description = "Group transactions";
-          type = lib.types.nullOr lib.types.str;
-        };
-        convert = lib.mkOption {
-          default = null;
-          description = "Currency to convert to";
-          type = lib.types.nullOr lib.types.str;
-        };
-        end = lib.mkOption {
-          default = null;
-          description = "End date (inclusive), in YYYY-MM-DD format";
-          type = lib.types.nullOr lib.types.str;
-        };
-        filter = lib.mkOption {
-          default = null;
-          description = "filter";
-          type = lib.types.nullOr lib.types.anything;
-        };
-        virtual = lib.mkOption {
-          default = null;
-          description = "Show virtual postings too";
-          type = lib.types.nullOr lib.types.bool;
-        };
-        year = lib.mkOption {
-          default = null;
-          description = "Filter to the given year";
-          type = lib.types.nullOr lib.types.int;
-        };
+    type = definedSubmodule [] {
+      begin = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Begin date (inclusive), in YYYY-MM-DD format\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      block = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"individually\"`";
+        description = "Group transactions";
+        type = lib.types.nullOr lib.types.str;
+      };
+      convert = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Currency to convert to";
+        type = lib.types.nullOr lib.types.str;
+      };
+      end = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "End date (inclusive), in YYYY-MM-DD format\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      filter = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "filter";
+        type = lib.types.nullOr lib.types.anything;
+      };
+      virtual = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `false`";
+        description = "Show virtual postings too";
+        type = lib.types.nullOr lib.types.bool;
+      };
+      year = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Filter to the given year";
+        type = lib.types.nullOr lib.types.int;
       };
     };
   };
   watch = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `false`";
     description = "Run centjes in a loop";
     type = lib.types.nullOr lib.types.bool;
   };

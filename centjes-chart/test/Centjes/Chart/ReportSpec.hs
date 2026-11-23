@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -116,9 +117,10 @@ spec = do
             turnover (V.fromList (map (* scale) values))
               `shouldBe` turnover (V.fromList values)
 
-  describe "produceChartReport" $
-    scenarioDir "test_resources/chart/valid" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+  describe "produceChartReport" $ do
+    let chartValidDir = [reldir|test_resources/chart/valid|]
+    scenarioDir chartValidDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (chartValidDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         reportFile <- liftIO $ replaceExtension ".txt" af
         it "produces the same chart report" $

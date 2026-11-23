@@ -3,420 +3,425 @@
 # centjes-switzerland:test/Centjes/Switzerland/OptParseSpec.hs:13
 # To update this it, run the test with --golden-reset
 { lib }:
-{
+let
+  definedSubmodule = required: declarations: definedType required (lib.types.submodule {
+    options = declarations;
+  });
+  definedType = required: submodule: submodule // {
+    emptyValue = { };
+    functor = submodule.functor // {
+      name = "definedSubmodule";
+    };
+    merge = submodule.merge // {
+      v2 = args: let
+        configValue = name: lib.getAttr name merged.value;
+        isDefined = name: (lib.getAttr name options).isDefined;
+        merged = submodule.merge.v2 args;
+        options = merged.valueMeta.configuration.options;
+        requiredValue = name: if isDefined name then configValue name else throw (lib.concatStrings [
+          "The option `"
+          (lib.showOption (lib.getAttr name options).loc)
+          "' is required but was not defined."
+        ]);
+      in
+      merged // {
+        value = lib.genAttrs required requiredValue // lib.genAttrs (lib.filter isDefined (lib.attrNames (lib.removeAttrs options ["_module"]))) configValue;
+      };
+    };
+    substSubModules = modules: definedType required (submodule.substSubModules modules);
+    typeMerge = _: null;
+  };
+in
+definedSubmodule [] {
   accident-insurance-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:insurance:accident\"`";
     description = "the account to use for accident insurance expenses";
     type = lib.types.nullOr lib.types.str;
   };
   ahv-id = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "The AHV identifier.";
     type = lib.types.nullOr lib.types.str;
   };
   base-dir = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "base directory";
     type = lib.types.nullOr lib.types.str;
   };
   clean = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "Clean the packet directory";
     type = lib.types.nullOr lib.types.bool;
   };
   daily-allowance-insurance-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:insurance:daily-allowance\"`";
     description = "the account to use for daily allowance insurance expenses";
     type = lib.types.nullOr lib.types.str;
   };
   daycare-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:daycare\"`";
     description = "the account to use for daycare expenses";
     type = lib.types.nullOr lib.types.str;
   };
   domestic-income-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"income:domestic\"`";
     description = "Account name of your domestic income";
     type = lib.types.nullOr lib.types.str;
   };
   donations-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:charity\"`";
     description = "the account to use for donations";
     type = lib.types.nullOr lib.types.str;
   };
   download-rates = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        begin = lib.mkOption {
-          default = null;
-          description = "The begin date (inclusive), default: Start of the year";
-          type = lib.types.nullOr lib.types.str;
-        };
-        end = lib.mkOption {
-          default = null;
-          description = "The final date (inclusive), default: Yesterday";
-          type = lib.types.nullOr lib.types.str;
-        };
-        output = lib.mkOption {
-          default = null;
-          description = "Where to put the resulting file";
-          type = lib.types.nullOr lib.types.str;
-        };
+    type = definedSubmodule [] {
+      begin = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "The begin date (inclusive), default: Start of the year\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      end = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "The final date (inclusive), default: Yesterday\nDay";
+        type = lib.types.nullOr lib.types.str;
+      };
+      output = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Where to put the resulting file";
+        type = lib.types.nullOr lib.types.str;
       };
     };
   };
   education-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:education\"`";
     description = "the account to use for education expenses";
     type = lib.types.nullOr lib.types.str;
   };
   electricity-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:electricity:homeoffice\"`";
     description = "the account to use for electricity expenses";
     type = lib.types.nullOr lib.types.str;
   };
   electricity-private-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:electricity:private\"`";
     description = "the account to use for private electricity expenses";
     type = lib.types.nullOr lib.types.str;
   };
   exports-income-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"income:exports\"`";
     description = "Account name of your exports' income";
     type = lib.types.nullOr lib.types.str;
   };
   first-name = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "your first name";
     type = lib.types.nullOr lib.types.str;
   };
   foreign-income-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"income:foreign\"`";
     description = "Account name of your foreign income";
     type = lib.types.nullOr lib.types.str;
   };
   health-dentist-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:health:dentist\"`";
     description = "the account to use for dentist expenses";
     type = lib.types.nullOr lib.types.str;
   };
   health-doctor-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:health:doctor\"`";
     description = "the account to use for doctor and prescription expenses";
     type = lib.types.nullOr lib.types.str;
   };
   health-hospital-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:health:hospital\"`";
     description = "the account to use for hospital stay expenses";
     type = lib.types.nullOr lib.types.str;
   };
   health-insurance-premiums-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:insurance:health\"`";
     description = "the account to use for health insurance premiums";
     type = lib.types.nullOr lib.types.str;
   };
   health-other-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:health:other\"`";
     description = "the account to use for other health expenses";
     type = lib.types.nullOr lib.types.str;
   };
   health-therapy-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:health:therapy\"`";
     description = "the account to use for therapy and cure expenses";
     type = lib.types.nullOr lib.types.str;
   };
   homeoffice-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:rent:homeoffice\"`";
     description = "the account to use for homeoffice expenses";
     type = lib.types.nullOr lib.types.str;
   };
   homeoffice-private-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:rent:private\"`";
     description = "the account to use for private homeoffice expenses";
     type = lib.types.nullOr lib.types.str;
   };
   internet-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:internet:homeoffice\"`";
     description = "the account to use for internet expenses";
     type = lib.types.nullOr lib.types.str;
   };
   internet-private-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:internet:private\"`";
     description = "the account to use for private internet expenses";
     type = lib.types.nullOr lib.types.str;
   };
   last-name = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "your last name";
     type = lib.types.nullOr lib.types.str;
   };
   ledger = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"ledger.cent\"`";
     description = "ledger file";
     type = lib.types.nullOr lib.types.str;
   };
   machinery-assets-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"assets:machinery\"`";
     description = "the account to use for machinery assets";
     type = lib.types.nullOr lib.types.str;
   };
   machinery-depreciation-rate = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"0.4\"`";
     description = "the depreciation rate for machinery (e.g. 0.4 for 40%)";
     type = lib.types.nullOr lib.types.str;
   };
   machinery-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:machinery\"`";
     description = "the expenses account for machinery purchases";
     type = lib.types.nullOr lib.types.str;
   };
   movables-assets-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"assets:movables\"`";
     description = "the account to use for movables assets";
     type = lib.types.nullOr lib.types.str;
   };
   movables-depreciation-rate = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"0.25\"`";
     description = "the depreciation rate for movables (e.g. 0.25 for 25%)";
     type = lib.types.nullOr lib.types.str;
   };
   movables-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:movables\"`";
     description = "the expenses account for movables purchases";
     type = lib.types.nullOr lib.types.str;
   };
   organisation-name = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "The organisation's legal name";
     type = lib.types.nullOr lib.types.str;
   };
   person-name = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "Your legal name";
     type = lib.types.nullOr lib.types.str;
   };
   phone-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:phone:professional\"`";
     description = "the account to use for phone expenses";
     type = lib.types.nullOr lib.types.str;
   };
   phone-private-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:phone:private\"`";
     description = "the account to use for private phone expenses";
     type = lib.types.nullOr lib.types.str;
   };
   prices = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"currency-rates.cent\"`";
     description = "prices file";
     type = lib.types.nullOr lib.types.str;
   };
   quarter = lib.mkOption {
-    default = null;
-    description = "the quarter to produce the report for";
+    defaultText = lib.literalMD "Unspecified";
+    description = "the quarter to produce the report for\nQuarter";
     type = lib.types.nullOr lib.types.unspecified;
   };
   set-aside = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        cantonal = lib.mkOption {
-          default = { };
-          type = lib.types.submodule {
-            options = {
-              rate = lib.mkOption {
-                default = null;
-                description = "the share of revenue that is set aside for this tax, between 0 and 1";
-                type = lib.types.nullOr lib.types.number;
-              };
-              reserves = lib.mkOption {
-                default = null;
-                description = "the accounts that money for this tax is moved or paid into";
-                type = lib.types.nullOr (lib.types.listOf lib.types.str);
-              };
-            };
+    type = definedSubmodule [] {
+      cantonal = lib.mkOption {
+        type = definedSubmodule [] {
+          rate = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified";
+            description = "the share of revenue that is set aside for this tax, between 0 and 1";
+            type = lib.types.nullOr lib.types.number;
+          };
+          reserves = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `[]`";
+            description = "the accounts that money for this tax is moved or paid into";
+            type = lib.types.nullOr (lib.types.listOf lib.types.str);
           };
         };
-        federal = lib.mkOption {
-          default = { };
-          type = lib.types.submodule {
-            options = {
-              rate = lib.mkOption {
-                default = null;
-                description = "the share of revenue that is set aside for this tax, between 0 and 1";
-                type = lib.types.nullOr lib.types.number;
-              };
-              reserves = lib.mkOption {
-                default = null;
-                description = "the accounts that money for this tax is moved or paid into";
-                type = lib.types.nullOr (lib.types.listOf lib.types.str);
-              };
-            };
+      };
+      federal = lib.mkOption {
+        type = definedSubmodule [] {
+          rate = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified";
+            description = "the share of revenue that is set aside for this tax, between 0 and 1";
+            type = lib.types.nullOr lib.types.number;
+          };
+          reserves = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `[]`";
+            description = "the accounts that money for this tax is moved or paid into";
+            type = lib.types.nullOr (lib.types.listOf lib.types.str);
           };
         };
-        sva = lib.mkOption {
-          default = { };
-          type = lib.types.submodule {
-            options = {
-              rate = lib.mkOption {
-                default = null;
-                description = "the share of revenue that is set aside for this tax, between 0 and 1";
-                type = lib.types.nullOr lib.types.number;
-              };
-              reserves = lib.mkOption {
-                default = null;
-                description = "the accounts that money for this tax is moved or paid into";
-                type = lib.types.nullOr (lib.types.listOf lib.types.str);
-              };
-            };
+      };
+      sva = lib.mkOption {
+        type = definedSubmodule [] {
+          rate = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified";
+            description = "the share of revenue that is set aside for this tax, between 0 and 1";
+            type = lib.types.nullOr lib.types.number;
+          };
+          reserves = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `[]`";
+            description = "the accounts that money for this tax is moved or paid into";
+            type = lib.types.nullOr (lib.types.listOf lib.types.str);
           };
         };
-        wealth = lib.mkOption {
-          default = { };
-          type = lib.types.submodule {
-            options = {
-              municipality = lib.mkOption {
-                default = null;
-                description = "the municipality you live in, by its number from the Federal Statistical Office, for its Steuerfuss";
-                type = lib.types.nullOr lib.types.int;
-              };
-              owned = lib.mkOption {
-                default = null;
-                description = "accounts shared with someone who is taxed separately, and the share of them that is yours, between 0 and 1";
-                type = lib.types.nullOr (lib.types.attrsOf lib.types.number);
-              };
-              reserves = lib.mkOption {
-                default = null;
-                description = "the accounts that money for wealth tax is moved into";
-                type = lib.types.nullOr (lib.types.listOf lib.types.str);
-              };
-              tag-not-taxable = lib.mkOption {
-                default = null;
-                description = "tag of asset and liability accounts that do not count as wealth, like a third pillar";
-                type = lib.types.nullOr lib.types.str;
-              };
-              tag-taxable = lib.mkOption {
-                default = null;
-                description = "tag of asset and liability accounts that count as wealth";
-                type = lib.types.nullOr lib.types.str;
-              };
-            };
+      };
+      wealth = lib.mkOption {
+        type = definedSubmodule [] {
+          municipality = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `261`";
+            description = "the municipality you live in, by its number from the Federal Statistical Office, for its Steuerfuss";
+            type = lib.types.nullOr lib.types.int;
+          };
+          owned = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `{ }`";
+            description = "accounts shared with someone who is taxed separately, and the share of them that is yours, between 0 and 1";
+            type = lib.types.nullOr (lib.types.attrsOf lib.types.number);
+          };
+          reserves = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `[]`";
+            description = "the accounts that money for wealth tax is moved into";
+            type = lib.types.nullOr (lib.types.listOf lib.types.str);
+          };
+          tag-not-taxable = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `\"not-taxable\"`";
+            description = "tag of asset and liability accounts that do not count as wealth, like a third pillar";
+            type = lib.types.nullOr lib.types.str;
+          };
+          tag-taxable = lib.mkOption {
+            defaultText = lib.literalMD "Unspecified, interpreted as `\"taxable\"`";
+            description = "tag of asset and liability accounts that count as wealth";
+            type = lib.types.nullOr lib.types.str;
           };
         };
       };
     };
   };
   tag-deductible = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"deductible\"`";
     description = "tag to use for deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
   tag-not-deductible = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"not-deductible\"`";
     description = "tag to use for non-deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
   tag-not-tax-deductible = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"not-tax-deductible\"`";
     description = "tag to use for non-tax-deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
   tag-not-vat-deductible = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"not-vat-deductible\"`";
     description = "tag to use for non-VAT-deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
   tag-tax-deductible = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"tax-deductible\"`";
     description = "tag to use for tax-deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
   tag-undeclared = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"undeclared\"`";
     description = "tag to use for undeclared asset accounts";
     type = lib.types.nullOr lib.types.str;
   };
   tag-vat-deductible = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"vat-deductible\"`";
     description = "tag to use for VAT-deductible purchases";
     type = lib.types.nullOr lib.types.str;
   };
   taxes = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        packet-dir = lib.mkOption {
-          default = null;
-          description = "Path to the packet directory to create";
-          type = lib.types.nullOr lib.types.str;
-        };
-        zip-file = lib.mkOption {
-          default = null;
-          description = "Path to the zip file to create";
-          type = lib.types.nullOr lib.types.str;
-        };
+    type = definedSubmodule [] {
+      packet-dir = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Path to the packet directory to create";
+        type = lib.types.nullOr lib.types.str;
+      };
+      zip-file = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"tax-packet.zip\"`";
+        description = "Path to the zip file to create";
+        type = lib.types.nullOr lib.types.str;
       };
     };
   };
   third-pillar-assets-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"assets:third-pillar\"`";
     description = "the account to use for third pillar assets";
     type = lib.types.nullOr lib.types.str;
   };
   third-pillar-insurance-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:insurance:third-pillar\"`";
     description = "the account to use for third pillar insurance expenses";
     type = lib.types.nullOr lib.types.str;
   };
   travel-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:travel:professional\"`";
     description = "the account to use for travel expenses";
     type = lib.types.nullOr lib.types.str;
   };
   travel-private-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:travel:private\"`";
     description = "the account to use for private travel expenses";
     type = lib.types.nullOr lib.types.str;
   };
   vat = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        packet-dir = lib.mkOption {
-          default = null;
-          description = "Path to the packet directory to create";
-          type = lib.types.nullOr lib.types.str;
-        };
-        zip-file = lib.mkOption {
-          default = null;
-          description = "path to the zip file to create";
-          type = lib.types.nullOr lib.types.str;
-        };
+    type = definedSubmodule [] {
+      packet-dir = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Path to the packet directory to create";
+        type = lib.types.nullOr lib.types.str;
+      };
+      zip-file = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"vat-packet.zip\"`";
+        description = "path to the zip file to create";
+        type = lib.types.nullOr lib.types.str;
       };
     };
   };
   vat-expenses-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:VAT\"`";
     description = "the account of the VAT paid on purchases";
     type = lib.types.nullOr lib.types.str;
   };
   vat-id = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "the VAT identifier";
     type = lib.types.nullOr lib.types.str;
   };
   vat-income-account = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"income:VAT\"`";
     description = "Account name of your the VAT you've charged";
     type = lib.types.nullOr lib.types.str;
   };
   watch = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `false`";
     description = "Run centjes in a loop";
     type = lib.types.nullOr lib.types.bool;
   };
   year = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "the year to produce the report for";
     type = lib.types.nullOr lib.types.int;
   };

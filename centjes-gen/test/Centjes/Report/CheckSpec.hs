@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Centjes.Report.CheckSpec (spec) where
@@ -17,8 +18,9 @@ import Test.Syd
 spec :: Spec
 spec =
   describe "doCompleteCheck" $ do
-    scenarioDirRecur "test_resources/check" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let checkDir = [reldir|test_resources/check|]
+    scenarioDirRecur checkDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (checkDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         resultFile <- liftIO $ replaceExtension ".err" af
         it "shows the same error when checking this module" $ do
@@ -27,8 +29,9 @@ spec =
             -- Try to check
             errs <- runTestLoggingT $ shouldFailToValidateT $ doCompleteCheck ds
             pure $ renderValidationErrors diag errs
-    scenarioDirRecur "test_resources/check-valid" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let checkValidDir = [reldir|test_resources/check-valid|]
+    scenarioDirRecur checkValidDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (checkValidDir </> fp)
       when (fileExtension af == Just ".cent") $
         it "checks this module without errors" $ do
           (ds, diag) <- runTestLoggingT $ loadModules af

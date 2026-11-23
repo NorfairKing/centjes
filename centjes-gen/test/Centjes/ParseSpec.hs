@@ -93,9 +93,10 @@ parseSpec ::
   Spec
 parseSpec name parser = withFrozenCallStack $ do
   describe name $ do
-    scenarioDir ("test_resources/syntax/" <> name <> "/valid") $ \fp ->
-      it (unwords ["can parse", fp]) $ do
-        af <- resolveFile' fp
+    validDir <- liftIO $ parseRelDir (concat ["test_resources/syntax/", name, "/valid"])
+    scenarioDir validDir $ \fp ->
+      it (unwords ["can parse", fromRelFile (validDir </> fp)]) $ do
+        af <- makeAbsolute (validDir </> fp)
         here <- getCurrentDir
         rf <- makeRelative here af
         contents <- T.strip <$> T.readFile (fromAbsFile af)
@@ -103,11 +104,12 @@ parseSpec name parser = withFrozenCallStack $ do
           expected <- shouldParse parser here rf contents
           shouldBeValid expected
 
-    scenarioDir ("test_resources/syntax/" <> name <> "/invalid") $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    invalidDir <- liftIO $ parseRelDir (concat ["test_resources/syntax/", name, "/invalid"])
+    scenarioDir invalidDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (invalidDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         errFile <- liftIO $ replaceExtension ".error" af
-        it (unwords ["fails to parse", fp, "with the right error"]) $
+        it (unwords ["fails to parse", fromRelFile (invalidDir </> fp), "with the right error"]) $
           goldenStringFile (fromAbsFile errFile) $ do
             here <- getCurrentDir
             rf <- makeRelative here af

@@ -1,5 +1,5 @@
 $doctype 5
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +10,8 @@ $doctype 5
     $# without !important.
     <link rel="stylesheet" href=@{AssetsStaticR bulma_css}>
     <link rel="icon" href=@{AssetsStaticR favicon_ico} type="image/x-icon">
+    $maybe route <- mCurrentRoute
+      <link rel="canonical" href=@{route}>
 
     ^{pageHead pageContent}
     $maybe description <- pageDescription pageContent

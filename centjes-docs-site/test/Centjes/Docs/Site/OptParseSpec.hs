@@ -11,4 +11,4 @@ spec = do
   describe "Settings" $ do
     settingsLintSpec @Settings
     goldenSettingsReferenceDocumentationSpec @Settings "test_resources/documentation.txt" "centjes-docs-site"
-    goldenSettingsNixOptionsSpec @Settings "options.nix"
+    goldenSettingsNixOptionTypeSpec @Settings "options.nix"

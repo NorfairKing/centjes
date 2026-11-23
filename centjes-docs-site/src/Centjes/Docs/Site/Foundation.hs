@@ -47,6 +47,7 @@ mkYesodData "App" $(parseRoutesFile "routes")
 instance Yesod App where
   defaultLayout widget = do
     app <- getYesod
+    mCurrentRoute <- getCurrentRoute
     let addReloadWidget = if development then (<> autoReloadWidgetFor ReloadR) else id
     pageContent <-
       widgetToPageContent $ do

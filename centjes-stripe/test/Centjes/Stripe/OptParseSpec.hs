@@ -10,4 +10,4 @@ spec :: Spec
 spec = do
   settingsLintSpec @Settings
   goldenSettingsReferenceDocumentationSpec @Settings "test_resources/documentation.txt" "centjes-stripe"
-  goldenSettingsNixOptionsSpec @Settings "options.nix"
+  goldenSettingsNixOptionTypeSpec @Settings "options.nix"

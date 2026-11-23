@@ -3,121 +3,147 @@
 # centjes-stripe:test/Centjes/Stripe/OptParseSpec.hs:13
 # To update this it, run the test with --golden-reset
 { lib }:
-{
+let
+  definedSubmodule = required: declarations: definedType required (lib.types.submodule {
+    options = declarations;
+  });
+  definedType = required: submodule: submodule // {
+    emptyValue = { };
+    functor = submodule.functor // {
+      name = "definedSubmodule";
+    };
+    merge = submodule.merge // {
+      v2 = args: let
+        configValue = name: lib.getAttr name merged.value;
+        isDefined = name: (lib.getAttr name options).isDefined;
+        merged = submodule.merge.v2 args;
+        options = merged.valueMeta.configuration.options;
+        requiredValue = name: if isDefined name then configValue name else throw (lib.concatStrings [
+          "The option `"
+          (lib.showOption (lib.getAttr name options).loc)
+          "' is required but was not defined."
+        ]);
+      in
+      merged // {
+        value = lib.genAttrs required requiredValue // lib.genAttrs (lib.filter isDefined (lib.attrNames (lib.removeAttrs options ["_module"]))) configValue;
+      };
+    };
+    substSubModules = modules: definedType required (submodule.substSubModules modules);
+    typeMerge = _: null;
+  };
+in
+definedSubmodule [] {
   import = lib.mkOption {
-    default = { };
-    type = lib.types.submodule {
-      options = {
-        assets-account = lib.mkOption {
-          default = null;
-          description = "Account name of the Stripe balance";
-          type = lib.types.nullOr lib.types.str;
-        };
-        begin = lib.mkOption {
-          default = null;
-          description = "The first month to import, default: January of this year";
-          type = lib.types.nullOr lib.types.str;
-        };
-        currency = lib.mkOption {
-          default = null;
-          description = "The currency Stripe settles in";
-          type = lib.types.nullOr lib.types.str;
-        };
-        deductible-tags = lib.mkOption {
-          default = null;
-          description = "Tags for an expense transaction whose expenses carried recoverable VAT";
-          type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        };
-        documents = lib.mkOption {
-          default = null;
-          description = "Directory of the Stripe documents downloaded by hand, relative to the ledger";
-          type = lib.types.nullOr lib.types.str;
-        };
-        domestic-income-account = lib.mkOption {
-          default = null;
-          description = "Account name of domestic income";
-          type = lib.types.nullOr lib.types.str;
-        };
-        fees-account = lib.mkOption {
-          default = null;
-          description = "Account name of Stripe's fees";
-          type = lib.types.nullOr lib.types.str;
-        };
-        fees-attachment = lib.mkOption {
-          default = null;
-          description = "formatTime pattern for Stripe's monthly tax invoice, the one document no API serves";
-          type = lib.types.nullOr lib.types.str;
-        };
-        fees-vat-rate = lib.mkOption {
-          default = null;
-          description = "The percentage Stripe charges VAT on its own fees at";
-          type = lib.types.nullOr lib.types.number;
-        };
-        foreign-income-account = lib.mkOption {
-          default = null;
-          description = "Account name of foreign income";
-          type = lib.types.nullOr lib.types.str;
-        };
-        home-country = lib.mkOption {
-          default = null;
-          description = "The two-letter country whose VAT this ledger owes";
-          type = lib.types.nullOr lib.types.str;
-        };
-        key = lib.mkOption {
-          default = null;
-          description = "Stripe API key that can read the balance and payouts and create report runs";
-          type = lib.types.nullOr lib.types.str;
-        };
-        key-file = lib.mkOption {
-          default = null;
-          description = "Stripe API key that can read the balance and payouts and create report runs";
-          type = lib.types.nullOr lib.types.str;
-        };
-        not-vat-deductible-tags = lib.mkOption {
-          default = null;
-          description = "Tags for an expense transaction whose expenses carried no VAT";
-          type = lib.types.nullOr (lib.types.listOf lib.types.str);
-        };
-        opening-account = lib.mkOption {
-          default = null;
-          description = "Account name that the opening balance comes from";
-          type = lib.types.nullOr lib.types.str;
-        };
-        output = lib.mkOption {
-          default = null;
-          description = "Output file path, which this importer rewrites";
-          type = lib.types.nullOr lib.types.str;
-        };
-        payout-account = lib.mkOption {
-          default = null;
-          description = "Account name of the self-transfer that payouts go through";
-          type = lib.types.nullOr lib.types.str;
-        };
-        refunds-account = lib.mkOption {
-          default = null;
-          description = "Account name of money given back to customers";
-          type = lib.types.nullOr lib.types.str;
-        };
-        reports = lib.mkOption {
-          default = null;
-          description = "Directory to save the monthly report CSVs into, relative to the ledger";
-          type = lib.types.nullOr lib.types.str;
-        };
-        vat-expenses-account = lib.mkOption {
-          default = null;
-          description = "Account name of the VAT paid, which is what gets reclaimed";
-          type = lib.types.nullOr lib.types.str;
-        };
-        vat-income-account = lib.mkOption {
-          default = null;
-          description = "Account name of the VAT charged to customers";
-          type = lib.types.nullOr lib.types.str;
-        };
+    type = definedSubmodule [] {
+      assets-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"assets:stripe\"`";
+        description = "Account name of the Stripe balance";
+        type = lib.types.nullOr lib.types.str;
+      };
+      begin = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "The first month to import, default: January of this year";
+        type = lib.types.nullOr lib.types.str;
+      };
+      currency = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"CHF\"`";
+        description = "The currency Stripe settles in";
+        type = lib.types.nullOr lib.types.str;
+      };
+      deductible-tags = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `[\"deductible\"]`";
+        description = "Tags for an expense transaction whose expenses carried recoverable VAT";
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+      };
+      documents = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"documents\"`";
+        description = "Directory of the Stripe documents downloaded by hand, relative to the ledger";
+        type = lib.types.nullOr lib.types.str;
+      };
+      domestic-income-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"income:domestic\"`";
+        description = "Account name of domestic income";
+        type = lib.types.nullOr lib.types.str;
+      };
+      fees-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:banking:stripe\"`";
+        description = "Account name of Stripe's fees";
+        type = lib.types.nullOr lib.types.str;
+      };
+      fees-attachment = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"tax-invoice-%Y-%m.pdf\"`";
+        description = "formatTime pattern for Stripe's monthly tax invoice, the one document no API serves";
+        type = lib.types.nullOr lib.types.str;
+      };
+      fees-vat-rate = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `8.1`";
+        description = "The percentage Stripe charges VAT on its own fees at";
+        type = lib.types.nullOr lib.types.number;
+      };
+      foreign-income-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"income:foreign\"`";
+        description = "Account name of foreign income";
+        type = lib.types.nullOr lib.types.str;
+      };
+      home-country = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"CH\"`";
+        description = "The two-letter country whose VAT this ledger owes";
+        type = lib.types.nullOr lib.types.str;
+      };
+      key = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Stripe API key that can read the balance and payouts and create report runs";
+        type = lib.types.nullOr lib.types.str;
+      };
+      key-file = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified";
+        description = "Stripe API key that can read the balance and payouts and create report runs";
+        type = lib.types.nullOr lib.types.str;
+      };
+      not-vat-deductible-tags = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `[ \"tax-deductible\" \"not-vat-deductible\" ]`";
+        description = "Tags for an expense transaction whose expenses carried no VAT";
+        type = lib.types.nullOr (lib.types.listOf lib.types.str);
+      };
+      opening-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"equity:starting\"`";
+        description = "Account name that the opening balance comes from";
+        type = lib.types.nullOr lib.types.str;
+      };
+      output = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"stripe.cent\"`";
+        description = "Output file path, which this importer rewrites";
+        type = lib.types.nullOr lib.types.str;
+      };
+      payout-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"assets:self-transfer:stripe-neon\"`";
+        description = "Account name of the self-transfer that payouts go through";
+        type = lib.types.nullOr lib.types.str;
+      };
+      refunds-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:refunds\"`";
+        description = "Account name of money given back to customers";
+        type = lib.types.nullOr lib.types.str;
+      };
+      reports = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"documents\"`";
+        description = "Directory to save the monthly report CSVs into, relative to the ledger";
+        type = lib.types.nullOr lib.types.str;
+      };
+      vat-expenses-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"expenses:VAT\"`";
+        description = "Account name of the VAT paid, which is what gets reclaimed";
+        type = lib.types.nullOr lib.types.str;
+      };
+      vat-income-account = lib.mkOption {
+        defaultText = lib.literalMD "Unspecified, interpreted as `\"income:VAT\"`";
+        description = "Account name of the VAT charged to customers";
+        type = lib.types.nullOr lib.types.str;
       };
     };
   };
   ledger = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `\"ledger.cent\"`";
     description = "ledger file";
     type = lib.types.nullOr lib.types.str;
   };

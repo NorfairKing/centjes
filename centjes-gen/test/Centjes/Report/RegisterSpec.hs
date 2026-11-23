@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -50,8 +51,9 @@ spec = do
                   forAllValid $ \ledger ->
                     shouldBeValid $ produceRegister @() f bs mCurrencySymbolTo showVirtual mBegin mEnd ledger
 
-    scenarioDir "test_resources/register/valid" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let registerValidDir = [reldir|test_resources/register/valid|]
+    scenarioDir registerValidDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (registerValidDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         reportFile <- liftIO $ replaceExtension ".txt" af
         configFile <- liftIO $ replaceExtension ".config" af
@@ -96,8 +98,8 @@ spec = do
                 pure $ renderChunksText termCaps $ renderAnyRegister rr
 
     describe "register invariants" $ do
-      scenarioDir "test_resources/register/valid" $ \fp -> do
-        af <- liftIO $ resolveFile' fp
+      scenarioDir registerValidDir $ \fp -> do
+        af <- liftIO $ makeAbsolute (registerValidDir </> fp)
         when (fileExtension af == Just ".cent") $ do
           configFile <- liftIO $ replaceExtension ".config" af
 
@@ -139,8 +141,9 @@ spec = do
                     go (Just block) rest
               go Nothing blocks
 
-    scenarioDir "test_resources/register/error" $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    let registerErrorDir = [reldir|test_resources/register/error|]
+    scenarioDir registerErrorDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (registerErrorDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         resultFile <- liftIO $ replaceExtension ".err" af
         configFile <- liftIO $ replaceExtension ".config" af

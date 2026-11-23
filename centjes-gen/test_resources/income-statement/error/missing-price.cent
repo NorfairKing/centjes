@@ -1,0 +1,10 @@
+currency USD 0.01
+currency CHF 0.01
+
+account assets
+account income
+
+2024-01-15
+  | Salary in USD
+  * assets +3000 USD
+  * income -3000 USD

@@ -3,19 +3,48 @@
 # centjes-docs-site:test/Centjes/Docs/Site/OptParseSpec.hs:14
 # To update this it, run the test with --golden-reset
 { lib }:
-{
+let
+  definedSubmodule = required: declarations: definedType required (lib.types.submodule {
+    options = declarations;
+  });
+  definedType = required: submodule: submodule // {
+    emptyValue = { };
+    functor = submodule.functor // {
+      name = "definedSubmodule";
+    };
+    merge = submodule.merge // {
+      v2 = args: let
+        configValue = name: lib.getAttr name merged.value;
+        isDefined = name: (lib.getAttr name options).isDefined;
+        merged = submodule.merge.v2 args;
+        options = merged.valueMeta.configuration.options;
+        requiredValue = name: if isDefined name then configValue name else throw (lib.concatStrings [
+          "The option `"
+          (lib.showOption (lib.getAttr name options).loc)
+          "' is required but was not defined."
+        ]);
+      in
+      merged // {
+        value = lib.genAttrs required requiredValue // lib.genAttrs (lib.filter isDefined (lib.attrNames (lib.removeAttrs options ["_module"]))) configValue;
+      };
+    };
+    substSubModules = modules: definedType required (submodule.substSubModules modules);
+    typeMerge = _: null;
+  };
+in
+definedSubmodule [] {
   google-analytics-tracking = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "The Google analytics tracking code";
     type = lib.types.nullOr lib.types.str;
   };
   google-search-console-verification = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified";
     description = "The Google search console verification code";
     type = lib.types.nullOr lib.types.str;
   };
   port = lib.mkOption {
-    default = null;
+    defaultText = lib.literalMD "Unspecified, interpreted as `8080`";
     description = "port to serve web requests on on";
     type = lib.types.nullOr lib.types.int;
   };

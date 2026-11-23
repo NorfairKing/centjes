@@ -61,22 +61,22 @@ spec = do
       m <- shouldParse parseModule here [relfile|pure-test.cent|] contents
       formatModule m `shouldBe` contents
 
-  centFilesDirSpec "test_resources/load"
-  centFilesDirSpec "test_resources/compile"
-  centFilesDirSpec "test_resources/balance"
-  centFilesDirSpec "test_resources/register"
-  centFilesDirSpec "test_resources/check"
-  centFilesDirSpec "test_resources/check-valid"
-  centFilesDirSpec "test_resources/lot"
-  centFilesDirSpec "test_resources/virtual"
+  centFilesDirSpec [reldir|test_resources/load|]
+  centFilesDirSpec [reldir|test_resources/compile|]
+  centFilesDirSpec [reldir|test_resources/balance|]
+  centFilesDirSpec [reldir|test_resources/register|]
+  centFilesDirSpec [reldir|test_resources/check|]
+  centFilesDirSpec [reldir|test_resources/check-valid|]
+  centFilesDirSpec [reldir|test_resources/lot|]
+  centFilesDirSpec [reldir|test_resources/virtual|]
 
-centFilesDirSpec :: FilePath -> Spec
+centFilesDirSpec :: Path Rel Dir -> Spec
 centFilesDirSpec dir =
   scenarioDirRecur dir $ \fp -> do
-    af <- liftIO $ resolveFile' fp
+    af <- liftIO $ makeAbsolute (dir </> fp)
     when (fileExtension af == Just ".cent") $
       it "can parse and format idempotently" $
-        goldenTextFile fp $ do
+        goldenTextFile (fromRelFile (dir </> fp)) $ do
           here <- getCurrentDir
           rf <- makeRelative here af
           contents <- T.readFile (fromAbsFile af)
@@ -120,14 +120,15 @@ parseFormatRoundtripWith ::
   Spec
 parseFormatRoundtripWith func name parser formatter = withFrozenCallStack $ do
   describe name $ do
-    scenarioDir ("test_resources/syntax/" <> name <> "/valid") $ \fp -> do
-      af <- liftIO $ resolveFile' fp
+    validDir <- liftIO $ parseRelDir (concat ["test_resources/syntax/", name, "/valid"])
+    scenarioDir validDir $ \fp -> do
+      af <- liftIO $ makeAbsolute (validDir </> fp)
       when (fileExtension af == Just ".cent") $ do
         let namedDir = parent (parent af)
         formattedDir <- liftIO $ resolveDir namedDir "formatted"
         let resultFile = formattedDir </> filename af
 
-        it (unwords ["can roundtrip", fp, "back to text the same way"]) $
+        it (unwords ["can roundtrip", fromRelFile (validDir </> fp), "back to text the same way"]) $
           goldenTextFile (fromAbsFile resultFile) $ do
             here <- getCurrentDir
             rf <- makeRelative here af

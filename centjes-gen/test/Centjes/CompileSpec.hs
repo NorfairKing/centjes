@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -72,8 +73,9 @@ spec = do
     it "produces valid ledgers" $
       producesValid (compileDeclarations @())
 
-  scenarioDir "test_resources/compile" $ \fp -> do
-    af <- liftIO $ resolveFile' fp
+  let compileDir = [reldir|test_resources/compile|]
+  scenarioDir compileDir $ \fp -> do
+    af <- liftIO $ makeAbsolute (compileDir </> fp)
     when (fileExtension af == Just ".cent") $ do
       resultFile <- liftIO $ replaceExtension ".err" af
       it "shows the same error when compiling this module" $ do
