@@ -43,6 +43,9 @@ import Language.Haskell.TH.Syntax (Lift)
 newtype AccountName = AccountName {unAccountName :: NonEmpty Text}
   deriving stock (Eq, Ord, Generic, Lift)
 
+-- [allow:HsNoCustomShowRead] opt-env-conf documents a setting's default with
+-- show, and an account name should read there the way it is written in a
+-- config file.
 instance Show AccountName where
   show = show . toString
 
