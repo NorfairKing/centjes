@@ -1,10 +1,10 @@
                 [37mBalance[m     [37mTotal[m     
-[37massets-old[m      [32m  7.00[m  [32mUSD[m [32m  7.00[m [32mUSD[m
 [37massets:cash[m                 [31m-15.00[m [31mUSD[m
 [37m└─ wallet[m       [31m-15.00[m  [31mUSD[m [31m-15.00[m [31mUSD[m
 [37massets:vault[m                [32m 15.00[m [32mUSD[m
 [37m├─ checking[m     [32m 10.00[m  [32mUSD[m [32m 10.00[m [32mUSD[m
 [37m└─ savings[m      [32m  5.00[m  [32mUSD[m [32m  5.00[m [32mUSD[m
+[37massets-old[m      [32m  7.00[m  [32mUSD[m [32m  7.00[m [32mUSD[m
 [37mequity[m          [31m -7.00[m  [31mUSD[m [31m -7.00[m [31mUSD[m
 [37mexpenses:food[m               [32m  5.00[m [32mUSD[m
 [37m└─ apple[m        [32m  5.00[m  [32mUSD[m [32m  5.00[m [32mUSD[m

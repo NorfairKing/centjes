@@ -24,7 +24,6 @@ import qualified Centjes.Typo as Text
 import qualified Data.Char as Char
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
-import Data.Ord (comparing)
 import Data.String
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -37,8 +36,12 @@ import Language.Haskell.TH.Syntax (Lift)
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
+-- | The segments of an account name, root first.
+--
+-- Root first, so that the derived 'Ord' puts every account right after its
+-- parent.
 newtype AccountName = AccountName {unAccountName :: NonEmpty Text}
-  deriving stock (Eq, Generic, Lift)
+  deriving stock (Eq, Ord, Generic, Lift)
 
 instance Show AccountName where
   show = show . toString
@@ -67,9 +70,6 @@ validAccountNameChar = \case
     | Char.isLatin1 c && Char.isAlphaNum c -> True
     | otherwise -> False
 
-instance Ord AccountName where
-  compare = comparing toText
-
 instance HasCodec AccountName where
   codec = bimapCodec f toText codec
     where
@@ -90,7 +90,7 @@ fromString :: String -> Maybe AccountName
 fromString = fromText . T.pack
 
 fromTextOrError :: Text -> Either String AccountName
-fromTextOrError = prettyValidate . AccountName . NE.fromList . reverse . T.splitOn ":"
+fromTextOrError = prettyValidate . AccountName . NE.fromList . T.splitOn ":"
 
 -- | Prefer 'fromTextOrErr' over 'fromStringOrErr'
 fromStringOrError :: String -> Either String AccountName
@@ -98,16 +98,14 @@ fromStringOrError = fromTextOrError . T.pack
 
 -- | Prefer 'toText' over 'toString'.
 toText :: AccountName -> Text
-toText = T.intercalate ":" . reverse . NE.toList . unAccountName
+toText = T.intercalate ":" . NE.toList . unAccountName
 
 -- | Prefer 'toText' over 'toString'.
 toString :: AccountName -> String
 toString = T.unpack . toText
 
 parent :: AccountName -> Maybe AccountName
-parent (AccountName (_ :| ts)) = do
-  ts' <- NE.nonEmpty ts
-  pure $ AccountName ts'
+parent (AccountName ts) = AccountName <$> NE.nonEmpty (NE.init ts)
 
 ancestors :: AccountName -> [AccountName]
 ancestors an = case parent an of

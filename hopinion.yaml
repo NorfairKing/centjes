@@ -8,7 +8,6 @@ disabled-rules:
   - HsNewtypeNotSynonym
   - HsNoCatchAllOwnSum
   - HsNoCustomEq
-  - HsNoCustomOrd
   - HsNoCustomShowRead
   - HsNoFilePath
   - HsNoRestatedGenValidDefaults

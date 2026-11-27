@@ -113,7 +113,7 @@ buildAccountForest balances =
     buildTree bs allAccounts (an, bal) =
       let -- Find direct children: accounts whose parent is this account
           children = filter (\(childAn, _) -> AccountName.parent childAn == Just an) allAccounts
-          leafName = NE.head (AccountName.unAccountName an) -- First element is the leaf (stored in reverse)
+          leafName = NE.last (AccountName.unAccountName an)
        in AccountTree
             { accountTreeName = leafName,
               accountTreeFullName = an,
