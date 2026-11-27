@@ -163,6 +163,7 @@ library
       Centjes.Switzerland.Command.VAT
       Centjes.Switzerland.OptParse
       Centjes.Switzerland.Report.Common
+      Centjes.Switzerland.Report.FormattedAmount
       Centjes.Switzerland.Report.SetAside
       Centjes.Switzerland.Report.SetAside.Types
       Centjes.Switzerland.Report.Taxes

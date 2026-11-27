@@ -13,7 +13,7 @@ where
 import Autodocodec
 import qualified Centjes.Description as Description
 import Centjes.Ledger
-import Centjes.Location
+import Centjes.Switzerland.Report.FormattedAmount
 import Centjes.Switzerland.Report.VAT.Types
 import qualified Centjes.Timestamp as Timestamp
 import Data.Aeson (ToJSON)
@@ -280,13 +280,4 @@ instance HasCodec AmountWithCurrency where
 
 amountToAmountWithCurrency :: Currency ann -> Money.Amount -> AmountWithCurrency
 amountToAmountWithCurrency currency amount =
-  let Located _ qf = currencyQuantisationFactor currency
-      symbol = currencySymbol currency
-   in AmountWithCurrency (Amount.format qf amount) symbol
-
-type FormattedAmount = String
-
-formatAmount :: Currency ann -> Money.Amount -> FormattedAmount
-formatAmount currency account =
-  let Located _ qf = currencyQuantisationFactor currency
-   in Amount.format qf account
+  AmountWithCurrency (formatAmount currency amount) (currencySymbol currency)

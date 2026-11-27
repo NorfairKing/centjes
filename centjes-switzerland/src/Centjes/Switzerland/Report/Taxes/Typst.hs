@@ -13,7 +13,7 @@ import Autodocodec
 import qualified Centjes.CurrencySymbol as CurrencySymbol
 import qualified Centjes.Description as Description
 import Centjes.Ledger
-import Centjes.Location
+import Centjes.Switzerland.Report.FormattedAmount
 import Centjes.Switzerland.Report.Taxes.Types
 import qualified Centjes.Timestamp as Timestamp
 import Data.Aeson (ToJSON)
@@ -31,8 +31,7 @@ import Text.Printf
 
 taxesReportInput :: TaxesReport ann -> Input
 taxesReportInput TaxesReport {..} =
-  let formatAmount cur = Amount.format (locatedValue (currencyQuantisationFactor cur))
-      formatChfAmount = formatAmount taxesReportCHF
+  let formatChfAmount = formatAmount taxesReportCHF
 
       inputLastName = taxesReportLastName
       inputFirstName = taxesReportFirstName
@@ -118,7 +117,7 @@ taxesReportInput TaxesReport {..} =
             partitionedExpensesInputTotalBusinessExpenses = formatChfAmount partitionedExpensesTotalBusinessExpenses,
             partitionedExpensesInputPrivateExpenses = map convertPrivateExpense partitionedExpensesPrivateExpenses,
             partitionedExpensesInputTotalPrivateExpenses = formatChfAmount partitionedExpensesTotalPrivateExpenses,
-            partitionedExpensesInputTotalExpenses = maybe "ERROR" formatChfAmount $ Amount.add partitionedExpensesTotalBusinessExpenses partitionedExpensesTotalPrivateExpenses
+            partitionedExpensesInputTotalExpenses = maybe (FormattedAmount "ERROR") formatChfAmount $ Amount.add partitionedExpensesTotalBusinessExpenses partitionedExpensesTotalPrivateExpenses
           }
       inputInsuranceExpenses =
         convertPartitionedExpenses
@@ -386,7 +385,7 @@ instance HasCodec Input where
 data AssetInput = AssetInput
   { assetInputAccountName :: !AccountName,
     assetInputBalances :: !(Map Text Balance),
-    assetInputConvertedBalance :: !String,
+    assetInputConvertedBalance :: !FormattedAmount,
     assetInputEvidence :: !(NonEmpty (Path Rel File))
   }
 
@@ -404,8 +403,8 @@ instance HasCodec AssetInput where
           .= assetInputEvidence
 
 data Balance = Balance
-  { balanceOriginal :: String,
-    balanceConverted :: String
+  { balanceOriginal :: FormattedAmount,
+    balanceConverted :: FormattedAmount
   }
 
 instance HasCodec Balance where
@@ -877,5 +876,3 @@ instance HasCodec AmountWithCurrency where
           .= amountWithCurrencyAmount
         <*> requiredField "symbol" "currency symbol"
           .= amountWithCurrencyCurrency
-
-type FormattedAmount = String
