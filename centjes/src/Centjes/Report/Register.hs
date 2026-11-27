@@ -686,11 +686,12 @@ convertFlatEntry currencyTo priceGraph _convertedRunning rawBalances FlatEntry {
         Validation
           (RegisterError ann)
           ([ConvertedFlatPosting ann], Money.MultiAccount (Commodity ann))
-      goPostings rawBal [] = pure ([], rawBal)
-      goPostings rawBal (fp : fps) = do
-        (converted, newRawBal) <- convertFlatPosting currencyTo priceGraph rawBal fp
-        (rest, finalRawBal) <- goPostings newRawBal fps
-        pure (converted : rest, finalRawBal)
+      goPostings rawBal = \case
+        [] -> pure ([], rawBal)
+        fp : fps -> do
+          (converted, newRawBal) <- convertFlatPosting currencyTo priceGraph rawBal fp
+          (rest, finalRawBal) <- goPostings newRawBal fps
+          pure (converted : rest, finalRawBal)
 
   (postings, newRawBalances) <-
     goPostings rawBalances (V.toList flatEntryPostings)
@@ -910,18 +911,19 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
         Money.MultiAccount (Commodity ann) ->
         [FlatPosting ann] ->
         ([RegisterPosting 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
-      convertPostings blockRunning [] = ([], blockRunning)
-      convertPostings blockRunning (fp : fps) =
-        let newBlockRunning = fromMaybe blockRunning (MultiAccount.add blockRunning (flatPostingAmount fp))
-            regPosting =
-              RegisterPosting
-                { registerPosting = flatPosting fp,
-                  registerPostingAmount = flatPostingAmount fp,
-                  registerPostingRunningTotal = flatPostingRunningTotal fp,
-                  registerPostingBlockRunningTotal = newBlockRunning
-                }
-            (rest, finalBlockRunning) = convertPostings newBlockRunning fps
-         in (regPosting : rest, finalBlockRunning)
+      convertPostings blockRunning = \case
+        [] -> ([], blockRunning)
+        fp : fps ->
+          let newBlockRunning = fromMaybe blockRunning (MultiAccount.add blockRunning (flatPostingAmount fp))
+              regPosting =
+                RegisterPosting
+                  { registerPosting = flatPosting fp,
+                    registerPostingAmount = flatPostingAmount fp,
+                    registerPostingRunningTotal = flatPostingRunningTotal fp,
+                    registerPostingBlockRunningTotal = newBlockRunning
+                  }
+              (rest, finalBlockRunning) = convertPostings newBlockRunning fps
+           in (regPosting : rest, finalBlockRunning)
 
   let goBlocks ::
         Maybe Block ->
@@ -1114,26 +1116,27 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         Money.Account ->
         [ConvertedFlatPosting ann] ->
         ([RegisterPosting 'SingleCurrency ann], Money.Account)
-      convertPostings blockRunning [] = ([], blockRunning)
-      convertPostings blockRunning (cp : cps) =
-        let -- Within-block running total: sum of individual amounts (for display within block)
-            newBlockRunning = fromMaybe blockRunning (Account.add blockRunning (convertedFlatPostingAmount cp))
-            -- Global running total: bulk-converted value (for final totals matching balance)
-            globalRunningTotal = convertedFlatPostingRunningTotal cp
-            -- For BlockSizeIndividual, use global running total (no separate "Total" column)
-            -- For other block sizes, use within-block running total (separate "Total" column shows global)
-            displayedBlockRunning = case blockSize of
-              BlockSizeIndividual -> globalRunningTotal
-              _ -> newBlockRunning
-            regPosting =
-              RegisterPosting
-                { registerPosting = convertedFlatPosting cp,
-                  registerPostingAmount = convertedFlatPostingAmount cp,
-                  registerPostingRunningTotal = globalRunningTotal,
-                  registerPostingBlockRunningTotal = displayedBlockRunning
-                }
-            (rest, finalBlockRunning) = convertPostings newBlockRunning cps
-         in (regPosting : rest, finalBlockRunning)
+      convertPostings blockRunning = \case
+        [] -> ([], blockRunning)
+        cp : cps ->
+          let -- Within-block running total: sum of individual amounts (for display within block)
+              newBlockRunning = fromMaybe blockRunning (Account.add blockRunning (convertedFlatPostingAmount cp))
+              -- Global running total: bulk-converted value (for final totals matching balance)
+              globalRunningTotal = convertedFlatPostingRunningTotal cp
+              -- For BlockSizeIndividual, use global running total (no separate "Total" column)
+              -- For other block sizes, use within-block running total (separate "Total" column shows global)
+              displayedBlockRunning = case blockSize of
+                BlockSizeIndividual -> globalRunningTotal
+                _ -> newBlockRunning
+              regPosting =
+                RegisterPosting
+                  { registerPosting = convertedFlatPosting cp,
+                    registerPostingAmount = convertedFlatPostingAmount cp,
+                    registerPostingRunningTotal = globalRunningTotal,
+                    registerPostingBlockRunningTotal = displayedBlockRunning
+                  }
+              (rest, finalBlockRunning) = convertPostings newBlockRunning cps
+           in (regPosting : rest, finalBlockRunning)
 
   let goBlocks ::
         Maybe Block ->

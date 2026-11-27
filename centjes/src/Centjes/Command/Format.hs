@@ -55,8 +55,9 @@ formatDir currencies base = do
   files <- snd <$> listDirRecurRel base
 
   let pen :: (a, Either b c) -> Either (a, b) (a, c)
-      pen (a, Left b) = Left (a, b)
-      pen (a, Right c) = Right (a, c)
+      pen = \case
+        (a, Left b) -> Left (a, b)
+        (a, Right c) -> Right (a, c)
 
   parsedFiles <- fmap catMaybes $ forConcurrently files $ \fp ->
     if fileExtension fp == Just ".cent"

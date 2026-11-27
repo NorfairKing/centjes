@@ -1,4 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -133,9 +134,10 @@ flattenForestWithContext :: [AccountTree ann] -> [(TreeRenderContext, AccountTre
 flattenForestWithContext = concatMap flattenRootWithContext
   where
     markLast :: [a] -> [(Bool, a)]
-    markLast [] = []
-    markLast [x] = [(True, x)]
-    markLast (x : xs) = (False, x) : markLast xs
+    markLast = \case
+      [] -> []
+      [x] -> [(True, x)]
+      x : xs -> (False, x) : markLast xs
 
     -- Root nodes don't get tree prefixes and don't contribute to prefix stack
     flattenRootWithContext :: AccountTree ann -> [(TreeRenderContext, AccountTree ann)]

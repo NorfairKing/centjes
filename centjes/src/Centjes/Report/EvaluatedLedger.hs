@@ -955,51 +955,52 @@ processEntry ::
   ProcessState ann ->
   MergedEntry ann ->
   Validation (EvaluatedLedgerError ann) (EvaluatedEntry ann, ProcessState ann)
-processEntry state (MergedPrice lp@(Located _ Price {..})) =
-  let Located _ commodityFrom = priceCommodity
-      Located _ Cost {..} = priceCost
-      Located _ rate = costConversionRate
-      Located _ currencyTo = costCurrency
-      Located _ timestamp = priceTimestamp
-      priority = Timestamp.toDay timestamp
-      newPriceGraph = PriceGraph.insert commodityFrom (CommodityCurrency currencyTo) rate priority (processStatePriceGraph state)
-      newState =
-        state
-          { processStatePriceGraph = newPriceGraph
-          }
-      evaluatedPrice =
-        EvaluatedPrice
-          { evaluatedPriceLocated = lp,
-            evaluatedPriceBalancesWithVirtual = processStateBalancesWithVirtual state,
-            evaluatedPriceBalancesWithoutVirtual = processStateBalancesWithoutVirtual state,
-            evaluatedPricePriceGraph = newPriceGraph
-          }
-   in pure (EvaluatedEntryPrice evaluatedPrice, newState)
-processEntry state (MergedTransaction lt@(Located tl t) (Located _ sumForAssertions, Located _ sumForVirtual)) = do
-  -- Incorporate assertion balances (without virtual)
-  newBalancesWithoutVirtual <- incorporateAccounts tl (processStateBalancesWithoutVirtual state) sumForAssertions
+processEntry state = \case
+  MergedPrice lp@(Located _ Price {..}) ->
+    let Located _ commodityFrom = priceCommodity
+        Located _ Cost {..} = priceCost
+        Located _ rate = costConversionRate
+        Located _ currencyTo = costCurrency
+        Located _ timestamp = priceTimestamp
+        priority = Timestamp.toDay timestamp
+        newPriceGraph = PriceGraph.insert commodityFrom (CommodityCurrency currencyTo) rate priority (processStatePriceGraph state)
+        newState =
+          state
+            { processStatePriceGraph = newPriceGraph
+            }
+        evaluatedPrice =
+          EvaluatedPrice
+            { evaluatedPriceLocated = lp,
+              evaluatedPriceBalancesWithVirtual = processStateBalancesWithVirtual state,
+              evaluatedPriceBalancesWithoutVirtual = processStateBalancesWithoutVirtual state,
+              evaluatedPricePriceGraph = newPriceGraph
+            }
+     in pure (EvaluatedEntryPrice evaluatedPrice, newState)
+  MergedTransaction lt@(Located tl t) (Located _ sumForAssertions, Located _ sumForVirtual) -> do
+    -- Incorporate assertion balances (without virtual)
+    newBalancesWithoutVirtual <- incorporateAccounts tl (processStateBalancesWithoutVirtual state) sumForAssertions
 
-  -- Incorporate user-visible balances (with virtual postings)
-  newBalancesWithVirtual <- incorporateAccounts tl (processStateBalancesWithVirtual state) sumForVirtual
+    -- Incorporate user-visible balances (with virtual postings)
+    newBalancesWithVirtual <- incorporateAccounts tl (processStateBalancesWithVirtual state) sumForVirtual
 
-  -- Build per-posting evaluated postings
-  let currentPriceGraph = processStatePriceGraph state
-  evaluatedPostings <- buildEvaluatedPostings tl (processStateBalancesWithVirtual state) (processStateBalancesWithoutVirtual state) currentPriceGraph (transactionPostings t)
+    -- Build per-posting evaluated postings
+    let currentPriceGraph = processStatePriceGraph state
+    evaluatedPostings <- buildEvaluatedPostings tl (processStateBalancesWithVirtual state) (processStateBalancesWithoutVirtual state) currentPriceGraph (transactionPostings t)
 
-  let evaluatedTransaction =
-        EvaluatedTransaction
-          { evaluatedTransactionLocated = lt,
-            evaluatedTransactionPostings = evaluatedPostings,
-            evaluatedTransactionBalancesWithVirtual = newBalancesWithVirtual,
-            evaluatedTransactionBalancesWithoutVirtual = newBalancesWithoutVirtual,
-            evaluatedTransactionPriceGraph = currentPriceGraph
-          }
-      newState =
-        state
-          { processStateBalancesWithVirtual = newBalancesWithVirtual,
-            processStateBalancesWithoutVirtual = newBalancesWithoutVirtual
-          }
-  pure (EvaluatedEntryTransaction evaluatedTransaction, newState)
+    let evaluatedTransaction =
+          EvaluatedTransaction
+            { evaluatedTransactionLocated = lt,
+              evaluatedTransactionPostings = evaluatedPostings,
+              evaluatedTransactionBalancesWithVirtual = newBalancesWithVirtual,
+              evaluatedTransactionBalancesWithoutVirtual = newBalancesWithoutVirtual,
+              evaluatedTransactionPriceGraph = currentPriceGraph
+            }
+        newState =
+          state
+            { processStateBalancesWithVirtual = newBalancesWithVirtual,
+              processStateBalancesWithoutVirtual = newBalancesWithoutVirtual
+            }
+    pure (EvaluatedEntryTransaction evaluatedTransaction, newState)
 
 incorporateAccounts ::
   (Ord ann) =>

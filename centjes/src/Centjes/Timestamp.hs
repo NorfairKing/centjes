@@ -74,11 +74,10 @@ toText :: Timestamp -> Text
 toText = T.pack . toString
 
 toString :: Timestamp -> String
-toString ts =
-  case ts of
-    TimestampDay d -> formatTime defaultTimeLocale "%F" d
-    TimestampMinute d m -> formatTime defaultTimeLocale "%F %H:%M" (minuteToLocalTime d m)
-    TimestampSecond d s -> formatTime defaultTimeLocale "%F %H:%M:%S" (secondToLocalTime d s)
+toString = \case
+  TimestampDay d -> formatTime defaultTimeLocale "%F" d
+  TimestampMinute d m -> formatTime defaultTimeLocale "%F %H:%M" (minuteToLocalTime d m)
+  TimestampSecond d s -> formatTime defaultTimeLocale "%F %H:%M:%S" (secondToLocalTime d s)
 
 fromString :: String -> Either String Timestamp
 fromString s =

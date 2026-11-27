@@ -423,12 +423,13 @@ stripImportAnnotation :: Import ann -> Import ()
 stripImportAnnotation (Import (Located _ relFile)) = Import (noLoc relFile)
 
 stripDeclarationAnnotation :: Declaration ann -> Declaration ()
-stripDeclarationAnnotation (DeclarationComment (Located _ t)) = DeclarationComment (noLoc t)
-stripDeclarationAnnotation (DeclarationCurrency (Located _ cd)) = DeclarationCurrency (noLoc (stripCurrencyDeclarationAnnotation cd))
-stripDeclarationAnnotation (DeclarationAccount (Located _ ad)) = DeclarationAccount (noLoc (stripAccountDeclarationAnnotation ad))
-stripDeclarationAnnotation (DeclarationTag (Located _ td)) = DeclarationTag (noLoc (stripTagDeclarationAnnotation td))
-stripDeclarationAnnotation (DeclarationPrice (Located _ pd)) = DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd))
-stripDeclarationAnnotation (DeclarationTransaction (Located _ t)) = DeclarationTransaction (noLoc (stripTransactionAnnotation t))
+stripDeclarationAnnotation = \case
+  DeclarationComment (Located _ t) -> DeclarationComment (noLoc t)
+  DeclarationCurrency (Located _ cd) -> DeclarationCurrency (noLoc (stripCurrencyDeclarationAnnotation cd))
+  DeclarationAccount (Located _ ad) -> DeclarationAccount (noLoc (stripAccountDeclarationAnnotation ad))
+  DeclarationTag (Located _ td) -> DeclarationTag (noLoc (stripTagDeclarationAnnotation td))
+  DeclarationPrice (Located _ pd) -> DeclarationPrice (noLoc (stripPriceDeclarationAnnotation pd))
+  DeclarationTransaction (Located _ t) -> DeclarationTransaction (noLoc (stripTransactionAnnotation t))
 
 stripCurrencyDeclarationAnnotation :: CurrencyDeclaration ann -> CurrencyDeclaration ()
 stripCurrencyDeclarationAnnotation CurrencyDeclaration {..} =
@@ -446,13 +447,15 @@ stripAccountDeclarationAnnotation AccountDeclaration {..} =
     }
 
 stripAccountExtraAnnotation :: AccountExtra ann -> AccountExtra ()
-stripAccountExtraAnnotation (AccountExtraAttachment (Located _ ea)) = AccountExtraAttachment (noLoc (stripExtraAttachmentAnnotation ea))
-stripAccountExtraAnnotation (AccountExtraAssertion (Located _ aa)) = AccountExtraAssertion (noLoc (stripAccountAssertionAnnotation aa))
-stripAccountExtraAnnotation (AccountExtraTag (Located _ et)) = AccountExtraTag (noLoc (stripExtraTagAnnotation et))
+stripAccountExtraAnnotation = \case
+  AccountExtraAttachment (Located _ ea) -> AccountExtraAttachment (noLoc (stripExtraAttachmentAnnotation ea))
+  AccountExtraAssertion (Located _ aa) -> AccountExtraAssertion (noLoc (stripAccountAssertionAnnotation aa))
+  AccountExtraTag (Located _ et) -> AccountExtraTag (noLoc (stripExtraTagAnnotation et))
 
 stripAccountAssertionAnnotation :: AccountAssertion ann -> AccountAssertion ()
-stripAccountAssertionAnnotation (AccountAssertionCurrency (Located _ cs)) = AccountAssertionCurrency (noLoc cs)
-stripAccountAssertionAnnotation (AccountAssertionVirtual (Located _ v)) = AccountAssertionVirtual (noLoc v)
+stripAccountAssertionAnnotation = \case
+  AccountAssertionCurrency (Located _ cs) -> AccountAssertionCurrency (noLoc cs)
+  AccountAssertionVirtual (Located _ v) -> AccountAssertionVirtual (noLoc v)
 
 stripTagDeclarationAnnotation :: TagDeclaration ann -> TagDeclaration ()
 stripTagDeclarationAnnotation TagDeclaration {..} =
@@ -494,9 +497,10 @@ stripRatioExpressionAnnotation RatioExpression {..} =
     }
 
 stripTransactionExtraAnnotation :: TransactionExtra ann -> TransactionExtra ()
-stripTransactionExtraAnnotation (TransactionAttachment (Located _ ea)) = TransactionAttachment (noLoc (stripExtraAttachmentAnnotation ea))
-stripTransactionExtraAnnotation (TransactionAssertion (Located _ ea)) = TransactionAssertion (noLoc (stripExtraAssertionAnnotation ea))
-stripTransactionExtraAnnotation (TransactionTag (Located _ et)) = TransactionTag (noLoc (stripExtraTagAnnotation et))
+stripTransactionExtraAnnotation = \case
+  TransactionAttachment (Located _ ea) -> TransactionAttachment (noLoc (stripExtraAttachmentAnnotation ea))
+  TransactionAssertion (Located _ ea) -> TransactionAssertion (noLoc (stripExtraAssertionAnnotation ea))
+  TransactionTag (Located _ et) -> TransactionTag (noLoc (stripExtraTagAnnotation et))
 
 stripExtraAttachmentAnnotation :: ExtraAttachment ann -> ExtraAttachment ()
 stripExtraAttachmentAnnotation (ExtraAttachment (Located _ a)) = ExtraAttachment (noLoc (stripAttachmentAnnotation a))

@@ -143,8 +143,9 @@ countLeadingZeroDecimals x
   | otherwise = ceiling (negate (logBase 10 x)) - 1
 
 extractNumber :: Value -> Maybe Scientific
-extractNumber (Number n) = Just n
-extractNumber _ = Nothing
+extractNumber = \case
+  Number n -> Just n
+  _ -> Nothing
 
 fetchUsdRates :: Manager -> Day -> LoggingT IO (Maybe (KM.KeyMap Value))
 fetchUsdRates man day = do

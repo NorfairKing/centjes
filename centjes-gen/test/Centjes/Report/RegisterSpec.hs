@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -120,11 +121,12 @@ spec = do
 
           it "has block titles in strictly increasing order" $ do
             withSingleCurrencyRegister af configFile $ \blocks -> do
-              let go [] = pure ()
-                  go [_] = pure ()
-                  go (b1 : b2 : rest) = do
-                    registerBlockTitle b1 `shouldSatisfy` (< registerBlockTitle b2)
-                    go (b2 : rest)
+              let go = \case
+                    [] -> pure ()
+                    [_] -> pure ()
+                    b1 : b2 : rest -> do
+                      registerBlockTitle b1 `shouldSatisfy` (< registerBlockTitle b2)
+                      go (b2 : rest)
               go blocks
 
           it "has empty blocks with zero total and same running total as previous" $ do

@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -70,15 +71,16 @@ instance Yesod App where
         let menu = $(widgetFile "menu")
         addReloadWidget $(widgetFile "default-body")
     withUrlRenderer $(hamletFile "templates/default-page.hamlet")
-  errorHandler NotFound = fmap toTypedContent $
-    defaultLayout $
-      do
-        setTitle "Page not found"
-        [whamlet|
-      <h1>
-        Page not found
-      |]
-  errorHandler other = defaultErrorHandler other
+  errorHandler = \case
+    NotFound -> fmap toTypedContent $
+      defaultLayout $
+        do
+          setTitle "Page not found"
+          [whamlet|
+        <h1>
+          Page not found
+        |]
+    other -> defaultErrorHandler other
 
 getHomeR :: Handler Html
 getHomeR = defaultLayout $ do

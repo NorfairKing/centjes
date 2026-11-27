@@ -1,7 +1,6 @@
 disabled-rules:
   - CommentBareTodo
   - HsGenValidWithoutExtraChecking
-  - HsLambdaCase
   - HsNoCatchAllOwnSum
   - HsNoSemigroupOnText
   - HsNoStringError
