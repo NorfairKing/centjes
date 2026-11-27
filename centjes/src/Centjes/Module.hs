@@ -115,9 +115,9 @@ data Module ann = Module
     -- @
     -- import bank.cent
     -- @
-    moduleImports :: [GenLocated ann (Import ann)],
+    moduleImports :: ![GenLocated ann (Import ann)],
     -- | Other declarations such as currencies,accounts,transactions,...
-    moduleDeclarations :: [GenLocated ann (Declaration ann)]
+    moduleDeclarations :: ![GenLocated ann (Declaration ann)]
   }
   deriving stock (Show, Generic)
 
@@ -261,19 +261,19 @@ data AccountExtra ann
     -- @
     -- + attach receipt.pdf
     -- @
-    AccountExtraAttachment (GenLocated ann (ExtraAttachment ann))
+    AccountExtraAttachment !(GenLocated ann (ExtraAttachment ann))
   | -- | Assertion
     --
     -- @
     -- + assert assets = 5 USD
     -- @
-    AccountExtraAssertion (GenLocated ann (AccountAssertion ann))
+    AccountExtraAssertion !(GenLocated ann (AccountAssertion ann))
   | -- | Tag
     --
     -- @
     -- + tag deductible
     -- @
-    AccountExtraTag (GenLocated ann (ExtraTag ann))
+    AccountExtraTag !(GenLocated ann (ExtraTag ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (AccountExtra ann)
@@ -303,7 +303,7 @@ type LTagDeclaration = LLocated TagDeclaration
 -- deductible
 -- @
 data TagDeclaration ann = TagDeclaration
-  { tagDeclarationTag :: GenLocated ann Tag
+  { tagDeclarationTag :: !(GenLocated ann Tag)
   }
   deriving stock (Show, Generic)
 
@@ -696,19 +696,19 @@ data TransactionExtra ann
     -- @
     -- + attach receipt.pdf
     -- @
-    TransactionAttachment (GenLocated ann (ExtraAttachment ann))
+    TransactionAttachment !(GenLocated ann (ExtraAttachment ann))
   | -- | Assertion
     --
     -- @
     -- + assert assets = 5 USD
     -- @
-    TransactionAssertion (GenLocated ann (ExtraAssertion ann))
+    TransactionAssertion !(GenLocated ann (ExtraAssertion ann))
   | -- | Tag
     --
     -- @
     -- + tag deductible
     -- @
-    TransactionTag (GenLocated ann (ExtraTag ann))
+    TransactionTag !(GenLocated ann (ExtraTag ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (TransactionExtra ann)

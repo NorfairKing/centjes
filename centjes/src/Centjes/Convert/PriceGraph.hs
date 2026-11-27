@@ -43,7 +43,7 @@ newtype PriceGraph priority cur = PriceGraph {unPriceGraph :: Map cur (Map cur (
 instance (Validity priority, Show priority, Ord priority, Validity cur, Show cur, Ord cur) => Validity (PriceGraph priority cur)
 
 -- We remember which direction the rate was added in, for the graph command.
-data Direction a = Forward a | Backward a
+data Direction a = Forward !a | Backward !a
   deriving (Show, Eq, Generic)
 
 instance (Validity a) => Validity (Direction a)
@@ -118,7 +118,7 @@ lookup' (PriceGraph m) =
 
 -- Sort by minimal priority in the chain first (bigger is better, should come first), then the
 -- length of the chain (shorter is better, should come first).
-data WorstPriorityCost priority = WorstPriorityCost (Down priority) Word
+data WorstPriorityCost priority = WorstPriorityCost !(Down priority) !Word
   deriving (Show, Eq, Ord)
 
 instance (Show priority, Ord priority) => Semigroup (WorstPriorityCost priority) where
@@ -231,6 +231,6 @@ lookupAllTo (PriceGraph m) target =
 
 -- Path from start to goal
 data Path node edge
-  = PathStart node
-  | PathFrom node edge (Path node edge)
+  = PathStart !node
+  | PathFrom !node !edge !(Path node edge)
   deriving (Show)

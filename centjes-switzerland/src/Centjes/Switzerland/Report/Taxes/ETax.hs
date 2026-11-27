@@ -29,8 +29,8 @@ import Text.XML as XML
 
 -- | `taxDeclaration`
 data XMLReport = XMLReport
-  { xmlReportHeader :: Header,
-    xmlReportContent :: Content
+  { xmlReportHeader :: !Header,
+    xmlReportContent :: !Content
   }
   deriving (Show)
 

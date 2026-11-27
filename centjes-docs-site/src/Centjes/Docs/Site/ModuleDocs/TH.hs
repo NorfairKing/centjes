@@ -48,7 +48,7 @@ instance FromJSON ModuleOption where
           )
 
 data NixValue = NixValue
-  { nixValueType :: Text,
+  { nixValueType :: !Text,
     nixValueText :: !Text
   }
   deriving (Lift)

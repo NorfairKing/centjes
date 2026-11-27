@@ -299,8 +299,8 @@ taxesReportInput TaxesReport {..} =
 -- Note that this is a separate type from the ETax 'XMLReport' because there
 -- is more information in the README than there is in the ETax
 data Input = Input
-  { inputLastName :: Text,
-    inputFirstName :: Text,
+  { inputLastName :: !Text,
+    inputFirstName :: !Text,
     inputYear :: !Year,
     inputConversionRates :: !(Map Text String),
     inputAssets :: ![AssetInput],
@@ -406,8 +406,8 @@ instance HasCodec AssetInput where
           .= assetInputEvidence
 
 data Balance = Balance
-  { balanceOriginal :: FormattedAmount,
-    balanceConverted :: FormattedAmount
+  { balanceOriginal :: !FormattedAmount,
+    balanceConverted :: !FormattedAmount
   }
 
 instance HasCodec Balance where
@@ -867,8 +867,8 @@ instance HasCodec DepreciationPurchaseInput where
           .= depreciationPurchaseInputEvidence
 
 data AmountWithCurrency = AmountWithCurrency
-  { amountWithCurrencyAmount :: FormattedAmount,
-    amountWithCurrencyCurrency :: CurrencySymbol
+  { amountWithCurrencyAmount :: !FormattedAmount,
+    amountWithCurrencyCurrency :: !CurrencySymbol
   }
 
 instance HasCodec AmountWithCurrency where

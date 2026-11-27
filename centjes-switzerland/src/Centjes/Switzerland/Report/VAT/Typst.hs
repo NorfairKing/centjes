@@ -62,10 +62,10 @@ vatReportInput VATReport {..} =
 -- Note that this is a separate type from the EMWST 'XMLReport' because there
 -- is more information in the README than there is in the EMWST
 data Input = Input
-  { inputPersonName :: Text,
-    inputOrganisationName :: Text,
+  { inputPersonName :: !Text,
+    inputOrganisationName :: !Text,
     -- | 111.222.333
-    inputVATId :: Text,
+    inputVATId :: !Text,
     inputQuarter :: !Quarter,
     inputRevenues :: ![InputRevenue],
     inputExpenses :: ![InputExpense],
@@ -265,8 +265,8 @@ instance HasCodec InputExpense where
           .= inputExpenseEvidence
 
 data AmountWithCurrency = AmountWithCurrency
-  { amountWithCurrencyAmount :: FormattedAmount,
-    amountWithCurrencyCurrency :: CurrencySymbol
+  { amountWithCurrencyAmount :: !FormattedAmount,
+    amountWithCurrencyCurrency :: !CurrencySymbol
   }
 
 instance HasCodec AmountWithCurrency where

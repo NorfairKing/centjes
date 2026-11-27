@@ -57,11 +57,11 @@ combineLots =
     . MultiAccount.unMultiAccount
 
 data DeductibleDeclaration ann
-  = DefinitelyDeductible ann
-  | DefinitelyNotDeductible ann
+  = DefinitelyDeductible !ann
+  | DefinitelyNotDeductible !ann
   | Undeclared
-  | RedundantlyDeclared ann ann
-  | AmbiguouslyDeclared ann ann
+  | RedundantlyDeclared !ann !ann
+  | AmbiguouslyDeclared !ann !ann
 
 decideDeductible ::
   Maybe ann ->

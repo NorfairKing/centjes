@@ -74,7 +74,7 @@ data EvaluatedEntry ann
 
 data EvaluatedTransaction ann = EvaluatedTransaction
   { evaluatedTransactionLocated :: !(GenLocated ann (Transaction ann)),
-    evaluatedTransactionPostings :: Vector (EvaluatedPosting ann),
+    evaluatedTransactionPostings :: !(Vector (EvaluatedPosting ann)),
     -- | Cumulative account balances (all accounts) including virtual postings,
     -- right after this transaction has been incorporated
     evaluatedTransactionBalancesWithVirtual :: !(AccountBalances ann),

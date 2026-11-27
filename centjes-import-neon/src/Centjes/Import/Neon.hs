@@ -76,7 +76,7 @@ runCentjesImportNeon = do
               }
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 
-data ImportError = ImportError !(Path Abs File) !Int ImportError'
+data ImportError = ImportError !(Path Abs File) !Int !ImportError'
 
 data ImportError'
   = ImportErrorUnknownCurrency !CurrencySymbol
