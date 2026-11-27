@@ -18,6 +18,6 @@ dependencyGraph =
             runIO $ putStrLn "WARNING: Building without dependency graph, set DEPENDENCY_GRAPH to build them during development."
             examineCode [||Nothing||]
           Just fp -> do
-            runIO $ putStrLn $ "Building with dependency graph at " <> fp
+            runIO $ putStrLn $ concat ["Building with dependency graph at ", fp]
             unsafeTExpCoerce (embedFileIfExists fp)
     )

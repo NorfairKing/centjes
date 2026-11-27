@@ -204,4 +204,4 @@ parseYesNoBool :: (MonadFail m) => Text -> m Bool
 parseYesNoBool = \case
   "yes" -> pure True
   "no" -> pure False
-  b -> fail $ "Unknown bool: " <> show b
+  b -> fail $ concat ["Unknown bool: ", show b]

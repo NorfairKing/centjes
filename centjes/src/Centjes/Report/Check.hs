@@ -106,7 +106,7 @@ instance ToReport (CheckError SourceSpan) where
         [ (toDiagnosePosition l1, Where "This attachment is the same as ..."),
           (toDiagnosePosition l2, This "... this attachment")
         ]
-        [Hint $ "If this is intentional, add '" <> T.unpack (formatTransactionExtra duplicateAttachmentExtra) <> "' to both."]
+        [Hint $ concat ["If this is intentional, add '", T.unpack (formatTransactionExtra duplicateAttachmentExtra), "' to both."]]
     CheckErrorUnnecessaryDuplicateAttachmentTag dl tl ->
       Err
         (Just "CE_UNNECESSARY_DUPLICATE_ATTACHMENT_TAG")

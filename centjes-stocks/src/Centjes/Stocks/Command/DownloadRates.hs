@@ -159,13 +159,7 @@ fetchStockHistory man ticker begin end = do
   let period1 = dayToUnixTimestamp begin
   let period2 = dayToUnixTimestamp (addDays 1 end) -- Add 1 day to make end inclusive
   let url =
-        "https://query1.finance.yahoo.com/v8/finance/chart/"
-          <> Text.unpack ticker
-          <> "?period1="
-          <> show period1
-          <> "&period2="
-          <> show period2
-          <> "&interval=1d"
+        concat ["https://query1.finance.yahoo.com/v8/finance/chart/", Text.unpack ticker, "?period1=", show period1, "&period2=", show period2, "&interval=1d"]
 
   logDebugN $ Text.pack $ unwords ["Fetching", url]
   result <- liftIO $ try $ do
@@ -173,14 +167,14 @@ fetchStockHistory man ticker begin end = do
     let requestWithHeaders =
           request
             { requestHeaders =
-                [ ("User-Agent", TE.encodeUtf8 $ Text.pack $ "centjes-stocks-" <> showVersion version)
+                [ ("User-Agent", TE.encodeUtf8 $ Text.pack $ concat ["centjes-stocks-", showVersion version])
                 ]
             }
     HTTP.httpLbs requestWithHeaders man
 
   case result of
     Left (e :: HTTP.HttpException) -> do
-      logWarnN $ Text.pack $ unwords ["HTTP request failed for", Text.unpack ticker <> ":", show e]
+      logWarnN $ Text.pack $ unwords ["HTTP request failed for", concat [Text.unpack ticker, ":"], show e]
       pure Nothing
     Right response ->
       if HTTP.statusCode (responseStatus response) /= 200
@@ -242,7 +236,7 @@ validateApiCurrency (sym, targetCurrency, ticker, history) = do
   let apiCurrency = stockHistoryApiCurrency history
   let (_, baseCurrency) = currencyInfo apiCurrency
   when (Text.toUpper baseCurrency /= Text.toUpper (CurrencySymbol.toText targetCurrency)) $ do
-    logErrorN $ Text.pack $ unwords ["Currency mismatch for", Text.unpack ticker <> ":", "API returns", Text.unpack apiCurrency, "(base:", Text.unpack baseCurrency <> "),", "but configured as", Text.unpack (CurrencySymbol.toText targetCurrency)]
+    logErrorN $ Text.pack $ unwords ["Currency mismatch for", concat [Text.unpack ticker, ":"], "API returns", Text.unpack apiCurrency, "(base:", concat [Text.unpack baseCurrency, "),"], "but configured as", Text.unpack (CurrencySymbol.toText targetCurrency)]
     liftIO exitFailure
   pure (sym, targetCurrency, history)
 

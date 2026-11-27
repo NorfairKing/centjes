@@ -85,7 +85,7 @@ renderStripeApiError =
     StripeApiErrorHttp url e -> unwords ["The request to", url, "failed:", show e]
     StripeApiErrorStatus url status body ->
       unlines
-        [ unwords ["The request to", url, "returned status", show status <> ":"],
+        [ unwords ["The request to", url, "returned status", concat [show status, ":"]],
           Text.unpack (TE.decodeUtf8Lenient (LB.toStrict body))
         ]
     StripeApiErrorDecode url reason ->
@@ -98,14 +98,14 @@ renderStripeApiError =
         [ "Stripe could not produce the report",
           show (unReportTypeId reportTypeId'),
           "(run",
-          Text.unpack (unReportRunId runId) <> ")."
+          concat [Text.unpack (unReportRunId runId), ")."]
         ]
     StripeApiErrorReportNoUrl reportTypeId' runId ->
       unwords
         [ "Stripe finished the report",
           show (unReportTypeId reportTypeId'),
           "(run",
-          Text.unpack (unReportRunId runId) <> ")",
+          concat [Text.unpack (unReportRunId runId), ")"],
           "without saying where to fetch it."
         ]
     StripeApiErrorReportTimedOut reportTypeId' runId polls ->
@@ -114,7 +114,7 @@ renderStripeApiError =
             [ "The report",
               show (unReportTypeId reportTypeId'),
               "(run",
-              Text.unpack (unReportRunId runId) <> ")",
+              concat [Text.unpack (unReportRunId runId), ")"],
               "was still not ready after",
               show polls,
               "checks."
@@ -123,7 +123,7 @@ renderStripeApiError =
         ]
     StripeApiErrorPagingStuck url cursor ->
       unlines
-        [ unwords ["The listing at", url, "says there is more after", show cursor <> ","],
+        [ unwords ["The listing at", url, "says there is more after", concat [show cursor, ","]],
           "but that is the cursor it was already asked for, so asking again would fetch the same page forever."
         ]
     StripeApiErrorTooManyPages url limit ->
@@ -208,7 +208,7 @@ fetchReportType man key reportTypeId' =
     getJSON
       man
       key
-      ("https://api.stripe.com/v1/reporting/report_types/" <> Text.unpack (unReportTypeId reportTypeId'))
+      (concat ["https://api.stripe.com/v1/reporting/report_types/", Text.unpack (unReportTypeId reportTypeId')])
       []
 
 -- | Ask for a report over an interval, wait for it, and read it.
@@ -257,12 +257,12 @@ fetchReport man key reportTypeId' start end columns extraParameters = do
             [ [("report_type", TE.encodeUtf8 (unReportTypeId reportTypeId'))],
               [("parameters[interval_start]", numeric (unStripeTimestamp start))],
               [("parameters[interval_end]", numeric (unStripeTimestamp end))],
-              [ ( TE.encodeUtf8 (Text.pack ("parameters[columns][" <> show i <> "]")),
+              [ ( TE.encodeUtf8 (Text.pack (concat ["parameters[columns][", show i, "]"])),
                   TE.encodeUtf8 (unReportColumn column)
                 )
               | (i, column) <- zip [0 :: Int ..] columns
               ],
-              map (\(k, v) -> ("parameters[" <> k <> "]", v)) extraParameters
+              map (\(k, v) -> (mconcat ["parameters[", k, "]"], v)) extraParameters
             ]
         )
   url <- waitForReport man key reportTypeId' 0 run
@@ -286,7 +286,7 @@ waitForReport man key reportTypeId' pollsSoFar run = do
           getJSON
             man
             key
-            ("https://api.stripe.com/v1/reporting/report_runs/" <> Text.unpack (unReportRunId runId))
+            (concat ["https://api.stripe.com/v1/reporting/report_runs/", Text.unpack (unReportRunId runId)])
             []
       waitForReport man key reportTypeId' (succ pollsSoFar) run'
 
@@ -365,7 +365,7 @@ request man key url mBody query = do
     let authorised =
           initial
             { requestHeaders =
-                [ ("Authorization", "Bearer " <> TE.encodeUtf8 (unStripeKey key)),
+                [ ("Authorization", mconcat ["Bearer ", TE.encodeUtf8 (unStripeKey key)]),
                   ("Stripe-Version", stripeVersion)
                 ]
             }

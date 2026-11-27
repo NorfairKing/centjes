@@ -48,7 +48,7 @@ instance Validity Description where
       ]
 
 instance Semigroup Description where
-  (<>) (Description t1) (Description t2) = Description $ t1 <> "\n" <> t2
+  (<>) (Description t1) (Description t2) = Description $ T.pack $ concat [T.unpack t1, "\n", T.unpack t2]
 
 fromTextM :: (MonadFail m) => Text -> m Description
 fromTextM t = case fromText t of

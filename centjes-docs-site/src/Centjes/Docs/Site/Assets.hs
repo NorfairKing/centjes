@@ -9,7 +9,7 @@ import Yesod.EmbeddedStatic.Remote
 mkEmbeddedStatic
   development
   "assets"
-  ( let remoteStatic fp = embedRemoteFileAt fp ("static/" ++ fp)
+  ( let remoteStatic fp = embedRemoteFileAt fp (concat ["static/", fp])
      in [ -- embedDir "content/assets",
           remoteStatic "asciinema-player.js" "https://github.com/asciinema/asciinema-player/releases/download/v2.6.1/asciinema-player.js",
           remoteStatic "asciinema-player.css" "https://github.com/asciinema/asciinema-player/releases/download/v2.6.1/asciinema-player.css",

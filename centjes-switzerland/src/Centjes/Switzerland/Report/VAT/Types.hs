@@ -106,7 +106,7 @@ renderVATIdReference (VATId t) =
 
 -- | Render a 'VATId' as the eCH-0108 @uidType@ token, e.g. @CHE111222333@.
 vatIdToken :: VATId -> Text
-vatIdToken (VATId t) = "CHE" <> t
+vatIdToken (VATId t) = T.pack $ concat ["CHE", T.unpack t]
 
 -- | The settings we need to produce a 'VATReport'
 data VATInput = VATInput

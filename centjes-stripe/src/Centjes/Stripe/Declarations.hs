@@ -117,7 +117,7 @@ instance ToReport DeclarationError where
           DeclarationErrorUnrepresentableAttachment pattern_ rendered ->
             stripeErr
               "SD_UNREPRESENTABLE_ATTACHMENT"
-              (unwords ["The pattern", show pattern_, "produced", show rendered <> ",", "which is not a relative file path"])
+              (unwords ["The pattern", show pattern_, "produced", concat [show rendered, ","], "which is not a relative file path"])
               ["Patterns are formatTime patterns, so %Y and %m stand for the year and the month."]
           DeclarationErrorSum accounts ->
             stripeErr "SD_SUM" (unwords ["Cannot add up", show accounts]) []

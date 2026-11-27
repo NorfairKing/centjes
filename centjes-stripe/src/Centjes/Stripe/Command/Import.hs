@@ -81,7 +81,7 @@ instance ToReport ImportError where
             [ "The output file",
               fromAbsFile output,
               "is not inside the ledger's directory",
-              fromAbsDir ledgerDirectory <> "."
+              concat [fromAbsDir ledgerDirectory, "."]
             ]
         )
         []
@@ -89,10 +89,10 @@ instance ToReport ImportError where
     ImportErrorOutputNotImported output ledgerFile ->
       Err
         (Just "SI_OUTPUT_NOT_IMPORTED")
-        (unwords ["The ledger does not import", fromRelFile output <> ",", "but that file exists."])
+        (unwords ["The ledger does not import", concat [fromRelFile output, ","], "but that file exists."])
         []
         [ Hint "This importer reads back what it has already written and never rewrites a month, which it cannot do for a file the ledger does not include.",
-          Hint (unwords ["Add an import of it to", fromAbsFile ledgerFile <> "."])
+          Hint (unwords ["Add an import of it to", concat [fromAbsFile ledgerFile, "."]])
         ]
     ImportErrorNoSuchCurrency currency ->
       Err
@@ -238,7 +238,7 @@ sinkModule importSettings quantisationFactor alreadyThere existingModule = do
       ( \t ->
           logInfoN $
             Text.pack $
-              unwords ["Adding", show (transactionMonth t) <> ":", maybe "no description" show (descriptionOf t)]
+              unwords ["Adding", concat [show (transactionMonth t), ":"], maybe "no description" show (descriptionOf t)]
       )
       toAdd
   pure $ mergeTransactionDeclarations existingModule (map noLoc toAdd)
@@ -432,7 +432,7 @@ monthReports man key stripeCurrency ledgerDirectory reportsDirectory month = do
                 Text.pack $
                   unwords
                     [ "Reading",
-                      fromRelFile relFile <> ",",
+                      concat [fromRelFile relFile, ","],
                       "which is the copy the ledger refers to."
                     ]
               liftIO $ LB.readFile (fromAbsFile absFile)
@@ -452,7 +452,7 @@ monthReports man key stripeCurrency ledgerDirectory reportsDirectory month = do
         when (not saved) $ do
           ensureDir (parent absFile)
           liftIO $ LB.writeFile (fromAbsFile absFile) contents
-          logInfoN $ Text.pack $ unwords ["Saved", fromRelFile relFile <> "."]
+          logInfoN $ Text.pack $ unwords ["Saved", concat [fromRelFile relFile, "."]]
         pure parsed
   MonthReports month
     <$> table ReportKindTax

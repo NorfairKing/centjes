@@ -229,7 +229,7 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                                   [ renderHtmlDoc $ moduleDoc lmodule,
                                     renderChunksHtml $ renderSetAsideReport setAsideReport
                                   ]
-                          c -> error $ unlines ["Unknown centjes command: " <> show c]
+                          c -> error $ unlines [concat ["Unknown centjes command: ", show c]]
           _ ->
             let tokenizerConfig =
                   TokenizerConfig
@@ -237,14 +237,14 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                       traceOutput = False
                     }
                 syntax = case syntaxByName (syntaxMap tokenizerConfig) language of
-                  Nothing -> error $ "Unknown programming language for highlighting: " <> show language
+                  Nothing -> error $ concat ["Unknown programming language for highlighting: ", show language]
                   Just s -> s
                 sourceLines = case tokenize tokenizerConfig syntax code of
-                  Left err -> error $ "Failed to parse source code: " <> err
+                  Left err -> error $ concat ["Failed to parse source code: ", err]
                   Right sls -> sls
              in Html.div ! HtmlA.style (B.textValue $ T.pack $ styleToCss espresso) $
                   Skylighting.formatHtmlBlock Skylighting.defaultFormatOpts sourceLines
-      _ -> error $ "Unsupported node: " <> show n
+      _ -> error $ concat ["Unsupported node: ", show n]
 
 -- [check:tag DocsSetAsideInput] Keep the example configuration on the
 -- set-aside docs page the same as this one.
@@ -292,7 +292,7 @@ renderChunksHtml = Html.pre . foldMap go
         catMaybes
           [ do
               c <- chunkForeground
-              pure $ "color:" <> colorStyle c <> ";"
+              pure $ mconcat ["color:", colorStyle c, ";"]
           ]
     -- We use our own colours for rendering on a light-mode website.
     colorStyle :: Colour -> Html.AttributeValue
@@ -389,4 +389,4 @@ splitContents cs =
               contents = T.intercalate threeDashes rest
            in (tags, contents)
         [contents] -> ([], contents)
-        _ -> error $ "Failed to parse attributes in" <> T.unpack cs
+        _ -> error $ concat ["Failed to parse attributes in", T.unpack cs]

@@ -208,8 +208,8 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
         | bl <- maybeToList mbl
         ]
   pure
-    [ DeclarationComment $ noLoc $ Comment $ T.pack $ "Started date: " <> formatTime defaultTimeLocale "%F %T" rowStartedDate,
-      DeclarationComment $ noLoc $ Comment $ T.pack $ "Completed date: " <> maybe "" (formatTime defaultTimeLocale "%F %T") rowCompletedDate,
+    [ DeclarationComment $ noLoc $ Comment $ T.pack $ concat ["Started date: ", formatTime defaultTimeLocale "%F %T" rowStartedDate],
+      DeclarationComment $ noLoc $ Comment $ T.pack $ concat ["Completed date: ", maybe "" (formatTime defaultTimeLocale "%F %T") rowCompletedDate],
       DeclarationTransaction $ noLoc $ Transaction {..}
     ]
 

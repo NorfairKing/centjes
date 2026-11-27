@@ -382,14 +382,14 @@ parsePartitionedExpenseAccounts ::
 parsePartitionedExpenseAccounts category businessKey businessDefault privateKey privateDefault = do
   partitionedExpenseAccountsBusiness <-
     setting
-      [ help $ "the account to use for " <> category <> " expenses",
+      [ help $ concat ["the account to use for ", category, " expenses"],
         reader $ maybeReader AccountName.fromString,
         conf businessKey,
         value businessDefault
       ]
   partitionedExpenseAccountsPrivate <-
     setting
-      [ help $ "the account to use for private " <> category <> " expenses",
+      [ help $ concat ["the account to use for private ", category, " expenses"],
         reader $ maybeReader AccountName.fromString,
         conf privateKey,
         value privateDefault
@@ -417,7 +417,7 @@ depreciationRateCodec =
   bimapCodec
     (first renderDepreciationRateError . parseDepreciationRate)
     ( \r -> case DecimalLiteral.fromRatio r of
-        Nothing -> show (numerator r) <> "/" <> show (denominator r)
+        Nothing -> concat [show (numerator r), "/", show (denominator r)]
         Just dl -> DecimalLiteral.toString dl
     )
     codec
@@ -519,9 +519,9 @@ validatePartitionedExpenses ::
   Data.Validity.Validation
 validatePartitionedExpenses expenseName businessAccessor PartitionedExpenses {..} =
   mconcat
-    [ declare ("the " <> expenseName <> " costs sum to the total " <> expenseName <> " costs") $
+    [ declare (concat ["the ", expenseName, " costs sum to the total ", expenseName, " costs"]) $
         Amount.sum (map businessAccessor partitionedExpensesBusinessExpenses) == Just partitionedExpensesTotalBusinessExpenses,
-      declare ("the private " <> expenseName <> " costs sum to the total private " <> expenseName <> " costs") $
+      declare (concat ["the private ", expenseName, " costs sum to the total private ", expenseName, " costs"]) $
         Amount.sum (map privateExpenseCHFAmount partitionedExpensesPrivateExpenses) == Just partitionedExpensesTotalPrivateExpenses
     ]
 
@@ -959,19 +959,19 @@ instance ToReport (TaxesError SourceSpan) where
     TaxesErrorDepreciationNegativeBalance al an ->
       Err
         Nothing
-        ("Negative balance for depreciation account: " <> show an)
+        (concat ["Negative balance for depreciation account: ", show an])
         [(toDiagnosePosition al, This "This account has a negative balance")]
         []
     TaxesErrorDepreciationAccountNotDeclared an ->
       Err
         Nothing
-        ("Depreciation account not declared: " <> show an)
+        (concat ["Depreciation account not declared: ", show an])
         []
         [Hint "Declare the account in the ledger"]
     TaxesErrorDepreciationNoOpeningBalance al an year ->
       Err
         Nothing
-        ("No opening balance for depreciation account: " <> show an)
+        (concat ["No opening balance for depreciation account: ", show an])
         [(toDiagnosePosition al, This "This account has no balance at the end of the previous year")]
         [ Hint $
             unlines'

@@ -62,7 +62,7 @@ instance ToReport (ConvertError SourceSpan) where
     ConvertErrorUnknownTarget cs ->
       Err
         (Just "CONVERT_ERROR_UNKNOWN_TARGET")
-        ("Unknown currency to convert to: " <> CurrencySymbol.toString cs)
+        (concat ["Unknown currency to convert to: ", CurrencySymbol.toString cs])
         []
         []
     -- [tag:CONVERT_ERROR_MISSING_PRICE] At least one test per error:

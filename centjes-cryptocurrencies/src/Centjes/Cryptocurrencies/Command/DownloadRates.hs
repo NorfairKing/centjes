@@ -150,8 +150,8 @@ extractNumber = \case
 fetchUsdRates :: Manager -> Day -> LoggingT IO (Maybe (KM.KeyMap Value))
 fetchUsdRates man day = do
   let dateStr = formatTime defaultTimeLocale "%F" day
-  let primaryUrl = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@" <> dateStr <> "/v1/currencies/usd.json"
-  let fallbackUrl = "https://" <> dateStr <> ".currency-api.pages.dev/v1/currencies/usd.json"
+  let primaryUrl = concat ["https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@", dateStr, "/v1/currencies/usd.json"]
+  let fallbackUrl = concat ["https://", dateStr, ".currency-api.pages.dev/v1/currencies/usd.json"]
 
   tryFetchRates man primaryUrl >>= \case
     Just rates -> pure $ Just rates
@@ -159,17 +159,17 @@ fetchUsdRates man day = do
 
 tryFetchRates :: Manager -> String -> LoggingT IO (Maybe (KM.KeyMap Value))
 tryFetchRates man url = do
-  logDebugN $ "Fetching " <> T.pack url
+  logDebugN $ T.pack $ concat ["Fetching ", url]
   request <- liftIO $ HTTP.parseRequest url
   result <- liftIO $ try $ HTTP.httpLbs request man
   case result of
     Left (e :: HTTP.HttpException) -> do
-      logWarnN $ "HTTP request failed: " <> T.pack (show e)
+      logWarnN $ T.pack $ concat ["HTTP request failed: ", show e]
       pure Nothing
     Right response ->
       if HTTP.statusCode (responseStatus response) /= 200
         then do
-          logWarnN $ "HTTP request returned status " <> T.pack (show (HTTP.statusCode (responseStatus response)))
+          logWarnN $ T.pack $ concat ["HTTP request returned status ", show (HTTP.statusCode (responseStatus response))]
           pure Nothing
         else pure $ parseRatesResponse (responseBody response)
 

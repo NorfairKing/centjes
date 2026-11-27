@@ -33,7 +33,7 @@ nixosModuleDocs =
             runIO $ putStrLn "WARNING: Building without nixos module docs, set CENTJES_DOCS_NIXOS_MODULE_DOCS to build them during development."
             examineCode [||BakedIn []||]
           Just mdf -> do
-            runIO $ putStrLn $ "Building with nixos module documentation at " <> mdf
+            runIO $ putStrLn $ concat ["Building with nixos module documentation at ", mdf]
             let rf = Path mdf -- Very hacky because it's not necessarily relative
             examineCode $ embedWith rf
     )

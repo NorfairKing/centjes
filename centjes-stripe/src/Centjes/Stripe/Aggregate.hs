@@ -192,7 +192,7 @@ data StripeError
 instance ToReport StripeError where
   toReport =
     let stripeErr code message hints = Err (Just code) message [] (map Hint hints)
-        inMonth month = unwords ["In", show month <> ":"]
+        inMonth month = unwords ["In", concat [show month, ":"]]
      in \case
           StripeErrorReport month reportTypeId' reportError ->
             stripeErr
@@ -209,7 +209,7 @@ instance ToReport StripeError where
                     "of tax at",
                     showRate rate,
                     "for",
-                    Text.unpack country <> ","
+                    concat [Text.unpack country, ","]
                   ]
               )
               [ "which is not the country this ledger owes VAT to.",
@@ -228,7 +228,7 @@ instance ToReport StripeError where
                     "of tax on",
                     show net,
                     "at a reported rate of",
-                    showRate rate <> ","
+                    concat [showRate rate, ","]
                   ]
               )
               [ "which is not a rate this ledger's VAT report can name.",
@@ -259,7 +259,7 @@ instance ToReport StripeError where
                     "Stripe's balance moved by",
                     show moved,
                     "but what this importer would book comes to",
-                    show booked <> "."
+                    concat [show booked, "."]
                   ]
               )
               [ "Every figure here is one of Stripe's own aggregates, so a difference means the",
@@ -291,7 +291,7 @@ instance ToReport StripeError where
                   [ inMonth month,
                     show (unReportTypeId reportTypeId'),
                     "has a row in",
-                    show stated <> ",",
+                    concat [show stated, ","],
                     "which is not the currency this ledger reads Stripe in."
                   ]
               )
@@ -306,19 +306,19 @@ instance ToReport StripeError where
                     "Stripe charged",
                     show tax,
                     "of tax on a fee of",
-                    show fee <> ",",
+                    concat [show fee, ","],
                     "which",
                     showRate rate,
                     "does not account for."
                   ]
               )
-              [ unwords ["The rate Stripe charges VAT on its fees at is configured, and is set to", showRate rate <> "."],
+              [ unwords ["The rate Stripe charges VAT on its fees at is configured, and is set to", concat [showRate rate, "."]],
                 "Either it has changed, or this month's fees were taxed at more than one rate.",
                 "Check Stripe's tax invoice for the month and set fees-vat-rate to what it says."
               ]
 
 showRate :: Rational -> String
-showRate rate = show (fromRational (rate * 100) :: Double) <> "%"
+showRate rate = concat [show (fromRational (rate * 100) :: Double), "%"]
 
 -- | One row of the tax report, read.
 data TaxRow = TaxRow

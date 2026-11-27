@@ -310,18 +310,18 @@ lCostExpressionDoc (Located _ CostExpression {..}) =
 
 lRatioExpressionDoc :: GenLocated l (RatioExpression l) -> Doc SyntaxElement
 lRatioExpressionDoc (Located _ RatioExpression {..}) =
-  "~"
-    <> ( case ratioExpressionInclusive of
-           Nothing -> ""
-           Just True -> "i"
-           Just False -> "e"
-       )
-    <> ( case ratioExpressionRounding of
-           Nothing -> ""
-           Just RoundUp -> "u"
-           Just RoundDown -> "d"
-           Just RoundNearest -> "n"
-       )
+  mconcat
+    [ "~",
+      case ratioExpressionInclusive of
+        Nothing -> ""
+        Just True -> "i"
+        Just False -> "e",
+      case ratioExpressionRounding of
+        Nothing -> ""
+        Just RoundUp -> "u"
+        Just RoundDown -> "d"
+        Just RoundNearest -> "n"
+    ]
     <+> lRationalExpressionDoc ratioExpressionRationalExpression
 
 lRationalExpressionDoc :: GenLocated l (RationalExpression l) -> Doc SyntaxElement

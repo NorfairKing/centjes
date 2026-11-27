@@ -105,7 +105,7 @@ instance ToReport (ChartError SourceSpan) where
     ChartErrorUnknownCurrency currencySymbol ->
       Err
         (Just "CHART_ERROR_UNKNOWN_CURRENCY")
-        ("Cannot draw a chart in an undeclared currency: " <> CurrencySymbol.toString currencySymbol)
+        (concat ["Cannot draw a chart in an undeclared currency: ", CurrencySymbol.toString currencySymbol])
         []
         []
     ChartErrorNoData ->

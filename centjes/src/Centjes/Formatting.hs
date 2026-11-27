@@ -66,7 +66,7 @@ accountChunkWithWidth mWidth qf acc =
   fore (if acc >= Account.zero then green else red)
     . chunk
     . T.pack
-    . maybe id (\(Max w) -> printf ("%" ++ show w ++ "s")) mWidth
+    . maybe id (\(Max w) -> printf (concat ["%", show w, "s"])) mWidth
     $ Account.format qf acc
 
 timestampChunk :: Timestamp -> Chunk

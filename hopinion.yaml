@@ -1,3 +1,2 @@
 disabled-rules:
-  - HsNoSemigroupOnText
   - HsPrefixNaming

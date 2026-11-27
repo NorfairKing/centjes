@@ -36,7 +36,7 @@ embeddedSchemas =
            runIO $ putStrLn "WARNING: Building without XML schemas, set CENTJES_SWITZERLAND_SCHEMA_DIR to validate output during development."
            [|[]|]
          Just schemaDir -> do
-           runIO $ putStrLn $ "Building with XML schemas at " <> schemaDir
+           runIO $ putStrLn $ concat ["Building with XML schemas at ", schemaDir]
            embedDir schemaDir
    )
 

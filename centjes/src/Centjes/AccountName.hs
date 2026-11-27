@@ -77,12 +77,12 @@ instance HasCodec AccountName where
   codec = bimapCodec f toText codec
     where
       f t = case fromText t of
-        Nothing -> Left $ "Invalid AccountName: " <> show t
+        Nothing -> Left $ concat ["Invalid AccountName: ", show t]
         Just an -> Right an
 
 instance IsString AccountName where
   fromString s = case fromText (T.pack s) of
-    Nothing -> error $ "Invalid AccountName literal: " <> show s
+    Nothing -> error $ concat ["Invalid AccountName literal: ", show s]
     Just an -> an
 
 fromText :: Text -> Maybe AccountName

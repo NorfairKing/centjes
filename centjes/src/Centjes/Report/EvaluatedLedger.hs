@@ -198,7 +198,7 @@ instance ToReport (EvaluatedLedgerError SourceSpan) where
           ( toDiagnosePosition adl,
             Where $
               unlines'
-                [ unwords ["Based on this account and the account type", AccountType.toString at <> ", "],
+                [ unwords ["Based on this account and the account type", concat [AccountType.toString at, ", "]],
                   unwords
                     [ "Which implies that the balance must be",
                       case at of
@@ -327,7 +327,7 @@ instance ToReport (BalanceError SourceSpan) where
         [ (toDiagnosePosition cl, Where "Using this cost"),
           (toDiagnosePosition al, This "Could not convert this amount")
         ]
-        [ Hint $ "The closest valid rate is " <> DecimalLiteral.toString dl
+        [ Hint $ concat ["The closest valid rate is ", DecimalLiteral.toString dl]
         | cr <- maybeToList mConversionRate,
           dl <- maybeToList $ ConversionRate.toDecimalLiteral cr
         ]

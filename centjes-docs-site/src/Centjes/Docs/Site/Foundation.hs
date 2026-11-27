@@ -108,7 +108,7 @@ lookupPage' url = do
     Just dp -> pure dp
 
 setCentjesTitle :: (MonadWidget m) => Html -> m ()
-setCentjesTitle t = setTitle $ "Centjes Documentation - " <> t
+setCentjesTitle t = setTitle $ mconcat ["Centjes Documentation - ", t]
 
 loadDocPages :: (MonadHandler m) => m (Map [Text] DocPage)
 loadDocPages = loadIO docPages

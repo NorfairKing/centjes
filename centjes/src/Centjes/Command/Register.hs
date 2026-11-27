@@ -25,6 +25,7 @@ import Centjes.Timing
 import Centjes.Validation
 import Control.Monad.IO.Class
 import Control.Monad.Logger
+import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import Data.Semigroup
 import qualified Data.Text as T
@@ -281,7 +282,7 @@ renderRevaluation currency maxWidth RegisterRevaluation {..} =
       amountChunks = singleAccountChunksWithWidth currency (Just maxWidth) registerRevaluationAmount
       runningChunks = singleAccountChunksWithWidth currency (Just maxWidth) registerRevaluationBlockRunningTotal
       renderLines = zipAmountAndRunning amountChunks runningChunks
-      descriptionText = "Price: " <> T.intercalate ", " (NE.toList currencyTexts)
+      descriptionText = T.pack $ concat ["Price: ", intercalate ", " (map T.unpack (NE.toList currencyTexts))]
    in hCatTable
         [ [[timestampChunk ts]],
           [[fore cyan $ chunk descriptionText]],

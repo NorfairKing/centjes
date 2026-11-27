@@ -151,7 +151,7 @@ renderReportError = \case
     unwords ["The report is not a CSV this importer can read:", reason]
   ReportErrorNoSuchColumn column available ->
     unlines
-      [ unwords ["The report has no column named", show (unReportColumn column) <> "."],
+      [ unwords ["The report has no column named", concat [show (unReportColumn column), "."]],
         unwords ["It has:", show (map unReportColumn available)],
         "The importer asks Stripe for the columns it wants by name, so this means Stripe has renamed or dropped one.",
         "It can also mean this is a saved copy from before the importer asked for that column, in which case deleting the file lets the next run fetch it again."
@@ -159,16 +159,16 @@ renderReportError = \case
   ReportErrorNotUtf8 column ->
     unwords ["The column", show (unReportColumn column), "is not valid UTF-8."]
   ReportErrorNotADecimal column raw ->
-    unwords ["The column", show (unReportColumn column), "holds", show raw <> ",", "which is not a decimal number."]
+    unwords ["The column", show (unReportColumn column), "holds", concat [show raw, ","], "which is not a decimal number."]
   ReportErrorNotRepresentable column raw qf ->
     unlines
       [ unwords
           [ "The column",
             show (unReportColumn column),
             "holds",
-            show raw <> ",",
+            concat [show raw, ","],
             "which cannot be expressed exactly with quantisation factor",
-            show (unQuantisationFactor qf) <> "."
+            concat [show (unQuantisationFactor qf), "."]
           ],
         "Rounding money silently is how a reconciliation stops meaning anything, so this is an error."
       ]

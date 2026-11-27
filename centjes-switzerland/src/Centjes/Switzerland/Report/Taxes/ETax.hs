@@ -85,7 +85,7 @@ instance ToElement Header where
           | ca <- maybeToList headerCanton
           ],
           [ NodeElement $ ech0119Element "source" [NodeContent "0"],
-            NodeElement $ ech0119Element "sourceDescription" [NodeContent $ T.pack $ "centjes-switzerland-" <> showVersion CentjesSwitzerland.version]
+            NodeElement $ ech0119Element "sourceDescription" [NodeContent $ T.pack $ concat ["centjes-switzerland-", showVersion CentjesSwitzerland.version]]
           ]
         ]
 

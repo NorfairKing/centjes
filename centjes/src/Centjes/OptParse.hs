@@ -98,7 +98,7 @@ instance HasParser LogLevel where
         "Info" -> Right LevelInfo
         "Warn" -> Right LevelWarn
         "Error" -> Right LevelError
-        s -> Left $ "Unknown LogLevel: " <> show s
+        s -> Left $ unwords ["Unknown LogLevel:", show s]
 
 instance HasCodec LogLevel where
   codec =

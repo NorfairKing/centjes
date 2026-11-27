@@ -108,7 +108,7 @@ spec = do
   let monthReportsWith :: Month -> [(Path Rel File, LB.ByteString)] -> [Payout] -> IO MonthReports
       monthReportsWith month overrides payouts = do
         let parse name contents = case parseReportTable contents of
-              Left e -> expectationFailure (unwords [fromRelFile name <> ":", renderReportError e]) >> error "unreachable"
+              Left e -> expectationFailure (unwords [concat [fromRelFile name, ":"], renderReportError e]) >> error "unreachable"
               Right t -> pure t
         let table name = case lookup name overrides of
               Just contents -> parse name contents

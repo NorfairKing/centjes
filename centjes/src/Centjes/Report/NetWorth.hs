@@ -66,7 +66,7 @@ instance ToReport (NetWorthError SourceSpan) where
     NetWorthErrorCouldNotSum day ->
       Err
         (Just "NW_SUM")
-        ("Could not sum account balances for net worth on " <> show day)
+        (concat ["Could not sum account balances for net worth on ", show day])
         []
         []
     NetWorthErrorBalance balanceError -> toReport balanceError
