@@ -499,7 +499,12 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
         ]
   if moved /= booked
     then validationFailure $ StripeErrorDoesNotReconcile month moved booked
-    else pure StripeMonth {stripeMonthMonth = month, ..}
+    else
+      pure
+        StripeMonth
+          { stripeMonthMonth = month,
+            ..
+          }
 
 -- | Which rate a home-country row was taxed at.
 --

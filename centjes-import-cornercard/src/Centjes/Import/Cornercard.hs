@@ -68,7 +68,11 @@ runCentjesImportCornercard = do
                     )
             )
             (filter ((== "Settled transaction") . rowStatus . snd) (zip [1 ..] (sortOn rowDate (V.toList v))))
-      let m = Module {moduleImports = [], moduleDeclarations = map noLoc ts}
+      let m =
+            Module
+              { moduleImports = [],
+                moduleDeclarations = map noLoc ts
+              }
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 
 data ImportError = ImportError !(Path Abs File) !Int ImportError'

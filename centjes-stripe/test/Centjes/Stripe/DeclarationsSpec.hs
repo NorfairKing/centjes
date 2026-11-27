@@ -200,7 +200,12 @@ render :: [Transaction ()] -> Text
 render = render' . map (noLoc . DeclarationTransaction . noLoc)
 
 render' :: [GenLocated () (Declaration ())] -> Text
-render' declarations = formatModule Module {moduleImports = [], moduleDeclarations = declarations}
+render' declarations =
+  formatModule
+    Module
+      { moduleImports = [],
+        moduleDeclarations = declarations
+      }
 
 descriptionOf :: Transaction () -> Maybe Text
 descriptionOf t = unDescription . locatedValue . commentedValue <$> transactionDescription t

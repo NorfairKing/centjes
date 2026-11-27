@@ -232,7 +232,10 @@ produceChartReport accountTypes accountFilter currencySymbol evaluatedLedger = d
         let held = V.map (Account.toRational quantisationFactor) costs
         pure
           ( (turnover held, negate (averageHeld held), accountName),
-            ChartSeries {chartSeriesAccount = accountName, chartSeriesValues = values}
+            ChartSeries
+              { chartSeriesAccount = accountName,
+                chartSeriesValues = values
+              }
           )
       pure $ V.fromList $ map snd $ sortOn fst keyed
 

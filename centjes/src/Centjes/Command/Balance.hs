@@ -140,13 +140,23 @@ flattenForestWithContext = concatMap flattenRootWithContext
     -- Root nodes don't get tree prefixes and don't contribute to prefix stack
     flattenRootWithContext :: AccountTree ann -> [(TreeRenderContext, AccountTree ann)]
     flattenRootWithContext tree =
-      let ctx = TreeRenderContext {treeRenderContextPrefixStack = [], treeRenderContextIsLast = True, treeRenderContextIsRoot = True}
+      let ctx =
+            TreeRenderContext
+              { treeRenderContextPrefixStack = [],
+                treeRenderContextIsLast = True,
+                treeRenderContextIsRoot = True
+              }
           childResults = concatMap (flattenWithContext []) (markLast (accountTreeChildren tree))
        in (ctx, tree) : childResults
 
     flattenWithContext :: [Bool] -> (Bool, AccountTree ann) -> [(TreeRenderContext, AccountTree ann)]
     flattenWithContext prefixStack (isLast, tree) =
-      let ctx = TreeRenderContext {treeRenderContextPrefixStack = prefixStack, treeRenderContextIsLast = isLast, treeRenderContextIsRoot = False}
+      let ctx =
+            TreeRenderContext
+              { treeRenderContextPrefixStack = prefixStack,
+                treeRenderContextIsLast = isLast,
+                treeRenderContextIsRoot = False
+              }
           childPrefixStack = isLast : prefixStack
           childResults = concatMap (flattenWithContext childPrefixStack) (markLast (accountTreeChildren tree))
        in (ctx, tree) : childResults

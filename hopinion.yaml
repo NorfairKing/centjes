@@ -7,7 +7,6 @@ disabled-rules:
   - HsNoStringError
   - HsOneLetPerBinding
   - HsPrefixNaming
-  - HsRecordFieldPerLine
   - HsStrictFields
   - TestGenValidSpecPerGenValid
   - TestNoTestHelpers

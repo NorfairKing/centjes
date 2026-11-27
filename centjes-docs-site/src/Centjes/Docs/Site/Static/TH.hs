@@ -231,7 +231,11 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                                   ]
                           c -> error $ unlines ["Unknown centjes command: " <> show c]
           _ ->
-            let tokenizerConfig = TokenizerConfig {syntaxMap = defaultSyntaxMap, traceOutput = False}
+            let tokenizerConfig =
+                  TokenizerConfig
+                    { syntaxMap = defaultSyntaxMap,
+                      traceOutput = False
+                    }
                 syntax = case syntaxByName (syntaxMap tokenizerConfig) language of
                   Nothing -> error $ "Unknown programming language for highlighting: " <> show language
                   Just s -> s

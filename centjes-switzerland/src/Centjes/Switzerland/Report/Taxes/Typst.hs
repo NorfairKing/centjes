@@ -54,7 +54,10 @@ taxesReportInput TaxesReport {..} =
                       map
                         ( \(cur, (amount, chfAmount)) ->
                             ( CurrencySymbol.toText (currencySymbol cur),
-                              Balance {balanceOriginal = formatAmount cur amount, balanceConverted = formatChfAmount chfAmount}
+                              Balance
+                                { balanceOriginal = formatAmount cur amount,
+                                  balanceConverted = formatChfAmount chfAmount
+                                }
                             )
                         )
                         (M.toList assetAccountBalances)

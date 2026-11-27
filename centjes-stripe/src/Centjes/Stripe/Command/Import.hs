@@ -149,7 +149,12 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
       outputExists <- doesFileExist importSettingOutput
       if outputExists
         then validationTFailure $ ImportErrorOutputNotImported outputRelFile settingLedgerFile
-        else pure Module {moduleImports = [], moduleDeclarations = []}
+        else
+          pure
+            Module
+              { moduleImports = [],
+                moduleDeclarations = []
+              }
   let alreadyThere = monthsAlreadyImported (moduleDeclarations existingModule)
 
   quantisationFactor <- case M.lookup importSettingCurrency currencies of

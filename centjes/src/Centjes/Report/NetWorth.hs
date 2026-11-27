@@ -111,7 +111,13 @@ produceConvertedReport netWorthReportConvertedCurrency mBegin mEnd evaluatedLedg
   let daySnapshots = buildDaySnapshots (ledgerAccounts ledger) entries
 
   if M.null daySnapshots
-    then pure $ NetWorthReportConvertedData {netWorthReportConvertedEntries = V.empty, netWorthReportConvertedBalanceReport = Nothing, ..}
+    then
+      pure $
+        NetWorthReportConvertedData
+          { netWorthReportConvertedEntries = V.empty,
+            netWorthReportConvertedBalanceReport = Nothing,
+            ..
+          }
     else do
       -- Determine date range
       let firstDay = fst (M.findMin daySnapshots)
