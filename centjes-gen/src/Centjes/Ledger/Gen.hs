@@ -81,11 +81,17 @@ instance (Ord ann, GenValid ann) => GenValid (Ledger ann) where
         )
       $ shrinkValidStructurallyWithoutExtraFiltering l
 
-instance (Ord ann, GenValid ann) => GenValid (Account ann)
+instance (Ord ann, GenValid ann) => GenValid (Account ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid VirtualPostingPolicy
+instance GenValid VirtualPostingPolicy where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (Ord ann, GenValid ann) => GenValid (Transaction ann)
+instance (Ord ann, GenValid ann) => GenValid (Transaction ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 -- Map must not be empty
 genTransactionWith ::
@@ -112,7 +118,9 @@ genTransactionWith accounts currencies tags = do
       else genMapOf ((,) <$> chooseTag tags <*> genValid)
   pure Transaction {..}
 
-instance (Eq ann, GenValid ann) => GenValid (Posting ann)
+instance (Eq ann, GenValid ann) => GenValid (Posting ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (Eq ann, GenValid ann) => GenValid (PostingPrice ann)
 
@@ -140,7 +148,9 @@ genPostingWith accounts currencies = do
   postingAmountRatio <- genValid
   pure Posting {..}
 
-instance (GenValid ann) => GenValid (Assertion ann)
+instance (GenValid ann) => GenValid (Assertion ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 -- Map must not be empty
 genAssertionWith ::
@@ -169,7 +179,9 @@ genPriceWithCurrencies currencies = do
     priceTimestamp <- genValid
     pure Price {..}
 
-instance (GenValid ann) => GenValid (Cost ann)
+instance (GenValid ann) => GenValid (Cost ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 -- Map must not be empty
 genCostWithCurrencies ::
@@ -184,11 +196,17 @@ genCostWithCurrencies currencies (Located _ referenceCurrency) = do
   forM mCurrency $ \costCurrency ->
     pure Cost {..}
 
-instance (GenValid ann) => GenValid (AmountRatio ann)
+instance (GenValid ann) => GenValid (AmountRatio ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (Commodity ann)
+instance (GenValid ann) => GenValid (Commodity ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid ann) => GenValid (Currency ann)
+instance (GenValid ann) => GenValid (Currency ann) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (GenValid ann) => GenValid (Lot ann)
 

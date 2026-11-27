@@ -19,27 +19,49 @@ import Data.GenValidity.Time ()
 import Test.Syd
 import Test.Syd.Validity
 
-instance GenValid StripeCurrency
+instance GenValid StripeCurrency where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid StripeTimestamp
+instance GenValid StripeTimestamp where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ReportTypeId
+instance GenValid ReportTypeId where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ReportType
+instance GenValid ReportType where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ReportRunId
+instance GenValid ReportRunId where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ReportRunStatus
+instance GenValid ReportRunStatus where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid ReportRun
+instance GenValid ReportRun where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid PayoutId
+instance GenValid PayoutId where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid PayoutStatus
+instance GenValid PayoutStatus where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid Payout
+instance GenValid Payout where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance (GenValid a) => GenValid (StripeList a)
+instance (GenValid a) => GenValid (StripeList a) where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 -- | The roundtrip every codec in this package has to satisfy.
 --

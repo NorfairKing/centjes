@@ -5,4 +5,6 @@ module Centjes.AccountType.Gen where
 import Centjes.AccountType
 import Data.GenValidity
 
-instance GenValid AccountType
+instance GenValid AccountType where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

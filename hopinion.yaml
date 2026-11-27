@@ -1,5 +1,4 @@
 disabled-rules:
-  - HsGenValidWithoutExtraChecking
   - HsNoSemigroupOnText
   - HsPrefixNaming
   - HsStrictFields

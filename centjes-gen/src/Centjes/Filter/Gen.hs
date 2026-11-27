@@ -7,4 +7,6 @@ import Centjes.Filter
 import Data.GenValidity
 import Data.GenValidity.Text ()
 
-instance GenValid Filter
+instance GenValid Filter where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering

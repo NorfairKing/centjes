@@ -13,9 +13,13 @@ import qualified Money.Amount as Amount
 import Money.Amount.Gen ()
 import Test.QuickCheck
 
-instance GenValid TaxesInput
+instance GenValid TaxesInput where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid PartitionedExpenseAccounts
+instance GenValid PartitionedExpenseAccounts where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 fixPartitionedExpensesTotals ::
   (a -> Amount) ->

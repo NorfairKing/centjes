@@ -7,7 +7,9 @@ import Data.GenValidity
 import Data.GenValidity.Time ()
 import Test.QuickCheck
 
-instance GenValid Timestamp
+instance GenValid Timestamp where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid MinuteOfDay where
   genValid = MinuteOfDay <$> choose (0, 24 * 60 - 1)

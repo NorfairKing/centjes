@@ -16,9 +16,13 @@ import Test.QuickCheck
 
 -- TODO upstream this to genvalidity-time
 -- [allow:CommentBareTodo] Open work without an issue yet.
-instance GenValid Quarter
+instance GenValid Quarter where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid VATInput
+instance GenValid VATInput where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance GenValid VATId where
   genValid = do
@@ -27,9 +31,13 @@ instance GenValid VATId where
     pure $ VATId $ T.pack $ firstDigit : restDigits
   shrinkValid _ = []
 
-instance GenValid VATRate
+instance GenValid VATRate where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
-instance GenValid GrossOrNet
+instance GenValid GrossOrNet where
+  genValid = genValidStructurallyWithoutExtraChecking
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DomesticRevenue ann) where
   genValid = do
@@ -42,6 +50,7 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (DomesticRevenue ann) whe
         { domesticRevenueCHFAmount = chfAmount,
           domesticRevenueVATCHFAmount = vatAmount
         }
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (ForeignRevenue ann) where
   genValid = do
@@ -49,6 +58,7 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (ForeignRevenue ann) wher
     -- If this number is too small, that's a VERY good problem.
     chfAmount <- Amount.fromMinimalQuantisations <$> choose (0, 100_000_000_00)
     pure $ dr {foreignRevenueCHFAmount = chfAmount}
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (DeductibleExpense ann) where
   genValid = do
@@ -61,6 +71,7 @@ instance (Show ann, Ord ann, GenValid ann) => GenValid (DeductibleExpense ann) w
         { deductibleExpenseCHFAmount = chfAmount,
           deductibleExpenseVATCHFAmount = vatAmount
         }
+  shrinkValid = shrinkValidStructurallyWithoutExtraFiltering
 
 instance (Show ann, Ord ann, GenValid ann) => GenValid (VATReport ann) where
   genValid = do
