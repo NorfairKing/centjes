@@ -71,6 +71,22 @@
         "type": "github"
       }
     },
+    "hopinion": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795734709,
+        "narHash": "sha256-/i1dzlnQOBV0Q/wqPZHCN3rJmfQd+546E+6BkZOnkOg=",
+        "owner": "NorfairKing",
+        "repo": "hopinion",
+        "rev": "c1da67744e9a2a47ffc1b4fdd92099d3583b584c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NorfairKing",
+        "repo": "hopinion",
+        "type": "github"
+      }
+    },
     "linkcheck": {
       "flake": false,
       "locked": {
@@ -207,6 +223,7 @@
         "autodocodec": "autodocodec",
         "dekking": "dekking",
         "haskell-dependency-graph-nix": "haskell-dependency-graph-nix",
+        "hopinion": "hopinion",
         "linkcheck": "linkcheck",
         "nixpkgs": "nixpkgs",
         "opt-env-conf": "opt-env-conf",

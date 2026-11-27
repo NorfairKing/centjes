@@ -1,0 +1,26 @@
+disabled-rules:
+  - CommentBareTodo
+  - CommentCouplingConnection
+  - HsAppOnlyMain
+  - HsGenValidInGenPackage
+  - HsGenValidWithoutExtraChecking
+  - HsLambdaCase
+  - HsNewtypeNotSynonym
+  - HsNoCatchAllOwnSum
+  - HsNoCustomEq
+  - HsNoCustomOrd
+  - HsNoCustomShowRead
+  - HsNoFilePath
+  - HsNoRestatedGenValidDefaults
+  - HsNoSemigroupOnText
+  - HsNoStringError
+  - HsOneLetPerBinding
+  - HsPrefixNaming
+  - HsRecordFieldPerLine
+  - HsStrictFields
+  - HsTestOneSpecPerFile
+  - HsValidateExtendsGeneric
+  - TestGenValidSpecPerGenValid
+  - TestJsonSpecPerJsonType
+  - TestNoTestHelpers
+  - TestSydtestOnly

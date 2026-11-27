@@ -37,6 +37,8 @@
     seocheck.flake = false;
     sydtest.url = "github:NorfairKing/sydtest";
     sydtest.flake = false;
+    hopinion.url = "github:NorfairKing/hopinion";
+    hopinion.flake = false;
   };
 
   outputs =
@@ -57,6 +59,7 @@
     , linkcheck
     , seocheck
     , sydtest
+    , hopinion
     }:
     let
       system = "x86_64-linux";
@@ -77,6 +80,7 @@
           (import (seocheck + "/nix/overlay.nix"))
           (import (sydtest + "/nix/overlay.nix"))
           (import (weeder-nix + "/nix/overlay.nix"))
+          (import (hopinion + "/nix/overlay.nix"))
           (_:_: { makeDependencyGraph = haskell-dependency-graph-nix.lib.${system}.makeDependencyGraph; })
           (_:_: { evalNixOSConfig = args: import (nixpkgs + "/nixos/lib/eval-config.nix") (args // { inherit system; }); })
           self.overlays.${system}
@@ -133,6 +137,10 @@
         };
         weeder-check = pkgs.weeder-nix.makeWeederCheck {
           weederToml = ./weeder.toml;
+          packages = builtins.attrNames pkgs.haskellPackages.centjesPackages;
+        };
+        hopinion = pkgs.hopinion.makeHopinionCheck {
+          src = ./.;
           packages = builtins.attrNames pkgs.haskellPackages.centjesPackages;
         };
         pre-commit = pre-commit-hooks.lib.${ system}.run {
