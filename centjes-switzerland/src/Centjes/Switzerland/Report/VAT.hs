@@ -159,7 +159,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
   -- ESTV asks for net where there is a choice.
   vatReportGrossOrNet <-
     case map domesticRevenueGrossOrNet vatReportDomesticRevenues of
-      [] -> pure Net
+      [] -> pure GrossOrNetNet
       grossOrNet : rest ->
         if all (== grossOrNet) rest
           then pure grossOrNet
@@ -323,7 +323,7 @@ requirePercentageRate ::
 requirePercentageRate tl = \case
   Nothing -> validationTFailure $ VATErrorNoVATPercentage tl
   Just (Located pl (AmountRatio inclusive _ (Located _ r))) ->
-    pure (pl, r, if inclusive then Gross else Net)
+    pure (pl, r, if inclusive then GrossOrNetGross else GrossOrNetNet)
 
 requirePercentageVATRate ::
   ann ->
@@ -366,21 +366,21 @@ gatherDeductibleExpenses vatInput@VATInput {..} Ledger {..} quarter chf dailyPri
             let mTagNotVATDeductible = M.lookup vatInputTagNotVATDeductible transactionTags
             case decideDeductible mTagDeductible mTagNotDeductible mTagVATDeductible mTagNotVATDeductible of
               -- If it's tagged as deductible, expect at least one deductible expense
-              DefinitelyDeductible tagl -> do
+              DeductibleDeclarationDefinitelyDeductible tagl -> do
                 mDes <- parseExpectedDeductibleExpenses vatInput ledgerAccounts dailyPriceGraphs chf lt
                 case mDes of
                   Nothing -> validationTFailure $ VATErrorDeductibleNoExpenses tl tagl
                   Just ne -> pure $ Just ne
               -- Ignore the transaction if it's tagged as not-deductible
-              DefinitelyNotDeductible _ -> pure Nothing
+              DeductibleDeclarationDefinitelyNotDeductible _ -> pure Nothing
               -- If it's not tagged at all, error if there are expenses.
-              Undeclared -> do
+              DeductibleDeclarationUndeclared -> do
                 case parseUnxpectedDeductibleExpenses vatInput ledgerAccounts lt of
                   Nothing -> pure Nothing
                   Just lp -> validationTFailure $ VATErrorUntaggedExpenses tl lp
               -- Can't tag as both deductible and not-deductible
-              AmbiguouslyDeclared tagl tagnotl -> validationTFailure $ VATErrorDeductibleAndNotDeductible tl tagl tagnotl
-              RedundantlyDeclared t1l t2l -> validationTFailure $ VATErrorRedundantlyDeclared tl t1l t2l
+              DeductibleDeclarationAmbiguouslyDeclared tagl tagnotl -> validationTFailure $ VATErrorDeductibleAndNotDeductible tl tagl tagnotl
+              DeductibleDeclarationRedundantlyDeclared t1l t2l -> validationTFailure $ VATErrorRedundantlyDeclared tl t1l t2l
 
 parseUnxpectedDeductibleExpenses ::
   VATInput ->

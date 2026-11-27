@@ -153,7 +153,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
           -- TODO assert that the balance is positive?
           -- this is checked anyway, we may use this in the type
           -- [allow:CommentBareTodo] Open work without an issue yet.
-          let attachments = map (locatedValue . attachmentPath . locatedValue) $ V.toList accountAttachments
+          let attachments = map (locatedValue . unAttachment . locatedValue) $ V.toList accountAttachments
 
           -- TODO This allows undeclared accounts with evidence, do we want that?
           -- [allow:CommentBareTodo] Open work without an issue yet.
@@ -263,7 +263,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
       case mUndeclaredTag of
         Just _ -> pure Nothing
         Nothing -> do
-          let attachments = map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments
+          let attachments = map (locatedValue . unAttachment . locatedValue) $ V.toList transactionAttachments
           case NE.nonEmpty attachments of
             Nothing -> do
               let Located _ accountName = postingAccountName
@@ -323,7 +323,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
         let privateExpenseTimestamp = timestamp
         let privateExpenseCurrency = postingCurrency p
         privateExpenseCHFAmount <- convertDaily al dailyPriceGraphs day privateExpenseCurrency taxesReportCHF privateExpenseAmount
-        privateExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+        privateExpenseEvidence <- forM (map (locatedValue . unAttachment . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
           let fileInTarball = [reldir|expenses/private|] </> filename rf
           includeFile fileInTarball rf
           pure fileInTarball
@@ -361,7 +361,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                     let insuranceExpenseTimestamp = timestamp
                     let insuranceExpenseCurrency = postingCurrency p
                     insuranceExpenseCHFAmount <- convertDaily al dailyPriceGraphs day insuranceExpenseCurrency taxesReportCHF insuranceExpenseAmount
-                    insuranceExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+                    insuranceExpenseEvidence <- forM (map (locatedValue . unAttachment . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
                       let fileInTarball = [reldir|expenses/insurance|] </> filename rf
                       includeFile fileInTarball rf
                       pure fileInTarball
@@ -383,7 +383,7 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
             let homeofficeExpenseTimestamp = timestamp
             let homeofficeExpenseCurrency = postingCurrency p
             homeofficeExpenseCHFAmount <- convertDaily al dailyPriceGraphs day homeofficeExpenseCurrency taxesReportCHF homeofficeExpenseAmount
-            homeofficeExpenseEvidence <- forM (map (locatedValue . attachmentPath . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
+            homeofficeExpenseEvidence <- forM (map (locatedValue . unAttachment . locatedValue) $ V.toList transactionAttachments) $ \rf -> do
               let fileInTarball = [reldir|expenses/homeoffice|] </> filename rf
               includeFile fileInTarball rf
               pure fileInTarball
@@ -710,11 +710,11 @@ withDeductibleTag TaxesInput {..} tl lp tags continue = do
   let mTagTaxDeductible = M.lookup taxesInputTagTaxDeductible tags
   let mTagNotTaxDeductible = M.lookup taxesInputTagNotTaxDeductible tags
   case decideDeductible mTagDeductible mTagNotDeductible mTagTaxDeductible mTagNotTaxDeductible of
-    DefinitelyDeductible _ -> Just <$> continue
-    DefinitelyNotDeductible _ -> pure Nothing
-    Undeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
-    RedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
-    AmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl
+    DeductibleDeclarationDefinitelyDeductible _ -> Just <$> continue
+    DeductibleDeclarationDefinitelyNotDeductible _ -> pure Nothing
+    DeductibleDeclarationUndeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+    DeductibleDeclarationRedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
+    DeductibleDeclarationAmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl
 
 -- | Like 'withDeductibleTag' but returns 'Right' for deductible and 'Left' for not-deductible
 -- instead of discarding not-deductible expenses.
@@ -732,11 +732,11 @@ withDeductibleTagEither TaxesInput {..} tl lp tags businessContinue privateConti
   let mTagTaxDeductible = M.lookup taxesInputTagTaxDeductible tags
   let mTagNotTaxDeductible = M.lookup taxesInputTagNotTaxDeductible tags
   case decideDeductible mTagDeductible mTagNotDeductible mTagTaxDeductible mTagNotTaxDeductible of
-    DefinitelyDeductible _ -> Right <$> businessContinue
-    DefinitelyNotDeductible _ -> Left <$> privateContinue
-    Undeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
-    RedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
-    AmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl
+    DeductibleDeclarationDefinitelyDeductible _ -> Right <$> businessContinue
+    DeductibleDeclarationDefinitelyNotDeductible _ -> Left <$> privateContinue
+    DeductibleDeclarationUndeclared -> validationTFailure $ TaxesErrorUntaggedExpenses tl lp
+    DeductibleDeclarationRedundantlyDeclared t1l t2l -> validationTFailure $ TaxesErrorRedundantlyDeclared tl t1l t2l
+    DeductibleDeclarationAmbiguouslyDeclared tyl tnl -> validationTFailure $ TaxesErrorDeductibleAndNotDeductible tl tyl tnl
 
 produceDepreciationSchedule ::
   (Ord ann) =>
@@ -757,7 +757,7 @@ produceDepreciationSchedule taxesInput assetAccount expenseAccount depreciationS
   (accountLocation, depreciationScheduleOpeningBalanceEvidence) <- case M.lookup assetAccount accounts of
     Nothing -> validationTFailure $ TaxesErrorDepreciationAccountNotDeclared assetAccount
     Just (Located al Account {..}) -> do
-      let attachments = map (locatedValue . attachmentPath . locatedValue) $ V.toList accountAttachments
+      let attachments = map (locatedValue . unAttachment . locatedValue) $ V.toList accountAttachments
       case NE.nonEmpty attachments of
         Nothing -> validationTFailure $ TaxesErrorAssetAccountWithoutEvidence (Located al assetAccount)
         Just ne -> do

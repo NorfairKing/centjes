@@ -83,10 +83,10 @@ spec = do
                 report <-
                   shouldValidate diag $
                     produceIncomeStatementReport
-                      incomeStatementSettingFilter
-                      incomeStatementSettingBegin
-                      incomeStatementSettingEnd
-                      incomeStatementSettingCurrency
+                      incomeStatementSettingsFilter
+                      incomeStatementSettingsBegin
+                      incomeStatementSettingsEnd
+                      incomeStatementSettingsCurrency
                       incomeStatementSettingShowVirtual
                       evaluatedLedger
 
@@ -131,10 +131,10 @@ spec = do
                     errs <-
                       shouldFailToValidate $
                         produceIncomeStatementReport
-                          incomeStatementSettingFilter
-                          incomeStatementSettingBegin
-                          incomeStatementSettingEnd
-                          incomeStatementSettingCurrency
+                          incomeStatementSettingsFilter
+                          incomeStatementSettingsBegin
+                          incomeStatementSettingsEnd
+                          incomeStatementSettingsCurrency
                           incomeStatementSettingShowVirtual
                           evaluatedLedger
 

@@ -37,16 +37,16 @@ import Text.Colour.Layout
 runCentjesSwitzerlandSetAside :: Settings -> SetAsideSettings -> IO ()
 runCentjesSwitzerlandSetAside Settings {..} SetAsideSettings {..} =
   runStderrLoggingT $
-    loadMWatchedModules settingWatch (settingBaseDir </> settingLedgerFile) $ \(declarations, fileMap) -> do
+    loadMWatchedModules settingsWatch (settingsBaseDir </> settingsLedgerFile) $ \(declarations, fileMap) -> do
       let diag = diagFromFileMap fileMap
       ledger <- liftIO $ checkValidation diag $ compileDeclarations declarations
       today <- liftIO $ utctDay <$> getCurrentTime
       report <-
         liftIO $
           checkValidation diag $
-            produceSetAsideReport setAsideSettingInput setAsideSettingTaxesInput today (splitPrices settingPricesFile ledger) ledger
+            produceSetAsideReport setAsideSettingsInput setAsideSettingsTaxesInput today (splitPrices settingsPricesFile ledger) ledger
       liftIO $
-        putChunksLocaleWith setAsideSettingTerminalCapabilities $
+        putChunksLocaleWith setAsideSettingsTerminalCapabilities $
           renderSetAsideReport report
 
 -- | The prices file holds the ESTV's prices, as downloaded by the
@@ -223,8 +223,8 @@ renderActions actions surpluses =
             [ "  ",
               chunk setAsideActionTax,
               case setAsideActionKind of
-                SetAsideActionSave -> ": save "
-                SetAsideActionPrepay -> ": pre-pay ",
+                SetAsideActionKindSave -> ": save "
+                SetAsideActionKindPrepay -> ": pre-pay ",
               fore red $ chunk $ T.pack $ Amount.format chfQuantisationFactor setAsideActionAmount,
               chunk $ T.concat [" CHF (", T.pack (Amount.format chfQuantisationFactor setAsideActionShortfall), " CHF short)"]
             ]
@@ -232,8 +232,8 @@ renderActions actions surpluses =
                 []
                 ( \an ->
                     [ case setAsideActionKind of
-                        SetAsideActionSave -> ", into "
-                        SetAsideActionPrepay -> ", booked on ",
+                        SetAsideActionKindSave -> ", into "
+                        SetAsideActionKindPrepay -> ", booked on ",
                       fore white (chunk (AccountName.toText an))
                     ]
                 )

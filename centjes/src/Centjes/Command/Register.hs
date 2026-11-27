@@ -41,7 +41,7 @@ import Text.Colour.Layout
 
 runCentjesRegister :: Settings -> RegisterSettings -> LoggingT IO ()
 runCentjesRegister Settings {..} RegisterSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+  loadMWatchedModules settingsWatch settingsLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
     register <-
@@ -49,28 +49,28 @@ runCentjesRegister Settings {..} RegisterSettings {..} =
         liftIO $
           checkValidation diagnostic $
             produceRegister
-              registerSettingFilter
-              registerSettingBlockSize
-              registerSettingCurrency
+              registerSettingsFilter
+              registerSettingsBlockSize
+              registerSettingsCurrency
               registerSettingShowVirtual
-              registerSettingBegin
-              registerSettingEnd
+              registerSettingsBegin
+              registerSettingsEnd
               ledger
     liftIO $
-      putChunksLocaleWith settingTerminalCapabilities $
+      putChunksLocaleWith settingsTerminalCapabilities $
         renderAnyRegister register
 
 renderAnyRegister :: AnyRegister ann -> [Chunk]
 renderAnyRegister = \case
-  AnyMultiCurrency r -> renderMultiCurrencyRegister r
-  AnyConverted cr -> renderConvertedRegister cr
+  AnyRegisterMultiCurrency r -> renderMultiCurrencyRegister r
+  AnyRegisterConverted cr -> renderConvertedRegister cr
 
-renderMultiCurrencyRegister :: Register 'MultiCurrency ann -> [Chunk]
+renderMultiCurrencyRegister :: Register 'AmountModeMultiCurrency ann -> [Chunk]
 renderMultiCurrencyRegister register =
   let t = table (map (map pure) (renderMultiCurrencyRegisterTable register))
    in renderTable t
 
-renderMultiCurrencyRegisterTable :: Register 'MultiCurrency ann -> [[Chunk]]
+renderMultiCurrencyRegisterTable :: Register 'AmountModeMultiCurrency ann -> [[Chunk]]
 renderMultiCurrencyRegisterTable r@Register {..} =
   concat
     [ [ case blockSizeGrouping registerBlockSize of
@@ -107,7 +107,7 @@ renderMultiCurrencyRegisterTable r@Register {..} =
 renderMultiBlock ::
   BlockSize ->
   Max Word8 ->
-  RegisterBlock 'MultiCurrency ann ->
+  RegisterBlock 'AmountModeMultiCurrency ann ->
   [[Chunk]]
 renderMultiBlock blockSize maxAccountWidth RegisterBlock {..} =
   let blockLines =
@@ -129,7 +129,7 @@ renderMultiBlock blockSize maxAccountWidth RegisterBlock {..} =
 
 renderMultiEntry ::
   Max Word8 ->
-  RegisterEntry 'MultiCurrency ann ->
+  RegisterEntry 'AmountModeMultiCurrency ann ->
   [[Chunk]]
 renderMultiEntry maxAccountWidth (RegisterEntryTransaction RegisterTransaction {..}) =
   let Located _ ts = registerTransactionTimestamp
@@ -139,7 +139,7 @@ renderMultiEntry maxAccountWidth (RegisterEntryTransaction RegisterTransaction {
         (locatedValue <$> registerTransactionDescription)
         registerTransactionPostings
 
-registerMaxAccountWidthMulti :: Register 'MultiCurrency ann -> Max Word8
+registerMaxAccountWidthMulti :: Register 'AmountModeMultiCurrency ann -> Max Word8
 registerMaxAccountWidthMulti Register {..} = foldMap goB registerBlocks
   where
     goB = foldMap goE . registerBlockEntries
@@ -154,7 +154,7 @@ renderMultiTransaction ::
   Max Word8 ->
   Timestamp ->
   Maybe Description ->
-  Vector (RegisterPosting 'MultiCurrency ann) ->
+  Vector (RegisterPosting 'AmountModeMultiCurrency ann) ->
   [[Chunk]]
 renderMultiTransaction maxWidth timestamp mDescription postings =
   let postingLines =
@@ -196,7 +196,7 @@ renderConvertedRegister ConvertedRegister {..} =
   let t = table (map (map pure) (renderConvertedRegisterTable convertedRegisterCurrency convertedRegister))
    in renderTable t
 
-renderConvertedRegisterTable :: Currency ann -> Register 'SingleCurrency ann -> [[Chunk]]
+renderConvertedRegisterTable :: Currency ann -> Register 'AmountModeSingleCurrency ann -> [[Chunk]]
 renderConvertedRegisterTable currency r@Register {..} =
   concat
     [ [ case blockSizeGrouping registerBlockSize of
@@ -234,7 +234,7 @@ renderSingleBlock ::
   BlockSize ->
   Currency ann ->
   Max Word8 ->
-  RegisterBlock 'SingleCurrency ann ->
+  RegisterBlock 'AmountModeSingleCurrency ann ->
   [[Chunk]]
 renderSingleBlock blockSize currency maxAccountWidth RegisterBlock {..} =
   let blockLines =
@@ -257,7 +257,7 @@ renderSingleBlock blockSize currency maxAccountWidth RegisterBlock {..} =
 renderSingleEntry ::
   Currency ann ->
   Max Word8 ->
-  RegisterEntry 'SingleCurrency ann ->
+  RegisterEntry 'AmountModeSingleCurrency ann ->
   [[Chunk]]
 renderSingleEntry currency maxAccountWidth = \case
   RegisterEntryTransaction RegisterTransaction {..} ->
@@ -298,7 +298,7 @@ renderRevaluation currency maxWidth RegisterRevaluation {..} =
         go (a : as) [] = ([chunk " "] ++ a ++ [chunk " ", chunk " "]) : go as []
         go [] (r : rs) = ([chunk " ", chunk " ", chunk " "] ++ r) : go [] rs
 
-registerMaxAccountWidthSingle :: Currency ann -> Register 'SingleCurrency ann -> Max Word8
+registerMaxAccountWidthSingle :: Currency ann -> Register 'AmountModeSingleCurrency ann -> Max Word8
 registerMaxAccountWidthSingle currency Register {..} = foldMap goB registerBlocks
   where
     goB = foldMap goE . registerBlockEntries
@@ -319,7 +319,7 @@ renderSingleTransaction ::
   Max Word8 ->
   Timestamp ->
   Maybe Description ->
-  Vector (RegisterPosting 'SingleCurrency ann) ->
+  Vector (RegisterPosting 'AmountModeSingleCurrency ann) ->
   [[Chunk]]
 renderSingleTransaction currency maxWidth timestamp mDescription postings =
   let postingLines =

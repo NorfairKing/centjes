@@ -31,36 +31,36 @@ spec = sequential $ do
   -- tests without a scenario.
   let setAsideErrorKind :: SetAsideError ann -> SetAsideErrorKind
       setAsideErrorKind = \case
-        SetAsideErrorNoCHF -> KindNoCHF
-        SetAsideErrorWrongCHF _ -> KindWrongCHF
-        SetAsideErrorConvert _ -> KindConvert
-        SetAsideErrorNoOfficialRateBefore _ _ -> KindNoOfficialRateBefore
-        SetAsideErrorNoPrice _ _ -> KindNoPrice
-        SetAsideErrorUndeclaredAccount _ -> KindUndeclaredAccount
-        SetAsideErrorUntaggedWealth _ _ -> KindUntaggedWealth
-        SetAsideErrorTaggedBoth _ _ _ -> KindTaggedBoth
-        SetAsideErrorNoCantonalRates _ -> KindNoCantonalRates
-        SetAsideErrorNoMunicipalSteuerfuss _ _ -> KindNoMunicipalSteuerfuss
-        SetAsideErrorNoThirdPillarMaximum _ -> KindNoThirdPillarMaximum
-        SetAsideErrorUndeclaredThirdPillarAccount _ -> KindUndeclaredThirdPillarAccount
-        SetAsideErrorTaxes _ -> KindTaxes
-        SetAsideErrorOverflow -> KindOverflow
+        SetAsideErrorNoCHF -> SetAsideErrorKindNoCHF
+        SetAsideErrorWrongCHF _ -> SetAsideErrorKindWrongCHF
+        SetAsideErrorConvert _ -> SetAsideErrorKindConvert
+        SetAsideErrorNoOfficialRateBefore _ _ -> SetAsideErrorKindNoOfficialRateBefore
+        SetAsideErrorNoPrice _ _ -> SetAsideErrorKindNoPrice
+        SetAsideErrorUndeclaredAccount _ -> SetAsideErrorKindUndeclaredAccount
+        SetAsideErrorUntaggedWealth _ _ -> SetAsideErrorKindUntaggedWealth
+        SetAsideErrorTaggedBoth _ _ _ -> SetAsideErrorKindTaggedBoth
+        SetAsideErrorNoCantonalRates _ -> SetAsideErrorKindNoCantonalRates
+        SetAsideErrorNoMunicipalSteuerfuss _ _ -> SetAsideErrorKindNoMunicipalSteuerfuss
+        SetAsideErrorNoThirdPillarMaximum _ -> SetAsideErrorKindNoThirdPillarMaximum
+        SetAsideErrorUndeclaredThirdPillarAccount _ -> SetAsideErrorKindUndeclaredThirdPillarAccount
+        SetAsideErrorTaxes _ -> SetAsideErrorKindTaxes
+        SetAsideErrorOverflow -> SetAsideErrorKindOverflow
   let errorScenario :: SetAsideErrorKind -> Path Rel Dir
       errorScenario = \case
-        KindNoCHF -> [reldir|no-chf|]
-        KindWrongCHF -> [reldir|wrong-chf|]
-        KindConvert -> [reldir|convert|]
-        KindNoOfficialRateBefore -> [reldir|no-official-rate-before|]
-        KindNoPrice -> [reldir|no-price|]
-        KindUndeclaredAccount -> [reldir|undeclared-account|]
-        KindUntaggedWealth -> [reldir|untagged-wealth|]
-        KindTaggedBoth -> [reldir|tagged-both|]
-        KindNoCantonalRates -> [reldir|no-cantonal-rates|]
-        KindNoMunicipalSteuerfuss -> [reldir|no-municipal-steuerfuss|]
-        KindNoThirdPillarMaximum -> [reldir|no-third-pillar-maximum|]
-        KindUndeclaredThirdPillarAccount -> [reldir|undeclared-third-pillar-account|]
-        KindTaxes -> [reldir|taxes|]
-        KindOverflow -> [reldir|overflow|]
+        SetAsideErrorKindNoCHF -> [reldir|no-chf|]
+        SetAsideErrorKindWrongCHF -> [reldir|wrong-chf|]
+        SetAsideErrorKindConvert -> [reldir|convert|]
+        SetAsideErrorKindNoOfficialRateBefore -> [reldir|no-official-rate-before|]
+        SetAsideErrorKindNoPrice -> [reldir|no-price|]
+        SetAsideErrorKindUndeclaredAccount -> [reldir|undeclared-account|]
+        SetAsideErrorKindUntaggedWealth -> [reldir|untagged-wealth|]
+        SetAsideErrorKindTaggedBoth -> [reldir|tagged-both|]
+        SetAsideErrorKindNoCantonalRates -> [reldir|no-cantonal-rates|]
+        SetAsideErrorKindNoMunicipalSteuerfuss -> [reldir|no-municipal-steuerfuss|]
+        SetAsideErrorKindNoThirdPillarMaximum -> [reldir|no-third-pillar-maximum|]
+        SetAsideErrorKindUndeclaredThirdPillarAccount -> [reldir|undeclared-third-pillar-account|]
+        SetAsideErrorKindTaxes -> [reldir|taxes|]
+        SetAsideErrorKindOverflow -> [reldir|overflow|]
   describe "renderSetAsideReport" $
     dirScenarioDir [reldir|test_set_aside|] $ \rd ->
       it "renders the same report for this scenario" $
@@ -118,18 +118,18 @@ spec = sequential $ do
 -- | Every kind of error that the report can fail with, each with a scenario
 -- in its own directory.
 data SetAsideErrorKind
-  = KindNoCHF
-  | KindWrongCHF
-  | KindConvert
-  | KindNoOfficialRateBefore
-  | KindNoPrice
-  | KindUndeclaredAccount
-  | KindUntaggedWealth
-  | KindTaggedBoth
-  | KindNoCantonalRates
-  | KindNoMunicipalSteuerfuss
-  | KindNoThirdPillarMaximum
-  | KindUndeclaredThirdPillarAccount
-  | KindTaxes
-  | KindOverflow
+  = SetAsideErrorKindNoCHF
+  | SetAsideErrorKindWrongCHF
+  | SetAsideErrorKindConvert
+  | SetAsideErrorKindNoOfficialRateBefore
+  | SetAsideErrorKindNoPrice
+  | SetAsideErrorKindUndeclaredAccount
+  | SetAsideErrorKindUntaggedWealth
+  | SetAsideErrorKindTaggedBoth
+  | SetAsideErrorKindNoCantonalRates
+  | SetAsideErrorKindNoMunicipalSteuerfuss
+  | SetAsideErrorKindNoThirdPillarMaximum
+  | SetAsideErrorKindUndeclaredThirdPillarAccount
+  | SetAsideErrorKindTaxes
+  | SetAsideErrorKindOverflow
   deriving (Show, Eq, Enum, Bounded)

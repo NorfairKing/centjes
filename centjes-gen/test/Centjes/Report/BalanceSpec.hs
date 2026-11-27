@@ -136,9 +136,9 @@ spec = do
                 br <-
                   shouldValidate diag $
                     produceBalanceReportFromEvaluatedLedger
-                      balanceSettingFilter
-                      balanceSettingEnd
-                      balanceSettingCurrency
+                      balanceSettingsFilter
+                      balanceSettingsEnd
+                      balanceSettingsCurrency
                       balanceSettingShowVirtual
                       evaluatedLedger
 
@@ -188,9 +188,9 @@ spec = do
                         errs <-
                           shouldFailToValidate $
                             produceBalanceReportFromEvaluatedLedger
-                              balanceSettingFilter
-                              balanceSettingEnd
-                              balanceSettingCurrency
+                              balanceSettingsFilter
+                              balanceSettingsEnd
+                              balanceSettingsCurrency
                               balanceSettingShowVirtual
                               evaluatedLedger
 

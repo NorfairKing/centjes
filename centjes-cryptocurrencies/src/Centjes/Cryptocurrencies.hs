@@ -8,6 +8,6 @@ import Centjes.Cryptocurrencies.OptParse
 runCentjesCryptocurrencies :: IO ()
 runCentjesCryptocurrencies = do
   settings@Settings {..} <- getSettings
-  case settingCommand of
+  case settingsCommand of
     CommandDownloadRates downloadRatesSettings ->
       runCentjesCryptocurrenciesDownloadRates settings downloadRatesSettings

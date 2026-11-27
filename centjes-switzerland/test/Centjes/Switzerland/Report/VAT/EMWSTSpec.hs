@@ -35,13 +35,13 @@ spec = sequential $
               withYamlConfig (pure (Just configFile)) $
                 (,) <$> settingsParser <*> settingsParser
 
-          let ledgerFile = settingBaseDir </> settingLedgerFile
+          let ledgerFile = settingsBaseDir </> settingsLedgerFile
 
           (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
           ledger <- shouldValidate diag $ compileDeclarations declarations
 
           let pretendToday = fromGregorian 2024 01 29
-          let vatInput = vatSettingInput {vatInputQuarter = YearQuarter 2024 Q1}
+          let vatInput = vatSettingsInput {vatInputQuarter = YearQuarter 2024 Q1}
 
           let validation = runReporter $ produceVATReport vatInput ledger
           (vatReport, _) <- shouldValidate diag validation

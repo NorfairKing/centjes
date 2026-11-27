@@ -33,11 +33,11 @@ spec = sequential $
               withYamlConfig (pure (Just configFile)) $
                 (,) <$> settingsParser <*> settingsParser
 
-          let ledgerFile = settingBaseDir </> settingLedgerFile
+          let ledgerFile = settingsBaseDir </> settingsLedgerFile
           (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
           ledger <- shouldValidate diag $ compileDeclarations declarations
 
-          let taxesInput = taxesSettingInput {taxesInputYear = 2024}
+          let taxesInput = taxesSettingsInput {taxesInputYear = 2024}
 
           let validation = runReporter $ produceTaxesReport taxesInput ledger
           (taxesReport, _) <- shouldValidate diag validation

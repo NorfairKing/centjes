@@ -175,7 +175,7 @@ account_extra
 extra_account_assertion
   :: { LAccountAssertion }
   : tok_assert tok_currency currency_symbol { sBE $1 $3 $ AccountAssertionCurrency $3 }
-  | tok_assert tok_no_virtual { sBE $1 $2 $ AccountAssertionVirtual (sL1 $2 AccountAssertionNoVirtual) }
+  | tok_assert tok_no_virtual { sBE $1 $2 $ AccountAssertionVirtual (sL1 $2 AccountAssertionVirtualNotAllowed) }
   | tok_assert tok_virtual_allowed { sBE $1 $2 $ AccountAssertionVirtual (sL1 $2 AccountAssertionVirtualAllowed) }
   | tok_assert tok_virtual_only { sBE $1 $2 $ AccountAssertionVirtual (sL1 $2 AccountAssertionVirtualOnly) }
 
@@ -295,9 +295,9 @@ transaction_extras
 
 transaction_extra
   :: { LTransactionExtra }
-  : tok_plus extra_attachment { sBE $1 $2 $ TransactionAttachment $2 }
-  | tok_plus extra_assertion { sBE $1 $2 $ TransactionAssertion $2 }
-  | tok_plus extra_tag { sBE $1 $2 $ TransactionTag $2 }
+  : tok_plus extra_attachment { sBE $1 $2 $ TransactionExtraAttachment $2 }
+  | tok_plus extra_assertion { sBE $1 $2 $ TransactionExtraAssertion $2 }
+  | tok_plus extra_tag { sBE $1 $2 $ TransactionExtraTag $2 }
 
 extra_attachment
   :: { LExtraAttachment }

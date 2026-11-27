@@ -30,12 +30,12 @@ spec = sequential $
         withCurrentDir dir $ withArgs [] $ do
           (Settings {..}, VATSettings {..}) <- runParser version "centjes-switzerland vat-tests" $ (,) <$> settingsParser <*> settingsParser
 
-          let ledgerFile = settingBaseDir </> settingLedgerFile
+          let ledgerFile = settingsBaseDir </> settingsLedgerFile
 
           (declarations, diag) <- runNoLoggingT $ loadModules ledgerFile
           ledger <- shouldValidate diag $ compileDeclarations declarations
 
-          let vatInput = vatSettingInput {vatInputQuarter = YearQuarter 2024 Q1}
+          let vatInput = vatSettingsInput {vatInputQuarter = YearQuarter 2024 Q1}
 
           let validation = runReporter $ produceVATReport vatInput ledger
           (vatReport, _) <- shouldValidate diag validation

@@ -62,9 +62,9 @@ spec = do
                 report <-
                   shouldValidate diag $
                     produceNetWorthReport
-                      netWorthSettingCurrency
-                      netWorthSettingBegin
-                      netWorthSettingEnd
+                      netWorthSettingsCurrency
+                      netWorthSettingsBegin
+                      netWorthSettingsEnd
                       ledger
 
                 pure $ renderChunksText termCaps $ renderNetWorthReport report
@@ -101,9 +101,9 @@ spec = do
                 errs <-
                   shouldFailToValidate $
                     produceNetWorthReport
-                      netWorthSettingCurrency
-                      netWorthSettingBegin
-                      netWorthSettingEnd
+                      netWorthSettingsCurrency
+                      netWorthSettingsBegin
+                      netWorthSettingsEnd
                       ledger
 
                 pure $ renderValidationErrors diag errs

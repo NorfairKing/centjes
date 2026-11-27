@@ -196,7 +196,7 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                                       evaluatedLedger
                              in mconcat
                                   [ renderHtmlDoc $ moduleDoc lmodule,
-                                    renderChunksHtml $ renderBalanceReport DoNotShowEmpty balanceReport
+                                    renderChunksHtml $ renderBalanceReport ShowEmptyHide balanceReport
                                   ]
                           "register" ->
                             let register =
@@ -323,26 +323,26 @@ renderHtmlDoc doc =
     layoutOptions = LayoutOptions {layoutPageWidth = Unbounded}
     go :: DocTree SyntaxElement -> Html
     go = \case
-      DTText t -> Html.span $ Html.text t
-      DTAnnotated ann ts ->
+      DocTreeText t -> Html.span $ Html.text t
+      DocTreeAnnotated ann ts ->
         Html.span ! HtmlA.style (syntaxElementStyle ann) $
           foldMap go ts
     -- These are based on
     -- https://github.com/zefei/cake16/blob/7367a7caa750e6379c0e8a56229347b9a0a24048/colors/cake16.vim#L27
     syntaxElementStyle :: SyntaxElement -> Html.AttributeValue
     syntaxElementStyle = \case
-      SyntaxImport -> "color: #308090;"
-      SyntaxKeyword -> "color: #b95942;"
-      SyntaxComment -> "color: #878787;"
-      SyntaxDecimalLiteral -> "color: #b95942;"
-      SyntaxTimestamp -> "color: #308444;"
-      SyntaxDescription -> "color: #50707e;"
-      SyntaxCurrencySymbol -> "color: #b95942;"
-      SyntaxAccountName -> "color: #50707e;"
+      SyntaxElementImport -> "color: #308090;"
+      SyntaxElementKeyword -> "color: #b95942;"
+      SyntaxElementComment -> "color: #878787;"
+      SyntaxElementDecimalLiteral -> "color: #b95942;"
+      SyntaxElementTimestamp -> "color: #308444;"
+      SyntaxElementDescription -> "color: #50707e;"
+      SyntaxElementCurrencySymbol -> "color: #b95942;"
+      SyntaxElementAccountName -> "color: #50707e;"
 
 data DocTree ann
-  = DTText !Text
-  | DTAnnotated !ann ![DocTree ann]
+  = DocTreeText !Text
+  | DocTreeAnnotated !ann ![DocTree ann]
 
 treeUp :: SimpleDocTree ann -> [DocTree ann]
 treeUp = go . pure
@@ -351,10 +351,10 @@ treeUp = go . pure
     go = \case
       [] -> []
       (STEmpty : rest) -> go rest -- Should not happen.
-      (STChar c : rest) -> DTText (T.pack [c]) : go rest
-      (STText _ t : rest) -> DTText t : go rest
-      (STLine i : rest) -> DTText (T.pack $ concat $ "\n" : replicate i "  ") : go rest
-      (STAnn ann sdt : rest) -> DTAnnotated ann (go [sdt]) : go rest
+      (STChar c : rest) -> DocTreeText (T.pack [c]) : go rest
+      (STText _ t : rest) -> DocTreeText t : go rest
+      (STLine i : rest) -> DocTreeText (T.pack $ concat $ "\n" : replicate i "  ") : go rest
+      (STAnn ann sdt : rest) -> DocTreeAnnotated ann (go [sdt]) : go rest
       (STConcat sdts : rest) -> go $ sdts ++ rest
 
 scrubNode :: Node -> Text

@@ -55,7 +55,7 @@ doCompleteCheck ::
     SourceSpan
     ( Ledger SourceSpan,
       BalanceReport SourceSpan,
-      Register 'MultiCurrency SourceSpan
+      Register 'AmountModeMultiCurrency SourceSpan
     )
 doCompleteCheck declarations = do
   () <- withLoggedDuration "Check declarations" $ checkLDeclarations declarations
@@ -110,7 +110,7 @@ instance ToReport (CheckError SourceSpan) where
     CheckErrorUnnecessaryDuplicateAttachmentTag dl tl ->
       Err
         (Just "CE_UNNECESSARY_DUPLICATE_ATTACHMENT_TAG")
-        (unwords ["Unnecessary tag:", T.unpack (tagText duplicateAttachmentTag)])
+        (unwords ["Unnecessary tag:", T.unpack (unTag duplicateAttachmentTag)])
         [ (toDiagnosePosition dl, Where "While trying to check this declaration"),
           (toDiagnosePosition tl, This "This tag claims that an attachment is attached more than once, but none of the attachments here are.")
         ]
@@ -253,11 +253,11 @@ checkAccountUsage declarations =
               assertedAccounts =
                 mapMaybe
                   ( \case
-                      Commented (Located _ (TransactionAssertion (Located _ (ExtraAssertion (Located _ (Module.AssertionEquals _ (Located _ an) _ _)))))) _ ->
+                      Commented (Located _ (TransactionExtraAssertion (Located _ (ExtraAssertion (Located _ (Module.AssertionEquals _ (Located _ an) _ _)))))) _ ->
                         Just an
-                      Commented (Located _ (TransactionAttachment _)) _ ->
+                      Commented (Located _ (TransactionExtraAttachment _)) _ ->
                         Nothing
-                      Commented (Located _ (TransactionTag _)) _ ->
+                      Commented (Located _ (TransactionExtraTag _)) _ ->
                         Nothing
                   )
                   transactionExtras
@@ -300,11 +300,11 @@ checkTagUsage declarations =
                 S.unions $
                   map
                     ( \case
-                        Commented (Located _ (TransactionAttachment _)) _ ->
+                        Commented (Located _ (TransactionExtraAttachment _)) _ ->
                           S.empty
-                        Commented (Located _ (TransactionAssertion _)) _ ->
+                        Commented (Located _ (TransactionExtraAssertion _)) _ ->
                           S.empty
-                        Commented (Located _ (TransactionTag (Located _ (ExtraTag (Located _ tag))))) _ ->
+                        Commented (Located _ (TransactionExtraTag (Located _ (ExtraTag (Located _ tag))))) _ ->
                           S.singleton tag
                     )
                     transactionExtras
@@ -319,7 +319,7 @@ duplicateAttachmentTag :: Tag
 duplicateAttachmentTag = "duplicate-attachment"
 
 duplicateAttachmentExtra :: TransactionExtra ()
-duplicateAttachmentExtra = TransactionTag (Located () (ExtraTag (Located () duplicateAttachmentTag)))
+duplicateAttachmentExtra = TransactionExtraTag (Located () (ExtraTag (Located () duplicateAttachmentTag)))
 
 -- | Where one attachment is attached, resolved so that two attachments of the
 -- same file from different directories compare equal.
@@ -415,9 +415,9 @@ declarationAttachments = \case
         if tag == duplicateAttachmentTag then Just el else Nothing
     transactionExtraDuplicateTag :: Located (TransactionExtra SourceSpan) -> Maybe SourceSpan
     transactionExtraDuplicateTag (Located el te) = case te of
-      TransactionAttachment _ -> Nothing
-      TransactionAssertion _ -> Nothing
-      TransactionTag (Located _ (ExtraTag (Located _ tag))) ->
+      TransactionExtraAttachment _ -> Nothing
+      TransactionExtraAssertion _ -> Nothing
+      TransactionExtraTag (Located _ (ExtraTag (Located _ tag))) ->
         if tag == duplicateAttachmentTag then Just el else Nothing
     accountExtraAttachment :: Located (AccountExtra SourceSpan) -> Maybe (AttachmentOccurrence SourceSpan)
     accountExtraAttachment (Located _ ae) = case ae of
@@ -427,10 +427,10 @@ declarationAttachments = \case
       AccountExtraTag _ -> Nothing
     transactionExtraAttachment :: Located (TransactionExtra SourceSpan) -> Maybe (AttachmentOccurrence SourceSpan)
     transactionExtraAttachment (Located _ te) = case te of
-      TransactionAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located l fp))))) ->
+      TransactionExtraAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located l fp))))) ->
         Just (attachmentOccurrence l fp)
-      TransactionAssertion _ -> Nothing
-      TransactionTag _ -> Nothing
+      TransactionExtraAssertion _ -> Nothing
+      TransactionExtraTag _ -> Nothing
     attachmentOccurrence :: SourceSpan -> Path Rel File -> AttachmentOccurrence SourceSpan
     attachmentOccurrence l fp =
       AttachmentOccurrence
@@ -470,9 +470,9 @@ checkTransactionExtra ::
   TransactionExtra SourceSpan ->
   CheckerT SourceSpan ()
 checkTransactionExtra tl = \case
-  TransactionAttachment a -> checkAttachment tl a
-  TransactionAssertion _ -> pure ()
-  TransactionTag _ -> pure ()
+  TransactionExtraAttachment a -> checkAttachment tl a
+  TransactionExtraAssertion _ -> pure ()
+  TransactionExtraTag _ -> pure ()
 
 checkAttachment :: SourceSpan -> LExtraAttachment -> CheckerT SourceSpan ()
 checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located l fp))))) = do
@@ -509,7 +509,7 @@ checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located
 checkLedger ::
   (Ord ann) =>
   Ledger ann ->
-  Checker ann (BalanceReport ann, Register 'MultiCurrency ann)
+  Checker ann (BalanceReport ann, Register 'AmountModeMultiCurrency ann)
 checkLedger ledger = do
   -- Produce the evaluated ledger once, shared by both reports
   evaluatedLedger <-

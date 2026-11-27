@@ -50,13 +50,13 @@ import Text.Printf (printf)
 runCentjesStocksDownloadRates :: Settings -> DownloadRatesSettings -> IO ()
 runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStderrLoggingT $ do
   -- Load ledger to get declared currencies
-  (declarations, diag) <- loadModules settingLedgerFile
+  (declarations, diag) <- loadModules settingsLedgerFile
   currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
 
   let stocks = NE.toList downloadRatesSettingStocks
 
   -- Extract existing price declarations from the loaded declarations that came from the output file
-  let outputRelFile = downloadRatesSettingOutput >>= stripProperPrefix (parent settingLedgerFile)
+  let outputRelFile = downloadRatesSettingsOutput >>= stripProperPrefix (parent settingsLedgerFile)
   let existingDeclarations = case outputRelFile of
         Nothing -> []
         Just relFile -> declarationsFromFile relFile declarations
@@ -78,13 +78,13 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
         -- Throttle requests (500ms between each)
         .| C.mapM (\x -> liftIO (threadDelay 100_000) >> pure x)
         -- Fetch stock history
-        .| C.mapM (fetchHistory man downloadRatesSettingBegin downloadRatesSettingEnd)
+        .| C.mapM (fetchHistory man downloadRatesSettingsBegin downloadRatesSettingsEnd)
         -- Validate API currency matches configured currency
         .| C.mapM validateApiCurrency
         -- Expand to (symbol, targetCurrency, day, price) for each data point
         .| C.concatMap (\(sym, targetCur, history) -> [(sym, targetCur, day, price) | (day, price) <- stockHistoryTimeSeries history])
         -- Filter to requested date range
-        .| C.filter (\(_, _, day, _) -> day >= downloadRatesSettingBegin && day <= downloadRatesSettingEnd)
+        .| C.filter (\(_, _, day, _) -> day >= downloadRatesSettingsBegin && day <= downloadRatesSettingsEnd)
         -- Convert to rate expressions
         .| C.concatMap (\(sym, targetCur, day, price) -> [(sym, targetCur, day, rateExpr) | rateExpr <- maybeToList (priceToRateExpression price)])
         -- Skip rates that already exist in the file
@@ -101,7 +101,7 @@ runCentjesStocksDownloadRates Settings {..} DownloadRatesSettings {..} = runStde
           formatModule $
             mergePriceDeclarations existingDeclarations newDeclarations
 
-  liftIO $ case downloadRatesSettingOutput of
+  liftIO $ case downloadRatesSettingsOutput of
     Nothing -> SB.putStr output
     Just outputFile -> SB.writeFile (fromAbsFile outputFile) output
 

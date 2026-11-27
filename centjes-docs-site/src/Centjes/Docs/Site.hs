@@ -21,8 +21,8 @@ centjesDocsSite = do
   let app =
         App
           { appAssets = assets,
-            appGoogleAnalyticsTracking = settingGoogleAnalyticsTracking,
-            appGoogleSearchConsoleVerification = settingGoogleSearchConsoleVerification
+            appGoogleAnalyticsTracking = settingsGoogleAnalyticsTracking,
+            appGoogleSearchConsoleVerification = settingsGoogleSearchConsoleVerification
           }
   registry <- liftIO Registry.new
   metricsEndpoint <-
@@ -41,4 +41,4 @@ centjesDocsSite = do
           . defaultMiddlewaresNoLogging
   plainApp <- liftIO $ toWaiAppPlain app
   let application = middlewares plainApp
-  Warp.run settingPort application
+  Warp.run settingsPort application

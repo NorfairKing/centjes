@@ -45,13 +45,13 @@ parseInstructions =
         <*> settingsParser
 
 data Settings = Settings
-  { settingBaseDir :: !(Path Abs Dir),
-    settingLedgerFile :: !(Path Rel File),
+  { settingsBaseDir :: !(Path Abs Dir),
+    settingsLedgerFile :: !(Path Rel File),
     -- We must use a separate file for prices because the swiss taxes require
     -- that we use the prices downloaded with the `download-rates` command.
-    settingPricesFile :: !(Path Rel File),
-    settingWatch :: !Bool,
-    settingClean :: !Bool
+    settingsPricesFile :: !(Path Rel File),
+    settingsWatch :: !Bool,
+    settingsClean :: !Bool
   }
 
 instance HasParser Settings where
@@ -60,7 +60,7 @@ instance HasParser Settings where
 {-# ANN parseSettings ("NOCOVER" :: String) #-}
 parseSettings :: Parser Settings
 parseSettings = do
-  settingBaseDir <-
+  settingsBaseDir <-
     choice
       [ directoryPathSetting
           [ help "base directory",
@@ -68,7 +68,7 @@ parseSettings = do
           ],
         runIO getCurrentDir
       ]
-  settingLedgerFile <-
+  settingsLedgerFile <-
     mapIO parseRelFile $
       setting
         [ help "ledger file",
@@ -78,7 +78,7 @@ parseSettings = do
           value "ledger.cent",
           metavar "FILE_PATH"
         ]
-  settingPricesFile <-
+  settingsPricesFile <-
     mapIO parseRelFile $
       setting
         [ help "prices file",
@@ -87,7 +87,7 @@ parseSettings = do
           value "currency-rates.cent",
           metavar "FILE_PATH"
         ]
-  settingWatch <-
+  settingsWatch <-
     setting
       [ help "Run centjes in a loop",
         name "watch",
@@ -97,7 +97,7 @@ parseSettings = do
         reader exists,
         value False
       ]
-  settingClean <-
+  settingsClean <-
     yesNoSwitch
       [ help "Clean the packet directory",
         name "clean",
@@ -125,9 +125,9 @@ parseDispatch =
     ]
 
 data TaxesSettings = TaxesSettings
-  { taxesSettingZipFile :: !(Path Abs File),
-    taxesSettingPacketDir :: !(Maybe (Path Abs Dir)),
-    taxesSettingInput :: !TaxesInput
+  { taxesSettingsZipFile :: !(Path Abs File),
+    taxesSettingsPacketDir :: !(Maybe (Path Abs Dir)),
+    taxesSettingsInput :: !TaxesInput
   }
 
 instance HasParser TaxesSettings where
@@ -136,8 +136,8 @@ instance HasParser TaxesSettings where
 {-# ANN parseTaxesSettings ("NOCOVER" :: String) #-}
 parseTaxesSettings :: Parser TaxesSettings
 parseTaxesSettings = do
-  taxesSettingInput <- settingsParser
-  (taxesSettingZipFile, taxesSettingPacketDir) <- subConfig_ "taxes" $ do
+  taxesSettingsInput <- settingsParser
+  (taxesSettingsZipFile, taxesSettingsPacketDir) <- subConfig_ "taxes" $ do
     zf <-
       filePathSetting
         [ help "Path to the zip file to create",
@@ -154,9 +154,9 @@ parseTaxesSettings = do
   pure TaxesSettings {..}
 
 data VATSettings = VATSettings
-  { vatSettingZipFile :: !(Path Abs File),
-    vatSettingPacketDir :: !(Maybe (Path Abs Dir)),
-    vatSettingInput :: !VATInput
+  { vatSettingsZipFile :: !(Path Abs File),
+    vatSettingsPacketDir :: !(Maybe (Path Abs Dir)),
+    vatSettingsInput :: !VATInput
   }
 
 instance HasParser VATSettings where
@@ -165,8 +165,8 @@ instance HasParser VATSettings where
 {-# ANN parseVATSettings ("NOCOVER" :: String) #-}
 parseVATSettings :: Parser VATSettings
 parseVATSettings = do
-  vatSettingInput <- settingsParser
-  (vatSettingZipFile, vatSettingPacketDir) <- subConfig_ "vat" $ do
+  vatSettingsInput <- settingsParser
+  (vatSettingsZipFile, vatSettingsPacketDir) <- subConfig_ "vat" $ do
     zf <-
       filePathSetting
         [ help "path to the zip file to create",
@@ -183,9 +183,9 @@ parseVATSettings = do
   pure VATSettings {..}
 
 data DownloadRatesSettings = DownloadRatesSettings
-  { downloadRatesSettingBegin :: !Day,
-    downloadRatesSettingEnd :: !Day,
-    downloadRatesSettingDestination :: !(Path Abs File)
+  { downloadRatesSettingsBegin :: !Day,
+    downloadRatesSettingsEnd :: !Day,
+    downloadRatesSettingsDestination :: !(Path Abs File)
   }
 
 instance HasParser DownloadRatesSettings where
@@ -194,7 +194,7 @@ instance HasParser DownloadRatesSettings where
 {-# ANN parseDownloadRatesSettings ("NOCOVER" :: String) #-}
 parseDownloadRatesSettings :: Parser DownloadRatesSettings
 parseDownloadRatesSettings = subConfig_ "download-rates" $ do
-  downloadRatesSettingBegin <-
+  downloadRatesSettingsBegin <-
     choice
       [ setting
           [ help "The begin date (inclusive), default: Start of the year",
@@ -208,7 +208,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
           let (y, _, _) = toGregorian today
           pure $ fromGregorian y 1 1
       ]
-  downloadRatesSettingEnd <-
+  downloadRatesSettingsEnd <-
     choice
       [ setting
           [ help "The final date (inclusive), default: Yesterday",
@@ -218,7 +218,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
           ],
         runIO $ addDays (-1) . utctDay <$> getCurrentTime
       ]
-  downloadRatesSettingDestination <-
+  downloadRatesSettingsDestination <-
     filePathSetting
       [ help "Where to put the resulting file",
         name "output",
@@ -227,11 +227,11 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
   pure DownloadRatesSettings {..}
 
 data SetAsideSettings = SetAsideSettings
-  { setAsideSettingInput :: !SetAsideInput,
+  { setAsideSettingsInput :: !SetAsideInput,
     -- | The settings of the taxes report, which set-aside produces for its
     -- revenue, business expenses and third pillar contributions.
-    setAsideSettingTaxesInput :: !TaxesInput,
-    setAsideSettingTerminalCapabilities :: !TerminalCapabilities
+    setAsideSettingsTaxesInput :: !TaxesInput,
+    setAsideSettingsTerminalCapabilities :: !TerminalCapabilities
   }
 
 instance HasParser SetAsideSettings where
@@ -240,7 +240,7 @@ instance HasParser SetAsideSettings where
 {-# ANN parseSetAsideSettings ("NOCOVER" :: String) #-}
 parseSetAsideSettings :: Parser SetAsideSettings
 parseSetAsideSettings = do
-  setAsideSettingInput <- settingsParser
-  setAsideSettingTaxesInput <- settingsParser
-  setAsideSettingTerminalCapabilities <- runIO getTerminalCapabilitiesFromEnv
+  setAsideSettingsInput <- settingsParser
+  setAsideSettingsTaxesInput <- settingsParser
+  setAsideSettingsTerminalCapabilities <- runIO getTerminalCapabilitiesFromEnv
   pure SetAsideSettings {..}

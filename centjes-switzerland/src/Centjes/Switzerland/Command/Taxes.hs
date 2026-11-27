@@ -47,26 +47,26 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
   typstTemplateFile <- resolveFile assetsDir "taxes.typ"
 
   runStderrLoggingT $ do
-    loadMWatchedModules settingWatch (settingBaseDir </> settingLedgerFile) $ \(declarations, fileMap) -> do
+    loadMWatchedModules settingsWatch (settingsBaseDir </> settingsLedgerFile) $ \(declarations, fileMap) -> do
       let diag = diagFromFileMap fileMap
       let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
 
       ledger <-
         liftIO $
           checkValidation diag $
-            filterLedgerByPricesFile settingPricesFile
+            filterLedgerByPricesFile settingsPricesFile
               <$> compileDeclarations declarations
 
       -- Check ahead of time, so we don't generate reports of invalid ledgers
       val <- runValidationT $ doCompleteCheck declarations
       void $ liftIO $ checkValidation diag val
 
-      let validation = runReporter $ produceTaxesReport taxesSettingInput ledger
+      let validation = runReporter $ produceTaxesReport taxesSettingsInput ledger
       (taxesReport, reportFiles) <- liftIO $ checkValidation diag validation
 
       let includedFiles = M.union reportFiles centjesFiles
 
-      withPacketDir settingClean taxesSettingPacketDir $ \packetDir -> do
+      withPacketDir settingsClean taxesSettingsPacketDir $ \packetDir -> do
         -- Write the xml to a file
         xmlFile <- do
           now <- liftIO getCurrentTime
@@ -166,14 +166,14 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
                   "in the packet at",
                   fromRelFile to
                 ]
-          let fromFile = settingBaseDir </> from
+          let fromFile = settingsBaseDir </> from
           let packetFile = packetDir </> to
           ensureDir (parent packetFile)
           copyFile fromFile packetFile
           pure (to, packetFile)
 
         -- Create a nice zip file
-        createZipFile taxesSettingZipFile $
+        createZipFile taxesSettingsZipFile $
           M.insert [relfile|README.pdf|] readmeFile $
             M.insert [relfile|raw-input.json|] jsonInputFile $
               M.insert
@@ -185,5 +185,5 @@ runCentjesSwitzerlandTaxes Settings {..} TaxesSettings {..} = do
           T.pack $
             unwords
               [ "Succesfully created packet",
-                fromAbsFile taxesSettingZipFile
+                fromAbsFile taxesSettingsZipFile
               ]

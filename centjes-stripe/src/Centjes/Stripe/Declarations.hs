@@ -44,41 +44,41 @@ import Path
 
 -- | Everything about the ledger that the emitter must not decide for itself.
 data DeclarationSettings = DeclarationSettings
-  { declarationSettingAssetsAccountName :: !AccountName,
-    declarationSettingDomesticIncomeAccountName :: !AccountName,
-    declarationSettingVATIncomeAccountName :: !AccountName,
-    declarationSettingForeignIncomeAccountName :: !AccountName,
-    declarationSettingFeesAccountName :: !AccountName,
+  { declarationSettingsAssetsAccountName :: !AccountName,
+    declarationSettingsDomesticIncomeAccountName :: !AccountName,
+    declarationSettingsVATIncomeAccountName :: !AccountName,
+    declarationSettingsForeignIncomeAccountName :: !AccountName,
+    declarationSettingsFeesAccountName :: !AccountName,
     -- | Where money given back to a customer goes.
     --
     -- An expense rather than negative revenue, because @centjes-switzerland@ rejects a
     -- positive posting to an income account outright.  See 'refundsTransaction'.
-    declarationSettingRefundsAccountName :: !AccountName,
-    declarationSettingVATExpensesAccountName :: !AccountName,
-    declarationSettingPayoutAccountName :: !AccountName,
+    declarationSettingsRefundsAccountName :: !AccountName,
+    declarationSettingsVATExpensesAccountName :: !AccountName,
+    declarationSettingsPayoutAccountName :: !AccountName,
     -- | Where the balance the importer starts from comes from.
-    declarationSettingOpeningAccountName :: !AccountName,
+    declarationSettingsOpeningAccountName :: !AccountName,
     -- | Tags for a transaction whose expenses carried recoverable tax.
-    declarationSettingDeductibleTags :: ![Tag],
+    declarationSettingsDeductibleTags :: ![Tag],
     -- | Tags for a transaction whose expenses carried none.
     --
     -- A transaction tagged deductible must have at least one expense posting followed
     -- by a VAT posting, or @centjes-switzerland@ fails with
     -- @VATErrorDeductibleNoExpenses@.  A month whose every fee was exempt has none, so
     -- it needs the other pair of tags.
-    declarationSettingNotVATDeductibleTags :: ![Tag],
+    declarationSettingsNotVATDeductibleTags :: ![Tag],
     -- | Where the documents that have to be downloaded by hand live, relative to the
     -- ledger.
-    declarationSettingDocumentsDirectory :: !(Path Rel Dir),
+    declarationSettingsDocumentsDirectory :: !(Path Rel Dir),
     -- | Where the report CSVs the importer saves live, relative to the ledger.
-    declarationSettingReportsDirectory :: !(Path Rel Dir),
+    declarationSettingsReportsDirectory :: !(Path Rel Dir),
     -- | 'formatTime' pattern for Stripe's monthly tax invoice.
     --
     -- The only document the importer cannot fetch: Stripe's invoices for its own fees
     -- are in the dashboard under Settings, Reporting and documents, and no API serves
     -- them.  It is also the one that has to be a real invoice rather than a report,
     -- since reclaiming the input tax needs the document carrying Stripe's VAT number.
-    declarationSettingFeesAttachmentPattern :: !String
+    declarationSettingsFeesAttachmentPattern :: !String
   }
 
 data DeclarationError
@@ -165,8 +165,8 @@ openingTransaction ::
   Validation DeclarationError (Transaction ())
 openingTransaction DeclarationSettings {..} quantisationFactor currency day balance = do
   description <- requireDescription "Stripe opening balance"
-  assetsPosting <- posting quantisationFactor currency declarationSettingAssetsAccountName balance
-  openingPosting <- posting quantisationFactor currency declarationSettingOpeningAccountName (Account.negate balance)
+  assetsPosting <- posting quantisationFactor currency declarationSettingsAssetsAccountName balance
+  openingPosting <- posting quantisationFactor currency declarationSettingsOpeningAccountName (Account.negate balance)
   pure
     Transaction
       { transactionTimestamp = noLoc (TimestampDay day),
@@ -219,8 +219,8 @@ payoutTransaction ::
   Validation DeclarationError (Transaction ())
 payoutTransaction DeclarationSettings {..} quantisationFactor currency StripePayout {..} = do
   description <- requireDescription $ Text.pack $ unwords ["Stripe payout", showGregorian stripePayoutDay]
-  payoutPosting <- posting quantisationFactor currency declarationSettingPayoutAccountName stripePayoutAmount
-  assetsPosting <- posting quantisationFactor currency declarationSettingAssetsAccountName (Account.negate stripePayoutAmount)
+  payoutPosting <- posting quantisationFactor currency declarationSettingsPayoutAccountName stripePayoutAmount
+  assetsPosting <- posting quantisationFactor currency declarationSettingsAssetsAccountName (Account.negate stripePayoutAmount)
   pure
     Transaction
       { transactionTimestamp = noLoc (TimestampDay stripePayoutDay),
@@ -251,12 +251,12 @@ salesTransaction DeclarationSettings {..} quantisationFactor currency StripeMont
         concat
           <$> traverse
             ( \RevenueAtRate {..} -> do
-                netPosting <- posting quantisationFactor currency declarationSettingDomesticIncomeAccountName revenueAtRateNet
+                netPosting <- posting quantisationFactor currency declarationSettingsDomesticIncomeAccountName revenueAtRateNet
                 vatPosting <-
                   ratioPosting
                     quantisationFactor
                     currency
-                    declarationSettingVATIncomeAccountName
+                    declarationSettingsVATIncomeAccountName
                     revenueAtRateTax
                     revenueAtRateRate
                 pure [netPosting, vatPosting]
@@ -264,7 +264,7 @@ salesTransaction DeclarationSettings {..} quantisationFactor currency StripeMont
             domestic
       foreignPostings <-
         traverse
-          (posting quantisationFactor currency declarationSettingForeignIncomeAccountName)
+          (posting quantisationFactor currency declarationSettingsForeignIncomeAccountName)
           (maybeToList mForeign)
       total <-
         requireSum $
@@ -273,12 +273,12 @@ salesTransaction DeclarationSettings {..} quantisationFactor currency StripeMont
               map revenueAtRateTax domestic,
               maybeToList mForeign
             ]
-      assetsPosting <- posting quantisationFactor currency declarationSettingAssetsAccountName (Account.negate total)
+      assetsPosting <- posting quantisationFactor currency declarationSettingsAssetsAccountName (Account.negate total)
       -- The tax summary is where the country split comes from and the activity summary
       -- is where the total comes from, so both are what this transaction rests on.
       attachments <-
         traverse
-          (reportAttachment declarationSettingReportsDirectory stripeMonthMonth)
+          (reportAttachment declarationSettingsReportsDirectory stripeMonthMonth)
           [ReportKindTax, ReportKindActivity]
       pure $
         Just
@@ -316,7 +316,7 @@ refundsTransaction DeclarationSettings {..} quantisationFactor currency StripeMo
           <$> traverse
             ( \RevenueAtRate {..} -> do
                 refundPosting <-
-                  posting quantisationFactor currency declarationSettingRefundsAccountName revenueAtRateRefundedNet
+                  posting quantisationFactor currency declarationSettingsRefundsAccountName revenueAtRateRefundedNet
                 if revenueAtRateRefundedTax == Account.zero
                   then pure [refundPosting]
                   else do
@@ -324,7 +324,7 @@ refundsTransaction DeclarationSettings {..} quantisationFactor currency StripeMo
                       ratioPosting
                         quantisationFactor
                         currency
-                        declarationSettingVATExpensesAccountName
+                        declarationSettingsVATExpensesAccountName
                         revenueAtRateRefundedTax
                         revenueAtRateRate
                     pure [refundPosting, vatPosting]
@@ -336,11 +336,11 @@ refundsTransaction DeclarationSettings {..} quantisationFactor currency StripeMo
             [ map revenueAtRateRefundedNet refunded,
               map revenueAtRateRefundedTax refunded
             ]
-      assetsPosting <- posting quantisationFactor currency declarationSettingAssetsAccountName (Account.negate total)
+      assetsPosting <- posting quantisationFactor currency declarationSettingsAssetsAccountName (Account.negate total)
       -- The tax summary again: the report that says what was sold is the one that says
       -- what was given back.  Whether that ends up being the same file twice is decided by
       -- 'monthTransactions', which is where both transactions are in hand.
-      attachment <- reportAttachment declarationSettingReportsDirectory stripeMonthMonth ReportKindTax
+      attachment <- reportAttachment declarationSettingsReportsDirectory stripeMonthMonth ReportKindTax
       let carriedTax = any ((/= Account.zero) . revenueAtRateRefundedTax) refunded
       pure $
         Just
@@ -373,7 +373,7 @@ feesTransaction DeclarationSettings {..} quantisationFactor currency StripeMonth
         concat
           <$> traverse
             ( \FeeLine {..} -> do
-                Commented lp _ <- posting quantisationFactor currency declarationSettingFeesAccountName feeLineAmount
+                Commented lp _ <- posting quantisationFactor currency declarationSettingsFeesAccountName feeLineAmount
                 comment <- requireComment feeLineDescription
                 let feePosting = Commented lp (Just (noLoc comment))
                 case feeLineRate of
@@ -383,19 +383,19 @@ feesTransaction DeclarationSettings {..} quantisationFactor currency StripeMonth
                       ratioPosting
                         quantisationFactor
                         currency
-                        declarationSettingVATExpensesAccountName
+                        declarationSettingsVATExpensesAccountName
                         feeLineTax
                         rate
                     pure [feePosting, vatPosting]
             )
             fees
       total <- requireSum $ map feeLineAmount fees ++ map feeLineTax fees
-      assetsPosting <- posting quantisationFactor currency declarationSettingAssetsAccountName (Account.negate total)
+      assetsPosting <- posting quantisationFactor currency declarationSettingsAssetsAccountName (Account.negate total)
       -- Stripe's own tax invoice, which is what the input tax is reclaimed on, and the
       -- fee summary the amounts were read from.
       taxInvoice <-
-        attachmentExtra declarationSettingDocumentsDirectory declarationSettingFeesAttachmentPattern stripeMonthMonth Nothing
-      feeSummary <- reportAttachment declarationSettingReportsDirectory stripeMonthMonth ReportKindFees
+        attachmentExtra declarationSettingsDocumentsDirectory declarationSettingsFeesAttachmentPattern stripeMonthMonth Nothing
+      feeSummary <- reportAttachment declarationSettingsReportsDirectory stripeMonthMonth ReportKindFees
       let carriedTax = not (null (mapMaybe feeLineRate fees))
       pure $
         Just
@@ -418,11 +418,11 @@ feesTransaction DeclarationSettings {..} quantisationFactor currency StripeMonth
 tagsFor :: DeclarationSettings -> Bool -> [Tag]
 tagsFor DeclarationSettings {..} carriedTax =
   if carriedTax
-    then declarationSettingDeductibleTags
-    else declarationSettingNotVATDeductibleTags
+    then declarationSettingsDeductibleTags
+    else declarationSettingsNotVATDeductibleTags
 
 tagExtras :: [Tag] -> [Commented () (TransactionExtra ())]
-tagExtras tags = [noCommentsOn (TransactionTag (noLoc (ExtraTag (noLoc tag)))) | tag <- tags]
+tagExtras tags = [noCommentsOn (TransactionExtraTag (noLoc (ExtraTag (noLoc tag)))) | tag <- tags]
 
 balanceAssertion ::
   DeclarationSettings ->
@@ -434,13 +434,13 @@ balanceAssertion DeclarationSettings {..} quantisationFactor currency balance = 
   literal <- requireLiteral quantisationFactor balance
   pure $
     noCommentsOn $
-      TransactionAssertion $
+      TransactionExtraAssertion $
         noLoc $
           ExtraAssertion $
             noLoc $
               AssertionEquals
                 AssertionScopeReal
-                (noLoc declarationSettingAssetsAccountName)
+                (noLoc declarationSettingsAssetsAccountName)
                 (noLoc literal)
                 (noLoc (CommodityExpressionCurrency (noLoc currency)))
 
@@ -474,7 +474,7 @@ attachmentExtra documentsDirectory pattern_ month mCommentText = do
   pure $
     Commented
       ( noLoc $
-          TransactionAttachment $
+          TransactionExtraAttachment $
             noLoc $
               ExtraAttachment $
                 noLoc $

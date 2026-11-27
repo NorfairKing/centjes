@@ -92,7 +92,7 @@ commentedDocs func (Commented (Located _ value) mCommentAbove) =
 -- | One line per @--@ line the comment was written as.
 commentDocs :: Comment -> [Doc SyntaxElement]
 commentDocs =
-  map (\lineText -> annotate SyntaxComment ("--" <+> pretty lineText)) . Comment.commentLines
+  map (\lineText -> annotate SyntaxElementComment ("--" <+> pretty lineText)) . Comment.commentLines
 
 moduleDoc :: Module l -> Doc SyntaxElement
 moduleDoc Module {..} =
@@ -112,19 +112,19 @@ moduleDoc Module {..} =
       let dt' = decType d
           insertEmptyLine = case (dt, dt') of
             -- Group comments together
-            (DecComment, DecComment) -> False
+            (DecTypeComment, DecTypeComment) -> False
             -- Attach comments to the next declaration
-            (DecComment, _) -> False
+            (DecTypeComment, _) -> False
             -- Group currency declarations together
-            (DecCurrency, DecCurrency) -> False
+            (DecTypeCurrency, DecTypeCurrency) -> False
             -- Group account declarations together
-            (DecAccount, DecAccount) -> False
+            (DecTypeAccount, DecTypeAccount) -> False
             -- Group tag declarations together
-            (DecTag, DecTag) -> False
+            (DecTypeTag, DecTypeTag) -> False
             -- Group price declarations together
-            (DecPrice, DecPrice) -> False
+            (DecTypePrice, DecTypePrice) -> False
             -- Don't group transactions together
-            (DecTransaction, DecTransaction) -> True
+            (DecTypeTransaction, DecTypeTransaction) -> True
             _ -> dt /= dt'
        in ( if insertEmptyLine
               then (hardline :)
@@ -133,22 +133,22 @@ moduleDoc Module {..} =
             $ declarationDoc d <> hardline : go (Just dt') ds
 
 data DecType
-  = DecComment
-  | DecCurrency
-  | DecAccount
-  | DecTag
-  | DecPrice
-  | DecTransaction
+  = DecTypeComment
+  | DecTypeCurrency
+  | DecTypeAccount
+  | DecTypeTag
+  | DecTypePrice
+  | DecTypeTransaction
   deriving (Eq)
 
 decType :: Declaration l -> DecType
 decType = \case
-  DeclarationComment {} -> DecComment
-  DeclarationCurrency {} -> DecCurrency
-  DeclarationAccount {} -> DecAccount
-  DeclarationTag {} -> DecTag
-  DeclarationPrice {} -> DecPrice
-  DeclarationTransaction {} -> DecTransaction
+  DeclarationComment {} -> DecTypeComment
+  DeclarationCurrency {} -> DecTypeCurrency
+  DeclarationAccount {} -> DecTypeAccount
+  DeclarationTag {} -> DecTypeTag
+  DeclarationPrice {} -> DecTypePrice
+  DeclarationTransaction {} -> DecTypeTransaction
 
 lImportDoc :: GenLocated l (Import l) -> Doc SyntaxElement
 lImportDoc = importDoc . locatedValue
@@ -158,7 +158,7 @@ importDoc (Import (Located _ fp)) =
   let pString = fromRelFile $ case splitExtension fp of
         Just (rest, ".cent") -> rest
         _ -> fp
-   in annotate SyntaxKeyword "import" <+> annotate SyntaxImport (pretty pString) <> hardline
+   in annotate SyntaxElementKeyword "import" <+> annotate SyntaxElementImport (pretty pString) <> hardline
 
 declarationDoc :: Declaration l -> Doc SyntaxElement
 declarationDoc = \case
@@ -174,7 +174,7 @@ lCurrencyDeclarationDoc = currencyDeclarationDoc . locatedValue
 
 currencyDeclarationDoc :: CurrencyDeclaration l -> Doc SyntaxElement
 currencyDeclarationDoc CurrencyDeclaration {..} =
-  annotate SyntaxKeyword "currency"
+  annotate SyntaxElementKeyword "currency"
     <+> currencySymbolDoc (locatedValue currencyDeclarationSymbol)
     <+> quantisationFactorDoc currencyDeclarationQuantisationFactor
 
@@ -192,7 +192,7 @@ accountDeclarationDoc AccountDeclaration {..} =
             id
             (\at -> (<+> lAccountTypeDoc at))
             accountDeclarationType
-            ( annotate SyntaxKeyword "account"
+            ( annotate SyntaxElementKeyword "account"
                 <+> lAccountNameDoc accountDeclarationName
             )
         ],
@@ -212,15 +212,15 @@ lAccountAssertionDoc = accountAssertionDoc . locatedValue
 accountAssertionDoc :: AccountAssertion l -> Doc SyntaxElement
 accountAssertionDoc = \case
   AccountAssertionCurrency currencySymbol ->
-    annotate SyntaxKeyword "assert"
-      <+> annotate SyntaxKeyword "currency"
+    annotate SyntaxElementKeyword "assert"
+      <+> annotate SyntaxElementKeyword "currency"
       <+> lCurrencySymbolDoc currencySymbol
   AccountAssertionVirtual (Located _ virtual) ->
-    annotate SyntaxKeyword "assert"
+    annotate SyntaxElementKeyword "assert"
       <+> annotate
-        SyntaxKeyword
+        SyntaxElementKeyword
         ( case virtual of
-            AccountAssertionNoVirtual -> "no-virtual"
+            AccountAssertionVirtualNotAllowed -> "no-virtual"
             AccountAssertionVirtualAllowed -> "virtual-allowed"
             AccountAssertionVirtualOnly -> "virtual-only"
         )
@@ -233,7 +233,7 @@ lTagDeclarationDoc = tagDeclarationDoc . locatedValue
 
 tagDeclarationDoc :: TagDeclaration l -> Doc SyntaxElement
 tagDeclarationDoc TagDeclaration {..} =
-  annotate SyntaxKeyword "tag"
+  annotate SyntaxElementKeyword "tag"
     <+> tagDoc (locatedValue tagDeclarationTag)
 
 lPriceDeclarationDoc :: GenLocated l (PriceDeclaration l) -> Doc SyntaxElement
@@ -241,7 +241,7 @@ lPriceDeclarationDoc = priceDeclarationDoc . locatedValue
 
 priceDeclarationDoc :: PriceDeclaration l -> Doc SyntaxElement
 priceDeclarationDoc PriceDeclaration {..} =
-  annotate SyntaxKeyword "price"
+  annotate SyntaxElementKeyword "price"
     <+> lTimestampDoc priceDeclarationTimestamp
     <+> lCurrencySymbolDoc priceDeclarationCurrencySymbol
     <+> lCostExpressionDoc priceDeclarationCost
@@ -278,10 +278,10 @@ lTimestampDoc :: GenLocated l Timestamp -> Doc SyntaxElement
 lTimestampDoc = timestampDoc . locatedValue
 
 timestampDoc :: Timestamp -> Doc SyntaxElement
-timestampDoc = annotate SyntaxTimestamp . pretty . Timestamp.toString
+timestampDoc = annotate SyntaxElementTimestamp . pretty . Timestamp.toString
 
 descriptionDocs :: Description -> [Doc SyntaxElement]
-descriptionDocs = map (annotate SyntaxDescription . pretty . ("| " <>)) . T.lines . unDescription
+descriptionDocs = map (annotate SyntaxElementDescription . pretty . ("| " <>)) . T.lines . unDescription
 
 postingDocHelper :: Maybe (Max Int) -> Maybe (Max Int) -> Maybe (Max Word8) -> Posting l -> Doc SyntaxElement
 postingDocHelper mMaxAccountNameWidth mMaxAccountWidth mMaxAccountDecimals Posting {..} =
@@ -301,7 +301,7 @@ priceAnnotationDoc = \case
   PriceAnnotationLot ce -> lotDoc ce
 
 lotDoc :: GenLocated l (CostExpression l) -> Doc SyntaxElement
-lotDoc ce = annotate SyntaxKeyword "lot" <+> "@" <+> lCostExpressionDoc ce
+lotDoc ce = annotate SyntaxElementKeyword "lot" <+> "@" <+> lCostExpressionDoc ce
 
 lCostExpressionDoc :: GenLocated l (CostExpression l) -> Doc SyntaxElement
 lCostExpressionDoc (Located _ CostExpression {..}) =
@@ -343,19 +343,19 @@ lRationalDecimalLiteralDoc = decimalLiteralDoc . DecimalLiteral.setSignOptional 
 transactionExtraDoc :: TransactionExtra l -> Doc SyntaxElement
 transactionExtraDoc =
   ("+" <+>) . \case
-    TransactionAttachment a -> extraAttachmentDoc (locatedValue a)
-    TransactionAssertion a -> extraAssertionDoc (locatedValue a)
-    TransactionTag t -> lExtraTagDoc t
+    TransactionExtraAttachment a -> extraAttachmentDoc (locatedValue a)
+    TransactionExtraAssertion a -> extraAssertionDoc (locatedValue a)
+    TransactionExtraTag t -> lExtraTagDoc t
 
 extraAttachmentDoc :: ExtraAttachment l -> Doc SyntaxElement
 extraAttachmentDoc (ExtraAttachment (Located _ (Attachment (Located _ fp)))) =
-  annotate SyntaxKeyword "attach"
+  annotate SyntaxElementKeyword "attach"
     <+> pretty (fromRelFile fp)
 
 extraAssertionDoc :: ExtraAssertion l -> Doc SyntaxElement
 extraAssertionDoc (ExtraAssertion (Located _ (AssertionEquals scope an (Located _ dl) lce))) =
   annotate
-    SyntaxKeyword
+    SyntaxElementKeyword
     ( case scope of
         AssertionScopeReal -> "assert"
         AssertionScopeVirtual -> "assert virtual"
@@ -378,7 +378,7 @@ lExtraTagDoc = extraTagDoc . locatedValue
 
 extraTagDoc :: ExtraTag l -> Doc SyntaxElement
 extraTagDoc (ExtraTag lt) =
-  annotate SyntaxKeyword "tag"
+  annotate SyntaxElementKeyword "tag"
     <+> tagDoc (locatedValue lt)
 
 tagDoc :: Tag -> Doc SyntaxElement
@@ -388,7 +388,7 @@ lAccountNameDoc :: GenLocated l AccountName -> Doc SyntaxElement
 lAccountNameDoc = accountNameDoc . locatedValue
 
 accountNameDoc :: AccountName -> Doc SyntaxElement
-accountNameDoc = annotate SyntaxAccountName . pretty . AccountName.toText
+accountNameDoc = annotate SyntaxElementAccountName . pretty . AccountName.toText
 
 accountDoc :: DecimalLiteral -> Doc SyntaxElement
 accountDoc = decimalLiteralDoc . DecimalLiteral.setSignRequired
@@ -417,20 +417,20 @@ charactersBeforeDot (DecimalLiteral _ m e) =
   1 + max 1 (length (show m) - fromIntegral e)
 
 decimalLiteralDoc :: DecimalLiteral -> Doc SyntaxElement
-decimalLiteralDoc = annotate SyntaxDecimalLiteral . pretty . DecimalLiteral.toString
+decimalLiteralDoc = annotate SyntaxElementDecimalLiteral . pretty . DecimalLiteral.toString
 
 lCurrencySymbolDoc :: GenLocated l CurrencySymbol -> Doc SyntaxElement
 lCurrencySymbolDoc = currencySymbolDoc . locatedValue
 
 currencySymbolDoc :: CurrencySymbol -> Doc SyntaxElement
-currencySymbolDoc = annotate SyntaxCurrencySymbol . pretty . currencySymbolText
+currencySymbolDoc = annotate SyntaxElementCurrencySymbol . pretty . unCurrencySymbol
 
 data SyntaxElement
-  = SyntaxImport
-  | SyntaxKeyword
-  | SyntaxComment
-  | SyntaxDecimalLiteral
-  | SyntaxTimestamp
-  | SyntaxDescription
-  | SyntaxCurrencySymbol
-  | SyntaxAccountName
+  = SyntaxElementImport
+  | SyntaxElementKeyword
+  | SyntaxElementComment
+  | SyntaxElementDecimalLiteral
+  | SyntaxElementTimestamp
+  | SyntaxElementDescription
+  | SyntaxElementCurrencySymbol
+  | SyntaxElementAccountName

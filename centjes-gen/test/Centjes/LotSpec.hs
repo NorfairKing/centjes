@@ -63,7 +63,7 @@ spec = do
         ]
         `shouldBe` ["EUR", "EUR", "SWDA lot @ 500 EUR", "EUR"]
       [ ( commodityText (locatedValue (priceCommodity price)),
-          currencySymbolText (currencySymbol (locatedValue (costCurrency (locatedValue (priceCost price)))))
+          unCurrencySymbol (currencySymbol (locatedValue (costCurrency (locatedValue (priceCost price)))))
         )
         | Located _ price <- V.toList (ledgerPrices ledger)
         ]
@@ -76,7 +76,7 @@ spec = do
       (ds, diag) <- runNoLoggingT $ loadModules af
       ledger <- shouldValidate diag $ compileDeclarations ds
       [ ( commodityText (locatedValue (priceCommodity price)),
-          currencySymbolText (currencySymbol (locatedValue (costCurrency (locatedValue (priceCost price)))))
+          unCurrencySymbol (currencySymbol (locatedValue (costCurrency (locatedValue (priceCost price)))))
         )
         | Located _ price <- V.toList (ledgerPrices ledger)
         ]

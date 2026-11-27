@@ -31,7 +31,7 @@ import Language.Haskell.TH.Syntax (Lift)
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
-newtype Tag = Tag {tagText :: Text}
+newtype Tag = Tag {unTag :: Text}
   deriving stock (Eq, Ord, Generic, Lift)
   deriving newtype (Show)
 
@@ -65,7 +65,7 @@ fromText :: Text -> Either [ValidationChain] Tag
 fromText = checkValidity . Tag
 
 toText :: Tag -> Text
-toText = tagText
+toText = unTag
 
 toString :: Tag -> String
 toString = T.unpack . toText

@@ -43,12 +43,12 @@ runCentjesSwitzerlandDownloadRates :: Settings -> DownloadRatesSettings -> IO ()
 runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
   runStderrLoggingT $ do
     -- Produce the input.json structure
-    (declarations, diag) <- loadModules $ settingBaseDir </> settingLedgerFile
+    (declarations, diag) <- loadModules $ settingsBaseDir </> settingsLedgerFile
     currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
     man <- liftIO newTlsManager
 
     -- Extract existing declarations from the loaded declarations that came from the destination file
-    let existingDeclarations = case stripProperPrefix settingBaseDir downloadRatesSettingDestination of
+    let existingDeclarations = case stripProperPrefix settingsBaseDir downloadRatesSettingsDestination of
           Nothing -> []
           Just relFile -> declarationsFromFile relFile declarations
 
@@ -62,7 +62,7 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
     newDeclarations <-
       runConduit $
         -- For each day
-        yieldMany [downloadRatesSettingBegin .. downloadRatesSettingEnd]
+        yieldMany [downloadRatesSettingsBegin .. downloadRatesSettingsEnd]
           -- Skip days we already have rates for
           .| C.filter (not . (`S.member` existingDays))
           .| C.mapM
@@ -167,7 +167,7 @@ runCentjesSwitzerlandDownloadRates Settings {..} DownloadRatesSettings {..} =
           .| C.sinkList
 
     liftIO $
-      SB.writeFile (fromAbsFile downloadRatesSettingDestination) $
+      SB.writeFile (fromAbsFile downloadRatesSettingsDestination) $
         TE.encodeUtf8 $
           formatModule $
             mergePriceDeclarations existingDeclarations newDeclarations

@@ -30,8 +30,8 @@ getSettings :: IO Settings
 getSettings = runSettingsParser version "cryptocurrency exchange rate downloader for centjes"
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File),
-    settingCommand :: !Command
+  { settingsLedgerFile :: !(Path Abs File),
+    settingsCommand :: !Command
   }
 
 instance HasParser Settings where
@@ -42,7 +42,7 @@ parseSettings :: Parser Settings
 parseSettings =
   subEnv_ "centjes-cryptocurrencies" $
     withConfigurableYamlConfig (runIO $ resolveFile' "cryptocurrencies.yaml") $ do
-      settingLedgerFile <-
+      settingsLedgerFile <-
         filePathSetting
           [ help "ledger file",
             short 'l',
@@ -50,7 +50,7 @@ parseSettings =
             value "ledger.cent",
             metavar "FILE_PATH"
           ]
-      settingCommand <- settingsCommandParser
+      settingsCommand <- settingsCommandParser
       pure Settings {..}
 
 newtype Command
@@ -65,10 +65,10 @@ settingsCommandParser =
 
 data DownloadRatesSettings = DownloadRatesSettings
   { downloadRatesSettingSymbols :: !(Maybe (NonEmpty CurrencySymbol)),
-    downloadRatesSettingTarget :: !CurrencySymbol,
-    downloadRatesSettingBegin :: !Day,
-    downloadRatesSettingEnd :: !Day,
-    downloadRatesSettingOutput :: !(Maybe (Path Abs File))
+    downloadRatesSettingsTarget :: !CurrencySymbol,
+    downloadRatesSettingsBegin :: !Day,
+    downloadRatesSettingsEnd :: !Day,
+    downloadRatesSettingsOutput :: !(Maybe (Path Abs File))
   }
 
 {-# ANN parseDownloadRatesSettings ("NOCOVER" :: String) #-}
@@ -83,7 +83,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
           long "symbols",
           metavar "SYMBOLS"
         ]
-  downloadRatesSettingTarget <-
+  downloadRatesSettingsTarget <-
     setting
       [ help "Target currency symbol",
         reader $ eitherReader (first renderInvalid . CurrencySymbol.fromText . T.pack),
@@ -93,7 +93,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
         value (CurrencySymbol.CurrencySymbol "USD"),
         metavar "CURRENCY"
       ]
-  downloadRatesSettingBegin <-
+  downloadRatesSettingsBegin <-
     choice
       [ setting
           [ help "The begin date (inclusive), default: Start of the year",
@@ -106,7 +106,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
           let (y, _, _) = toGregorian today
           pure $ fromGregorian y 1 1
       ]
-  downloadRatesSettingEnd <-
+  downloadRatesSettingsEnd <-
     choice
       [ setting
           [ help "The final date (inclusive), default: Yesterday",
@@ -116,7 +116,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
           ],
         runIO $ addDays (-1) . utctDay <$> getCurrentTime
       ]
-  downloadRatesSettingOutput <-
+  downloadRatesSettingsOutput <-
     optional $
       filePathSetting
         [ help "Output file path (default: stdout)",

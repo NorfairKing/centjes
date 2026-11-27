@@ -18,12 +18,12 @@ getSettings :: IO Settings
 getSettings = runSettingsParser version "importer for cornercard"
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File),
-    settingInput :: !(Path Abs File),
-    settingOutput :: !(Path Abs File),
-    settingLiabilitiesAccountName :: !AccountName,
-    settingExpensesAccountName :: !AccountName,
-    settingIncomeAccountName :: !AccountName
+  { settingsLedgerFile :: !(Path Abs File),
+    settingsInput :: !(Path Abs File),
+    settingsOutput :: !(Path Abs File),
+    settingsLiabilitiesAccountName :: !AccountName,
+    settingsExpensesAccountName :: !AccountName,
+    settingsIncomeAccountName :: !AccountName
   }
 
 instance HasParser Settings where
@@ -34,27 +34,27 @@ parseSettings :: Parser Settings
 parseSettings =
   subEnv_ "centjes-import-cornercard" $
     withConfigurableYamlConfig (runIO $ resolveFile' "cornercard.yaml") $ do
-      settingLedgerFile <-
+      settingsLedgerFile <-
         filePathSetting
           [ help "main ledger file",
             short 'l',
             name "ledger",
             value "ledger.cent"
           ]
-      settingInput <-
+      settingsInput <-
         filePathSetting
           [ help "input file",
             argument,
             metavar "CSV_FILE"
           ]
-      settingOutput <-
+      settingsOutput <-
         filePathSetting
           [ help "help output ledger file",
             short 'o',
             name "output",
             value "cornercard.cent"
           ]
-      settingLiabilitiesAccountName <-
+      settingsLiabilitiesAccountName <-
         setting
           [ help "Liabilities account name",
             reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
@@ -62,7 +62,7 @@ parseSettings =
             value "liabilities:cornercard",
             metavar "ACCOUNT_NAME"
           ]
-      settingExpensesAccountName <-
+      settingsExpensesAccountName <-
         setting
           [ help "Expenses account name",
             reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
@@ -70,7 +70,7 @@ parseSettings =
             value "expenses:unknown:cornercard",
             metavar "ACCOUNT_NAME"
           ]
-      settingIncomeAccountName <-
+      settingsIncomeAccountName <-
         setting
           [ help "Income account name",
             reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),

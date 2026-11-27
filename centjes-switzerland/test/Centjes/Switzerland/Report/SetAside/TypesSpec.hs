@@ -110,7 +110,7 @@ spec = do
             setAsideWealthReserveAccounts = []
           }
         (M.singleton "taxable" (1 :: Int))
-        `shouldBe` Taxable
+        `shouldBe` TaxabilityTaxable
 
     it "leaves out an account tagged not-taxable" $
       taxability
@@ -122,7 +122,7 @@ spec = do
             setAsideWealthReserveAccounts = []
           }
         (M.singleton "not-taxable" (1 :: Int))
-        `shouldBe` NotTaxable
+        `shouldBe` TaxabilityNotTaxable
 
     it "ignores other tags" $
       taxability
@@ -134,7 +134,7 @@ spec = do
             setAsideWealthReserveAccounts = []
           }
         (M.fromList [("undeclared", 1 :: Int), ("taxable", 2)])
-        `shouldBe` Taxable
+        `shouldBe` TaxabilityTaxable
 
     it "finds an untagged account" $
       taxability
@@ -146,7 +146,7 @@ spec = do
             setAsideWealthReserveAccounts = []
           }
         (M.singleton "undeclared" (1 :: Int))
-        `shouldBe` Untagged
+        `shouldBe` TaxabilityUntagged
 
     it "finds an account tagged both" $
       taxability
@@ -158,7 +158,7 @@ spec = do
             setAsideWealthReserveAccounts = []
           }
         (M.fromList [("taxable", 1 :: Int), ("not-taxable", 2)])
-        `shouldBe` TaggedBoth 1 2
+        `shouldBe` TaxabilityTaggedBoth 1 2
 
   describe "parseOwnedShares" $ do
     it "accepts nothing and everything" $

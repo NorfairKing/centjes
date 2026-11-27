@@ -44,7 +44,7 @@ import Text.Printf (printf)
 runCentjesCryptocurrenciesDownloadRates :: Settings -> DownloadRatesSettings -> IO ()
 runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..} = runStderrLoggingT $ do
   -- Load ledger to get declared currencies
-  (declarations, diag) <- loadModules settingLedgerFile
+  (declarations, diag) <- loadModules settingsLedgerFile
   currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
 
   man <- liftIO newTlsManager
@@ -53,11 +53,11 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
   -- Only keep symbols that are known currencies and cryptocurrencies
   let symbols =
         filter (\s -> M.member s currencies && isCryptocurrency s) $
-          maybe (filter (/= downloadRatesSettingTarget) $ M.keys currencies) NE.toList downloadRatesSettingSymbols
+          maybe (filter (/= downloadRatesSettingsTarget) $ M.keys currencies) NE.toList downloadRatesSettingSymbols
   let symbolsSet = S.fromList symbols
 
   -- Extract existing price declarations from the loaded declarations that came from the output file
-  let outputRelFile = downloadRatesSettingOutput >>= stripProperPrefix (parent settingLedgerFile)
+  let outputRelFile = downloadRatesSettingsOutput >>= stripProperPrefix (parent settingsLedgerFile)
   let existingDeclarations = case outputRelFile of
         Nothing -> []
         Just relFile -> declarationsFromFile relFile declarations
@@ -76,7 +76,7 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
 
   newDeclarations <-
     runConduit $
-      yieldMany [downloadRatesSettingBegin .. downloadRatesSettingEnd]
+      yieldMany [downloadRatesSettingsBegin .. downloadRatesSettingsEnd]
         -- Skip days where we already have all rates
         .| C.filter (not . dayFullyCovered)
         -- Gentle delay between requests
@@ -102,7 +102,7 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
               Just coveredSymbols -> not $ S.member symbol coveredSymbols
           )
         -- Produce price declarations
-        .| C.map (\(day, symbol, rateExpression) -> noLoc $ mkPriceDeclaration day symbol rateExpression downloadRatesSettingTarget)
+        .| C.map (\(day, symbol, rateExpression) -> noLoc $ mkPriceDeclaration day symbol rateExpression downloadRatesSettingsTarget)
         .| C.sinkList
 
   let output =
@@ -110,7 +110,7 @@ runCentjesCryptocurrenciesDownloadRates Settings {..} DownloadRatesSettings {..}
           formatModule $
             mergePriceDeclarations existingDeclarations newDeclarations
 
-  liftIO $ case downloadRatesSettingOutput of
+  liftIO $ case downloadRatesSettingsOutput of
     Nothing -> SB.putStr output
     Just outputFile -> SB.writeFile (fromAbsFile outputFile) output
 

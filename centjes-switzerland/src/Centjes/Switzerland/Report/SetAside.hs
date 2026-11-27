@@ -149,10 +149,10 @@ produceSetAsideReport SetAsideInput {..} taxesInput today prices ledger@Ledger {
 
   let taxes :: [(SetAsideActionKind, Text, [AccountName], SetAsideLine)]
       taxes =
-        [ (SetAsideActionSave, "Wealth tax", setAsideWealthReserveAccounts setAsideInputWealth, setAsideReportWealthTax),
-          (SetAsideActionSave, "SVA", setAsideTaxReserveAccounts setAsideInputSocialSecurity, setAsideReportSocialSecurity),
-          (SetAsideActionPrepay, "Cantonal", setAsideTaxReserveAccounts setAsideInputCantonal, setAsideReportCantonal),
-          (SetAsideActionSave, "Federal", setAsideTaxReserveAccounts setAsideInputFederal, setAsideReportFederal)
+        [ (SetAsideActionKindSave, "Wealth tax", setAsideWealthReserveAccounts setAsideInputWealth, setAsideReportWealthTax),
+          (SetAsideActionKindSave, "SVA", setAsideTaxReserveAccounts setAsideInputSocialSecurity, setAsideReportSocialSecurity),
+          (SetAsideActionKindPrepay, "Cantonal", setAsideTaxReserveAccounts setAsideInputCantonal, setAsideReportCantonal),
+          (SetAsideActionKindSave, "Federal", setAsideTaxReserveAccounts setAsideInputFederal, setAsideReportFederal)
         ]
   setAsideReportActions <- fmap catMaybes $
     forM taxes $ \(setAsideActionKind, setAsideActionTax, reserveAccounts, SetAsideLine {..}) ->
@@ -398,10 +398,10 @@ computeWealthTax chf year wealthTaxBasisDay wealth@SetAsideWealth {..} SetAsideP
       if null holdings
         then pure Account.zero
         else case taxability wealth accountTags of
-          NotTaxable -> pure Account.zero
-          Untagged -> validationFailure $ SetAsideErrorUntaggedWealth al an
-          TaggedBoth taxableLocation notTaxableLocation -> validationFailure $ SetAsideErrorTaggedBoth an taxableLocation notTaxableLocation
-          Taxable -> do
+          TaxabilityNotTaxable -> pure Account.zero
+          TaxabilityUntagged -> validationFailure $ SetAsideErrorUntaggedWealth al an
+          TaxabilityTaggedBoth taxableLocation notTaxableLocation -> validationFailure $ SetAsideErrorTaggedBoth an taxableLocation notTaxableLocation
+          TaxabilityTaxable -> do
             values <- mapM (uncurry valueHolding) holdings
             value <- requireSum values
             let ownedShare :: Scientific

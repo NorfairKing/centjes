@@ -28,7 +28,7 @@ import GHC.Generics (Generic)
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
-newtype CurrencySymbol = CurrencySymbol {currencySymbolText :: Text}
+newtype CurrencySymbol = CurrencySymbol {unCurrencySymbol :: Text}
   deriving (Show, Eq, Ord, Generic)
 
 instance Validity CurrencySymbol where
@@ -51,7 +51,7 @@ validCurrencySymbolChar = \case
     | otherwise -> False
 
 instance HasCodec CurrencySymbol where
-  codec = bimapCodec (first renderInvalid . fromText) currencySymbolText codec
+  codec = bimapCodec (first renderInvalid . fromText) unCurrencySymbol codec
 
 fromTextM :: (MonadFail m) => Text -> m CurrencySymbol
 fromTextM t = case fromText t of
@@ -62,7 +62,7 @@ fromText :: Text -> Either [ValidationChain] CurrencySymbol
 fromText = checkValidity . CurrencySymbol
 
 toText :: CurrencySymbol -> Text
-toText = currencySymbolText
+toText = unCurrencySymbol
 
 toString :: CurrencySymbol -> String
 toString = T.unpack . toText

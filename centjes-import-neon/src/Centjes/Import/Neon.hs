@@ -39,9 +39,9 @@ import System.Exit
 runCentjesImportNeon :: IO ()
 runCentjesImportNeon = do
   Settings {..} <- getSettings
-  let inputFp = fromAbsFile settingInput
+  let inputFp = fromAbsFile settingsInput
   contents <- SB.readFile inputFp
-  (ds, diag) <- runStderrLoggingT $ loadModules settingLedgerFile
+  (ds, diag) <- runStderrLoggingT $ loadModules settingsLedgerFile
   currencies <- checkValidation diag $ compileDeclarationsCurrencies ds
 
   let csvOpts = defaultDecodeOptions {decDelimiter = fromIntegral (Char.ord ';')}
@@ -59,12 +59,12 @@ runCentjesImportNeon = do
             ( \(rowIx, row) ->
                 DeclarationTransaction . noLoc
                   <$> mapValidationFailure
-                    (ImportError settingInput rowIx)
+                    (ImportError settingsInput rowIx)
                     ( rowTransaction
                         currencies
-                        settingAssetsAccountName
-                        settingExpensesAccountName
-                        settingIncomeAccountName
+                        settingsAssetsAccountName
+                        settingsExpensesAccountName
+                        settingsIncomeAccountName
                         row
                     )
             )
@@ -74,33 +74,33 @@ runCentjesImportNeon = do
               { moduleImports = [],
                 moduleDeclarations = map noLoc ts
               }
-      SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
+      SB.writeFile (fromAbsFile settingsOutput) (TE.encodeUtf8 (formatModule m))
 
-data ImportError = ImportError !(Path Abs File) !Int !ImportError'
+data ImportError = ImportError !(Path Abs File) !Int !ImportErrorReason
 
-data ImportError'
-  = ImportErrorUnknownCurrency !CurrencySymbol
-  | ImportErrorInvalidAccount !QuantisationFactor !DecimalLiteral
-  | ImportErrorInvalidLiteral !QuantisationFactor !Money.Account
-  | ImportErrorAdd !Money.Account !Money.Account
+data ImportErrorReason
+  = ImportErrorReasonUnknownCurrency !CurrencySymbol
+  | ImportErrorReasonInvalidAccount !QuantisationFactor !DecimalLiteral
+  | ImportErrorReasonInvalidLiteral !QuantisationFactor !Money.Account
+  | ImportErrorReasonAdd !Money.Account !Money.Account
 
 instance ToReport ImportError where
   toReport (ImportError fp rowIx ie) =
     let f =
           case ie of
-            ImportErrorUnknownCurrency symbol ->
+            ImportErrorReasonUnknownCurrency symbol ->
               Err
                 (Just "IE_REVOLUT_UNKNOWN_CURRENCY")
-                (unwords ["Unknown currency:", show (currencySymbolText symbol)])
-            ImportErrorInvalidAccount qf dl ->
+                (unwords ["Unknown currency:", show (unCurrencySymbol symbol)])
+            ImportErrorReasonInvalidAccount qf dl ->
               Err
                 (Just "IE_REVOLUT_INVALID_AMOUNT")
                 (unwords ["Invalid amount:", show (DecimalLiteral.toString dl), "with quantisation factor", show (unQuantisationFactor qf)])
-            ImportErrorInvalidLiteral qf a ->
+            ImportErrorReasonInvalidLiteral qf a ->
               Err
                 (Just "IE_REVOLUT_INVALID_LITERAL")
                 (unwords ["Invalid literal:", show a, "with quantisation factor", show (unQuantisationFactor qf)])
-            ImportErrorAdd a1 a2 ->
+            ImportErrorReasonAdd a1 a2 ->
               Err
                 (Just "IE_REVOLUT_ADD")
                 (unwords ["Could not add", show a2, "to", show a1])
@@ -122,7 +122,7 @@ rowTransaction ::
   AccountName ->
   AccountName ->
   Row ->
-  Validation ImportError' (Transaction ())
+  Validation ImportErrorReason (Transaction ())
 rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName Row {..} = do
   let transactionTimestamp = noLoc $ TimestampDay rowDate
   let transactionDescription =
@@ -137,13 +137,13 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
 
   let rowCurrency = CurrencySymbol "CHF"
   Located _ quantisationFactor <- case M.lookup rowCurrency currencies of
-    Nothing -> validationFailure $ ImportErrorUnknownCurrency rowCurrency
+    Nothing -> validationFailure $ ImportErrorReasonUnknownCurrency rowCurrency
     Just qf -> pure qf
   let fromLiteral dl = case Account.fromDecimalLiteral quantisationFactor dl of
-        Nothing -> validationFailure $ ImportErrorInvalidAccount quantisationFactor dl
+        Nothing -> validationFailure $ ImportErrorReasonInvalidAccount quantisationFactor dl
         Just a -> pure a
   let toLiteral a = case Account.toDecimalLiteral quantisationFactor a of
-        Nothing -> validationFailure $ ImportErrorInvalidLiteral quantisationFactor a
+        Nothing -> validationFailure $ ImportErrorReasonInvalidLiteral quantisationFactor a
         Just dl -> pure dl
   expensesAccount <- Account.negate <$> fromLiteral rowAccount
   expensesLiteral <- toLiteral expensesAccount

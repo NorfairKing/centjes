@@ -863,11 +863,11 @@ checkEntryAssertions accounts (EvaluatedEntryTransaction evaluatedTransaction) =
 
 -- | An intermediate merged entry before evaluation
 data MergedEntry ann
-  = MergedTransaction
+  = MergedEntryTransaction
       !(GenLocated ann (Transaction ann))
       -- | (forAssertions/withoutVirtual, forUserWithVirtual)
       !(GenLocated ann (AccountBalances ann), GenLocated ann (AccountBalances ann))
-  | MergedPrice !(GenLocated ann (Price ann))
+  | MergedEntryPrice !(GenLocated ann (Price ann))
 
 -- | Interleave prices into the transaction stream.
 --
@@ -893,13 +893,13 @@ mergeEntries transactions prices =
       ] ->
       [GenLocated ann (Price ann)] ->
       [MergedEntry ann]
-    go [] remainingPrices = map MergedPrice remainingPrices
+    go [] remainingPrices = map MergedEntryPrice remainingPrices
     go ((lt@(Located _ t), bals) : ts) remainingPrices =
       let tDay = transactionDay t
           -- Take all prices whose day <= this transaction's day
           (pricesBefore, pricesAfter) = span (\lp -> priceDay lp <= tDay) remainingPrices
-       in map MergedPrice pricesBefore
-            ++ [MergedTransaction lt bals]
+       in map MergedEntryPrice pricesBefore
+            ++ [MergedEntryTransaction lt bals]
             ++ go ts pricesAfter
 
     transactionDay :: Transaction ann -> Day
@@ -956,7 +956,7 @@ processEntry ::
   MergedEntry ann ->
   Validation (EvaluatedLedgerError ann) (EvaluatedEntry ann, ProcessState ann)
 processEntry state = \case
-  MergedPrice lp@(Located _ Price {..}) ->
+  MergedEntryPrice lp@(Located _ Price {..}) ->
     let Located _ commodityFrom = priceCommodity
         Located _ Cost {..} = priceCost
         Located _ rate = costConversionRate
@@ -976,7 +976,7 @@ processEntry state = \case
               evaluatedPricePriceGraph = newPriceGraph
             }
      in pure (EvaluatedEntryPrice evaluatedPrice, newState)
-  MergedTransaction lt@(Located tl t) (Located _ sumForAssertions, Located _ sumForVirtual) -> do
+  MergedEntryTransaction lt@(Located tl t) (Located _ sumForAssertions, Located _ sumForVirtual) -> do
     -- Incorporate assertion balances (without virtual)
     newBalancesWithoutVirtual <- incorporateAccounts tl (processStateBalancesWithoutVirtual state) sumForAssertions
 

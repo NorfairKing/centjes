@@ -125,12 +125,12 @@ import qualified Money.MultiAccount as MultiAccount
 {-# ANN module ("DisableMutations" :: String) #-}
 
 -- | Amount mode distinguishes between multi-currency and single-currency registers
-data AmountMode = MultiCurrency | SingleCurrency
+data AmountMode = AmountModeMultiCurrency | AmountModeSingleCurrency
 
 -- | Type family mapping amount mode to the actual amount type
 type family AmountOf (mode :: AmountMode) ann where
-  AmountOf 'MultiCurrency ann = Money.MultiAccount (Commodity ann)
-  AmountOf 'SingleCurrency ann = Money.Account
+  AmountOf 'AmountModeMultiCurrency ann = Money.MultiAccount (Commodity ann)
+  AmountOf 'AmountModeSingleCurrency ann = Money.Account
 
 -- Flat register types (Stage 1 output)
 
@@ -210,7 +210,7 @@ data Register (mode :: AmountMode) ann = Register
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (Register mode ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (Register 'MultiCurrency ann) where
+instance (Validity ann, Show ann, Ord ann) => Validity (Register 'AmountModeMultiCurrency ann) where
   validate r@Register {..} =
     mconcat
       [ genericValidate r,
@@ -219,7 +219,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (Register 'MultiCurrency 
             == Just registerTotal
       ]
 
-instance (Validity ann, Show ann, Ord ann) => Validity (Register 'SingleCurrency ann) where
+instance (Validity ann, Show ann, Ord ann) => Validity (Register 'AmountModeSingleCurrency ann) where
   validate r@Register {..} =
     mconcat
       [ genericValidate r,
@@ -242,7 +242,7 @@ data RegisterBlock (mode :: AmountMode) ann = RegisterBlock
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterBlock mode ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'MultiCurrency ann) where
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'AmountModeMultiCurrency ann) where
   validate b@RegisterBlock {..} =
     mconcat
       [ genericValidate b,
@@ -254,7 +254,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'MultiCurr
 -- The block total is not checked against the sum of the entries here, because
 -- entries use individually-rounded amounts while the block total uses
 -- bulk-converted running total differences for consistency with balance.
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'SingleCurrency ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'AmountModeSingleCurrency ann)
 
 -- | A register entry is either a transaction or a revaluation
 -- Revaluations can only exist in SingleCurrency mode (GADT constraint)
@@ -265,16 +265,16 @@ data RegisterEntry (mode :: AmountMode) ann where
   -- Revaluations ONLY exist in SingleCurrency mode
   RegisterEntryRevaluation ::
     !(RegisterRevaluation ann) ->
-    RegisterEntry 'SingleCurrency ann
+    RegisterEntry 'AmountModeSingleCurrency ann
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterEntry mode ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'MultiCurrency ann) where
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'AmountModeMultiCurrency ann) where
   -- [allow:HsValidateExtendsGeneric] A GADT whose constructors refine the mode
   -- cannot have a Generic instance.
   validate (RegisterEntryTransaction rt) = validate rt
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'SingleCurrency ann) where
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'AmountModeSingleCurrency ann) where
   -- [allow:HsValidateExtendsGeneric] A GADT whose constructors refine the mode
   -- cannot have a Generic instance.
   validate = \case
@@ -284,7 +284,7 @@ instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'SingleCur
 -- | Get the total amount for a multi-currency register entry
 registerEntryTotalMulti ::
   (Ord ann) =>
-  RegisterEntry 'MultiCurrency ann ->
+  RegisterEntry 'AmountModeMultiCurrency ann ->
   Maybe (Money.MultiAccount (Commodity ann))
 registerEntryTotalMulti (RegisterEntryTransaction rt) = registerTransactionTotalMulti rt
 
@@ -316,13 +316,13 @@ data RegisterTransaction (mode :: AmountMode) ann = RegisterTransaction
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterTransaction mode ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterTransaction 'MultiCurrency ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterTransaction 'AmountModeMultiCurrency ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterTransaction 'SingleCurrency ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterTransaction 'AmountModeSingleCurrency ann)
 
 registerTransactionTotalMulti ::
   (Ord ann) =>
-  RegisterTransaction 'MultiCurrency ann ->
+  RegisterTransaction 'AmountModeMultiCurrency ann ->
   Maybe (Money.MultiAccount (Commodity ann))
 registerTransactionTotalMulti =
   MultiAccount.sum
@@ -330,7 +330,7 @@ registerTransactionTotalMulti =
     . registerTransactionPostings
   where
     registerPostingAmountMulti ::
-      RegisterPosting 'MultiCurrency ann ->
+      RegisterPosting 'AmountModeMultiCurrency ann ->
       Money.MultiAccount (Commodity ann)
     registerPostingAmountMulti RegisterPosting {..} = registerPostingAmount
 
@@ -347,14 +347,14 @@ data RegisterPosting (mode :: AmountMode) ann = RegisterPosting
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterPosting mode ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterPosting 'MultiCurrency ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterPosting 'AmountModeMultiCurrency ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterPosting 'SingleCurrency ann)
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterPosting 'AmountModeSingleCurrency ann)
 
 -- | Wrapper for converted registers, includes target currency for formatting
 data ConvertedRegister ann = ConvertedRegister
   { convertedRegisterCurrency :: !(Currency ann),
-    convertedRegister :: !(Register 'SingleCurrency ann)
+    convertedRegister :: !(Register 'AmountModeSingleCurrency ann)
   }
   deriving (Generic)
 
@@ -364,8 +364,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (ConvertedRegister ann)
 
 -- | Sum type for unified API
 data AnyRegister ann
-  = AnyMultiCurrency !(Register 'MultiCurrency ann)
-  | AnyConverted !(ConvertedRegister ann)
+  = AnyRegisterMultiCurrency !(Register 'AmountModeMultiCurrency ann)
+  | AnyRegisterConverted !(ConvertedRegister ann)
   deriving (Generic)
 
 deriving instance (Show ann) => Show (AnyRegister ann)
@@ -418,10 +418,10 @@ produceRegister f blockSize mCurrencySymbolTo showVirtual mBegin mEnd ledger = d
   case mCurrencySymbolTo of
     Nothing -> do
       r <- produceMultiCurrencyRegister f blockSize showVirtual mBegin mEnd evaluatedLedger
-      pure (AnyMultiCurrency r)
+      pure (AnyRegisterMultiCurrency r)
     Just currencySymbolTo -> do
       r <- produceConvertedRegister f blockSize currencySymbolTo showVirtual mBegin mEnd evaluatedLedger
-      pure (AnyConverted r)
+      pure (AnyRegisterConverted r)
 
 -- | Produce a multi-currency register (no conversion).
 produceMultiCurrencyRegister ::
@@ -439,7 +439,7 @@ produceMultiCurrencyRegister ::
   Maybe Day ->
   -- | Evaluated ledger
   EvaluatedLedger ann ->
-  Validation (RegisterError ann) (Register 'MultiCurrency ann)
+  Validation (RegisterError ann) (Register 'AmountModeMultiCurrency ann)
 produceMultiCurrencyRegister f blockSize showVirtual mBegin mEnd evaluatedLedger = do
   flatRegister <- produceFlatRegister f showVirtual mBegin mEnd evaluatedLedger
   groupMultiIntoBlocks blockSize mBegin mEnd flatRegister
@@ -881,7 +881,7 @@ groupMultiIntoBlocks ::
   Maybe Day ->
   -- | Flat register to group
   FlatRegister ann ->
-  Validation (RegisterError ann) (Register 'MultiCurrency ann)
+  Validation (RegisterError ann) (Register 'AmountModeMultiCurrency ann)
 groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
   let mBeginBlock = (\begin -> dayBlockTitle begin blockSize) <$> mBegin
   let mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
@@ -896,7 +896,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
   let convertPostings ::
         Money.MultiAccount (Commodity ann) ->
         [FlatPosting ann] ->
-        ([RegisterPosting 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
+        ([RegisterPosting 'AmountModeMultiCurrency ann], Money.MultiAccount (Commodity ann))
       convertPostings blockRunning = \case
         [] -> ([], blockRunning)
         fp : fps ->
@@ -914,7 +914,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
   let convertEntry ::
         Money.MultiAccount (Commodity ann) ->
         FlatEntry ann ->
-        (RegisterEntry 'MultiCurrency ann, Money.MultiAccount (Commodity ann))
+        (RegisterEntry 'AmountModeMultiCurrency ann, Money.MultiAccount (Commodity ann))
       convertEntry blockRunning entry =
         let (postings, finalBlockRunning) = convertPostings blockRunning (V.toList (flatEntryPostings entry))
             regTx =
@@ -946,7 +946,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
         Block ->
         Money.MultiAccount (Commodity ann) ->
         Integer ->
-        RegisterBlock 'MultiCurrency ann
+        RegisterBlock 'AmountModeMultiCurrency ann
       makeEmptyBlock title runningTotal blockNum =
         RegisterBlock
           { registerBlockTitle = title,
@@ -961,7 +961,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
         Block ->
         Money.MultiAccount (Commodity ann) ->
         Integer ->
-        [RegisterBlock 'MultiCurrency ann]
+        [RegisterBlock 'AmountModeMultiCurrency ann]
       generateEmptyBlocks current target runningTotal blockNum
         | current >= target = []
         | otherwise =
@@ -970,7 +970,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
 
   let convertEntriesForBlock ::
         [FlatEntry ann] ->
-        ([RegisterEntry 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
+        ([RegisterEntry 'AmountModeMultiCurrency ann], Money.MultiAccount (Commodity ann))
       convertEntriesForBlock entries =
         let go _ [] = ([], MultiAccount.zero)
             go blockRunning (e : es) =
@@ -986,7 +986,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
         Integer ->
         Money.MultiAccount (Commodity ann) ->
         [FlatEntry ann] ->
-        [RegisterBlock 'MultiCurrency ann]
+        [RegisterBlock 'AmountModeMultiCurrency ann]
       goBlocks mCurrentBlock blockNum runningTotal entries =
         case findNextBlock mCurrentBlock entries of
           Nothing ->
@@ -1056,7 +1056,7 @@ groupSingleIntoBlocks ::
   Maybe Day ->
   -- | Converted flat register to group
   ConvertedFlatRegister ann ->
-  Validation (RegisterError ann) (Register 'SingleCurrency ann)
+  Validation (RegisterError ann) (Register 'AmountModeSingleCurrency ann)
 groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
   let mBeginBlock = (\begin -> dayBlockTitle begin blockSize) <$> mBegin
   let mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
@@ -1096,7 +1096,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
   let convertPostings ::
         Money.Account ->
         [ConvertedFlatPosting ann] ->
-        ([RegisterPosting 'SingleCurrency ann], Money.Account)
+        ([RegisterPosting 'AmountModeSingleCurrency ann], Money.Account)
       convertPostings blockRunning = \case
         [] -> ([], blockRunning)
         cp : cps ->
@@ -1122,7 +1122,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
   let convertEntry ::
         Money.Account ->
         ConvertedFlatEntry ann ->
-        (RegisterEntry 'SingleCurrency ann, Money.Account)
+        (RegisterEntry 'AmountModeSingleCurrency ann, Money.Account)
       convertEntry blockRunning = \case
         ConvertedFlatEntryTransaction t ->
           let (postings, newBlockRunning) = convertPostings blockRunning (V.toList (convertedFlatTransactionPostings t))
@@ -1159,7 +1159,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         Block ->
         Money.Account ->
         Integer ->
-        RegisterBlock 'SingleCurrency ann
+        RegisterBlock 'AmountModeSingleCurrency ann
       makeEmptyBlock title runningTotal blockNum =
         RegisterBlock
           { registerBlockTitle = title,
@@ -1174,7 +1174,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         Block ->
         Money.Account ->
         Integer ->
-        [RegisterBlock 'SingleCurrency ann]
+        [RegisterBlock 'AmountModeSingleCurrency ann]
       generateEmptyBlocks current target runningTotal blockNum
         | current >= target = []
         | otherwise =
@@ -1183,7 +1183,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
 
   let convertEntriesForBlock ::
         [ConvertedFlatEntry ann] ->
-        [RegisterEntry 'SingleCurrency ann]
+        [RegisterEntry 'AmountModeSingleCurrency ann]
       convertEntriesForBlock entries =
         let go _ [] = []
             go blockRunning (e : es) =
@@ -1196,7 +1196,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         Integer ->
         Money.Account ->
         [ConvertedFlatEntry ann] ->
-        [RegisterBlock 'SingleCurrency ann]
+        [RegisterBlock 'AmountModeSingleCurrency ann]
       goBlocks mCurrentBlock blockNum runningTotal entries =
         case findNextBlock mCurrentBlock entries of
           Nothing ->

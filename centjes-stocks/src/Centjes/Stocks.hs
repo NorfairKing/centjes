@@ -8,6 +8,6 @@ import Centjes.Stocks.OptParse
 runCentjesStocks :: IO ()
 runCentjesStocks = do
   settings@Settings {..} <- getSettings
-  case settingCommand of
+  case settingsCommand of
     CommandDownloadRates downloadRatesSettings ->
       runCentjesStocksDownloadRates settings downloadRatesSettings

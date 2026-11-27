@@ -49,15 +49,15 @@ spec = do
   let tagsOf :: Transaction () -> [Tag]
       tagsOf t =
         [ locatedValue lt
-        | Commented (Located _ (TransactionTag (Located _ (ExtraTag lt)))) _ <- transactionExtras t
+        | Commented (Located _ (TransactionExtraTag (Located _ (ExtraTag lt)))) _ <- transactionExtras t
         ]
   let assertionsOf :: Transaction () -> [ExtraAssertion ()]
       assertionsOf t =
-        [locatedValue lea | Commented (Located _ (TransactionAssertion lea)) _ <- transactionExtras t]
+        [locatedValue lea | Commented (Located _ (TransactionExtraAssertion lea)) _ <- transactionExtras t]
   let attachmentsOf :: Transaction () -> [Path Rel File]
       attachmentsOf t =
         [ rf
-        | Commented (Located _ (TransactionAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located _ rf))))))) _ <-
+        | Commented (Located _ (TransactionExtraAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located _ rf))))))) _ <-
             transactionExtras t
         ]
   let postingsOf :: Transaction () -> [Posting ()]
@@ -71,20 +71,20 @@ spec = do
   let testSettings :: DeclarationSettings
       testSettings =
         DeclarationSettings
-          { declarationSettingAssetsAccountName = "assets:stripe",
-            declarationSettingDomesticIncomeAccountName = "income:domestic",
-            declarationSettingVATIncomeAccountName = "income:VAT",
-            declarationSettingForeignIncomeAccountName = "income:foreign",
-            declarationSettingFeesAccountName = "expenses:banking:stripe",
-            declarationSettingRefundsAccountName = "expenses:refunds",
-            declarationSettingVATExpensesAccountName = "expenses:VAT",
-            declarationSettingPayoutAccountName = "assets:self-transfer:stripe-neon",
-            declarationSettingOpeningAccountName = "equity:starting",
-            declarationSettingDeductibleTags = ["deductible"],
-            declarationSettingNotVATDeductibleTags = ["tax-deductible", "not-vat-deductible"],
-            declarationSettingDocumentsDirectory = [reldir|documents/stripe|],
-            declarationSettingReportsDirectory = [reldir|documents/stripe/reports|],
-            declarationSettingFeesAttachmentPattern = "%Y-%m-%d_tax-invoice-%Y-%m.pdf"
+          { declarationSettingsAssetsAccountName = "assets:stripe",
+            declarationSettingsDomesticIncomeAccountName = "income:domestic",
+            declarationSettingsVATIncomeAccountName = "income:VAT",
+            declarationSettingsForeignIncomeAccountName = "income:foreign",
+            declarationSettingsFeesAccountName = "expenses:banking:stripe",
+            declarationSettingsRefundsAccountName = "expenses:refunds",
+            declarationSettingsVATExpensesAccountName = "expenses:VAT",
+            declarationSettingsPayoutAccountName = "assets:self-transfer:stripe-neon",
+            declarationSettingsOpeningAccountName = "equity:starting",
+            declarationSettingsDeductibleTags = ["deductible"],
+            declarationSettingsNotVATDeductibleTags = ["tax-deductible", "not-vat-deductible"],
+            declarationSettingsDocumentsDirectory = [reldir|documents/stripe|],
+            declarationSettingsReportsDirectory = [reldir|documents/stripe/reports|],
+            declarationSettingsFeesAttachmentPattern = "%Y-%m-%d_tax-invoice-%Y-%m.pdf"
           }
   let emit :: [StripeMonth] -> [Transaction ()]
       emit months =
@@ -100,14 +100,14 @@ spec = do
         [ (claimed, runningTotal)
         | (t, earlier) <- zip transactions (inits transactions),
           ExtraAssertion (Located _ (AssertionEquals _ (Located _ name) (Located _ literal) _)) <- assertionsOf t,
-          name == declarationSettingAssetsAccountName testSettings,
+          name == declarationSettingsAssetsAccountName testSettings,
           let claimed = Just (literalAsAccount literal),
           let runningTotal =
                 Account.sum
                   [ amountOf p
                   | earlierTransaction <- earlier ++ [t],
                     p <- postingsOf earlierTransaction,
-                    locatedValue (postingAccountName p) == declarationSettingAssetsAccountName testSettings
+                    locatedValue (postingAccountName p) == declarationSettingsAssetsAccountName testSettings
                   ]
         ]
   let account :: Integer -> Account.Account

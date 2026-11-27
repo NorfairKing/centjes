@@ -45,7 +45,7 @@ import Text.Colour.Layout
 
 runCentjesBalance :: Settings -> BalanceSettings -> LoggingT IO ()
 runCentjesBalance Settings {..} BalanceSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+  loadMWatchedModules settingsWatch settingsLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
     evaluatedLedger <-
@@ -58,12 +58,12 @@ runCentjesBalance Settings {..} BalanceSettings {..} =
         liftIO $
           checkValidation diagnostic $
             produceBalanceReportFromEvaluatedLedger
-              balanceSettingFilter
-              balanceSettingEnd
-              balanceSettingCurrency
+              balanceSettingsFilter
+              balanceSettingsEnd
+              balanceSettingsCurrency
               balanceSettingShowVirtual
               evaluatedLedger
-    liftIO $ putChunksLocaleWith settingTerminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
+    liftIO $ putChunksLocaleWith settingsTerminalCapabilities $ renderBalanceReport balanceSettingShowEmpty br
 
 renderBalanceReport :: ShowEmpty -> BalanceReport ann -> [Chunk]
 renderBalanceReport se br =
@@ -76,7 +76,7 @@ renderBalanceReportTable se br@BalanceReport {..} =
       -- Filter accounts BEFORE building tree so isLast is computed correctly
       accountsToShow = case se of
         ShowEmpty -> balanceReportFilledBalances
-        DoNotShowEmpty -> M.filter (not . null . MultiAccount.unMultiAccount) balanceReportFilledBalances
+        ShowEmptyHide -> M.filter (not . null . MultiAccount.unMultiAccount) balanceReportFilledBalances
       forest = buildAccountForest accountsToShow
       flattenedWithContext = flattenForestWithContext forest
       -- Header row: name column (includes tree), balance column (2 cells), total column (2 cells)

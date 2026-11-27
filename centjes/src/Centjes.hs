@@ -12,7 +12,7 @@ runCentjes :: IO ()
 runCentjes = do
   instructions@(Instructions d settings) <- getInstructions
   runStderrLoggingT $
-    filterLogger (\_ ll -> ll >= settingLogLevel settings) $ do
+    filterLogger (\_ ll -> ll >= settingsLogLevel settings) $ do
       logDebugN $ T.pack $ ppShow instructions
       case d of
         DispatchCheck cs -> runCentjesCheck settings cs

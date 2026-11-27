@@ -77,7 +77,7 @@ instance ToReport (ConvertError SourceSpan) where
                 [ "Could not convert an amount because the conversion rate from",
                   T.unpack (commodityText fromCommodity),
                   "to",
-                  T.unpack (currencySymbolText (currencySymbol toCurrency)),
+                  T.unpack (unCurrencySymbol (currencySymbol toCurrency)),
                   "cannot be determined"
                 ]
             )

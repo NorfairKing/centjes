@@ -91,7 +91,7 @@ instance ToReport (CompileError SourceSpan) where
             [ "Could not parse decimal literal as quantisation factor:",
               DecimalLiteral.toString dl,
               "for currency with symbol",
-              show (currencySymbolText sym)
+              show (unCurrencySymbol sym)
             ]
         )
         [ (toDiagnosePosition fl, This "this number does not represent a valid quantisation factor"),
@@ -103,7 +103,7 @@ instance ToReport (CompileError SourceSpan) where
         (Just "CE_UNDECLARED_CURRENCY")
         ( unwords
             [ "Undeclared currency:",
-              show (currencySymbolText symbol)
+              show (unCurrencySymbol symbol)
             ]
         )
         [ (toDiagnosePosition dl, Where "While trying to compile this declaration"),
@@ -128,7 +128,7 @@ instance ToReport (CompileError SourceSpan) where
     CompileErrorCurrencyDeclaredTwice cl1 cl2 symbol ->
       Err
         (Just "CE_DUPLICATE_CURRENCY")
-        (unwords ["Currency has been declared twice:", show (currencySymbolText symbol)])
+        (unwords ["Currency has been declared twice:", show (unCurrencySymbol symbol)])
         [ (toDiagnosePosition cl1, Where "This currency has been declared here first"),
           (toDiagnosePosition cl2, This "This currency has been declared twice")
         ]
@@ -190,7 +190,7 @@ instance ToReport (CompileError SourceSpan) where
     CompileErrorAccountCurrencyDeclaredTwice cl1 cl2 symbol ->
       Err
         (Just "CE_DUPLICATE_ACCOUNT_CURRENCY")
-        (unwords ["Account assertion has duplicate currency assertion for:", show (currencySymbolText symbol)])
+        (unwords ["Account assertion has duplicate currency assertion for:", show (unCurrencySymbol symbol)])
         [ (toDiagnosePosition cl1, Where "This currency has been asserted here first"),
           (toDiagnosePosition cl2, This "This currency has been asserted twice")
         ]
@@ -501,17 +501,17 @@ compileAccountDeclaration currencies tags (Located dl AccountDeclaration {..}) =
       Just t -> pure t
       Nothing -> validationFailure $ CompileErrorCouldNotInferAccountType dl accountDeclarationName
   AccountExtras {..} <- compileAccountExtras currencies tags accountDeclarationExtras
-  let accountAttachments = V.fromList $ DList.toList accountExtraAttachments
-  let currencyAssertions = DList.toList accountExtraCurrencies
-  let accountTags = accountExtraTags
+  let accountAttachments = V.fromList $ DList.toList accountExtrasAttachments
+  let currencyAssertions = DList.toList accountExtrasCurrencies
+  let accountTags = accountExtrasTags
   accountCurrencies <-
     if null currencyAssertions
       then pure Nothing
       else Just . M.keysSet <$> foldM goCurrency M.empty currencyAssertions
-  let virtualAssertions = DList.toList accountExtraVirtual
+  let virtualAssertions = DList.toList accountExtrasVirtual
   accountVirtualPostingPolicy <- case virtualAssertions of
     [] -> pure VirtualPostingPolicyForbidden
-    [Located _ AccountAssertionNoVirtual] -> pure VirtualPostingPolicyForbidden
+    [Located _ AccountAssertionVirtualNotAllowed] -> pure VirtualPostingPolicyForbidden
     [Located _ AccountAssertionVirtualAllowed] -> pure VirtualPostingPolicyAllowed
     [Located _ AccountAssertionVirtualOnly] -> pure VirtualPostingPolicyOnly
     (Located l1 _ : Located l2 _ : _) ->
@@ -541,40 +541,40 @@ compileAccountExtra ::
   Validation (CompileError ann) (AccountExtras ann)
 compileAccountExtra currencies tags (Located l e) = case e of
   AccountExtraAttachment (Located _ (ExtraAttachment a)) ->
-    pure $ mempty {accountExtraAttachments = DList.singleton a}
+    pure $ mempty {accountExtrasAttachments = DList.singleton a}
   AccountExtraAssertion (Located _ (AccountAssertionCurrency lcs)) ->
-    (\lc -> mempty {accountExtraCurrencies = DList.singleton lc})
+    (\lc -> mempty {accountExtrasCurrencies = DList.singleton lc})
       <$> compileAccountAssertionCurrency currencies l lcs
   AccountExtraAssertion (Located _ (AccountAssertionVirtual lv)) ->
-    pure $ mempty {accountExtraVirtual = DList.singleton lv}
+    pure $ mempty {accountExtrasVirtual = DList.singleton lv}
   AccountExtraTag et ->
-    (\ct -> mempty {accountExtraTags = uncurry M.singleton ct})
+    (\ct -> mempty {accountExtrasTags = uncurry M.singleton ct})
       <$> compileTag tags l et
 
 data AccountExtras ann = AccountExtras
-  { accountExtraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
-    accountExtraCurrencies :: !(DList (GenLocated ann (Currency ann))),
-    accountExtraVirtual :: !(DList (GenLocated ann AccountAssertionVirtual)),
-    accountExtraTags :: !(Map Tag ann)
+  { accountExtrasAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
+    accountExtrasCurrencies :: !(DList (GenLocated ann (Currency ann))),
+    accountExtrasVirtual :: !(DList (GenLocated ann AccountAssertionVirtual)),
+    accountExtrasTags :: !(Map Tag ann)
   }
 
 -- We need this semigroup instance to show as many errors as possible.
 instance Semigroup (AccountExtras ann) where
   (<>) e1 e2 =
     AccountExtras
-      { accountExtraAttachments = accountExtraAttachments e1 <> accountExtraAttachments e2,
-        accountExtraCurrencies = accountExtraCurrencies e1 <> accountExtraCurrencies e2,
-        accountExtraVirtual = accountExtraVirtual e1 <> accountExtraVirtual e2,
-        accountExtraTags = M.union (accountExtraTags e1) (accountExtraTags e2)
+      { accountExtrasAttachments = accountExtrasAttachments e1 <> accountExtrasAttachments e2,
+        accountExtrasCurrencies = accountExtrasCurrencies e1 <> accountExtrasCurrencies e2,
+        accountExtrasVirtual = accountExtrasVirtual e1 <> accountExtrasVirtual e2,
+        accountExtrasTags = M.union (accountExtrasTags e1) (accountExtrasTags e2)
       }
 
 instance Monoid (AccountExtras ann) where
   mempty =
     AccountExtras
-      { accountExtraAttachments = mempty,
-        accountExtraCurrencies = mempty,
-        accountExtraVirtual = mempty,
-        accountExtraTags = mempty
+      { accountExtrasAttachments = mempty,
+        accountExtrasCurrencies = mempty,
+        accountExtrasVirtual = mempty,
+        accountExtrasTags = mempty
       }
   mappend = (<>)
 
@@ -714,9 +714,9 @@ compileTransaction currencies accounts tags (Located l mt) = do
   let transactionPostings = V.fromList postings
   let prices = concatMap (compilePostingPrices transactionTimestamp) postings
   TransactionExtras {..} <- compileTransactionExtras currencies accounts tags l (Module.transactionExtras mt)
-  let transactionAttachments = V.fromList $ DList.toList transactionExtraAttachments
-  let transactionAssertions = V.fromList $ DList.toList transactionExtraAssertions
-  let transactionTags = transactionExtraTags
+  let transactionAttachments = V.fromList $ DList.toList transactionExtrasAttachments
+  let transactionAssertions = V.fromList $ DList.toList transactionExtrasAssertions
+  let transactionTags = transactionExtrasTags
   pure
     ( Located l Ledger.Transaction {..},
       prices
@@ -754,26 +754,26 @@ compilePostingPrices timestamp (Located pl p) =
                 ]
 
 data TransactionExtras ann = TransactionExtras
-  { transactionExtraAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
-    transactionExtraAssertions :: !(DList (GenLocated ann (Ledger.Assertion ann))),
-    transactionExtraTags :: !(Map Tag ann)
+  { transactionExtrasAttachments :: !(DList (GenLocated ann (Ledger.Attachment ann))),
+    transactionExtrasAssertions :: !(DList (GenLocated ann (Ledger.Assertion ann))),
+    transactionExtrasTags :: !(Map Tag ann)
   }
 
 -- We need this semigroup instance to show as many errors as possible.
 instance Semigroup (TransactionExtras ann) where
   (<>) e1 e2 =
     TransactionExtras
-      { transactionExtraAttachments = transactionExtraAttachments e1 <> transactionExtraAttachments e2,
-        transactionExtraAssertions = transactionExtraAssertions e1 <> transactionExtraAssertions e2,
-        transactionExtraTags = M.union (transactionExtraTags e1) (transactionExtraTags e2)
+      { transactionExtrasAttachments = transactionExtrasAttachments e1 <> transactionExtrasAttachments e2,
+        transactionExtrasAssertions = transactionExtrasAssertions e1 <> transactionExtrasAssertions e2,
+        transactionExtrasTags = M.union (transactionExtrasTags e1) (transactionExtrasTags e2)
       }
 
 instance Monoid (TransactionExtras ann) where
   mempty =
     TransactionExtras
-      { transactionExtraAttachments = mempty,
-        transactionExtraAssertions = mempty,
-        transactionExtraTags = M.empty
+      { transactionExtrasAttachments = mempty,
+        transactionExtrasAssertions = mempty,
+        transactionExtrasTags = M.empty
       }
   mappend = (<>)
 
@@ -798,13 +798,13 @@ compileTransactionExtra ::
     (CompileError ann)
     (TransactionExtras ann)
 compileTransactionExtra currencies accounts tags l (Located _ e) = case e of
-  TransactionAssertion a ->
-    (\ca -> mempty {transactionExtraAssertions = DList.singleton ca})
+  TransactionExtraAssertion a ->
+    (\ca -> mempty {transactionExtrasAssertions = DList.singleton ca})
       <$> compileTransactionAssertion currencies accounts l a
-  TransactionAttachment (Located _ (ExtraAttachment a)) ->
-    pure $ mempty {transactionExtraAttachments = DList.singleton a}
-  TransactionTag et ->
-    (\ct -> mempty {transactionExtraTags = uncurry M.singleton ct})
+  TransactionExtraAttachment (Located _ (ExtraAttachment a)) ->
+    pure $ mempty {transactionExtrasAttachments = DList.singleton a}
+  TransactionExtraTag et ->
+    (\ct -> mempty {transactionExtrasTags = uncurry M.singleton ct})
       <$> compileTag tags l et
 
 compilePosting ::

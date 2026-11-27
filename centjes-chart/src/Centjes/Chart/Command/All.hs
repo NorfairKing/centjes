@@ -15,18 +15,18 @@ import Control.Monad.Logger
 
 runCentjesChartAll :: Settings -> AllSettings -> LoggingT IO ()
 runCentjesChartAll Settings {..} AllSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+  loadMWatchedModules settingsWatch settingsLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- liftIO $ checkValidation diagnostic $ compileDeclarations declarations
     evaluatedLedger <- liftIO $ checkValidation diagnostic $ produceEvaluatedLedger ledger
     report <-
       liftIO $
         checkValidation diagnostic $
-          produceChartReport [AccountTypeAssets] allSettingFilter allSettingCurrency evaluatedLedger
+          produceChartReport [AccountTypeAssets] allSettingsFilter allSettingsCurrency evaluatedLedger
     let renderSettings =
           RenderSettings
-            { renderSettingTitle = allSettingTitle,
-              renderSettingWidth = 1920,
-              renderSettingHeight = 1080
+            { renderSettingsTitle = allSettingsTitle,
+              renderSettingsWidth = 1920,
+              renderSettingsHeight = 1080
             }
-    liftIO $ renderChartReportSvg renderSettings report allSettingOutputFile
+    liftIO $ renderChartReportSvg renderSettings report allSettingsOutputFile

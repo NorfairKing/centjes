@@ -43,15 +43,15 @@ newtype PriceGraph priority cur = PriceGraph {unPriceGraph :: Map cur (Map cur (
 instance (Validity priority, Show priority, Ord priority, Validity cur, Show cur, Ord cur) => Validity (PriceGraph priority cur)
 
 -- We remember which direction the rate was added in, for the graph command.
-data Direction a = Forward !a | Backward !a
+data Direction a = DirectionForward !a | DirectionBackward !a
   deriving (Show, Eq, Generic)
 
 instance (Validity a) => Validity (Direction a)
 
 unDirection :: Direction a -> a
 unDirection = \case
-  Forward a -> a
-  Backward a -> a
+  DirectionForward a -> a
+  DirectionBackward a -> a
 
 empty :: PriceGraph priority cur
 empty = PriceGraph M.empty
@@ -76,8 +76,8 @@ insert from to rate priority p@(PriceGraph m) =
     then p
     else
       PriceGraph $
-        M.insertWith M.union to (M.singleton from (Backward (ConversionRate.invert rate, priority))) $
-          M.insertWith M.union from (M.singleton to (Forward (rate, priority))) m
+        M.insertWith M.union to (M.singleton from (DirectionBackward (ConversionRate.invert rate, priority))) $
+          M.insertWith M.union from (M.singleton to (DirectionForward (rate, priority))) m
 
 fromList :: (Ord cur) => [((cur, cur), (Money.ConversionRate, priority))] -> PriceGraph priority cur
 fromList = foldl' (\ps ((c1, c2), (r, p)) -> insert c1 c2 r p ps) empty

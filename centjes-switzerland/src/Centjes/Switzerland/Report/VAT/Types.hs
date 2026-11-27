@@ -68,7 +68,7 @@ instance Validity Quarter
 -- The number is nine digits, the first of which is nonzero. It is rendered for
 -- human reference as @111.222.333@ and as the eCH-0108 @uidType@ token
 -- @CHE111222333@ (matching @CHE[1-9][0-9]{8}@) in the E-MWST declaration.
-newtype VATId = VATId {vatIdNumber :: Text}
+newtype VATId = VATId {unVATId :: Text}
   deriving (Show, Eq, Generic)
 
 instance Validity VATId where
@@ -386,8 +386,8 @@ instance (Validity ann, Show ann, Ord ann) => Validity (DomesticRevenue ann)
 -- revenue posting beside it, which makes that posting gross; one written with
 -- an exclusive ratio (@~e@) is money on top of it, which makes it net.
 data GrossOrNet
-  = Gross
-  | Net
+  = GrossOrNetGross
+  | GrossOrNetNet
   deriving (Show, Eq, Generic)
 
 instance Validity GrossOrNet

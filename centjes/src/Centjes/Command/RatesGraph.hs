@@ -32,7 +32,7 @@ import Text.Printf
 
 runCentjesRatesGraph :: Settings -> RatesGraphSettings -> LoggingT IO ()
 runCentjesRatesGraph Settings {..} RatesGraphSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) ->
+  loadMWatchedModules settingsWatch settingsLedgerFile $ \(declarations, fileMap) ->
     withLoggedDuration "RatestGraph" $ do
       let diagnostic = diagFromFileMap fileMap
       ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
@@ -43,12 +43,12 @@ runCentjesRatesGraph Settings {..} RatesGraphSettings {..} =
             forM_ (M.toList (unPriceGraph priceGraph)) $ \(currencyFrom, toMap) ->
               forM_ (M.toList toMap) $ \(currencyTo, dir) ->
                 case (dir, currencyFrom, currencyTo) of
-                  (PriceGraph.Backward {}, _, _) -> pure ()
+                  (PriceGraph.DirectionBackward {}, _, _) -> pure ()
                   -- A lot is not a node of its own here: its one-to-one edge to
                   -- the underlying would draw as a self-loop on the underlying.
-                  (PriceGraph.Forward _, CommodityLot _, _) -> pure ()
-                  (PriceGraph.Forward _, _, CommodityLot _) -> pure ()
-                  (PriceGraph.Forward (rate, priority), CommodityCurrency fromCurrency, CommodityCurrency toCurrency) -> do
+                  (PriceGraph.DirectionForward _, CommodityLot _, _) -> pure ()
+                  (PriceGraph.DirectionForward _, _, CommodityLot _) -> pure ()
+                  (PriceGraph.DirectionForward (rate, priority), CommodityCurrency fromCurrency, CommodityCurrency toCurrency) -> do
                     let from = currencySymbol fromCurrency
                     let to = currencySymbol toCurrency
                     edge
@@ -65,6 +65,6 @@ runCentjesRatesGraph Settings {..} RatesGraphSettings {..} =
                                   ]
                               }
                       ]
-      liftIO $ case ratesGraphSettingOutputFile of
+      liftIO $ case ratesGraphSettingsOutputFile of
         Nothing -> hPutDot stdout dotGraph
         Just outputFile -> writeDotFile (toFilePath outputFile) dotGraph

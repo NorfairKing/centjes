@@ -97,22 +97,22 @@ duplicateSetAsideAccounts SetAsideInput {..} =
 
 -- | Whether an account counts as taxable wealth, by its tags.
 data Taxability ann
-  = Taxable
-  | NotTaxable
+  = TaxabilityTaxable
+  | TaxabilityNotTaxable
   | -- | Neither tag, which is an error so that no account is left out by
     -- accident.
-    Untagged
+    TaxabilityUntagged
   | -- | Both tags, at these locations.
-    TaggedBoth !ann !ann
+    TaxabilityTaggedBoth !ann !ann
   deriving (Show, Eq)
 
 taxability :: SetAsideWealth -> Map Tag ann -> Taxability ann
 taxability SetAsideWealth {..} tags =
   case (M.lookup setAsideWealthTagTaxable tags, M.lookup setAsideWealthTagNotTaxable tags) of
-    (Just _, Nothing) -> Taxable
-    (Nothing, Just _) -> NotTaxable
-    (Nothing, Nothing) -> Untagged
-    (Just taxableLocation, Just notTaxableLocation) -> TaggedBoth taxableLocation notTaxableLocation
+    (Just _, Nothing) -> TaxabilityTaxable
+    (Nothing, Just _) -> TaxabilityNotTaxable
+    (Nothing, Nothing) -> TaxabilityUntagged
+    (Just taxableLocation, Just notTaxableLocation) -> TaxabilityTaggedBoth taxableLocation notTaxableLocation
 
 {-# ANN parseSetAsideInput ("NOCOVER" :: String) #-}
 parseSetAsideInput :: Parser SetAsideInput
@@ -253,7 +253,7 @@ parseFraction fraction =
 
 -- | A municipality in the canton of Zürich, by its number from the Swiss
 -- Federal Statistical Office, like 261 for the city of Zürich.
-newtype Municipality = Municipality {municipalityNumber :: Int}
+newtype Municipality = Municipality {unMunicipality :: Int}
 
 -- | The prices to convert with, split by whether the tax administration
 -- publishes them.
@@ -371,9 +371,9 @@ data SetAsideAction = SetAsideAction
 
 data SetAsideActionKind
   = -- | Move money aside, for a tax that cannot be paid before it is billed.
-    SetAsideActionSave
+    SetAsideActionKindSave
   | -- | Pay ahead of the bill.
-    SetAsideActionPrepay
+    SetAsideActionKindPrepay
 
 -- | A tax that has more set aside than it will cost.
 data SetAsideSurplus = SetAsideSurplus
@@ -419,9 +419,9 @@ instance ToReport (SetAsideError SourceSpan) where
     SetAsideErrorNoPrice symbol day ->
       Err
         Nothing
-        (unwords ["No price for", show (currencySymbolText symbol), "on or before", show day])
+        (unwords ["No price for", show (unCurrencySymbol symbol), "on or before", show day])
         []
-        [Hint (unwords ["Add a price for", T.unpack (currencySymbolText symbol), "on or before that day, in CHF or in a currency with a price in CHF."])]
+        [Hint (unwords ["Add a price for", T.unpack (unCurrencySymbol symbol), "on or before that day, in CHF or in a currency with a price in CHF."])]
     SetAsideErrorUndeclaredAccount an ->
       Err
         Nothing

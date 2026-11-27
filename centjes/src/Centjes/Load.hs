@@ -11,7 +11,7 @@ module Centjes.Load
     loadModules',
     loadModulesOrErr,
     LoadError (..),
-    LoadError',
+    LoadErrorReason,
     diagFromFileMap,
     diagFromFileMap',
   )
@@ -158,35 +158,35 @@ loadModules' firstPath = do
       let diag = addReport (diagFromFileMap' fileMap) (toReport le)
       liftIO $ dieWithDiag diag
 
-data LoadError = LoadError !(Map (Path Rel File) Text) !LoadError'
+data LoadError = LoadError !(Map (Path Rel File) Text) !LoadErrorReason
 
-data LoadError'
-  = LoadErrorImportMissing !(Path Rel File) !(Maybe SourceSpan)
-  | LoadErrorNotAFile !(Path Rel File) !(Maybe SourceSpan)
-  | LoadErrorNotUtf8 !(Path Rel File) !(Maybe SourceSpan)
-  | LoadErrorParseError !(Path Rel File) !(Maybe SourceSpan) !String
+data LoadErrorReason
+  = LoadErrorReasonImportMissing !(Path Rel File) !(Maybe SourceSpan)
+  | LoadErrorReasonNotAFile !(Path Rel File) !(Maybe SourceSpan)
+  | LoadErrorReasonNotUtf8 !(Path Rel File) !(Maybe SourceSpan)
+  | LoadErrorReasonParseError !(Path Rel File) !(Maybe SourceSpan) !String
 
-instance ToReport LoadError' where
+instance ToReport LoadErrorReason where
   toReport = \case
-    LoadErrorImportMissing rf mL ->
+    LoadErrorReasonImportMissing rf mL ->
       Err
         (Just "LE_IMPORT_MISSING")
         (unwords ["Imported module does not exist:", fromRelFile rf])
         [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL]
         []
-    LoadErrorNotAFile rf mL ->
+    LoadErrorReasonNotAFile rf mL ->
       Err
         (Just "LE_IMPORT_FILE")
         (unwords ["Imported module is not a file:", fromRelFile rf])
         [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL]
         []
-    LoadErrorNotUtf8 rf mL ->
+    LoadErrorReasonNotUtf8 rf mL ->
       Err
         (Just "LE_UTF8")
         (unwords ["Imported module is not utf-8 encoded:", fromRelFile rf])
         [(toDiagnosePosition l, This "Imported here") | l <- maybeToList mL]
         []
-    LoadErrorParseError rf mL e ->
+    LoadErrorReasonParseError rf mL e ->
       Err
         (Just "LE_UTF8")
         ( case maybePos of
@@ -306,12 +306,12 @@ readSingleModule base fileMap mIl p = do
         then do
           contents <- liftIO $ SB.readFile $ fromAbsFile af
           case TE.decodeUtf8' contents of
-            Left _ -> loadError $ LoadErrorNotUtf8 p mIl
+            Left _ -> loadError $ LoadErrorReasonNotUtf8 p mIl
             Right textContents -> do
               case parseModule base p textContents of
-                Left e -> throwError $ LoadError (M.insert p textContents fileMap) $ LoadErrorParseError p mIl e
+                Left e -> throwError $ LoadError (M.insert p textContents fileMap) $ LoadErrorReasonParseError p mIl e
                 Right m -> do
                   lift $ logDebugN $ T.pack $ unwords ["Read module:", fp]
                   pure (textContents, m)
-        else throwError $ LoadError fileMap $ LoadErrorNotAFile p mIl
-    else throwError $ LoadError fileMap $ LoadErrorImportMissing p mIl
+        else throwError $ LoadError fileMap $ LoadErrorReasonNotAFile p mIl
+    else throwError $ LoadError fileMap $ LoadErrorReasonImportMissing p mIl

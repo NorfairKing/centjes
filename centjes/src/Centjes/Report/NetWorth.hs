@@ -41,15 +41,15 @@ data NetWorthReport ann
   deriving (Show)
 
 data NetWorthReportConvertedData ann = NetWorthReportConvertedData
-  { netWorthReportConvertedCurrency :: !(Currency ann),
-    netWorthReportConvertedEntries :: !(Vector (Day, Money.Account)),
-    netWorthReportConvertedBalanceReport :: !(Maybe (BalanceReport ann))
+  { netWorthReportConvertedDataCurrency :: !(Currency ann),
+    netWorthReportConvertedDataEntries :: !(Vector (Day, Money.Account)),
+    netWorthReportConvertedDataBalanceReport :: !(Maybe (BalanceReport ann))
   }
   deriving (Show)
 
 data NetWorthReportMultiCurrencyData ann = NetWorthReportMultiCurrencyData
-  { netWorthReportMultiCurrencyEntries :: !(Vector (Day, Money.MultiAccount (Commodity ann))),
-    netWorthReportMultiCurrencyBalanceReport :: !(Maybe (BalanceReport ann))
+  { netWorthReportMultiCurrencyDataEntries :: !(Vector (Day, Money.MultiAccount (Commodity ann))),
+    netWorthReportMultiCurrencyDataBalanceReport :: !(Maybe (BalanceReport ann))
   }
   deriving (Show)
 
@@ -103,7 +103,7 @@ produceConvertedReport ::
   Maybe Day ->
   EvaluatedLedger ann ->
   Validation (NetWorthError ann) (NetWorthReportConvertedData ann)
-produceConvertedReport netWorthReportConvertedCurrency mBegin mEnd evaluatedLedger = do
+produceConvertedReport netWorthReportConvertedDataCurrency mBegin mEnd evaluatedLedger = do
   let ledger = evaluatedLedgerSource evaluatedLedger
   let entries = evaluatedLedgerEntries evaluatedLedger
 
@@ -114,8 +114,8 @@ produceConvertedReport netWorthReportConvertedCurrency mBegin mEnd evaluatedLedg
     then
       pure $
         NetWorthReportConvertedData
-          { netWorthReportConvertedEntries = V.empty,
-            netWorthReportConvertedBalanceReport = Nothing,
+          { netWorthReportConvertedDataEntries = V.empty,
+            netWorthReportConvertedDataBalanceReport = Nothing,
             ..
           }
     else do
@@ -126,12 +126,12 @@ produceConvertedReport netWorthReportConvertedCurrency mBegin mEnd evaluatedLedg
       let endDay = fromMaybe lastDay mEnd
 
       -- Generate entries for each day in the range
-      netWorthReportConvertedEntries <-
+      netWorthReportConvertedDataEntries <-
         V.fromList
           <$> traverse
             ( \day -> do
                 let (balances, priceGraph) = fromMaybe (M.empty, MemoisedPriceGraph.empty) $ lookupLE day daySnapshots
-                account <- computeDayNetWorth day priceGraph netWorthReportConvertedCurrency balances
+                account <- computeDayNetWorth day priceGraph netWorthReportConvertedDataCurrency balances
                 pure (day, account)
             )
             [beginDay .. endDay]
@@ -140,14 +140,14 @@ produceConvertedReport netWorthReportConvertedCurrency mBegin mEnd evaluatedLedg
       let (finalBalances, finalPriceGraph) = fromMaybe (M.empty, MemoisedPriceGraph.empty) $ lookupLE endDay daySnapshots
       balanceReportBalances <-
         mapValidationFailure NetWorthErrorConvert $
-          convertAccountBalances finalPriceGraph netWorthReportConvertedCurrency finalBalances
+          convertAccountBalances finalPriceGraph netWorthReportConvertedDataCurrency finalBalances
       balanceReportFilledBalances <-
         mapValidationFailure NetWorthErrorBalance $
           fillAccountBalances balanceReportBalances
       balanceReportTotal <- case MultiAccount.sum balanceReportBalances of
         Nothing -> validationFailure $ NetWorthErrorCouldNotSum endDay
         Just total -> pure total
-      let netWorthReportConvertedBalanceReport = Just BalanceReport {..}
+      let netWorthReportConvertedDataBalanceReport = Just BalanceReport {..}
 
       pure NetWorthReportConvertedData {..}
 
@@ -169,8 +169,8 @@ produceMultiCurrencyReport mBegin mEnd evaluatedLedger = do
     then
       pure $
         NetWorthReportMultiCurrencyData
-          { netWorthReportMultiCurrencyEntries = V.empty,
-            netWorthReportMultiCurrencyBalanceReport = Nothing
+          { netWorthReportMultiCurrencyDataEntries = V.empty,
+            netWorthReportMultiCurrencyDataBalanceReport = Nothing
           }
     else do
       -- Determine date range
@@ -180,7 +180,7 @@ produceMultiCurrencyReport mBegin mEnd evaluatedLedger = do
       let endDay = fromMaybe lastDay mEnd
 
       -- Generate entries for each day in the range
-      netWorthReportMultiCurrencyEntries <-
+      netWorthReportMultiCurrencyDataEntries <-
         V.fromList
           <$> traverse
             ( \day -> do
@@ -199,7 +199,7 @@ produceMultiCurrencyReport mBegin mEnd evaluatedLedger = do
       balanceReportTotal <- case MultiAccount.sum balanceReportBalances of
         Nothing -> validationFailure $ NetWorthErrorCouldNotSum endDay
         Just total -> pure total
-      let netWorthReportMultiCurrencyBalanceReport = Just BalanceReport {..}
+      let netWorthReportMultiCurrencyDataBalanceReport = Just BalanceReport {..}
 
       pure NetWorthReportMultiCurrencyData {..}
 

@@ -48,10 +48,10 @@ parseInstructions =
         <*> settingsParser
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File),
-    settingWatch :: !Bool,
-    settingLogLevel :: !LogLevel,
-    settingTerminalCapabilities :: !TerminalCapabilities
+  { settingsLedgerFile :: !(Path Abs File),
+    settingsWatch :: !Bool,
+    settingsLogLevel :: !LogLevel,
+    settingsTerminalCapabilities :: !TerminalCapabilities
   }
   deriving (Show)
 
@@ -61,14 +61,14 @@ instance HasParser Settings where
 {-# ANN parseSettings ("NOCOVER" :: String) #-}
 parseSettings :: Parser Settings
 parseSettings = do
-  settingLedgerFile <-
+  settingsLedgerFile <-
     filePathSetting
       [ help "ledger file",
         short 'l',
         name "ledger",
         value "ledger.cent"
       ]
-  settingWatch <-
+  settingsWatch <-
     setting
       [ help "Run centjes in a loop",
         name "watch",
@@ -78,8 +78,8 @@ parseSettings = do
         reader exists,
         value False
       ]
-  settingLogLevel <- settingsParser
-  settingTerminalCapabilities <- runIO getTerminalCapabilitiesFromEnv
+  settingsLogLevel <- settingsParser
+  settingsTerminalCapabilities <- runIO getTerminalCapabilitiesFromEnv
   pure Settings {..}
 
 instance HasParser LogLevel where
@@ -151,12 +151,12 @@ parseCheckSettings :: Parser CheckSettings
 parseCheckSettings = pure CheckSettings
 
 data RegisterSettings = RegisterSettings
-  { registerSettingFilter :: !Filter,
-    registerSettingBlockSize :: !BlockSize,
-    registerSettingCurrency :: !(Maybe CurrencySymbol),
+  { registerSettingsFilter :: !Filter,
+    registerSettingsBlockSize :: !BlockSize,
+    registerSettingsCurrency :: !(Maybe CurrencySymbol),
     registerSettingShowVirtual :: !Bool,
-    registerSettingBegin :: !(Maybe Day),
-    registerSettingEnd :: !(Maybe Day)
+    registerSettingsBegin :: !(Maybe Day),
+    registerSettingsEnd :: !(Maybe Day)
   }
   deriving (Show)
 
@@ -166,7 +166,7 @@ instance HasParser RegisterSettings where
 {-# ANN parseRegisterSettings ("NOCOVER" :: String) #-}
 parseRegisterSettings :: Parser RegisterSettings
 parseRegisterSettings = subConfig_ "register" $ do
-  registerSettingCurrency <-
+  registerSettingsCurrency <-
     optional $
       setting
         [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
@@ -176,7 +176,7 @@ parseRegisterSettings = subConfig_ "register" $ do
           conf "convert",
           metavar "CURRENCY"
         ]
-  registerSettingBlockSize <- settingsParser
+  registerSettingsBlockSize <- settingsParser
   registerSettingShowVirtual <-
     setting
       [ help "Show virtual postings too",
@@ -185,16 +185,16 @@ parseRegisterSettings = subConfig_ "register" $ do
         conf "virtual",
         value False
       ]
-  ~(registerSettingBegin, registerSettingEnd) <- timeFilterParser
-  registerSettingFilter <- settingsParser
+  ~(registerSettingsBegin, registerSettingsEnd) <- timeFilterParser
+  registerSettingsFilter <- settingsParser
   pure RegisterSettings {..}
 
 data BalanceSettings = BalanceSettings
-  { balanceSettingFilter :: !Filter,
-    balanceSettingCurrency :: !(Maybe CurrencySymbol),
+  { balanceSettingsFilter :: !Filter,
+    balanceSettingsCurrency :: !(Maybe CurrencySymbol),
     balanceSettingShowEmpty :: !ShowEmpty,
     balanceSettingShowVirtual :: !Bool,
-    balanceSettingEnd :: !(Maybe Day)
+    balanceSettingsEnd :: !(Maybe Day)
   }
   deriving (Show)
 
@@ -204,7 +204,7 @@ instance HasParser BalanceSettings where
 {-# ANN parseBalanceSettings ("NOCOVER" :: String) #-}
 parseBalanceSettings :: Parser BalanceSettings
 parseBalanceSettings = subConfig_ "balance" $ do
-  balanceSettingCurrency <-
+  balanceSettingsCurrency <-
     optional $
       setting
         [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
@@ -220,7 +220,7 @@ parseBalanceSettings = subConfig_ "balance" $ do
         switch ShowEmpty,
         long "show-empty",
         conf "show-empty",
-        value DoNotShowEmpty
+        value ShowEmptyHide
       ]
   balanceSettingShowVirtual <-
     setting
@@ -230,15 +230,15 @@ parseBalanceSettings = subConfig_ "balance" $ do
         conf "virtual",
         value False
       ]
-  balanceSettingEnd <- endFilterParser
-  balanceSettingFilter <- settingsParser
+  balanceSettingsEnd <- endFilterParser
+  balanceSettingsFilter <- settingsParser
   pure BalanceSettings {..}
 
 data NetWorthSettings = NetWorthSettings
-  { netWorthSettingCurrency :: !(Maybe CurrencySymbol),
-    netWorthSettingBegin :: !(Maybe Day),
-    netWorthSettingEnd :: !(Maybe Day),
-    netWorthSettingOutputFormat :: !OutputFormat
+  { netWorthSettingsCurrency :: !(Maybe CurrencySymbol),
+    netWorthSettingsBegin :: !(Maybe Day),
+    netWorthSettingsEnd :: !(Maybe Day),
+    netWorthSettingsOutputFormat :: !OutputFormat
   }
   deriving (Show)
 
@@ -248,7 +248,7 @@ instance HasParser NetWorthSettings where
 {-# ANN parseNetWorthSettings ("NOCOVER" :: String) #-}
 parseNetWorthSettings :: Parser NetWorthSettings
 parseNetWorthSettings = subConfig_ "net-worth" $ do
-  netWorthSettingCurrency <-
+  netWorthSettingsCurrency <-
     optional $
       setting
         [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
@@ -258,23 +258,23 @@ parseNetWorthSettings = subConfig_ "net-worth" $ do
           conf "convert",
           metavar "CURRENCY"
         ]
-  netWorthSettingOutputFormat <-
+  netWorthSettingsOutputFormat <-
     setting
       [ help "Output as CSV",
         switch OutputFormatCSV,
         long "csv",
         value OutputFormatTerminal
       ]
-  ~(netWorthSettingBegin, netWorthSettingEnd) <- timeFilterParser
+  ~(netWorthSettingsBegin, netWorthSettingsEnd) <- timeFilterParser
   pure NetWorthSettings {..}
 
 data IncomeStatementSettings = IncomeStatementSettings
-  { incomeStatementSettingFilter :: !Filter,
-    incomeStatementSettingCurrency :: !(Maybe CurrencySymbol),
+  { incomeStatementSettingsFilter :: !Filter,
+    incomeStatementSettingsCurrency :: !(Maybe CurrencySymbol),
     incomeStatementSettingShowEmpty :: !ShowEmpty,
     incomeStatementSettingShowVirtual :: !Bool,
-    incomeStatementSettingBegin :: !(Maybe Day),
-    incomeStatementSettingEnd :: !(Maybe Day)
+    incomeStatementSettingsBegin :: !(Maybe Day),
+    incomeStatementSettingsEnd :: !(Maybe Day)
   }
   deriving (Show)
 
@@ -284,7 +284,7 @@ instance HasParser IncomeStatementSettings where
 {-# ANN parseIncomeStatementSettings ("NOCOVER" :: String) #-}
 parseIncomeStatementSettings :: Parser IncomeStatementSettings
 parseIncomeStatementSettings = subConfig_ "income-statement" $ do
-  incomeStatementSettingCurrency <-
+  incomeStatementSettingsCurrency <-
     optional $
       setting
         [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
@@ -300,7 +300,7 @@ parseIncomeStatementSettings = subConfig_ "income-statement" $ do
         switch ShowEmpty,
         long "show-empty",
         conf "show-empty",
-        value DoNotShowEmpty
+        value ShowEmptyHide
       ]
   incomeStatementSettingShowVirtual <-
     setting
@@ -310,8 +310,8 @@ parseIncomeStatementSettings = subConfig_ "income-statement" $ do
         conf "virtual",
         value False
       ]
-  ~(incomeStatementSettingBegin, incomeStatementSettingEnd) <- timeFilterParser
-  incomeStatementSettingFilter <- settingsParser
+  ~(incomeStatementSettingsBegin, incomeStatementSettingsEnd) <- timeFilterParser
+  incomeStatementSettingsFilter <- settingsParser
   pure IncomeStatementSettings {..}
 
 -- | Parser for time filtering with both begin and end dates (for register)
@@ -555,7 +555,7 @@ endFilterParser =
 
 data ShowEmpty
   = ShowEmpty
-  | DoNotShowEmpty
+  | ShowEmptyHide
   deriving (Show)
 
 instance HasCodec ShowEmpty where
@@ -563,13 +563,13 @@ instance HasCodec ShowEmpty where
     where
       f = \case
         True -> ShowEmpty
-        False -> DoNotShowEmpty
+        False -> ShowEmptyHide
       g = \case
         ShowEmpty -> True
-        DoNotShowEmpty -> False
+        ShowEmptyHide -> False
 
 data FormatSettings = FormatSettings
-  { formatSettingFileOrDir :: !(Maybe (Either (Path Abs File) (Path Abs Dir)))
+  { formatSettingsFileOrDir :: !(Maybe (Either (Path Abs File) (Path Abs Dir)))
   }
   deriving (Show)
 
@@ -579,7 +579,7 @@ instance HasParser FormatSettings where
 {-# ANN parseFormatSettings ("NOCOVER" :: String) #-}
 parseFormatSettings :: Parser FormatSettings
 parseFormatSettings = do
-  formatSettingFileOrDir <-
+  formatSettingsFileOrDir <-
     optional $
       choice
         [ Left
@@ -600,7 +600,7 @@ parseFormatSettings = do
   pure FormatSettings {..}
 
 data RatesGraphSettings = RatesGraphSettings
-  { ratesGraphSettingOutputFile :: !(Maybe (Path Abs File))
+  { ratesGraphSettingsOutputFile :: !(Maybe (Path Abs File))
   }
   deriving (Show)
 
@@ -610,7 +610,7 @@ instance HasParser RatesGraphSettings where
 {-# ANN parseRatesGraphSettings ("NOCOVER" :: String) #-}
 parseRatesGraphSettings :: Parser RatesGraphSettings
 parseRatesGraphSettings = do
-  ratesGraphSettingOutputFile <-
+  ratesGraphSettingsOutputFile <-
     optional $
       filePathSetting
         [ help "Output file (default: stdout)",

@@ -131,7 +131,7 @@
     config:
       [37mimport.currency[m: # [32mor null[m
         [33m<string>[m
-    default: [33mCurrencySymbol {currencySymbolText = "CHF"}[m
+    default: [33mCurrencySymbol {unCurrencySymbol = "CHF"}[m
     
     [34mDirectory of the Stripe documents downloaded by hand, relative to the ledger[m
     option: [37m--documents[m [33mDIRECTORY_PATH[m
@@ -269,7 +269,7 @@
     # [32mor null[m
     [33m<number>[m
   [34mThe currency Stripe settles in[m
-  default: [33mCurrencySymbol {currencySymbolText = "CHF"}[m
+  default: [33mCurrencySymbol {unCurrencySymbol = "CHF"}[m
   [37mimport.currency[m:
     # [32mor null[m
     [33m<string>[m

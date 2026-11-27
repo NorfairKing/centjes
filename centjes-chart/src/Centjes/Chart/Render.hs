@@ -25,9 +25,9 @@ import Path.IO (ensureDir)
 
 -- | How to render a chart report, beyond the data itself.
 data RenderSettings = RenderSettings
-  { renderSettingTitle :: !String,
-    renderSettingWidth :: !Double,
-    renderSettingHeight :: !Double
+  { renderSettingsTitle :: !String,
+    renderSettingsWidth :: !Double,
+    renderSettingsHeight :: !Double
   }
 
 -- | Render a chart report to an SVG file.
@@ -49,7 +49,7 @@ renderChartReportSvg RenderSettings {..} report outputFile = do
   let fileOptions =
         def
           { _fo_format = SVG,
-            _fo_size = (renderSettingWidth, renderSettingHeight)
+            _fo_size = (renderSettingsWidth, renderSettingsHeight)
           }
   let plots
         | chartReportIsNonNegative report =
@@ -71,7 +71,7 @@ renderChartReportSvg RenderSettings {..} report outputFile = do
                       _plot_lines_title = title
                     }
   let layout =
-        layout_title .~ renderSettingTitle $
+        layout_title .~ renderSettingsTitle $
           layout_grid_last .~ True $
             layout_plots .~ plots $
               def

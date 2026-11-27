@@ -12,8 +12,11 @@ import Path
 
 {-# ANN module ("DisableMutations" :: String) #-}
 
+-- [allow:HsPrefixNaming] Located reads naturally through the Located synonym, and is used in nearly every module.
 data GenLocated l e = Located
-  { locatedLocation :: !l,
+  { -- [allow:HsPrefixNaming] Named after Located, like the constructor.
+    locatedLocation :: !l,
+    -- [allow:HsPrefixNaming] Named after Located, like the constructor, and used in nearly every module.
     locatedValue :: !e
   }
   deriving stock (Show, Eq, Ord, Generic)

@@ -25,7 +25,7 @@ spec =
       ledger <- shouldValidate diag $ compileDeclarations ds
       evaluatedLedger <- shouldValidate diag $ produceEvaluatedLedger ledger
 
-      [ (scope, currencySymbolText (currencySymbol (commodityCurrency commodity)))
+      [ (scope, unCurrencySymbol (currencySymbol (commodityCurrency commodity)))
         | Located _ transaction <- V.toList (ledgerTransactions ledger),
           Located _ (AssertionEquals scope _ _ (Located _ commodity)) <-
             V.toList (transactionAssertions transaction)

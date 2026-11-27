@@ -39,7 +39,7 @@ import Text.Colour.Layout
 
 runCentjesIncomeStatement :: Settings -> IncomeStatementSettings -> LoggingT IO ()
 runCentjesIncomeStatement Settings {..} IncomeStatementSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+  loadMWatchedModules settingsWatch settingsLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
     evaluatedLedger <-
@@ -52,13 +52,13 @@ runCentjesIncomeStatement Settings {..} IncomeStatementSettings {..} =
         liftIO $
           checkValidation diagnostic $
             produceIncomeStatementReport
-              incomeStatementSettingFilter
-              incomeStatementSettingBegin
-              incomeStatementSettingEnd
-              incomeStatementSettingCurrency
+              incomeStatementSettingsFilter
+              incomeStatementSettingsBegin
+              incomeStatementSettingsEnd
+              incomeStatementSettingsCurrency
               incomeStatementSettingShowVirtual
               evaluatedLedger
-    liftIO $ putChunksLocaleWith settingTerminalCapabilities $ renderIncomeStatementReport incomeStatementSettingShowEmpty report
+    liftIO $ putChunksLocaleWith settingsTerminalCapabilities $ renderIncomeStatementReport incomeStatementSettingShowEmpty report
 
 renderIncomeStatementReport :: ShowEmpty -> IncomeStatementReport ann -> [Chunk]
 renderIncomeStatementReport se report =
@@ -85,7 +85,7 @@ renderIncomeStatementRows se report@IncomeStatementReport {..} =
       negatedTotalIncome = negateMultiAccount incomeStatementReportTotalIncome
       incomeAccountsToShow = case se of
         ShowEmpty -> negatedFilledIncome
-        DoNotShowEmpty -> M.filter (not . null . MultiAccount.unMultiAccount) negatedFilledIncome
+        ShowEmptyHide -> M.filter (not . null . MultiAccount.unMultiAccount) negatedFilledIncome
       incomeForest = buildAccountForest incomeAccountsToShow
       incomeFlattenedWithContext = flattenForestWithContext incomeForest
       incomeRows =
@@ -97,7 +97,7 @@ renderIncomeStatementRows se report@IncomeStatementReport {..} =
       negatedTotalExpenses = negateMultiAccount incomeStatementReportTotalExpenses
       expensesAccountsToShow = case se of
         ShowEmpty -> negatedFilledExpenses
-        DoNotShowEmpty -> M.filter (not . null . MultiAccount.unMultiAccount) negatedFilledExpenses
+        ShowEmptyHide -> M.filter (not . null . MultiAccount.unMultiAccount) negatedFilledExpenses
       expensesForest = buildAccountForest expensesAccountsToShow
       expensesFlattenedWithContext = flattenForestWithContext expensesForest
       expensesRows =
@@ -145,7 +145,7 @@ incomeStatementMaxWidth se IncomeStatementReport {..} =
   where
     incomeAccountsToShow = case se of
       ShowEmpty -> incomeStatementReportFilledIncome
-      DoNotShowEmpty -> M.filter (not . null . MultiAccount.unMultiAccount) incomeStatementReportFilledIncome
+      ShowEmptyHide -> M.filter (not . null . MultiAccount.unMultiAccount) incomeStatementReportFilledIncome
     expensesAccountsToShow = case se of
       ShowEmpty -> incomeStatementReportFilledExpenses
-      DoNotShowEmpty -> M.filter (not . null . MultiAccount.unMultiAccount) incomeStatementReportFilledExpenses
+      ShowEmptyHide -> M.filter (not . null . MultiAccount.unMultiAccount) incomeStatementReportFilledExpenses

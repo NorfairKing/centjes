@@ -41,12 +41,12 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
       T.writeFile (fromAbsFile af) (formatModule @() m)
       let settings =
             Settings
-              { settingLedgerFile = af,
-                settingLogLevel = LevelError,
-                settingWatch = False,
-                settingTerminalCapabilities = WithoutColours
+              { settingsLedgerFile = af,
+                settingsLogLevel = LevelError,
+                settingsWatch = False,
+                settingsTerminalCapabilities = WithoutColours
               }
-      let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Left af)}
+      let formatSettings = FormatSettings {formatSettingsFileOrDir = Just (Left af)}
       runStderrLoggingT $ runCentjesFormat settings formatSettings
       assertFormatted tdir rf
 
@@ -61,12 +61,12 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
         T.writeFile (fromAbsFile af2) (formatModule @() m2)
         let settings =
               Settings
-                { settingLedgerFile = af1,
-                  settingLogLevel = LevelError,
-                  settingWatch = False,
-                  settingTerminalCapabilities = WithoutColours
+                { settingsLedgerFile = af1,
+                  settingsLogLevel = LevelError,
+                  settingsWatch = False,
+                  settingsTerminalCapabilities = WithoutColours
                 }
-        let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
+        let formatSettings = FormatSettings {formatSettingsFileOrDir = Just (Right tdir)}
         runStderrLoggingT $ runCentjesFormat settings formatSettings
         assertFormatted tdir rf1
         assertFormatted tdir rf2
@@ -79,11 +79,11 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
     T.writeFile (fromAbsFile testFile2) unformatted
     let settings =
           Settings
-            { settingLedgerFile = testFile1,
-              settingLogLevel = LevelError,
-              settingWatch = False,
-              settingTerminalCapabilities = WithoutColours
+            { settingsLedgerFile = testFile1,
+              settingsLogLevel = LevelError,
+              settingsWatch = False,
+              settingsTerminalCapabilities = WithoutColours
             }
-    let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
+    let formatSettings = FormatSettings {formatSettingsFileOrDir = Just (Right tdir)}
     runStderrLoggingT (runCentjesFormat settings formatSettings) `shouldThrow` (\(_ :: ExitCode) -> True)
     T.readFile (fromAbsFile testFile2) `shouldReturn` unformatted

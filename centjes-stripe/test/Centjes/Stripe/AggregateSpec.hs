@@ -34,16 +34,16 @@ spec = do
       taxCsv rows = LB.concat (taxCsvHeader : rows)
   let stripeErrorKind :: StripeError -> StripeErrorKind
       stripeErrorKind = \case
-        StripeErrorReport {} -> KindReport
-        StripeErrorForeignTaxCollected {} -> KindForeignTaxCollected
-        StripeErrorNoVATRate {} -> KindNoVATRate
-        StripeErrorHomeNontaxable {} -> KindHomeNontaxable
-        StripeErrorDoesNotReconcile {} -> KindDoesNotReconcile
-        StripeErrorNoBalanceCategory {} -> KindNoBalanceCategory
-        StripeErrorSum {} -> KindSum
-        StripeErrorRefundsExceedSales {} -> KindRefundsExceedSales
-        StripeErrorFeeRateDisagrees {} -> KindFeeRateDisagrees
-        StripeErrorWrongCurrency {} -> KindWrongCurrency
+        StripeErrorReport {} -> StripeErrorKindReport
+        StripeErrorForeignTaxCollected {} -> StripeErrorKindForeignTaxCollected
+        StripeErrorNoVATRate {} -> StripeErrorKindNoVATRate
+        StripeErrorHomeNontaxable {} -> StripeErrorKindHomeNontaxable
+        StripeErrorDoesNotReconcile {} -> StripeErrorKindDoesNotReconcile
+        StripeErrorNoBalanceCategory {} -> StripeErrorKindNoBalanceCategory
+        StripeErrorSum {} -> StripeErrorKindSum
+        StripeErrorRefundsExceedSales {} -> StripeErrorKindRefundsExceedSales
+        StripeErrorFeeRateDisagrees {} -> StripeErrorKindFeeRateDisagrees
+        StripeErrorWrongCurrency {} -> StripeErrorKindWrongCurrency
   let chf :: QuantisationFactor
       chf = QuantisationFactor 100
   -- One tax report row: country, rate, taxable, non-taxable, collected, refunded sales.
@@ -95,10 +95,10 @@ spec = do
   let settings :: AggregateSettings
       settings =
         AggregateSettings
-          { aggregateSettingHomeCountry = "CH",
-            aggregateSettingVATRates = swissVATRates,
-            aggregateSettingCurrency = StripeCurrency "chf",
-            aggregateSettingFeesVATRate = 0.081
+          { aggregateSettingsHomeCountry = "CH",
+            aggregateSettingsVATRates = swissVATRates,
+            aggregateSettingsCurrency = StripeCurrency "chf",
+            aggregateSettingsFeesVATRate = 0.081
           }
   let account :: Integer -> Account.Account
       account i = case Account.fromMinimalQuantisations i of
@@ -229,7 +229,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindForeignTaxCollected]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindForeignTaxCollected]
         ValidationSuccess _ -> expectationFailure "Expected foreign tax collected to be refused"
 
     -- Exempt and zero-rated home revenue are declared differently, and this importer
@@ -242,7 +242,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindHomeNontaxable]
         ValidationSuccess _ -> expectationFailure "Expected non-taxable home revenue to be refused"
 
     -- The dangerous shape, because the reconciliation cannot catch it: booking the wrong
@@ -258,7 +258,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoVATRate]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindNoVATRate]
         ValidationSuccess month ->
           expectationFailure $
             unwords
@@ -275,7 +275,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindHomeNontaxable]
         ValidationSuccess month ->
           expectationFailure $
             unwords
@@ -312,7 +312,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindWrongCurrency]
         ValidationSuccess _ -> expectationFailure "Expected a row in another currency to be refused"
 
     it "refuses a fee row in another currency" $ do
@@ -329,7 +329,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindWrongCurrency]
         ValidationSuccess _ -> expectationFailure "Expected a fee in another currency to be refused"
 
     -- The balance report leaves the currency off its payout lines, so an absent currency
@@ -380,7 +380,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindDoesNotReconcile]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindDoesNotReconcile]
         ValidationSuccess _ -> expectationFailure "Expected a month that does not reconcile to be refused"
 
     it "refuses a balance report with no ending balance" $ do
@@ -391,7 +391,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoBalanceCategory]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindNoBalanceCategory]
         ValidationSuccess _ -> expectationFailure "Expected a missing ending balance to be refused"
 
     -- A fee small enough that its tax cannot name a rate: 18 rappen of fee rounds to the
@@ -422,7 +422,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindFeeRateDisagrees]
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [StripeErrorKindFeeRateDisagrees]
         ValidationSuccess _ -> expectationFailure "Expected a fee at the wrong rate to be refused"
 
     it "counts each payout it was given" $ do
@@ -465,14 +465,14 @@ spec = do
         ValidationSuccess month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` [account 10_000]
 
 data StripeErrorKind
-  = KindReport
-  | KindForeignTaxCollected
-  | KindNoVATRate
-  | KindHomeNontaxable
-  | KindDoesNotReconcile
-  | KindNoBalanceCategory
-  | KindSum
-  | KindRefundsExceedSales
-  | KindFeeRateDisagrees
-  | KindWrongCurrency
+  = StripeErrorKindReport
+  | StripeErrorKindForeignTaxCollected
+  | StripeErrorKindNoVATRate
+  | StripeErrorKindHomeNontaxable
+  | StripeErrorKindDoesNotReconcile
+  | StripeErrorKindNoBalanceCategory
+  | StripeErrorKindSum
+  | StripeErrorKindRefundsExceedSales
+  | StripeErrorKindFeeRateDisagrees
+  | StripeErrorKindWrongCurrency
   deriving (Show, Eq)

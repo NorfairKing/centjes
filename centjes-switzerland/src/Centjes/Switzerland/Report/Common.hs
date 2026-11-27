@@ -57,11 +57,11 @@ combineLots =
     . MultiAccount.unMultiAccount
 
 data DeductibleDeclaration ann
-  = DefinitelyDeductible !ann
-  | DefinitelyNotDeductible !ann
-  | Undeclared
-  | RedundantlyDeclared !ann !ann
-  | AmbiguouslyDeclared !ann !ann
+  = DeductibleDeclarationDefinitelyDeductible !ann
+  | DeductibleDeclarationDefinitelyNotDeductible !ann
+  | DeductibleDeclarationUndeclared
+  | DeductibleDeclarationRedundantlyDeclared !ann !ann
+  | DeductibleDeclarationAmbiguouslyDeclared !ann !ann
 
 decideDeductible ::
   Maybe ann ->
@@ -75,17 +75,17 @@ decideDeductible
   mLocallyDeductible
   mLocallyNotDeductible =
     case (mGloballyDeductible, mGloballyNotDeductible, mLocallyDeductible, mLocallyNotDeductible) of
-      (Nothing, Nothing, Nothing, Nothing) -> Undeclared
-      (Just l, Nothing, Nothing, Nothing) -> DefinitelyDeductible l
-      (Nothing, Just l, Nothing, Nothing) -> DefinitelyNotDeductible l
-      (Nothing, Nothing, Just l, Nothing) -> DefinitelyDeductible l
-      (Nothing, Nothing, Nothing, Just l) -> DefinitelyNotDeductible l
-      (Just lg, Nothing, Just ll, Nothing) -> RedundantlyDeclared lg ll
-      (Nothing, Just lg, Nothing, Just ll) -> RedundantlyDeclared lg ll
-      (Just ly, Just ln, _, Nothing) -> AmbiguouslyDeclared ly ln
-      (Just ly, _, _, Just ln) -> AmbiguouslyDeclared ly ln
-      (Nothing, Nothing, Just ly, Just ln) -> AmbiguouslyDeclared ly ln
-      (Nothing, Just ln, Just ly, _) -> AmbiguouslyDeclared ly ln
+      (Nothing, Nothing, Nothing, Nothing) -> DeductibleDeclarationUndeclared
+      (Just l, Nothing, Nothing, Nothing) -> DeductibleDeclarationDefinitelyDeductible l
+      (Nothing, Just l, Nothing, Nothing) -> DeductibleDeclarationDefinitelyNotDeductible l
+      (Nothing, Nothing, Just l, Nothing) -> DeductibleDeclarationDefinitelyDeductible l
+      (Nothing, Nothing, Nothing, Just l) -> DeductibleDeclarationDefinitelyNotDeductible l
+      (Just lg, Nothing, Just ll, Nothing) -> DeductibleDeclarationRedundantlyDeclared lg ll
+      (Nothing, Just lg, Nothing, Just ll) -> DeductibleDeclarationRedundantlyDeclared lg ll
+      (Just ly, Just ln, _, Nothing) -> DeductibleDeclarationAmbiguouslyDeclared ly ln
+      (Just ly, _, _, Just ln) -> DeductibleDeclarationAmbiguouslyDeclared ly ln
+      (Nothing, Nothing, Just ly, Just ln) -> DeductibleDeclarationAmbiguouslyDeclared ly ln
+      (Nothing, Just ln, Just ly, _) -> DeductibleDeclarationAmbiguouslyDeclared ly ln
 
 dayInYear :: Year -> Day -> Bool
 dayInYear year day =

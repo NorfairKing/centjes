@@ -36,7 +36,7 @@ import Text.Colour
 
 runCentjesNetWorth :: Settings -> NetWorthSettings -> LoggingT IO ()
 runCentjesNetWorth Settings {..} NetWorthSettings {..} =
-  loadMWatchedModules settingWatch settingLedgerFile $ \(declarations, fileMap) -> do
+  loadMWatchedModules settingsWatch settingsLedgerFile $ \(declarations, fileMap) -> do
     let diagnostic = diagFromFileMap fileMap
     ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
     report <-
@@ -44,13 +44,13 @@ runCentjesNetWorth Settings {..} NetWorthSettings {..} =
         liftIO $
           checkValidation diagnostic $
             produceNetWorthReport
-              netWorthSettingCurrency
-              netWorthSettingBegin
-              netWorthSettingEnd
+              netWorthSettingsCurrency
+              netWorthSettingsBegin
+              netWorthSettingsEnd
               ledger
-    liftIO $ case netWorthSettingOutputFormat of
+    liftIO $ case netWorthSettingsOutputFormat of
       OutputFormatTerminal ->
-        putChunksLocaleWith settingTerminalCapabilities $
+        putChunksLocaleWith settingsTerminalCapabilities $
           renderNetWorthReport report
       OutputFormatCSV -> case report of
         NetWorthReportConverted converted ->
@@ -65,8 +65,8 @@ renderNetWorthReport = \case
 
 renderConvertedReport :: NetWorthReportConvertedData ann -> [Chunk]
 renderConvertedReport NetWorthReportConvertedData {..} =
-  let Located _ quantisationFactor = currencyQuantisationFactor netWorthReportConvertedCurrency
-      symbol = currencySymbol netWorthReportConvertedCurrency
+  let Located _ quantisationFactor = currencyQuantisationFactor netWorthReportConvertedDataCurrency
+      symbol = currencySymbol netWorthReportConvertedDataCurrency
       entriesChunks =
         concatMap
           ( \(day, account) ->
@@ -79,16 +79,16 @@ renderConvertedReport NetWorthReportConvertedData {..} =
                     chunk "\n"
                   ]
           )
-          (V.toList netWorthReportConvertedEntries)
-      balanceChunks = case netWorthReportConvertedBalanceReport of
+          (V.toList netWorthReportConvertedDataEntries)
+      balanceChunks = case netWorthReportConvertedDataBalanceReport of
         Nothing -> []
         Just balanceReport ->
-          chunk "\n" : renderBalanceReport DoNotShowEmpty balanceReport
+          chunk "\n" : renderBalanceReport ShowEmptyHide balanceReport
    in entriesChunks ++ balanceChunks
 
 renderMultiCurrencyReport :: NetWorthReportMultiCurrencyData ann -> [Chunk]
 renderMultiCurrencyReport NetWorthReportMultiCurrencyData {..} =
-  let width = foldMap (multiAccountMaxWidth . snd) (V.toList netWorthReportMultiCurrencyEntries)
+  let width = foldMap (multiAccountMaxWidth . snd) (V.toList netWorthReportMultiCurrencyDataEntries)
       entriesChunks =
         concatMap
           ( \(day, multiAccount) ->
@@ -104,18 +104,18 @@ renderMultiCurrencyReport NetWorthReportMultiCurrencyData {..} =
                         ++ [chunk "\n"]
                         ++ concatMap (\row -> indent ++ intersperse (chunk " ") row ++ [chunk "\n"]) restRows
           )
-          (V.toList netWorthReportMultiCurrencyEntries)
-      balanceChunks = case netWorthReportMultiCurrencyBalanceReport of
+          (V.toList netWorthReportMultiCurrencyDataEntries)
+      balanceChunks = case netWorthReportMultiCurrencyDataBalanceReport of
         Nothing -> []
         Just balanceReport ->
-          chunk "\n" : renderBalanceReport DoNotShowEmpty balanceReport
+          chunk "\n" : renderBalanceReport ShowEmptyHide balanceReport
    in entriesChunks ++ balanceChunks
 
 renderNetWorthReportCSV :: NetWorthReportConvertedData ann -> LB.ByteString
 renderNetWorthReportCSV NetWorthReportConvertedData {..} =
-  let Located _ quantisationFactor = currencyQuantisationFactor netWorthReportConvertedCurrency
+  let Located _ quantisationFactor = currencyQuantisationFactor netWorthReportConvertedDataCurrency
       header = "date,balance\n"
-      rows = foldMap (renderCSVRow quantisationFactor) (V.toList netWorthReportConvertedEntries)
+      rows = foldMap (renderCSVRow quantisationFactor) (V.toList netWorthReportConvertedDataEntries)
    in Builder.toLazyByteString (header <> rows)
 
 renderCSVRow :: QuantisationFactor -> (Day, Money.Account) -> Builder.Builder

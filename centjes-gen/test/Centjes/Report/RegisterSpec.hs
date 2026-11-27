@@ -44,7 +44,7 @@ spec = do
   let withSingleCurrencyRegister ::
         Path Abs File ->
         Path Abs File ->
-        ([RegisterBlock 'SingleCurrency SourceSpan] -> IO ()) ->
+        ([RegisterBlock 'AmountModeSingleCurrency SourceSpan] -> IO ()) ->
         IO ()
       withSingleCurrencyRegister af configFile assertion = do
         mConfig <- do
@@ -69,17 +69,17 @@ spec = do
             rr <-
               shouldValidate diag $
                 produceRegister
-                  registerSettingFilter
-                  registerSettingBlockSize
-                  registerSettingCurrency
+                  registerSettingsFilter
+                  registerSettingsBlockSize
+                  registerSettingsCurrency
                   registerSettingShowVirtual
-                  registerSettingBegin
-                  registerSettingEnd
+                  registerSettingsBegin
+                  registerSettingsEnd
                   ledger
             case rr of
-              AnyConverted ConvertedRegister {..} ->
+              AnyRegisterConverted ConvertedRegister {..} ->
                 assertion $ V.toList $ registerBlocks convertedRegister
-              AnyMultiCurrency _ ->
+              AnyRegisterMultiCurrency _ ->
                 -- Multi-currency registers don't have single-currency blocks; skip
                 pure ()
   let expectedAverage :: Money.Account -> Integer -> Money.Account
@@ -131,12 +131,12 @@ spec = do
                 rr <-
                   shouldValidate diag $
                     produceRegister
-                      registerSettingFilter
-                      registerSettingBlockSize
-                      registerSettingCurrency
+                      registerSettingsFilter
+                      registerSettingsBlockSize
+                      registerSettingsCurrency
                       registerSettingShowVirtual
-                      registerSettingBegin
-                      registerSettingEnd
+                      registerSettingsBegin
+                      registerSettingsEnd
                       ledger
 
                 shouldBeValid rr
@@ -220,12 +220,12 @@ spec = do
                 errs <-
                   shouldFailToValidate $
                     produceRegister
-                      registerSettingFilter
-                      registerSettingBlockSize
-                      registerSettingCurrency
+                      registerSettingsFilter
+                      registerSettingsBlockSize
+                      registerSettingsCurrency
                       registerSettingShowVirtual
-                      registerSettingBegin
-                      registerSettingEnd
+                      registerSettingsBegin
+                      registerSettingsEnd
                       ledger
 
                 pure $ renderValidationErrors diag errs

@@ -47,27 +47,27 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
   typstTemplateFile <- resolveFile assetsDir "vat.typ"
 
   runStderrLoggingT $
-    loadMWatchedModules settingWatch (settingBaseDir </> settingLedgerFile) $ \(declarations, fileMap) -> do
+    loadMWatchedModules settingsWatch (settingsBaseDir </> settingsLedgerFile) $ \(declarations, fileMap) -> do
       let diag = diagFromFileMap fileMap
       let centjesFiles = M.fromList $ map (\(k, _) -> ([reldir|ledger|] </> k, k)) $ M.toList fileMap
 
       ledger <-
         liftIO $
           checkValidation diag $
-            filterLedgerByPricesFile settingPricesFile
+            filterLedgerByPricesFile settingsPricesFile
               <$> compileDeclarations declarations
       -- Check ahead of time, so we don't generate reports of invalid ledgers
       val <- runValidationT $ doCompleteCheck declarations
       void $ liftIO $ checkValidation diag val
 
-      let validation = runReporter $ produceVATReport vatSettingInput ledger
+      let validation = runReporter $ produceVATReport vatSettingsInput ledger
       (vatReport, reportFiles) <- liftIO $ checkValidation diag validation
 
       let includedFiles = M.union reportFiles centjesFiles
 
       let input = vatReportInput vatReport
 
-      withPacketDir settingClean vatSettingPacketDir $ \packetDir -> do
+      withPacketDir settingsClean vatSettingsPacketDir $ \packetDir -> do
         -- Write the xml to a file
         xmlFile <- do
           now <- liftIO getCurrentTime
@@ -163,14 +163,14 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
                   "in the packet at",
                   fromRelFile to
                 ]
-          let fromFile = settingBaseDir </> from
+          let fromFile = settingsBaseDir </> from
           let packetFile = packetDir </> to
           ensureDir (parent packetFile)
           copyFile fromFile packetFile
           pure (to, packetFile)
 
         -- Create a nice zip file
-        createZipFile vatSettingZipFile $
+        createZipFile vatSettingsZipFile $
           M.insert [relfile|README.pdf|] readmeFile $
             M.insert [relfile|raw-input.json|] jsonInputFile $
               M.insert [relfile|vat.xml|] xmlFile absFiles
@@ -179,5 +179,5 @@ runCentjesSwitzerlandVAT Settings {..} VATSettings {..} = do
           T.pack $
             unwords
               [ "Succesfully created packet",
-                fromAbsFile vatSettingZipFile
+                fromAbsFile vatSettingsZipFile
               ]

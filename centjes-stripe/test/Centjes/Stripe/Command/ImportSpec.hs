@@ -290,7 +290,7 @@ spec = do
       existing <- moduleOf here withAnImport
       transactions <- transactionsOf here twoMonths
       let merged = mergeTransactionDeclarations existing (map noLoc transactions)
-      map (locatedValue . importFile . locatedValue) (moduleImports merged) `shouldBe` [[relfile|stripe-by-hand|]]
+      map (locatedValue . unImport . locatedValue) (moduleImports merged) `shouldBe` [[relfile|stripe-by-hand|]]
 
     -- The whole point: a month the user has rewritten stays rewritten.
     it "leaves a hand-edited month exactly as the user left it" $ do

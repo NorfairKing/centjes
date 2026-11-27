@@ -16,16 +16,16 @@ getSettings :: IO Settings
 getSettings = runSettingsParser version "centjes docs site"
 
 data Settings = Settings
-  { settingPort :: !Int,
-    settingGoogleAnalyticsTracking :: !(Maybe Text),
-    settingGoogleSearchConsoleVerification :: !(Maybe Text)
+  { settingsPort :: !Int,
+    settingsGoogleAnalyticsTracking :: !(Maybe Text),
+    settingsGoogleSearchConsoleVerification :: !(Maybe Text)
   }
 
 instance HasParser Settings where
   settingsParser =
     subEnv_ "centjes-docs-site" $
       withLocalYamlConfig $ do
-        settingPort <-
+        settingsPort <-
           setting
             [ help "port to serve web requests on on",
               reader auto,
@@ -33,7 +33,7 @@ instance HasParser Settings where
               value 8080,
               metavar "PORT"
             ]
-        settingGoogleAnalyticsTracking <-
+        settingsGoogleAnalyticsTracking <-
           optional $
             setting
               [ help "The Google analytics tracking code",
@@ -41,7 +41,7 @@ instance HasParser Settings where
                 name "google-analytics-tracking",
                 metavar "CODE"
               ]
-        settingGoogleSearchConsoleVerification <-
+        settingsGoogleSearchConsoleVerification <-
           optional $
             setting
               [ help "The Google search console verification code",

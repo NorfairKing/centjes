@@ -117,7 +117,7 @@ type ImportM = ValidationT ImportError (LoggingT IO)
 
 runCentjesStripeImport :: Settings -> ImportSettings -> IO ()
 runCentjesStripeImport settings importSettings = runStderrLoggingT $ do
-  (declarations, fileMap) <- loadModules' (settingLedgerFile settings)
+  (declarations, fileMap) <- loadModules' (settingsLedgerFile settings)
   let diag = diagFromFileMap fileMap
   currencies <- liftIO $ checkValidation diag $ compileDeclarationsCurrencies declarations
   validation <- runValidationT (importStripe settings importSettings currencies fileMap)
@@ -130,9 +130,9 @@ importStripe ::
   Map (Path Rel File) (Text, LModule) ->
   ImportM ()
 importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap = do
-  let ledgerDirectory = parent settingLedgerFile
-  outputRelFile <- case stripProperPrefix ledgerDirectory importSettingOutput of
-    Nothing -> validationTFailure $ ImportErrorOutputOutsideLedger importSettingOutput ledgerDirectory
+  let ledgerDirectory = parent settingsLedgerFile
+  outputRelFile <- case stripProperPrefix ledgerDirectory importSettingsOutput of
+    Nothing -> validationTFailure $ ImportErrorOutputOutsideLedger importSettingsOutput ledgerDirectory
     Just relFile -> pure relFile
 
   -- What the output file already says, from the parse of that file itself rather than
@@ -146,9 +146,9 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
       -- Not part of the ledger.  Creating it is fine; finding one already there is not,
       -- because then this importer cannot read back what it wrote and would replace
       -- by-hand edits and already-filed months with a fresh draft.
-      outputExists <- doesFileExist importSettingOutput
+      outputExists <- doesFileExist importSettingsOutput
       if outputExists
-        then validationTFailure $ ImportErrorOutputNotImported outputRelFile settingLedgerFile
+        then validationTFailure $ ImportErrorOutputNotImported outputRelFile settingsLedgerFile
         else
           pure
             Module
@@ -157,18 +157,18 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
               }
   let alreadyThere = monthsAlreadyImported (moduleDeclarations existingModule)
 
-  quantisationFactor <- case M.lookup importSettingCurrency currencies of
-    Nothing -> validationTFailure $ ImportErrorNoSuchCurrency importSettingCurrency
+  quantisationFactor <- case M.lookup importSettingsCurrency currencies of
+    Nothing -> validationTFailure $ ImportErrorNoSuchCurrency importSettingsCurrency
     Just (Located _ quantisationFactor) -> pure quantisationFactor
-  let stripeCurrency = StripeCurrency (Text.toLower (CurrencySymbol.toText importSettingCurrency))
+  let stripeCurrency = StripeCurrency (Text.toLower (CurrencySymbol.toText importSettingsCurrency))
 
   man <- liftIO HTTP.newTlsManager
 
   -- Which months are worth asking about at all: over, not already in the file, and
   -- reported on completely enough by every report this needs.
   today <- liftIO $ utctDay <$> getCurrentTime
-  reportTypes <- traverse (api . fetchReportType man importSettingKey . reportKindTypeId) allReportKinds
-  let (wanted, held) = monthsToImport importSettingBegin today alreadyThere reportTypes
+  reportTypes <- traverse (api . fetchReportType man importSettingsKey . reportKindTypeId) allReportKinds
+  let (wanted, held) = monthsToImport importSettingsBegin today alreadyThere reportTypes
   mapM_ (uncurry logNotYet) held
 
   -- One pipeline from the months worth asking about to the module to write.  A stage only
@@ -179,15 +179,15 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
     runConduit $
       fuseBoth
         ( yieldMany wanted
-            .| C.mapM (monthReports man importSettingKey stripeCurrency ledgerDirectory importSettingReportsDirectory)
+            .| C.mapM (monthReports man importSettingsKey stripeCurrency ledgerDirectory importSettingsReportsDirectory)
             .| C.map
               ( mapValidationFailure ImportErrorAggregate
                   . aggregateMonth
                     AggregateSettings
-                      { aggregateSettingHomeCountry = Text.toUpper importSettingHomeCountry,
-                        aggregateSettingVATRates = swissVATRates,
-                        aggregateSettingCurrency = stripeCurrency,
-                        aggregateSettingFeesVATRate = importSettingFeesVATRatePercentage / 100
+                      { aggregateSettingsHomeCountry = Text.toUpper importSettingsHomeCountry,
+                        aggregateSettingsVATRates = swissVATRates,
+                        aggregateSettingsCurrency = stripeCurrency,
+                        aggregateSettingsFeesVATRate = importSettingsFeesVATRatePercentage / 100
                       }
                     quantisationFactor
               )
@@ -204,7 +204,7 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
   let output = formatModule merged
   case M.lookup outputRelFile fileMap of
     Just (onDisk, _) | onDisk == output -> logInfoN $ Text.pack $ unwords ["Leaving", fromRelFile outputRelFile, "alone."]
-    _ -> liftIO $ SB.writeFile (fromAbsFile importSettingOutput) (TE.encodeUtf8 output)
+    _ -> liftIO $ SB.writeFile (fromAbsFile importSettingsOutput) (TE.encodeUtf8 output)
 
   -- Only after the months that did come through are safely on disk, because a month that
   -- stopped the run should not cost the ones before it.  The run still ends in failure, so
@@ -230,7 +230,7 @@ sinkModule importSettings quantisationFactor alreadyThere existingModule = do
           stripeTransactions
             (importDeclarationSettings importSettings)
             quantisationFactor
-            (importSettingCurrency importSettings)
+            (importSettingsCurrency importSettings)
             months
   let toAdd = transactionsToAdd alreadyThere transactions
   lift $
@@ -258,8 +258,8 @@ evidenceFor ImportSettings {..} ledgerDirectory month
         liftValidation $
           mapValidationFailure ImportErrorDeclaration $
             monthDocumentPath
-              importSettingDocumentsDirectory
-              importSettingFeesAttachmentPattern
+              importSettingsDocumentsDirectory
+              importSettingsFeesAttachmentPattern
               (stripeMonthMonth month)
       exists <- doesFileExist (ledgerDirectory </> taxInvoice)
       pure (month, if exists then Nothing else Just taxInvoice)

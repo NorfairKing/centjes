@@ -210,7 +210,7 @@ type LImport = LLocated Import
 -- @
 -- bank.cent
 -- @
-newtype Import ann = Import {importFile :: GenLocated ann (Path Rel File)}
+newtype Import ann = Import {unImport :: GenLocated ann (Path Rel File)}
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (Import ann)
@@ -288,7 +288,7 @@ data AccountAssertion ann
 instance (Validity ann) => Validity (AccountAssertion ann)
 
 data AccountAssertionVirtual
-  = AccountAssertionNoVirtual
+  = AccountAssertionVirtualNotAllowed
   | AccountAssertionVirtualAllowed
   | AccountAssertionVirtualOnly
   deriving stock (Show, Generic)
@@ -498,9 +498,9 @@ stripRatioExpressionAnnotation RatioExpression {..} =
 
 stripTransactionExtraAnnotation :: TransactionExtra ann -> TransactionExtra ()
 stripTransactionExtraAnnotation = \case
-  TransactionAttachment (Located _ ea) -> TransactionAttachment (noLoc (stripExtraAttachmentAnnotation ea))
-  TransactionAssertion (Located _ ea) -> TransactionAssertion (noLoc (stripExtraAssertionAnnotation ea))
-  TransactionTag (Located _ et) -> TransactionTag (noLoc (stripExtraTagAnnotation et))
+  TransactionExtraAttachment (Located _ ea) -> TransactionExtraAttachment (noLoc (stripExtraAttachmentAnnotation ea))
+  TransactionExtraAssertion (Located _ ea) -> TransactionExtraAssertion (noLoc (stripExtraAssertionAnnotation ea))
+  TransactionExtraTag (Located _ et) -> TransactionExtraTag (noLoc (stripExtraTagAnnotation et))
 
 stripExtraAttachmentAnnotation :: ExtraAttachment ann -> ExtraAttachment ()
 stripExtraAttachmentAnnotation (ExtraAttachment (Located _ a)) = ExtraAttachment (noLoc (stripAttachmentAnnotation a))
@@ -696,19 +696,19 @@ data TransactionExtra ann
     -- @
     -- + attach receipt.pdf
     -- @
-    TransactionAttachment !(GenLocated ann (ExtraAttachment ann))
+    TransactionExtraAttachment !(GenLocated ann (ExtraAttachment ann))
   | -- | Assertion
     --
     -- @
     -- + assert assets = 5 USD
     -- @
-    TransactionAssertion !(GenLocated ann (ExtraAssertion ann))
+    TransactionExtraAssertion !(GenLocated ann (ExtraAssertion ann))
   | -- | Tag
     --
     -- @
     -- + tag deductible
     -- @
-    TransactionTag !(GenLocated ann (ExtraTag ann))
+    TransactionExtraTag !(GenLocated ann (ExtraTag ann))
   deriving stock (Show, Generic)
 
 instance (Validity ann) => Validity (TransactionExtra ann)
@@ -732,7 +732,7 @@ type LAttachment = LLocated Attachment
 -- @
 -- receipt.pdf
 -- @
-newtype Attachment ann = Attachment {attachmentPath :: GenLocated ann (Path Rel File)}
+newtype Attachment ann = Attachment {unAttachment :: GenLocated ann (Path Rel File)}
   deriving stock (Show, Eq, Generic)
 
 instance (Validity ann) => Validity (Attachment ann)

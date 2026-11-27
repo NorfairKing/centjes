@@ -28,8 +28,8 @@ getSettings :: IO Settings
 getSettings = runSettingsParser version "stock price downloader for centjes"
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File),
-    settingCommand :: !Command
+  { settingsLedgerFile :: !(Path Abs File),
+    settingsCommand :: !Command
   }
 
 instance HasParser Settings where
@@ -40,7 +40,7 @@ parseSettings :: Parser Settings
 parseSettings =
   subEnv_ "centjes-stocks" $
     withConfigurableYamlConfig (runIO $ resolveFile' "stocks.yaml") $ do
-      settingLedgerFile <-
+      settingsLedgerFile <-
         filePathSetting
           [ help "ledger file",
             short 'l',
@@ -48,7 +48,7 @@ parseSettings =
             value "ledger.cent",
             metavar "FILE_PATH"
           ]
-      settingCommand <- settingsCommandParser
+      settingsCommand <- settingsCommandParser
       pure Settings {..}
 
 newtype Command
@@ -87,9 +87,9 @@ instance HasCodec StockSettings where
 
 data DownloadRatesSettings = DownloadRatesSettings
   { downloadRatesSettingStocks :: !(NonEmpty StockSettings),
-    downloadRatesSettingBegin :: !Day,
-    downloadRatesSettingEnd :: !Day,
-    downloadRatesSettingOutput :: !(Maybe (Path Abs File))
+    downloadRatesSettingsBegin :: !Day,
+    downloadRatesSettingsEnd :: !Day,
+    downloadRatesSettingsOutput :: !(Maybe (Path Abs File))
   }
 
 {-# ANN parseDownloadRatesSettings ("NOCOVER" :: String) #-}
@@ -100,7 +100,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
       [ help "Stock configurations with symbol and currency",
         conf "stocks"
       ]
-  downloadRatesSettingBegin <-
+  downloadRatesSettingsBegin <-
     choice
       [ setting
           [ help "The begin date (inclusive), default: Start of the year",
@@ -113,7 +113,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
           let (y, _, _) = toGregorian today
           pure $ fromGregorian y 1 1
       ]
-  downloadRatesSettingEnd <-
+  downloadRatesSettingsEnd <-
     choice
       [ setting
           [ help "The final date (inclusive), default: Yesterday",
@@ -123,7 +123,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
           ],
         runIO $ addDays (-1) . utctDay <$> getCurrentTime
       ]
-  downloadRatesSettingOutput <-
+  downloadRatesSettingsOutput <-
     optional $
       filePathSetting
         [ help "Output file path (default: stdout)",

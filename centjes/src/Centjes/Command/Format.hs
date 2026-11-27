@@ -36,8 +36,8 @@ import UnliftIO
 
 runCentjesFormat :: Settings -> FormatSettings -> LoggingT IO ()
 runCentjesFormat Settings {..} FormatSettings {..} =
-  case formatSettingFileOrDir of
-    Nothing -> formatFromLedger settingLedgerFile
+  case formatSettingsFileOrDir of
+    Nothing -> formatFromLedger settingsLedgerFile
     Just (Right dir) -> formatDir M.empty dir
     Just (Left file) -> formatSingleFile file
 

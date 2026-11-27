@@ -8,6 +8,6 @@ import Centjes.Stripe.OptParse
 runCentjesStripe :: IO ()
 runCentjesStripe = do
   settings@Settings {..} <- getSettings
-  case settingCommand of
+  case settingsCommand of
     CommandImport importSettings ->
       runCentjesStripeImport settings importSettings

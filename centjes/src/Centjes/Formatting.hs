@@ -43,7 +43,7 @@ multiAccountChunksWithWidth mWidth ma =
         (M.toList accounts)
 
 currencySymbolChunk :: CurrencySymbol -> Chunk
-currencySymbolChunk = fore magenta . chunk . currencySymbolText
+currencySymbolChunk = fore magenta . chunk . unCurrencySymbol
 
 -- | Render a commodity as it is written in a posting, lot and all.
 --

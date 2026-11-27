@@ -45,9 +45,9 @@ parseInstructions =
         <*> settingsParser
 
 data Settings = Settings
-  { settingLedgerFile :: !(Path Abs File),
-    settingWatch :: !Bool,
-    settingLogLevel :: !LogLevel
+  { settingsLedgerFile :: !(Path Abs File),
+    settingsWatch :: !Bool,
+    settingsLogLevel :: !LogLevel
   }
 
 instance HasParser Settings where
@@ -56,14 +56,14 @@ instance HasParser Settings where
 {-# ANN parseSettings ("NOCOVER" :: String) #-}
 parseSettings :: Parser Settings
 parseSettings = do
-  settingLedgerFile <-
+  settingsLedgerFile <-
     filePathSetting
       [ help "ledger file",
         short 'l',
         name "ledger",
         value "ledger.cent"
       ]
-  settingWatch <-
+  settingsWatch <-
     setting
       [ help "Run centjes in a loop",
         name "watch",
@@ -73,7 +73,7 @@ parseSettings = do
         reader exists,
         value False
       ]
-  settingLogLevel <- settingsParser
+  settingsLogLevel <- settingsParser
   pure Settings {..}
 
 data Dispatch
@@ -91,10 +91,10 @@ parseDispatch =
     ]
 
 data AllSettings = AllSettings
-  { allSettingCurrency :: !CurrencySymbol,
-    allSettingFilter :: !Filter,
-    allSettingOutputFile :: !(Path Abs File),
-    allSettingTitle :: !String
+  { allSettingsCurrency :: !CurrencySymbol,
+    allSettingsFilter :: !Filter,
+    allSettingsOutputFile :: !(Path Abs File),
+    allSettingsTitle :: !String
   }
 
 {-# ANN parseAllSettings ("NOCOVER" :: String) #-}
@@ -110,8 +110,8 @@ parseAllSettings = subConfig_ "all" $ do
           conf "currency",
           metavar "CURRENCY"
         ]
-  allSettingFilter <- settingsParser
-  allSettingOutputFile <-
+  allSettingsFilter <- settingsParser
+  allSettingsOutputFile <-
     filePathSetting
       [ help "Output SVG file",
         short 'o',
@@ -130,8 +130,8 @@ parseAllSettings = subConfig_ "all" $ do
         ]
   pure
     AllSettings
-      { allSettingCurrency = fromMaybe (CurrencySymbol "CHF") mCurrency,
-        allSettingFilter = allSettingFilter,
-        allSettingOutputFile = allSettingOutputFile,
-        allSettingTitle = fromMaybe "Assets" mTitle
+      { allSettingsCurrency = fromMaybe (CurrencySymbol "CHF") mCurrency,
+        allSettingsFilter = allSettingsFilter,
+        allSettingsOutputFile = allSettingsOutputFile,
+        allSettingsTitle = fromMaybe "Assets" mTitle
       }

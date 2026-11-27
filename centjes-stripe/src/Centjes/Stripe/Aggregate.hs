@@ -59,9 +59,9 @@ data AggregateSettings = AggregateSettings
     -- Revenue taxed here is domestic; everything else is foreign.  Tax collected for
     -- any /other/ country is money owed to that country rather than revenue, which
     -- this importer does not model, so it refuses instead.
-    aggregateSettingHomeCountry :: !Text,
+    aggregateSettingsHomeCountry :: !Text,
     -- | The VAT rates the home country's report can legitimately show.
-    aggregateSettingVATRates :: !(NonEmpty Rational),
+    aggregateSettingsVATRates :: !(NonEmpty Rational),
     -- | The currency the reports are read in, as Stripe spells it.
     --
     -- Checked against every row rather than assumed.  Three of the four reports are
@@ -69,7 +69,7 @@ data AggregateSettings = AggregateSettings
     -- thing standing between a sale settled in euros and its amount being booked as
     -- francs.  That mistake is invisible to the reconciliation, which sees the month's
     -- total and not which side of the domestic split each figure went to.
-    aggregateSettingCurrency :: !StripeCurrency,
+    aggregateSettingsCurrency :: !StripeCurrency,
     -- | The rate Stripe charges VAT on its own fees at.
     --
     -- Configured rather than read off the amounts, because a small fee cannot say which
@@ -80,7 +80,7 @@ data AggregateSettings = AggregateSettings
     -- The amounts still get to object.  Whenever a month's fee is big enough to name a
     -- rate, that rate has to be this one, so a wrong setting fails in the first month
     -- that can tell rather than quietly claiming the wrong input tax forever.
-    aggregateSettingFeesVATRate :: !Rational
+    aggregateSettingsFeesVATRate :: !Rational
   }
 
 -- | The reports for one month, as fetched.
@@ -343,7 +343,7 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
   let text = readText month
   let rational = readRational month
 
-  let inLedgerCurrency = requireRowCurrency month aggregateSettingCurrency
+  let inLedgerCurrency = requireRowCurrency month aggregateSettingsCurrency
 
   taxRows <-
     traverse
@@ -364,7 +364,7 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
   -- Tax collected anywhere but home is another authority's money, not revenue.
   traverse_
     ( \TaxRow {..} ->
-        when (taxRowCountry /= aggregateSettingHomeCountry && taxRowCollected /= Account.zero) $
+        when (taxRowCountry /= aggregateSettingsHomeCountry && taxRowCollected /= Account.zero) $
           validationFailure $
             StripeErrorForeignTaxCollected month taxRowCountry taxRowReportedRate taxRowCollected
     )
@@ -378,7 +378,7 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
   let homeRows =
         [ taxRow
         | taxRow <- taxRows,
-          taxRowCountry taxRow == aggregateSettingHomeCountry,
+          taxRowCountry taxRow == aggregateSettingsHomeCountry,
           any
             (/= Account.zero)
             [ taxRowTaxable taxRow,
@@ -400,7 +400,7 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
               then validationFailure $ StripeErrorHomeNontaxable month taxRowCountry taxRowTaxable taxRowNontaxable
               else do
                 rate <-
-                  case rowVATRate aggregateSettingVATRates taxRowReportedRate taxRowTaxable taxRowCollected of
+                  case rowVATRate aggregateSettingsVATRates taxRowReportedRate taxRowTaxable taxRowCollected of
                     Nothing ->
                       validationFailure $
                         StripeErrorNoVATRate month taxRowCountry taxRowReportedRate taxRowTaxable taxRowCollected
@@ -422,7 +422,7 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
 
   -- What the month charged in total, and the home country's share of it, tax
   -- included.  Foreign revenue is the difference, so nothing can fall out.
-  chargeGross <- activityGross month aggregateSettingCurrency quantisationFactor monthReportsActivity "charge"
+  chargeGross <- activityGross month aggregateSettingsCurrency quantisationFactor monthReportsActivity "charge"
   homeGross <-
     requireSum month $
       concatMap (\TaxRow {..} -> [taxRowTaxable, taxRowCollected]) homeRows
@@ -457,11 +457,11 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
               if feeTax == Account.zero
                 then pure Nothing
                 else
-                  if rateFits aggregateSettingFeesVATRate feeAmount feeTax
-                    then pure (Just aggregateSettingFeesVATRate)
+                  if rateFits aggregateSettingsFeesVATRate feeAmount feeTax
+                    then pure (Just aggregateSettingsFeesVATRate)
                     else
                       validationFailure $
-                        StripeErrorFeeRateDisagrees month aggregateSettingFeesVATRate feeAmount feeTax
+                        StripeErrorFeeRateDisagrees month aggregateSettingsFeesVATRate feeAmount feeTax
             pure
               FeeLine
                 { feeLineDescription = description,
@@ -479,8 +479,8 @@ aggregateMonth AggregateSettings {..} quantisationFactor MonthReports {..} = do
           filter (payoutStatusMovedMoney . payoutStatus) monthReportsPayouts
       )
 
-  stripeMonthOpeningBalance <- balanceCategory month aggregateSettingCurrency quantisationFactor monthReportsBalance "starting_balance"
-  stripeMonthClosingBalance <- balanceCategory month aggregateSettingCurrency quantisationFactor monthReportsBalance "ending_balance"
+  stripeMonthOpeningBalance <- balanceCategory month aggregateSettingsCurrency quantisationFactor monthReportsBalance "starting_balance"
+  stripeMonthClosingBalance <- balanceCategory month aggregateSettingsCurrency quantisationFactor monthReportsBalance "ending_balance"
 
   -- Everything above is one of Stripe's own aggregates, so what they say the month
   -- did has to equal what the ledger would say it did.

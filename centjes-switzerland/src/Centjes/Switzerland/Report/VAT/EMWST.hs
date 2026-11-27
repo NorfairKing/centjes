@@ -186,14 +186,14 @@ instance ToElement GeneralInformation where
 -- Note that in eCH-0217 version 1.0 this used to be @eCH-0097:uidStructureType@,
 -- a structure with separate @uidOrganisationIdCategorie@ and
 -- @uidOrganisationId@ child elements.
-newtype UID = UID {uidToken :: Text}
+newtype UID = UID {unUID :: Text}
   deriving (Show)
 
 instance ToElement UID where
   toElement UID {..} =
     ech0217Element
       "uid"
-      [NodeContent uidToken]
+      [NodeContent unUID]
 
 -- | `turnoverComputationType`
 --
@@ -407,8 +407,8 @@ instance ToElement EffectiveReportingMethod where
 
 grossOrNetToken :: GrossOrNet -> Text
 grossOrNetToken = \case
-  Net -> "1"
-  Gross -> "2"
+  GrossOrNetNet -> "1"
+  GrossOrNetGross -> "2"
 
 -- | `turnoverTaxRateType`
 --
@@ -485,7 +485,7 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   -- @
   -- UID des Steuerpflichtigen, wobei im Element uidOrganisationIdCategory der Präfix (CHE)
   -- @
-  let generalInformationUID = UID {uidToken = vatIdToken vatReportVATId}
+  let generalInformationUID = UID {unUID = vatIdToken vatReportVATId}
   let generalInformationOrganisationName = vatReportOrganisationName
   let generalInformationReportingPeriodFrom = periodFirstDay vatReportQuarter
   let generalInformationReportingPeriodTill = periodLastDay vatReportQuarter

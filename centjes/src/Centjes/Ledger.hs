@@ -340,7 +340,7 @@ commodityQuantisationFactor = currencyQuantisationFactor . commodityCurrency
 -- | Render a commodity the way it is written in a posting.
 commodityText :: Commodity ann -> Text
 commodityText = \case
-  CommodityCurrency currency -> currencySymbolText (currencySymbol currency)
+  CommodityCurrency currency -> unCurrencySymbol (currencySymbol currency)
   CommodityLot lot -> lotText lot
 
 data Currency ann = Currency
@@ -391,7 +391,7 @@ lotText :: Lot ann -> Text
 lotText Lot {..} =
   T.pack $
     unwords
-      [ T.unpack (currencySymbolText (currencySymbol lotCurrency)),
+      [ T.unpack (unCurrencySymbol (currencySymbol lotCurrency)),
         "lot",
         "@",
         case ConversionRate.toDecimalLiteral lotBasisRate of
@@ -399,5 +399,5 @@ lotText Lot {..} =
           Nothing ->
             let r = ConversionRate.toRatio lotBasisRate
              in unwords [show (numerator r), "/", show (denominator r)],
-        T.unpack (currencySymbolText (currencySymbol lotBasisCurrency))
+        T.unpack (unCurrencySymbol (currencySymbol lotBasisCurrency))
       ]
