@@ -845,8 +845,8 @@ checkEntryAssertions ::
 checkEntryAssertions _ (EvaluatedEntryPrice _) = pure ()
 checkEntryAssertions accounts (EvaluatedEntryTransaction evaluatedTransaction) = do
   let Located tl t = evaluatedTransactionLocated evaluatedTransaction
-      balancesWithoutVirtual = evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction
-      balancesWithVirtual = evaluatedTransactionBalancesWithVirtual evaluatedTransaction
+  let balancesWithoutVirtual = evaluatedTransactionBalancesWithoutVirtual evaluatedTransaction
+  let balancesWithVirtual = evaluatedTransactionBalancesWithVirtual evaluatedTransaction
   -- Account type assertions stay real-only.
   checkAccountTypeAssertions accounts tl balancesWithoutVirtual
   traverse_
@@ -995,7 +995,7 @@ processEntry state = \case
               evaluatedTransactionBalancesWithoutVirtual = newBalancesWithoutVirtual,
               evaluatedTransactionPriceGraph = currentPriceGraph
             }
-        newState =
+    let newState =
           state
             { processStateBalancesWithVirtual = newBalancesWithVirtual,
               processStateBalancesWithoutVirtual = newBalancesWithoutVirtual
@@ -1034,7 +1034,7 @@ checkAccountTypeAssertions accounts tl =
         Nothing -> validationFailure $ EvaluatedLedgerErrorUndeclaredAccount tl an
         Just (Located adl acc) -> do
           let at = accountType acc
-              predicate = AccountType.assertion at
+          let predicate = AccountType.assertion at
           if all predicate (MultiAccount.unMultiAccount ab)
             then pure ()
             else validationFailure $ EvaluatedLedgerErrorAccountTypeAssertion tl adl at ab

@@ -685,9 +685,9 @@ compileRational ::
   Maybe (GenLocated ann Rational)
 compileRational (Located rel RationalExpression {..}) = do
   let Located _ ndl = rationalExpressionNumerator
-      n :: Rational
+  let n :: Rational
       n = DecimalLiteral.toRational ndl
-      d :: Rational
+  let d :: Rational
       d = maybe 1 (DecimalLiteral.toRational . locatedValue) rationalExpressionDenominator
   guard (d /= 0)
   let percentageMod = if rationalExpressionPercent then 1 / 100 else 1
@@ -706,7 +706,7 @@ compileTransaction ::
     )
 compileTransaction currencies accounts tags (Located l mt) = do
   let transactionTimestamp = Module.transactionTimestamp mt
-      transactionDescription = commentedValue <$> Module.transactionDescription mt
+  let transactionDescription = commentedValue <$> Module.transactionDescription mt
   postings <-
     traverse
       (compilePosting currencies accounts l . commentedValue)

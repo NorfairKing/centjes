@@ -37,7 +37,7 @@ runCentjesRatesGraph Settings {..} RatesGraphSettings {..} =
       let diagnostic = diagFromFileMap fileMap
       ledger <- withLoggedDuration "Compile" $ liftIO $ checkValidation diagnostic $ compileDeclarations declarations
       let priceGraph = pricesToPriceGraph (ledgerPrices ledger)
-          dotGraph = digraph (Data.GraphViz.Types.Monadic.Str "currency-rates") $ do
+      let dotGraph = digraph (Data.GraphViz.Types.Monadic.Str "currency-rates") $ do
             forM_ (M.keys (ledgerCurrencies ledger)) $ \currencySymbol ->
               node' (CurrencySymbol.toText currencySymbol)
             forM_ (M.toList (unPriceGraph priceGraph)) $ \(currencyFrom, toMap) ->
@@ -50,7 +50,7 @@ runCentjesRatesGraph Settings {..} RatesGraphSettings {..} =
                   (PriceGraph.Forward _, _, CommodityLot _) -> pure ()
                   (PriceGraph.Forward (rate, priority), CommodityCurrency fromCurrency, CommodityCurrency toCurrency) -> do
                     let from = currencySymbol fromCurrency
-                        to = currencySymbol toCurrency
+                    let to = currencySymbol toCurrency
                     edge
                       (CurrencySymbol.toText from)
                       (CurrencySymbol.toText to)

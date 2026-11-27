@@ -80,7 +80,7 @@ produceBalanceReportFromEvaluatedLedger ::
   Validation (BalanceError ann) (BalanceReport ann)
 produceBalanceReportFromEvaluatedLedger f mEnd mCurrencySymbolTo showVirtual evaluatedLedger = do
   let entries = evaluatedLedgerEntries evaluatedLedger
-      ledger = evaluatedLedgerSource evaluatedLedger
+  let ledger = evaluatedLedgerSource evaluatedLedger
 
   -- Truncate entries to end date
   let truncatedEntries = case mEnd of

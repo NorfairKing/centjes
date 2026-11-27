@@ -264,10 +264,10 @@ parseYahooResponse :: LB.ByteString -> Maybe StockHistory
 parseYahooResponse body = do
   YahooChartResponse (YahooChartResult apiCurrency timestamps closePrices) <- decode body
   let (divisor, _baseCurrency) = currencyInfo apiCurrency
-      timestampList = V.toList timestamps
-      priceList = V.toList closePrices
-      pricePairs = zip timestampList priceList
-      timeSeries = [(unixTimestampToDay ts, price / divisor) | (ts, Just price) <- pricePairs]
+  let timestampList = V.toList timestamps
+  let priceList = V.toList closePrices
+  let pricePairs = zip timestampList priceList
+  let timeSeries = [(unixTimestampToDay ts, price / divisor) | (ts, Just price) <- pricePairs]
   pure $ StockHistory apiCurrency timeSeries
 
 -- | Convert a stock price to a rate expression

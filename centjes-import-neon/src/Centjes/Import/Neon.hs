@@ -125,7 +125,7 @@ rowTransaction ::
   Validation ImportError' (Transaction ())
 rowTransaction currencies assetsAccountName expensesAccountName incomeAccountName Row {..} = do
   let transactionTimestamp = noLoc $ TimestampDay rowDate
-      transactionDescription =
+  let transactionDescription =
         noCommentsOn
           <$> Description.combine
             ( filter

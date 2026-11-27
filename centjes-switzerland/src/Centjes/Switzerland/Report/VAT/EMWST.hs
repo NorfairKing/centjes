@@ -491,8 +491,8 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   let generalInformationReportingPeriodTill = periodLastDay vatReportQuarter
   let xmlReportGeneralInformation = GeneralInformation {..}
   let Located _ qf = currencyQuantisationFactor vatReportCHF
-      amountLiteral = Amount.toDecimalLiteral qf
-      accountLiteral = Account.toDecimalLiteral qf
+  let amountLiteral = Amount.toDecimalLiteral qf
+  let accountLiteral = Account.toDecimalLiteral qf
   turnoverComputationTotalConsideration <- amountLiteral vatReportTotalRevenue
   turnoverComputationSuppliesToForeignCountries <- traverse amountLiteral (unlessZero vatReportTotalExportsRevenue)
   turnoverComputationSuppliesAbroad <- traverse amountLiteral (unlessZero vatReportTotalForeignRevenue)

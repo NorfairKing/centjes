@@ -105,7 +105,7 @@ produceConvertedReport ::
   Validation (NetWorthError ann) (NetWorthReportConvertedData ann)
 produceConvertedReport netWorthReportConvertedCurrency mBegin mEnd evaluatedLedger = do
   let ledger = evaluatedLedgerSource evaluatedLedger
-      entries = evaluatedLedgerEntries evaluatedLedger
+  let entries = evaluatedLedgerEntries evaluatedLedger
 
   -- Build day-boundary snapshots of (balances, priceGraph) from entries
   let daySnapshots = buildDaySnapshots (ledgerAccounts ledger) entries
@@ -160,7 +160,7 @@ produceMultiCurrencyReport ::
   Validation (NetWorthError ann) (NetWorthReportMultiCurrencyData ann)
 produceMultiCurrencyReport mBegin mEnd evaluatedLedger = do
   let ledger = evaluatedLedgerSource evaluatedLedger
-      entries = evaluatedLedgerEntries evaluatedLedger
+  let entries = evaluatedLedgerEntries evaluatedLedger
 
   -- Build day-boundary snapshots of (balances, priceGraph) from entries
   let daySnapshots = buildDaySnapshots (ledgerAccounts ledger) entries

@@ -1,7 +1,6 @@
 disabled-rules:
   - HsGenValidWithoutExtraChecking
   - HsNoSemigroupOnText
-  - HsOneLetPerBinding
   - HsPrefixNaming
   - HsStrictFields
   - TestNoTestHelpers

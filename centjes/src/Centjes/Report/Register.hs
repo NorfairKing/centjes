@@ -609,8 +609,8 @@ convertFlatRegister currencyTo mEnd prices pricesVec FlatRegister {..} = do
   let lastPriceDay = case M.lookupMax prices of
         Nothing -> Nothing
         Just (day, _) -> Just day
-      -- Limit trailing revaluations to the end date filter
-      effectiveLastPriceDay = case (lastPriceDay, mEnd) of
+  -- Limit trailing revaluations to the end date filter
+  let effectiveLastPriceDay = case (lastPriceDay, mEnd) of
         (Just lpd, Just end) -> Just (min lpd end)
         (lpd, Nothing) -> lpd
         (Nothing, _) -> Nothing
@@ -630,8 +630,8 @@ convertFlatRegister currencyTo mEnd prices pricesVec FlatRegister {..} = do
           _ -> pure []
       go convertedRunning rawBalances mLastDay (entry : rest) = do
         let Located _ ts = flatEntryTimestamp entry
-            day = Timestamp.toDay ts
-            currentPrices = flatEntryPriceGraph entry
+        let day = Timestamp.toDay ts
+        let currentPrices = flatEntryPriceGraph entry
 
         revalEntries <- case mLastDay of
           Nothing -> pure []
@@ -723,7 +723,7 @@ convertFlatPosting ::
     (ConvertedFlatPosting ann, Money.MultiAccount (Commodity ann))
 convertFlatPosting currencyTo priceGraph rawBalances FlatPosting {..} = do
   let Located pl Posting {..} = flatPosting
-      Located al _ = postingAccount
+  let Located al _ = postingAccount
 
   -- Convert the amount
   converted <-
@@ -811,8 +811,8 @@ computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalan
     goRevals _ [] = pure []
     goRevals prevConvertedTotal (Located _ firstPrice : rest) = do
       let Located _ ts = priceTimestamp firstPrice
-          priceDay = Timestamp.toDay ts
-          newPG = case M.lookupLE priceDay priceGraphs of
+      let priceDay = Timestamp.toDay ts
+      let newPG = case M.lookupLE priceDay priceGraphs of
             Nothing -> MemoisedPriceGraph.empty
             Just (_, pg) -> pg
 
@@ -833,7 +833,7 @@ computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalan
           -- Collect any following same-day prices that have zero difference
           -- (they share the same price graph, so their totals are identical)
           let (zeroCurrencies, restPrices) = collectZeroSameDayPrices priceDay newConvertedTotal rest
-              allCurrencies = priceCommodity firstPrice :| zeroCurrencies
+          let allCurrencies = priceCommodity firstPrice :| zeroCurrencies
           let reval =
                 ConvertedFlatRevaluation
                   { convertedFlatRevaluationTimestamp = priceTimestamp firstPrice,
@@ -884,7 +884,7 @@ groupMultiIntoBlocks ::
   Validation (RegisterError ann) (Register 'MultiCurrency ann)
 groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
   let mBeginBlock = (\begin -> dayBlockTitle begin blockSize) <$> mBegin
-      mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
+  let mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
 
   let entryBlockTitle ::
         FlatEntry ann ->
@@ -893,21 +893,7 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
         let Located _ ts = flatEntryTimestamp entry
          in timestampBlockTitle ts blockSize
 
-  let convertEntry ::
-        Money.MultiAccount (Commodity ann) ->
-        FlatEntry ann ->
-        (RegisterEntry 'MultiCurrency ann, Money.MultiAccount (Commodity ann))
-      convertEntry blockRunning entry =
-        let (postings, finalBlockRunning) = convertPostings blockRunning (V.toList (flatEntryPostings entry))
-            regTx =
-              RegisterTransaction
-                { registerTransactionTimestamp = flatEntryTimestamp entry,
-                  registerTransactionDescription = flatEntryDescription entry,
-                  registerTransactionPostings = V.fromList postings
-                }
-         in (RegisterEntryTransaction regTx, finalBlockRunning)
-
-      convertPostings ::
+  let convertPostings ::
         Money.MultiAccount (Commodity ann) ->
         [FlatPosting ann] ->
         ([RegisterPosting 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
@@ -924,6 +910,76 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
                   }
               (rest, finalBlockRunning) = convertPostings newBlockRunning fps
            in (regPosting : rest, finalBlockRunning)
+
+  let convertEntry ::
+        Money.MultiAccount (Commodity ann) ->
+        FlatEntry ann ->
+        (RegisterEntry 'MultiCurrency ann, Money.MultiAccount (Commodity ann))
+      convertEntry blockRunning entry =
+        let (postings, finalBlockRunning) = convertPostings blockRunning (V.toList (flatEntryPostings entry))
+            regTx =
+              RegisterTransaction
+                { registerTransactionTimestamp = flatEntryTimestamp entry,
+                  registerTransactionDescription = flatEntryDescription entry,
+                  registerTransactionPostings = V.fromList postings
+                }
+         in (RegisterEntryTransaction regTx, finalBlockRunning)
+
+  let findNextBlock ::
+        Maybe Block ->
+        [FlatEntry ann] ->
+        Maybe (Block, [FlatEntry ann], [FlatEntry ann])
+      findNextBlock mCurrentBlock entries = case entries of
+        [] -> Nothing
+        (e : _) ->
+          let blockTitle = entryBlockTitle e
+              shouldProcess = case mCurrentBlock of
+                Nothing -> True
+                Just current -> blockTitle >= current
+           in if shouldProcess
+                then
+                  let (blockEntries, rest) = span (\entry -> entryBlockTitle entry == blockTitle) entries
+                   in Just (blockTitle, blockEntries, rest)
+                else findNextBlock mCurrentBlock (dropWhile (\entry -> entryBlockTitle entry < fromMaybe blockTitle mCurrentBlock) entries)
+
+  let makeEmptyBlock ::
+        Block ->
+        Money.MultiAccount (Commodity ann) ->
+        Integer ->
+        RegisterBlock 'MultiCurrency ann
+      makeEmptyBlock title runningTotal blockNum =
+        RegisterBlock
+          { registerBlockTitle = title,
+            registerBlockEntries = V.empty,
+            registerBlockTotal = MultiAccount.zero,
+            registerBlockRunningTotal = runningTotal,
+            registerBlockRunningAverage = computeMultiAverage runningTotal blockNum
+          }
+
+  let generateEmptyBlocks ::
+        Block ->
+        Block ->
+        Money.MultiAccount (Commodity ann) ->
+        Integer ->
+        [RegisterBlock 'MultiCurrency ann]
+      generateEmptyBlocks current target runningTotal blockNum
+        | current >= target = []
+        | otherwise =
+            let emptyBlock = makeEmptyBlock current runningTotal blockNum
+             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
+
+  let convertEntriesForBlock ::
+        [FlatEntry ann] ->
+        ([RegisterEntry 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
+      convertEntriesForBlock entries =
+        let go _ [] = ([], MultiAccount.zero)
+            go blockRunning (e : es) =
+              let (converted, newBlockRunning) = convertEntry blockRunning e
+                  (rest, restTotal) = go newBlockRunning es
+                  entryTotal = fromMaybe MultiAccount.zero (registerEntryTotalMulti converted)
+                  combinedTotal = fromMaybe entryTotal (MultiAccount.add entryTotal restTotal)
+               in (converted : rest, combinedTotal)
+         in go MultiAccount.zero entries
 
   let goBlocks ::
         Maybe Block ->
@@ -968,62 +1024,6 @@ groupMultiIntoBlocks blockSize mBegin mEnd FlatRegister {..} = do
                   then emptyBlocks ++ [block] ++ goBlocks (Just (nextBlock blockTitle)) nextBlockNum newRunningTotal restEntries
                   else emptyBlocks ++ [block]
 
-      findNextBlock ::
-        Maybe Block ->
-        [FlatEntry ann] ->
-        Maybe (Block, [FlatEntry ann], [FlatEntry ann])
-      findNextBlock mCurrentBlock entries = case entries of
-        [] -> Nothing
-        (e : _) ->
-          let blockTitle = entryBlockTitle e
-              shouldProcess = case mCurrentBlock of
-                Nothing -> True
-                Just current -> blockTitle >= current
-           in if shouldProcess
-                then
-                  let (blockEntries, rest) = span (\entry -> entryBlockTitle entry == blockTitle) entries
-                   in Just (blockTitle, blockEntries, rest)
-                else findNextBlock mCurrentBlock (dropWhile (\entry -> entryBlockTitle entry < fromMaybe blockTitle mCurrentBlock) entries)
-
-      generateEmptyBlocks ::
-        Block ->
-        Block ->
-        Money.MultiAccount (Commodity ann) ->
-        Integer ->
-        [RegisterBlock 'MultiCurrency ann]
-      generateEmptyBlocks current target runningTotal blockNum
-        | current >= target = []
-        | otherwise =
-            let emptyBlock = makeEmptyBlock current runningTotal blockNum
-             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
-
-      makeEmptyBlock ::
-        Block ->
-        Money.MultiAccount (Commodity ann) ->
-        Integer ->
-        RegisterBlock 'MultiCurrency ann
-      makeEmptyBlock title runningTotal blockNum =
-        RegisterBlock
-          { registerBlockTitle = title,
-            registerBlockEntries = V.empty,
-            registerBlockTotal = MultiAccount.zero,
-            registerBlockRunningTotal = runningTotal,
-            registerBlockRunningAverage = computeMultiAverage runningTotal blockNum
-          }
-
-      convertEntriesForBlock ::
-        [FlatEntry ann] ->
-        ([RegisterEntry 'MultiCurrency ann], Money.MultiAccount (Commodity ann))
-      convertEntriesForBlock entries =
-        let go _ [] = ([], MultiAccount.zero)
-            go blockRunning (e : es) =
-              let (converted, newBlockRunning) = convertEntry blockRunning e
-                  (rest, restTotal) = go newBlockRunning es
-                  entryTotal = fromMaybe MultiAccount.zero (registerEntryTotalMulti converted)
-                  combinedTotal = fromMaybe entryTotal (MultiAccount.add entryTotal restTotal)
-               in (converted : rest, combinedTotal)
-         in go MultiAccount.zero entries
-
   let blocks = goBlocks mBeginBlock 1 MultiAccount.zero flatRegisterEntries
   pure
     Register
@@ -1059,7 +1059,7 @@ groupSingleIntoBlocks ::
   Validation (RegisterError ann) (Register 'SingleCurrency ann)
 groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
   let mBeginBlock = (\begin -> dayBlockTitle begin blockSize) <$> mBegin
-      mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
+  let mEndBlock = (\end -> dayBlockTitle end blockSize) <$> mEnd
 
   let entryTimestamp ::
         ConvertedFlatEntry ann ->
@@ -1068,33 +1068,14 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
         ConvertedFlatEntryTransaction t -> convertedFlatTransactionTimestamp t
         ConvertedFlatEntryRevaluation r -> convertedFlatRevaluationTimestamp r
 
-      entryBlockTitle ::
+  let entryBlockTitle ::
         ConvertedFlatEntry ann ->
         Block
       entryBlockTitle entry =
         let Located _ ts = entryTimestamp entry
          in timestampBlockTitle ts blockSize
 
-  let convertEntry ::
-        Money.Account ->
-        ConvertedFlatEntry ann ->
-        (RegisterEntry 'SingleCurrency ann, Money.Account)
-      convertEntry blockRunning = \case
-        ConvertedFlatEntryTransaction t ->
-          let (postings, newBlockRunning) = convertPostings blockRunning (V.toList (convertedFlatTransactionPostings t))
-              regTx =
-                RegisterTransaction
-                  { registerTransactionTimestamp = convertedFlatTransactionTimestamp t,
-                    registerTransactionDescription = convertedFlatTransactionDescription t,
-                    registerTransactionPostings = V.fromList postings
-                  }
-           in (RegisterEntryTransaction regTx, newBlockRunning)
-        ConvertedFlatEntryRevaluation r ->
-          let revalAmount = convertedFlatRevaluationAmount r
-              newBlockRunning = fromMaybe blockRunning (Account.add blockRunning revalAmount)
-           in (RegisterEntryRevaluation (convertReval newBlockRunning r), newBlockRunning)
-
-      convertReval ::
+  let convertReval ::
         Money.Account ->
         ConvertedFlatRevaluation ann ->
         RegisterRevaluation ann
@@ -1112,7 +1093,7 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
                 registerRevaluationBlockRunningTotal = displayedBlockRunning
               }
 
-      convertPostings ::
+  let convertPostings ::
         Money.Account ->
         [ConvertedFlatPosting ann] ->
         ([RegisterPosting 'SingleCurrency ann], Money.Account)
@@ -1137,6 +1118,78 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
                   }
               (rest, finalBlockRunning) = convertPostings newBlockRunning cps
            in (regPosting : rest, finalBlockRunning)
+
+  let convertEntry ::
+        Money.Account ->
+        ConvertedFlatEntry ann ->
+        (RegisterEntry 'SingleCurrency ann, Money.Account)
+      convertEntry blockRunning = \case
+        ConvertedFlatEntryTransaction t ->
+          let (postings, newBlockRunning) = convertPostings blockRunning (V.toList (convertedFlatTransactionPostings t))
+              regTx =
+                RegisterTransaction
+                  { registerTransactionTimestamp = convertedFlatTransactionTimestamp t,
+                    registerTransactionDescription = convertedFlatTransactionDescription t,
+                    registerTransactionPostings = V.fromList postings
+                  }
+           in (RegisterEntryTransaction regTx, newBlockRunning)
+        ConvertedFlatEntryRevaluation r ->
+          let revalAmount = convertedFlatRevaluationAmount r
+              newBlockRunning = fromMaybe blockRunning (Account.add blockRunning revalAmount)
+           in (RegisterEntryRevaluation (convertReval newBlockRunning r), newBlockRunning)
+
+  let findNextBlock ::
+        Maybe Block ->
+        [ConvertedFlatEntry ann] ->
+        Maybe (Block, [ConvertedFlatEntry ann], [ConvertedFlatEntry ann])
+      findNextBlock mCurrentBlock entries = case entries of
+        [] -> Nothing
+        (e : _) ->
+          let blockTitle = entryBlockTitle e
+              shouldProcess = case mCurrentBlock of
+                Nothing -> True
+                Just current -> blockTitle >= current
+           in if shouldProcess
+                then
+                  let (blockEntries, rest) = span (\entry -> entryBlockTitle entry == blockTitle) entries
+                   in Just (blockTitle, blockEntries, rest)
+                else findNextBlock mCurrentBlock (dropWhile (\entry -> entryBlockTitle entry < fromMaybe blockTitle mCurrentBlock) entries)
+
+  let makeEmptyBlock ::
+        Block ->
+        Money.Account ->
+        Integer ->
+        RegisterBlock 'SingleCurrency ann
+      makeEmptyBlock title runningTotal blockNum =
+        RegisterBlock
+          { registerBlockTitle = title,
+            registerBlockEntries = V.empty,
+            registerBlockTotal = Account.zero,
+            registerBlockRunningTotal = runningTotal,
+            registerBlockRunningAverage = computeSingleAverage runningTotal blockNum
+          }
+
+  let generateEmptyBlocks ::
+        Block ->
+        Block ->
+        Money.Account ->
+        Integer ->
+        [RegisterBlock 'SingleCurrency ann]
+      generateEmptyBlocks current target runningTotal blockNum
+        | current >= target = []
+        | otherwise =
+            let emptyBlock = makeEmptyBlock current runningTotal blockNum
+             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
+
+  let convertEntriesForBlock ::
+        [ConvertedFlatEntry ann] ->
+        [RegisterEntry 'SingleCurrency ann]
+      convertEntriesForBlock entries =
+        let go _ [] = []
+            go blockRunning (e : es) =
+              let (converted, newBlockRunning) = convertEntry blockRunning e
+               in converted : go newBlockRunning es
+         in go Account.zero entries
 
   let goBlocks ::
         Maybe Block ->
@@ -1184,59 +1237,6 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
              in if shouldContinue
                   then emptyBlocks ++ [block] ++ goBlocks (Just (nextBlock blockTitle)) nextBlockNum newRunningTotal restEntries
                   else emptyBlocks ++ [block]
-
-      findNextBlock ::
-        Maybe Block ->
-        [ConvertedFlatEntry ann] ->
-        Maybe (Block, [ConvertedFlatEntry ann], [ConvertedFlatEntry ann])
-      findNextBlock mCurrentBlock entries = case entries of
-        [] -> Nothing
-        (e : _) ->
-          let blockTitle = entryBlockTitle e
-              shouldProcess = case mCurrentBlock of
-                Nothing -> True
-                Just current -> blockTitle >= current
-           in if shouldProcess
-                then
-                  let (blockEntries, rest) = span (\entry -> entryBlockTitle entry == blockTitle) entries
-                   in Just (blockTitle, blockEntries, rest)
-                else findNextBlock mCurrentBlock (dropWhile (\entry -> entryBlockTitle entry < fromMaybe blockTitle mCurrentBlock) entries)
-
-      generateEmptyBlocks ::
-        Block ->
-        Block ->
-        Money.Account ->
-        Integer ->
-        [RegisterBlock 'SingleCurrency ann]
-      generateEmptyBlocks current target runningTotal blockNum
-        | current >= target = []
-        | otherwise =
-            let emptyBlock = makeEmptyBlock current runningTotal blockNum
-             in emptyBlock : generateEmptyBlocks (nextBlock current) target runningTotal (blockNum + 1)
-
-      makeEmptyBlock ::
-        Block ->
-        Money.Account ->
-        Integer ->
-        RegisterBlock 'SingleCurrency ann
-      makeEmptyBlock title runningTotal blockNum =
-        RegisterBlock
-          { registerBlockTitle = title,
-            registerBlockEntries = V.empty,
-            registerBlockTotal = Account.zero,
-            registerBlockRunningTotal = runningTotal,
-            registerBlockRunningAverage = computeSingleAverage runningTotal blockNum
-          }
-
-      convertEntriesForBlock ::
-        [ConvertedFlatEntry ann] ->
-        [RegisterEntry 'SingleCurrency ann]
-      convertEntriesForBlock entries =
-        let go _ [] = []
-            go blockRunning (e : es) =
-              let (converted, newBlockRunning) = convertEntry blockRunning e
-               in converted : go newBlockRunning es
-         in go Account.zero entries
 
   let blocks = goBlocks mBeginBlock 1 Account.zero convertedFlatRegisterEntries
   pure

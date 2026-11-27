@@ -141,7 +141,7 @@ rowTransaction currencies assetsAccountName expensesAccountName incomeAccountNam
   -- rowAccount is the amount the expense
   -- rowFee is the fee on top of that amount
   let transactionTimestamp = noLoc $ Timestamp.secondFromLocalTime $ fromMaybe rowStartedDate rowCompletedDate
-      transactionDescription =
+  let transactionDescription =
         noCommentsOn
           <$> Description.combine
             ( filter

@@ -42,16 +42,16 @@ data RenderSettings = RenderSettings
 renderChartReportSvg :: RenderSettings -> ChartReport ann -> Path Abs File -> IO ()
 renderChartReportSvg RenderSettings {..} report outputFile = do
   let Located _ quantisationFactor = currencyQuantisationFactor (chartReportCurrency report)
-      toDouble :: Account.Account -> Double
+  let toDouble :: Account.Account -> Double
       toDouble = Account.toDouble quantisationFactor
-      xAxisDays = V.toList (chartReportDays report)
-      seriesList = V.toList (chartReportSeries report)
-      fileOptions =
+  let xAxisDays = V.toList (chartReportDays report)
+  let seriesList = V.toList (chartReportSeries report)
+  let fileOptions =
         def
           { _fo_format = SVG,
             _fo_size = (renderSettingWidth, renderSettingHeight)
           }
-      plots
+  let plots
         | chartReportIsNonNegative report =
             flip map (zip (cycle assetColors) (stackBands toDouble xAxisDays seriesList)) $
               \(color, (title, bandPoints)) ->
@@ -70,7 +70,7 @@ renderChartReportSvg RenderSettings {..} report outputFile = do
                       _plot_lines_style = solidLine 2 color,
                       _plot_lines_title = title
                     }
-      layout =
+  let layout =
         layout_title .~ renderSettingTitle $
           layout_grid_last .~ True $
             layout_plots .~ plots $

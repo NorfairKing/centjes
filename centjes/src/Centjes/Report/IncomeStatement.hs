@@ -81,8 +81,8 @@ produceIncomeStatementReport ::
   Validation (IncomeStatementError ann) (IncomeStatementReport ann)
 produceIncomeStatementReport f mBegin mEnd mCurrencySymbolTo showVirtual evaluatedLedger = do
   let entries = evaluatedLedgerEntries evaluatedLedger
-      ledger = evaluatedLedgerSource evaluatedLedger
-      accounts = ledgerAccounts ledger
+  let ledger = evaluatedLedgerSource evaluatedLedger
+  let accounts = ledgerAccounts ledger
 
   -- Truncate entries to end date
   let truncatedEntries = case mEnd of
@@ -105,10 +105,10 @@ produceIncomeStatementReport f mBegin mEnd mCurrencySymbolTo showVirtual evaluat
 
   -- Compute period activity: endBalances - beginBalances per account
   let allAccountNames = M.keys endBalances ++ M.keys beginBalances
-      periodBalances = M.fromList $ do
+  let periodBalances = M.fromList $ do
         an <- allAccountNames
         let endBal = M.findWithDefault MultiAccount.zero an endBalances
-            beginBal = M.findWithDefault MultiAccount.zero an beginBalances
+        let beginBal = M.findWithDefault MultiAccount.zero an beginBalances
         case MultiAccount.subtract endBal beginBal of
           Nothing -> [] -- Should not happen with valid data; skip if it does
           Just diff -> [(an, diff)]
@@ -117,12 +117,12 @@ produceIncomeStatementReport f mBegin mEnd mCurrencySymbolTo showVirtual evaluat
   let isIncomeAccount an = case M.lookup an accounts of
         Nothing -> False
         Just (Located _ acc) -> accountType acc == AccountTypeIncome
-      isExpensesAccount an = case M.lookup an accounts of
+  let isExpensesAccount an = case M.lookup an accounts of
         Nothing -> False
         Just (Located _ acc) -> accountType acc == AccountTypeExpenses
 
   let incomeBalances = filterAccountBalances f $ M.filterWithKey (\an _ -> isIncomeAccount an) periodBalances
-      expensesBalances = filterAccountBalances f $ M.filterWithKey (\an _ -> isExpensesAccount an) periodBalances
+  let expensesBalances = filterAccountBalances f $ M.filterWithKey (\an _ -> isExpensesAccount an) periodBalances
 
   -- Convert currencies if a target currency is specified
   incomeStatementReportIncome <- mapValidationFailure IncomeStatementErrorConvert $ case mCurrencySymbolTo of

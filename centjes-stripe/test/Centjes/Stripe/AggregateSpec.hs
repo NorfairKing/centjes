@@ -463,15 +463,15 @@ monthReports month = monthReportsWith month []
 -- | The fixture reports for a month, with some of them replaced.
 monthReportsWith :: Month -> [(Path Rel File, LB.ByteString)] -> [Payout] -> IO MonthReports
 monthReportsWith month overrides payouts = do
+  let parse name contents = case parseReportTable contents of
+        Left e -> expectationFailure (unwords [fromRelFile name <> ":", renderReportError e]) >> error "unreachable"
+        Right t -> pure t
   let table name = case lookup name overrides of
         Just contents -> parse name contents
         Nothing -> do
           monthDir <- parseRelDir (show month)
           contents <- LB.readFile (fromRelFile ([reldir|test_resources/reports|] </> monthDir </> name))
           parse name contents
-      parse name contents = case parseReportTable contents of
-        Left e -> expectationFailure (unwords [fromRelFile name <> ":", renderReportError e]) >> error "unreachable"
-        Right t -> pure t
   MonthReports month
     <$> table [relfile|tax.csv|]
     <*> table [relfile|activity.csv|]
