@@ -15,6 +15,7 @@ import Test.Syd.Validity
 spec :: Spec
 spec = do
   genValidSpec @(PriceGraph Int String)
+  genValidSpec @(PriceGraph.Direction Int)
 
   describe "empty" $
     it "is valid" $

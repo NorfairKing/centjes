@@ -19,3 +19,6 @@ spec = do
   genValidSpec @(Posting ())
   genValidSpec @(Transaction ())
   genValidSpec @(Ledger ())
+  genValidSpec @(Account ())
+  genValidSpec @VirtualPostingPolicy
+  genValidSpec @(PostingPrice ())

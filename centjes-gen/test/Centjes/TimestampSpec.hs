@@ -11,6 +11,8 @@ import Test.Syd.Validity
 spec :: Spec
 spec = do
   genValidSpec @Timestamp
+  genValidSpec @MinuteOfDay
+  genValidSpec @SecondOfDay
   describe "toText" $
     it "produces valid values" $
       producesValid Timestamp.toText
