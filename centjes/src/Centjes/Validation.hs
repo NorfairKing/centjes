@@ -29,7 +29,7 @@ newtype ValidationT e m a = ValidationT {unValidationT :: m (Validation e a)}
   deriving (Functor)
 
 instance (Applicative m) => Applicative (ValidationT e m) where
-  pure = ValidationT . pure . Success
+  pure = ValidationT . pure . ValidationSuccess
   (ValidationT m1) <*> (ValidationT m2) =
     ValidationT $
       (<*>) <$> m1 <*> m2
@@ -38,19 +38,19 @@ instance (Monad m) => Monad (ValidationT e m) where
   (ValidationT m) >>= f = ValidationT $ do
     va <- m
     case va of
-      Failure es -> pure $ Failure es
-      Success a -> unValidationT $ f a
+      ValidationFailure es -> pure $ ValidationFailure es
+      ValidationSuccess a -> unValidationT $ f a
 
 instance MonadTrans (ValidationT e) where
-  lift f = ValidationT $ Success <$> f
+  lift f = ValidationT $ ValidationSuccess <$> f
 
 instance (MonadIO m) => MonadIO (ValidationT e m) where
-  liftIO io = ValidationT $ Success <$> liftIO io
+  liftIO io = ValidationT $ ValidationSuccess <$> liftIO io
 
 instance (MonadLogger m) => MonadLogger (ValidationT e m) where
   monadLoggerLog loc src lvl msg = ValidationT $ do
     monadLoggerLog loc src lvl msg
-    pure $ Success ()
+    pure $ ValidationSuccess ()
 
 runValidationT :: ValidationT e m a -> m (Validation e a)
 runValidationT = unValidationT
@@ -62,48 +62,48 @@ validationTFailure :: (Applicative m) => e -> ValidationT e m a
 validationTFailure = ValidationT . pure . validationFailure
 
 data Validation e a
-  = Failure !(NonEmpty e)
-  | Success !a
+  = ValidationFailure !(NonEmpty e)
+  | ValidationSuccess !a
   deriving (Generic, Show)
 
 instance (Validity e, Validity a) => Validity (Validation e a)
 
 instance Functor (Validation e) where
-  fmap _ (Failure e) = Failure e
-  fmap f (Success a) = Success (f a)
+  fmap _ (ValidationFailure e) = ValidationFailure e
+  fmap f (ValidationSuccess a) = ValidationSuccess (f a)
 
 instance Applicative (Validation e) where
-  pure = Success
-  Failure e1 <*> Failure e2 = Failure (e1 `NE.append` e2)
-  Failure e1 <*> Success _ = Failure e1
-  Success _ <*> Failure e2 = Failure e2
-  Success f <*> Success a = Success (f a)
+  pure = ValidationSuccess
+  ValidationFailure e1 <*> ValidationFailure e2 = ValidationFailure (e1 `NE.append` e2)
+  ValidationFailure e1 <*> ValidationSuccess _ = ValidationFailure e1
+  ValidationSuccess _ <*> ValidationFailure e2 = ValidationFailure e2
+  ValidationSuccess f <*> ValidationSuccess a = ValidationSuccess (f a)
 
 instance Monad (Validation e) where
   return = pure
-  Success a >>= f = f a
-  Failure es >>= _ = Failure es
+  ValidationSuccess a >>= f = f a
+  ValidationFailure es >>= _ = ValidationFailure es
 
 instance (Semigroup a) => Semigroup (Validation e a) where
   (<>) f1 f2 = (<>) <$> f1 <*> f2
 
 instance (Monoid a) => Monoid (Validation e a) where
-  mempty = Success mempty
+  mempty = ValidationSuccess mempty
   mappend = (<>)
 
 validationFailure :: e -> Validation e a
-validationFailure e = Failure (e :| [])
+validationFailure e = ValidationFailure (e :| [])
 
 mapValidationFailure :: (e1 -> e2) -> Validation e1 a -> Validation e2 a
 mapValidationFailure f = \case
-  Success a -> Success a
-  Failure errs -> Failure $ NE.map f errs
+  ValidationSuccess a -> ValidationSuccess a
+  ValidationFailure errs -> ValidationFailure $ NE.map f errs
 
 -- Keep this in sync with renderValidationErrors
 checkValidation :: (ToReport e) => Diagnostic String -> Validation e a -> IO a
 checkValidation diag = \case
-  Success a -> pure a
-  Failure errs -> dieWithDiag $ renderDiagnostic diag errs
+  ValidationSuccess a -> pure a
+  ValidationFailure errs -> dieWithDiag $ renderDiagnostic diag errs
 
 -- Keep this in sync with checkValidation
 renderValidationErrors :: (ToReport e) => Diagnostic String -> NonEmpty e -> Text

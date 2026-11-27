@@ -16,8 +16,8 @@ import Test.Syd
 
 shouldValidate :: (ToReport e) => Diagnostic String -> Validation e a -> IO a
 shouldValidate diag = \case
-  Success a -> pure a
-  Failure errs -> expectationFailure $ T.unpack $ renderValidationErrors diag errs
+  ValidationSuccess a -> pure a
+  ValidationFailure errs -> expectationFailure $ T.unpack $ renderValidationErrors diag errs
 
 shouldValidateT :: (ToReport e, MonadIO m) => Diagnostic String -> ValidationT e m a -> m a
 shouldValidateT diag (ValidationT f) = f >>= liftIO . shouldValidate diag
@@ -27,8 +27,8 @@ shouldFailToValidateT (ValidationT f) = f >>= shouldFailToValidate
 
 shouldFailToValidate :: (Show a, MonadIO m) => Validation e a -> m (NonEmpty e)
 shouldFailToValidate = \case
-  Failure errs -> pure errs
-  Success a ->
+  ValidationFailure errs -> pure errs
+  ValidationSuccess a ->
     liftIO $
       expectationFailure $
         unlines

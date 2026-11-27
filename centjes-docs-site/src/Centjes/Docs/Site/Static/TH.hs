@@ -171,14 +171,14 @@ renderNode topLevel = LT.toStrict . renderHtml $ go topLevel
                         diag = diagFromFileMap $ M.singleton fakeFile (code, lmodule)
                         assertValidates :: (ToReport err) => Validation err a -> a
                         assertValidates = \case
-                          Failure errs ->
+                          ValidationFailure errs ->
                             error $
                               unlines
                                 [ "Validation failed:",
                                   T.unpack $ renderValidationErrors diag errs,
                                   T.unpack code
                                 ]
-                          Success a -> a
+                          ValidationSuccess a -> a
                         ledger = assertValidates $ compileDeclarations decls
                      in case T.unwords rest of
                           "" -> renderHtmlDoc $ moduleDoc lmodule

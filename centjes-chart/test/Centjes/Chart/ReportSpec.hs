@@ -143,8 +143,8 @@ spec = do
           ledger <- shouldValidate diag $ compileDeclarations ds
           evaluatedLedger <- shouldValidate diag $ produceEvaluatedLedger ledger
           case produceChartReport [AccountTypeAssets] FilterAny (CurrencySymbol "XYZ") evaluatedLedger of
-            Success _ -> expectationFailure "Expected a chart error but produced a report."
-            Failure errs -> pure $ renderValidationErrors diag errs
+            ValidationSuccess _ -> expectationFailure "Expected a chart error but produced a report."
+            ValidationFailure errs -> pure $ renderValidationErrors diag errs
     do
       af <- liftIO $ resolveFile' "test_resources/chart/error/no-matching-accounts.cent"
       errFile <- liftIO $ replaceExtension ".err" af
@@ -154,8 +154,8 @@ spec = do
           ledger <- shouldValidate diag $ compileDeclarations ds
           evaluatedLedger <- shouldValidate diag $ produceEvaluatedLedger ledger
           case produceChartReport [AccountTypeAssets] FilterAny (CurrencySymbol "USD") evaluatedLedger of
-            Success _ -> expectationFailure "Expected a chart error but produced a report."
-            Failure errs -> pure $ renderValidationErrors diag errs
+            ValidationSuccess _ -> expectationFailure "Expected a chart error but produced a report."
+            ValidationFailure errs -> pure $ renderValidationErrors diag errs
     do
       af <- liftIO $ resolveFile' "test_resources/chart/error/missing-price.cent"
       errFile <- liftIO $ replaceExtension ".err" af
@@ -165,5 +165,5 @@ spec = do
           ledger <- shouldValidate diag $ compileDeclarations ds
           evaluatedLedger <- shouldValidate diag $ produceEvaluatedLedger ledger
           case produceChartReport [AccountTypeAssets] FilterAny (CurrencySymbol "USD") evaluatedLedger of
-            Success _ -> expectationFailure "Expected a chart error but produced a report."
-            Failure errs -> pure $ renderValidationErrors diag errs
+            ValidationSuccess _ -> expectationFailure "Expected a chart error but produced a report."
+            ValidationFailure errs -> pure $ renderValidationErrors diag errs

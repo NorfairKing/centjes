@@ -180,8 +180,8 @@ spec = do
     it "aggregates an ordinary month" $ do
       reports <- monthReports (YearMonth 2026 7) []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> do
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> do
           stripeMonthDomesticRevenues month
             `shouldBe` [ RevenueAtRate
                            { revenueAtRateRate = 0.081,
@@ -206,8 +206,8 @@ spec = do
     it "does not turn a refund into foreign revenue" $ do
       reports <- monthReports (YearMonth 2026 8) []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> do
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> do
           stripeMonthForeignRevenue month `shouldBe` Nothing
           map revenueAtRateRefundedNet (stripeMonthDomesticRevenues month) `shouldBe` [account 10_000]
           map revenueAtRateRefundedTax (stripeMonthDomesticRevenues month) `shouldBe` [account 810]
@@ -215,8 +215,8 @@ spec = do
     it "reads the fee that carried no tax as carrying no rate" $ do
       reports <- monthReports (YearMonth 2026 7) []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month ->
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month ->
           map feeLineRate (stripeMonthFees month) `shouldBe` [Nothing, Just 0.081]
 
     -- Tax collected for somewhere else is that authority's money, not revenue, and this
@@ -229,8 +229,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindForeignTaxCollected]
-        Success _ -> expectationFailure "Expected foreign tax collected to be refused"
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindForeignTaxCollected]
+        ValidationSuccess _ -> expectationFailure "Expected foreign tax collected to be refused"
 
     -- Exempt and zero-rated home revenue are declared differently, and this importer
     -- cannot tell which it is looking at.
@@ -242,8 +242,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
-        Success _ -> expectationFailure "Expected non-taxable home revenue to be refused"
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
+        ValidationSuccess _ -> expectationFailure "Expected non-taxable home revenue to be refused"
 
     -- The dangerous shape, because the reconciliation cannot catch it: booking the wrong
     -- side of the domestic split leaves the month's total untouched.  A home row whose tax
@@ -258,8 +258,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoVATRate]
-        Success month ->
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoVATRate]
+        ValidationSuccess month ->
           expectationFailure $
             unwords
               [ "Expected untaxed home revenue to be refused, but it was booked as",
@@ -275,8 +275,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
-        Success month ->
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
+        ValidationSuccess month ->
           expectationFailure $
             unwords
               [ "Expected non-taxable home revenue to be refused, but it was booked as",
@@ -292,8 +292,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> stripeMonthDomesticRevenues month `shouldBe` []
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> stripeMonthDomesticRevenues month `shouldBe` []
 
     -- The tax report takes no currency filter, so a row in another currency arrives with
     -- an amount that means something else.  Reading it as the ledger's currency moves the
@@ -312,8 +312,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
-        Success _ -> expectationFailure "Expected a row in another currency to be refused"
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
+        ValidationSuccess _ -> expectationFailure "Expected a row in another currency to be refused"
 
     it "refuses a fee row in another currency" $ do
       reports <-
@@ -329,16 +329,16 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
-        Success _ -> expectationFailure "Expected a fee in another currency to be refused"
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
+        ValidationSuccess _ -> expectationFailure "Expected a fee in another currency to be refused"
 
     -- The balance report leaves the currency off its payout lines, so an absent currency
     -- has to stay acceptable or every month would be refused.
     it "accepts a row that states no currency at all" $ do
       reports <- monthReports (YearMonth 2026 7) []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> stripeMonthClosingBalance month `shouldBe` account 165_019
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> stripeMonthClosingBalance month `shouldBe` account 165_019
 
     -- Nothing can catch revenue that no tax row mentions: it lands in foreign by
     -- construction and the money is in the month either way.  What the importer can do is
@@ -357,8 +357,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> do
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> do
           -- Charges of 1581.00 against rows accounting for 1481.00 of it.
           stripeMonthRevenueWithNoTaxRow month `shouldBe` account 10_000
           -- And it is not the same thing as foreign revenue, which is the whole residual.
@@ -367,8 +367,8 @@ spec = do
     it "counts nothing unaccounted when the rows add up to the charges" $ do
       reports <- monthReports (YearMonth 2026 7) []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> stripeMonthRevenueWithNoTaxRow month `shouldBe` Account.zero
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> stripeMonthRevenueWithNoTaxRow month `shouldBe` Account.zero
 
     -- Every figure is one of Stripe's own aggregates, so if they disagree the month
     -- holds something none of the four reports accounts for.
@@ -380,8 +380,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindDoesNotReconcile]
-        Success _ -> expectationFailure "Expected a month that does not reconcile to be refused"
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindDoesNotReconcile]
+        ValidationSuccess _ -> expectationFailure "Expected a month that does not reconcile to be refused"
 
     it "refuses a balance report with no ending balance" $ do
       reports <-
@@ -391,8 +391,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoBalanceCategory]
-        Success _ -> expectationFailure "Expected a missing ending balance to be refused"
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoBalanceCategory]
+        ValidationSuccess _ -> expectationFailure "Expected a missing ending balance to be refused"
 
     -- A fee small enough that its tax cannot name a rate: 18 rappen of fee rounds to the
     -- same 1 rappen of tax at 8.1% as at 3.8%.  Stripe's tax on its own fees is a
@@ -407,8 +407,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> map feeLineRate (stripeMonthFees month) `shouldBe` [Just 0.081]
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> map feeLineRate (stripeMonthFees month) `shouldBe` [Just 0.081]
 
     -- The other side of configuring it: a month whose amounts can name a rate must agree
     -- with the configured one, or a wrong setting would quietly claim the wrong input tax
@@ -422,8 +422,8 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindFeeRateDisagrees]
-        Success _ -> expectationFailure "Expected a fee at the wrong rate to be refused"
+        ValidationFailure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindFeeRateDisagrees]
+        ValidationSuccess _ -> expectationFailure "Expected a fee at the wrong rate to be refused"
 
     it "counts each payout it was given" $ do
       reports <-
@@ -435,8 +435,8 @@ spec = do
             payoutOf "po_2" 1_783_100_000 10_000 PayoutStatusPaid
           ]
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` [account 10_000, account 10_000]
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` [account 10_000, account 10_000]
 
     -- A payout that failed or was canceled has its money returned to the balance, so
     -- booking it would move money in the ledger that never left Stripe.
@@ -449,8 +449,8 @@ spec = do
             payoutOf "po_2" 1_783_100_000 10_000 PayoutStatusCanceled
           ]
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` []
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` []
 
     -- Stripe takes the money out of the balance when the payout is created, so one still
     -- on its way has already left.
@@ -461,8 +461,8 @@ spec = do
           [([relfile|balance.csv|], "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n\"ending_balance\",\"Ending balance\",\"1550.19\",\"chf\"\n")]
           [payoutOf "po_1" 1_783_000_000 10_000 PayoutStatusInTransit]
       case aggregateMonth settings chf reports of
-        Failure errs -> expectationFailure $ show errs
-        Success month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` [account 10_000]
+        ValidationFailure errs -> expectationFailure $ show errs
+        ValidationSuccess month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` [account 10_000]
 
 data StripeErrorKind
   = KindReport

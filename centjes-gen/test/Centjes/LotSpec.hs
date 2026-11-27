@@ -39,17 +39,17 @@ spec = do
               case ( compiled (Module.PriceAnnotationCost costExpression),
                      compiled (Module.PriceAnnotationLot costExpression)
                    ) of
-                (Success (Located _ costPosting), Success (Located _ lotPosting)) ->
+                (ValidationSuccess (Located _ costPosting), ValidationSuccess (Located _ lotPosting)) ->
                   case postingPrice lotPosting of
                     PostingPriceCurrency _ _ ->
                       expectationFailure "the lot annotation did not compile to a lot"
                     PostingPriceLot _ ->
                       (locatedValue <$> postingConversion lotPosting)
                         `shouldBe` (locatedValue <$> postingConversion costPosting)
-                (Failure _, Failure _) -> pure ()
-                (Success _, Failure _) ->
+                (ValidationFailure _, ValidationFailure _) -> pure ()
+                (ValidationSuccess _, ValidationFailure _) ->
                   expectationFailure "the lot annotation failed to compile where the cost annotation did not"
-                (Failure _, Success _) ->
+                (ValidationFailure _, ValidationSuccess _) ->
                   expectationFailure "the cost annotation failed to compile where the lot annotation did not"
 
   describe "compileDeclarations" $ do

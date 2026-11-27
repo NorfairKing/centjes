@@ -78,8 +78,8 @@ spec = do
             forAllValid $ \showVirtual ->
               forAllValid $ \ledger ->
                 case produceEvaluatedLedger @() ledger of
-                  Failure _ -> pure () -- EvaluatedLedger may legitimately fail on generated ledgers
-                  Success evaluatedLedger ->
+                  ValidationFailure _ -> pure () -- EvaluatedLedger may legitimately fail on generated ledgers
+                  ValidationSuccess evaluatedLedger ->
                     shouldBeValid $ produceBalanceReportFromEvaluatedLedger @() f mY mCur showVirtual evaluatedLedger
 
     it "reports the offending balances when the cross-account total overflows" $ do
@@ -177,14 +177,14 @@ spec = do
 
                 -- Try producing the evaluated ledger first
                 case produceEvaluatedLedger ledger of
-                  Failure evaluatedLedgerErrors ->
+                  ValidationFailure evaluatedLedgerErrors ->
                     pure $ renderValidationErrors diag evaluatedLedgerErrors
-                  Success evaluatedLedger ->
+                  ValidationSuccess evaluatedLedger ->
                     -- Check assertions (account type and explicit assertions)
                     case checkEvaluatedLedgerAssertions evaluatedLedger of
-                      Failure assertionErrors ->
+                      ValidationFailure assertionErrors ->
                         pure $ renderValidationErrors diag assertionErrors
-                      Success () -> do
+                      ValidationSuccess () -> do
                         errs <-
                           shouldFailToValidate $
                             produceBalanceReportFromEvaluatedLedger

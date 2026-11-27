@@ -209,7 +209,7 @@ importStripe Settings {..} importSettings@ImportSettings {..} currencies fileMap
   -- Only after the months that did come through are safely on disk, because a month that
   -- stopped the run should not cost the ones before it.  The run still ends in failure, so
   -- that a scripted one cannot mistake a stopped import for a complete one.
-  maybe (pure ()) (liftValidation . Failure) stoppedAt
+  maybe (pure ()) (liftValidation . ValidationFailure) stoppedAt
 
 -- | Turn the months that are being written into the module to write.
 --
@@ -308,8 +308,8 @@ untilMonthFails ::
 untilMonthFails =
   await >>= \case
     Nothing -> pure Nothing
-    Just (Failure errors) -> pure (Just errors)
-    Just (Success month) -> do
+    Just (ValidationFailure errors) -> pure (Just errors)
+    Just (ValidationSuccess month) -> do
       yield month
       untilMonthFails
 

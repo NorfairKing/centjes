@@ -859,8 +859,8 @@ computeRevaluations lastDay currentDay priceGraphs allPrices currencyTo rawBalan
                 Nothing -> MemoisedPriceGraph.empty
                 Just (_, pg) -> pg
            in case convertMultiAccountToAccount Nothing nextPG currencyTo rawBalances of
-                Failure _ -> ([], prices) -- On error, don't group
-                Success nextTotal
+                ValidationFailure _ -> ([], prices) -- On error, don't group
+                ValidationSuccess nextTotal
                   | nextTotal == currentTotal ->
                       -- Zero difference, include this currency and continue
                       let (moreCurrencies, remaining) = collectZeroSameDayPrices day currentTotal rest

@@ -89,8 +89,8 @@ spec = do
   let emit :: [StripeMonth] -> [Transaction ()]
       emit months =
         case stripeTransactions testSettings (QuantisationFactor 100) (CurrencySymbol "CHF") months of
-          Failure errs -> error $ unwords ["Could not emit transactions in this test:", show errs]
-          Success transactions -> transactions
+          ValidationFailure errs -> error $ unwords ["Could not emit transactions in this test:", show errs]
+          ValidationSuccess transactions -> transactions
   -- For every balance assertion, what it claims paired with what the transactions up to
   -- and including it actually add up to.
   let assertedAgainstRunningTotal ::

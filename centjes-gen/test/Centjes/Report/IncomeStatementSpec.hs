@@ -42,8 +42,8 @@ spec = do
               forAllValid $ \showVirtual ->
                 forAllValid $ \ledger ->
                   case produceEvaluatedLedger @() ledger of
-                    Failure _ -> pure () -- EvaluatedLedger may legitimately fail on generated ledgers
-                    Success evaluatedLedger ->
+                    ValidationFailure _ -> pure () -- EvaluatedLedger may legitimately fail on generated ledgers
+                    ValidationSuccess evaluatedLedger ->
                       shouldBeValid $ produceIncomeStatementReport @() f mBegin mEnd mCur showVirtual evaluatedLedger
 
     let incomeStatementValidDir = [reldir|test_resources/income-statement/valid|]
@@ -125,9 +125,9 @@ spec = do
 
                 -- Try producing the evaluated ledger first
                 case produceEvaluatedLedger ledger of
-                  Failure evaluatedLedgerErrors ->
+                  ValidationFailure evaluatedLedgerErrors ->
                     pure $ renderValidationErrors diag evaluatedLedgerErrors
-                  Success evaluatedLedger -> do
+                  ValidationSuccess evaluatedLedger -> do
                     errs <-
                       shouldFailToValidate $
                         produceIncomeStatementReport

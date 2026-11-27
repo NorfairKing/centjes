@@ -110,8 +110,8 @@ spec = sequential $ do
             pricesFile <- parseRelFile "currency-rates.cent"
             let today = fromGregorian 2026 10 30
             case produceSetAsideReport input {setAsideInputYear = year} taxesInput today (splitPrices pricesFile ledger) ledger of
-              Success _ -> expectationFailure "the report should have failed"
-              Failure errs -> do
+              ValidationSuccess _ -> expectationFailure "the report should have failed"
+              ValidationFailure errs -> do
                 map setAsideErrorKind (NE.toList errs) `shouldBe` [kind]
                 pure $ renderValidationErrors diag errs
 

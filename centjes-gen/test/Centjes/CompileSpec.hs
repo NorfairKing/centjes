@@ -36,8 +36,8 @@ spec = do
         forAllValid $ \factor ->
           let Located () symbol = Module.postingCurrencySymbol posting
            in case compilePosting (M.singleton symbol factor) M.empty () (Located () posting) of
-                Failure _ -> pure ()
-                Success p -> shouldBeValid p
+                ValidationFailure _ -> pure ()
+                ValidationSuccess p -> shouldBeValid p
 
   describe "compilePriceDeclaration" $ do
     it "produces valid ledgers" $
@@ -48,8 +48,8 @@ spec = do
       forAllValid $ \priceDeclaration ->
         forAll (sequence (M.fromSet (const genValid) (Module.priceDeclarationCurrencySymbols priceDeclaration))) $ \currencies -> do
           case compilePriceDeclaration currencies (Located () priceDeclaration) of
-            Failure _ -> pure ()
-            Success t -> shouldBeValid t
+            ValidationFailure _ -> pure ()
+            ValidationSuccess t -> shouldBeValid t
 
   describe "compileTransaction" $ do
     it "produces valid ledgers" $
@@ -62,8 +62,8 @@ spec = do
       forAllValid $ \transaction ->
         forAll (sequence (M.fromSet (const genValid) (Module.transactionCurrencySymbols transaction))) $ \currencies -> do
           case compileTransaction currencies M.empty M.empty (Located () transaction) of
-            Failure _ -> pure ()
-            Success t -> shouldBeValid t
+            ValidationFailure _ -> pure ()
+            ValidationSuccess t -> shouldBeValid t
 
   describe "compileCurrencyDeclaration" $ do
     it "produces valid ledgers" $
