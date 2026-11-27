@@ -26,6 +26,199 @@ import Test.Syd
 
 spec :: Spec
 spec = do
+  let render' :: [GenLocated () (Declaration ())] -> Text
+      render' declarations =
+        formatModule
+          Module
+            { moduleImports = [],
+              moduleDeclarations = declarations
+            }
+  let render :: [Transaction ()] -> Text
+      render = render' . map (noLoc . DeclarationTransaction . noLoc)
+  let descriptionOf :: Transaction () -> Maybe Text
+      descriptionOf t = unDescription . locatedValue . commentedValue <$> transactionDescription t
+  let transactionNamed :: Text -> [Transaction ()] -> Maybe (Transaction ())
+      transactionNamed name transactions = case filter ((== Just name) . descriptionOf) transactions of
+        [] -> Nothing
+        (t : _) -> Just t
+  let accountNamesOf :: Transaction () -> [AccountName]
+      accountNamesOf t =
+        [locatedValue (postingAccountName p) | Commented (Located _ p) _ <- transactionPostings t]
+  let ratiosOf :: Transaction () -> [Bool]
+      ratiosOf t = [isJust (postingRatio p) | Commented (Located _ p) _ <- transactionPostings t]
+  let tagsOf :: Transaction () -> [Tag]
+      tagsOf t =
+        [ locatedValue lt
+        | Commented (Located _ (TransactionTag (Located _ (ExtraTag lt)))) _ <- transactionExtras t
+        ]
+  let assertionsOf :: Transaction () -> [ExtraAssertion ()]
+      assertionsOf t =
+        [locatedValue lea | Commented (Located _ (TransactionAssertion lea)) _ <- transactionExtras t]
+  let attachmentsOf :: Transaction () -> [Path Rel File]
+      attachmentsOf t =
+        [ rf
+        | Commented (Located _ (TransactionAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located _ rf))))))) _ <-
+            transactionExtras t
+        ]
+  let postingsOf :: Transaction () -> [Posting ()]
+      postingsOf t = [p | Commented (Located _ p) _ <- transactionPostings t]
+  let literalAsAccount :: DecimalLiteral -> Account.Account
+      literalAsAccount literal = case Account.fromDecimalLiteral (QuantisationFactor 100) literal of
+        Nothing -> error $ unwords ["Not a centime-sized amount in this test:", show literal]
+        Just a -> a
+  let amountOf :: Posting () -> Account.Account
+      amountOf p = literalAsAccount (locatedValue (postingAccount p))
+  let testSettings :: DeclarationSettings
+      testSettings =
+        DeclarationSettings
+          { declarationSettingAssetsAccountName = "assets:stripe",
+            declarationSettingDomesticIncomeAccountName = "income:domestic",
+            declarationSettingVATIncomeAccountName = "income:VAT",
+            declarationSettingForeignIncomeAccountName = "income:foreign",
+            declarationSettingFeesAccountName = "expenses:banking:stripe",
+            declarationSettingRefundsAccountName = "expenses:refunds",
+            declarationSettingVATExpensesAccountName = "expenses:VAT",
+            declarationSettingPayoutAccountName = "assets:self-transfer:stripe-neon",
+            declarationSettingOpeningAccountName = "equity:starting",
+            declarationSettingDeductibleTags = ["deductible"],
+            declarationSettingNotVATDeductibleTags = ["tax-deductible", "not-vat-deductible"],
+            declarationSettingDocumentsDirectory = [reldir|documents/stripe|],
+            declarationSettingReportsDirectory = [reldir|documents/stripe/reports|],
+            declarationSettingFeesAttachmentPattern = "%Y-%m-%d_tax-invoice-%Y-%m.pdf"
+          }
+  let emit :: [StripeMonth] -> [Transaction ()]
+      emit months =
+        case stripeTransactions testSettings (QuantisationFactor 100) (CurrencySymbol "CHF") months of
+          Failure errs -> error $ unwords ["Could not emit transactions in this test:", show errs]
+          Success transactions -> transactions
+  -- For every balance assertion, what it claims paired with what the transactions up to
+  -- and including it actually add up to.
+  let assertedAgainstRunningTotal ::
+        [Transaction ()] ->
+        [(Maybe Account.Account, Maybe Account.Account)]
+      assertedAgainstRunningTotal transactions =
+        [ (claimed, runningTotal)
+        | (t, earlier) <- zip transactions (inits transactions),
+          ExtraAssertion (Located _ (AssertionEquals _ (Located _ name) (Located _ literal) _)) <- assertionsOf t,
+          name == declarationSettingAssetsAccountName testSettings,
+          let claimed = Just (literalAsAccount literal),
+          let runningTotal =
+                Account.sum
+                  [ amountOf p
+                  | earlierTransaction <- earlier ++ [t],
+                    p <- postingsOf earlierTransaction,
+                    locatedValue (postingAccountName p) == declarationSettingAssetsAccountName testSettings
+                  ]
+        ]
+  let account :: Integer -> Account.Account
+      account i = case Account.fromMinimalQuantisations i of
+        Nothing -> error $ unwords ["Not a valid account in this test:", show i]
+        Just a -> a
+  let exemptFeeOnly :: FeeLine
+      exemptFeeOnly = FeeLine "Card payments - Stripe fee" (account 2_000) Account.zero Nothing
+  let july :: StripeMonth
+      july =
+        StripeMonth
+          { stripeMonthMonth = YearMonth 2026 7,
+            stripeMonthDomesticRevenues =
+              [ RevenueAtRate
+                  { revenueAtRateRate = 0.081,
+                    revenueAtRateNet = account (-100_000),
+                    revenueAtRateTax = account (-8_100),
+                    revenueAtRateRefundedNet = Account.zero,
+                    revenueAtRateRefundedTax = Account.zero
+                  }
+              ],
+            stripeMonthForeignRevenue = Just (account (-50_000)),
+            stripeMonthRevenueWithNoTaxRow = Account.zero,
+            stripeMonthFees =
+              [ exemptFeeOnly,
+                FeeLine "Stripe Tax - integration fee" (account 1_000) (account 81) (Just 0.081)
+              ],
+            stripeMonthPayouts = [StripePayout (fromGregorian 2026 7 15) (account 20_000)],
+            stripeMonthOpeningBalance = account 10_000,
+            stripeMonthClosingBalance = account 145_019
+          }
+  let august :: StripeMonth
+      august =
+        StripeMonth
+          { stripeMonthMonth = YearMonth 2026 8,
+            stripeMonthDomesticRevenues =
+              [ RevenueAtRate
+                  { revenueAtRateRate = 0.081,
+                    revenueAtRateNet = account (-100_000),
+                    revenueAtRateTax = account (-8_100),
+                    revenueAtRateRefundedNet = account 10_000,
+                    revenueAtRateRefundedTax = account 810
+                  }
+              ],
+            stripeMonthForeignRevenue = Nothing,
+            stripeMonthRevenueWithNoTaxRow = Account.zero,
+            stripeMonthFees = [],
+            stripeMonthPayouts = [],
+            stripeMonthOpeningBalance = account 145_019,
+            stripeMonthClosingBalance = account 242_309
+          }
+  let emptyMonth :: StripeMonth
+      emptyMonth =
+        StripeMonth
+          { stripeMonthMonth = YearMonth 2026 9,
+            stripeMonthDomesticRevenues = [],
+            stripeMonthForeignRevenue = Nothing,
+            stripeMonthRevenueWithNoTaxRow = Account.zero,
+            stripeMonthFees = [],
+            stripeMonthPayouts = [],
+            stripeMonthOpeningBalance = Account.zero,
+            stripeMonthClosingBalance = Account.zero
+          }
+  -- A month that gave money back without taking any, so its report is attached once.
+  let refundsOnly :: StripeMonth
+      refundsOnly =
+        august
+          { stripeMonthDomesticRevenues =
+              [ RevenueAtRate
+                  { revenueAtRateRate = 0.081,
+                    revenueAtRateNet = Account.zero,
+                    revenueAtRateTax = Account.zero,
+                    revenueAtRateRefundedNet = account 10_000,
+                    revenueAtRateRefundedTax = account 810
+                  }
+              ],
+            stripeMonthOpeningBalance = Account.zero,
+            stripeMonthClosingBalance = account (-10_810)
+          }
+  -- The percentage written on each posting's ratio, so that a pair can be told from a
+  -- posting that merely happens to sit next to one.
+  let ratioPercentagesOf :: Transaction () -> [Maybe String]
+      ratioPercentagesOf t =
+        [ percentageOf p
+        | Commented (Located _ p) _ <- transactionPostings t
+        ]
+        where
+          percentageOf p = case postingRatio p of
+            Nothing -> Nothing
+            Just (Located _ ratioExpression) ->
+              let Located _ rationalExpression = ratioExpressionRationalExpression ratioExpression
+                  Located _ numerator = rationalExpressionNumerator rationalExpression
+               in Just (DecimalLiteral.toString numerator)
+  -- Two rates in one month, each with something refunded at it.
+  let twoRates :: [RevenueAtRate]
+      twoRates =
+        [ RevenueAtRate
+            { revenueAtRateRate = 0.026,
+              revenueAtRateNet = account (-20_000),
+              revenueAtRateTax = account (-520),
+              revenueAtRateRefundedNet = account 1_000,
+              revenueAtRateRefundedTax = account 26
+            },
+          RevenueAtRate
+            { revenueAtRateRate = 0.081,
+              revenueAtRateNet = account (-100_000),
+              revenueAtRateTax = account (-8_100),
+              revenueAtRateRefundedNet = account 5_000,
+              revenueAtRateRefundedTax = account 405
+            }
+        ]
   describe "stripeTransactions" $ do
     it "writes an ordinary month" $
       goldenTextFile "test_resources/declarations/ordinary.cent" $
@@ -189,219 +382,3 @@ spec = do
       parsed <- shouldParse parseModule here [relfile|stripe.cent|] rendered
       render' (map (noLoc . stripDeclarationAnnotation . locatedValue) (moduleDeclarations parsed))
         `shouldBe` rendered
-
-emit :: [StripeMonth] -> [Transaction ()]
-emit months =
-  case stripeTransactions testSettings (QuantisationFactor 100) (CurrencySymbol "CHF") months of
-    Failure errs -> error $ unwords ["Could not emit transactions in this test:", show errs]
-    Success transactions -> transactions
-
-render :: [Transaction ()] -> Text
-render = render' . map (noLoc . DeclarationTransaction . noLoc)
-
-render' :: [GenLocated () (Declaration ())] -> Text
-render' declarations =
-  formatModule
-    Module
-      { moduleImports = [],
-        moduleDeclarations = declarations
-      }
-
-descriptionOf :: Transaction () -> Maybe Text
-descriptionOf t = unDescription . locatedValue . commentedValue <$> transactionDescription t
-
-transactionNamed :: Text -> [Transaction ()] -> Maybe (Transaction ())
-transactionNamed name transactions = case filter ((== Just name) . descriptionOf) transactions of
-  [] -> Nothing
-  (t : _) -> Just t
-
-accountNamesOf :: Transaction () -> [AccountName]
-accountNamesOf t =
-  [locatedValue (postingAccountName p) | Commented (Located _ p) _ <- transactionPostings t]
-
-ratiosOf :: Transaction () -> [Bool]
-ratiosOf t = [isJust (postingRatio p) | Commented (Located _ p) _ <- transactionPostings t]
-
-tagsOf :: Transaction () -> [Tag]
-tagsOf t =
-  [ locatedValue lt
-  | Commented (Located _ (TransactionTag (Located _ (ExtraTag lt)))) _ <- transactionExtras t
-  ]
-
-assertionsOf :: Transaction () -> [ExtraAssertion ()]
-assertionsOf t =
-  [locatedValue lea | Commented (Located _ (TransactionAssertion lea)) _ <- transactionExtras t]
-
-attachmentsOf :: Transaction () -> [Path Rel File]
-attachmentsOf t =
-  [ rf
-  | Commented (Located _ (TransactionAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located _ rf))))))) _ <-
-      transactionExtras t
-  ]
-
-postingsOf :: Transaction () -> [Posting ()]
-postingsOf t = [p | Commented (Located _ p) _ <- transactionPostings t]
-
-amountOf :: Posting () -> Account.Account
-amountOf p = literalAsAccount (locatedValue (postingAccount p))
-
-literalAsAccount :: DecimalLiteral -> Account.Account
-literalAsAccount literal = case Account.fromDecimalLiteral (QuantisationFactor 100) literal of
-  Nothing -> error $ unwords ["Not a centime-sized amount in this test:", show literal]
-  Just a -> a
-
--- | For every balance assertion, what it claims paired with what the transactions up to
--- and including it actually add up to.
-assertedAgainstRunningTotal ::
-  [Transaction ()] ->
-  [(Maybe Account.Account, Maybe Account.Account)]
-assertedAgainstRunningTotal transactions =
-  [ (claimed, runningTotal)
-  | (t, earlier) <- zip transactions (inits transactions),
-    ExtraAssertion (Located _ (AssertionEquals _ (Located _ name) (Located _ literal) _)) <- assertionsOf t,
-    name == declarationSettingAssetsAccountName testSettings,
-    let claimed = Just (literalAsAccount literal),
-    let runningTotal =
-          Account.sum
-            [ amountOf p
-            | earlierTransaction <- earlier ++ [t],
-              p <- postingsOf earlierTransaction,
-              locatedValue (postingAccountName p) == declarationSettingAssetsAccountName testSettings
-            ]
-  ]
-
-testSettings :: DeclarationSettings
-testSettings =
-  DeclarationSettings
-    { declarationSettingAssetsAccountName = "assets:stripe",
-      declarationSettingDomesticIncomeAccountName = "income:domestic",
-      declarationSettingVATIncomeAccountName = "income:VAT",
-      declarationSettingForeignIncomeAccountName = "income:foreign",
-      declarationSettingFeesAccountName = "expenses:banking:stripe",
-      declarationSettingRefundsAccountName = "expenses:refunds",
-      declarationSettingVATExpensesAccountName = "expenses:VAT",
-      declarationSettingPayoutAccountName = "assets:self-transfer:stripe-neon",
-      declarationSettingOpeningAccountName = "equity:starting",
-      declarationSettingDeductibleTags = ["deductible"],
-      declarationSettingNotVATDeductibleTags = ["tax-deductible", "not-vat-deductible"],
-      declarationSettingDocumentsDirectory = [reldir|documents/stripe|],
-      declarationSettingReportsDirectory = [reldir|documents/stripe/reports|],
-      declarationSettingFeesAttachmentPattern = "%Y-%m-%d_tax-invoice-%Y-%m.pdf"
-    }
-
-account :: Integer -> Account.Account
-account i = case Account.fromMinimalQuantisations i of
-  Nothing -> error $ unwords ["Not a valid account in this test:", show i]
-  Just a -> a
-
-exemptFeeOnly :: FeeLine
-exemptFeeOnly = FeeLine "Card payments - Stripe fee" (account 2_000) Account.zero Nothing
-
-july :: StripeMonth
-july =
-  StripeMonth
-    { stripeMonthMonth = YearMonth 2026 7,
-      stripeMonthDomesticRevenues =
-        [ RevenueAtRate
-            { revenueAtRateRate = 0.081,
-              revenueAtRateNet = account (-100_000),
-              revenueAtRateTax = account (-8_100),
-              revenueAtRateRefundedNet = Account.zero,
-              revenueAtRateRefundedTax = Account.zero
-            }
-        ],
-      stripeMonthForeignRevenue = Just (account (-50_000)),
-      stripeMonthRevenueWithNoTaxRow = Account.zero,
-      stripeMonthFees =
-        [ exemptFeeOnly,
-          FeeLine "Stripe Tax - integration fee" (account 1_000) (account 81) (Just 0.081)
-        ],
-      stripeMonthPayouts = [StripePayout (fromGregorian 2026 7 15) (account 20_000)],
-      stripeMonthOpeningBalance = account 10_000,
-      stripeMonthClosingBalance = account 145_019
-    }
-
-august :: StripeMonth
-august =
-  StripeMonth
-    { stripeMonthMonth = YearMonth 2026 8,
-      stripeMonthDomesticRevenues =
-        [ RevenueAtRate
-            { revenueAtRateRate = 0.081,
-              revenueAtRateNet = account (-100_000),
-              revenueAtRateTax = account (-8_100),
-              revenueAtRateRefundedNet = account 10_000,
-              revenueAtRateRefundedTax = account 810
-            }
-        ],
-      stripeMonthForeignRevenue = Nothing,
-      stripeMonthRevenueWithNoTaxRow = Account.zero,
-      stripeMonthFees = [],
-      stripeMonthPayouts = [],
-      stripeMonthOpeningBalance = account 145_019,
-      stripeMonthClosingBalance = account 242_309
-    }
-
-emptyMonth :: StripeMonth
-emptyMonth =
-  StripeMonth
-    { stripeMonthMonth = YearMonth 2026 9,
-      stripeMonthDomesticRevenues = [],
-      stripeMonthForeignRevenue = Nothing,
-      stripeMonthRevenueWithNoTaxRow = Account.zero,
-      stripeMonthFees = [],
-      stripeMonthPayouts = [],
-      stripeMonthOpeningBalance = Account.zero,
-      stripeMonthClosingBalance = Account.zero
-    }
-
--- | A month that gave money back without taking any, so its report is attached once.
-refundsOnly :: StripeMonth
-refundsOnly =
-  august
-    { stripeMonthDomesticRevenues =
-        [ RevenueAtRate
-            { revenueAtRateRate = 0.081,
-              revenueAtRateNet = Account.zero,
-              revenueAtRateTax = Account.zero,
-              revenueAtRateRefundedNet = account 10_000,
-              revenueAtRateRefundedTax = account 810
-            }
-        ],
-      stripeMonthOpeningBalance = Account.zero,
-      stripeMonthClosingBalance = account (-10_810)
-    }
-
--- | The percentage written on each posting's ratio, so that a pair can be told from a
--- posting that merely happens to sit next to one.
-ratioPercentagesOf :: Transaction () -> [Maybe String]
-ratioPercentagesOf t =
-  [ percentageOf p
-  | Commented (Located _ p) _ <- transactionPostings t
-  ]
-  where
-    percentageOf p = case postingRatio p of
-      Nothing -> Nothing
-      Just (Located _ ratioExpression) ->
-        let Located _ rationalExpression = ratioExpressionRationalExpression ratioExpression
-            Located _ numerator = rationalExpressionNumerator rationalExpression
-         in Just (DecimalLiteral.toString numerator)
-
--- | Two rates in one month, each with something refunded at it.
-twoRates :: [RevenueAtRate]
-twoRates =
-  [ RevenueAtRate
-      { revenueAtRateRate = 0.026,
-        revenueAtRateNet = account (-20_000),
-        revenueAtRateTax = account (-520),
-        revenueAtRateRefundedNet = account 1_000,
-        revenueAtRateRefundedTax = account 26
-      },
-    RevenueAtRate
-      { revenueAtRateRate = 0.081,
-        revenueAtRateNet = account (-100_000),
-        revenueAtRateTax = account (-8_100),
-        revenueAtRateRefundedNet = account 5_000,
-        revenueAtRateRefundedTax = account 405
-      }
-  ]

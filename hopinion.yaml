@@ -1,4 +1,3 @@
 disabled-rules:
   - HsNoSemigroupOnText
   - HsPrefixNaming
-  - TestNoTestHelpers

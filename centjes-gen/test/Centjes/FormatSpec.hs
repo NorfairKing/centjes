@@ -23,6 +23,88 @@ import Test.Syd.Validity
 
 spec :: Spec
 spec = do
+  let centFilesDirSpec :: Path Rel Dir -> Spec
+      centFilesDirSpec dir =
+        scenarioDirRecur dir $ \fp -> do
+          af <- liftIO $ makeAbsolute (dir </> fp)
+          when (fileExtension af == Just ".cent") $
+            it "can parse and format idempotently" $
+              goldenTextFile (fromRelFile (dir </> fp)) $ do
+                here <- getCurrentDir
+                rf <- makeRelative here af
+                contents <- T.readFile (fromAbsFile af)
+                context (show contents) $ do
+                  expected <- shouldParse parseModule here rf contents
+                  shouldBeValid expected
+                  context (show expected) $ do
+                    let rendered = formatModule expected
+                    context (unlines ["Rendered:", T.unpack rendered]) $ do
+                      actual <- shouldParse parseModule here rf rendered
+                      formatModule actual `shouldBe` formatModule expected
+                      pure rendered
+  let parseFormatRoundtripWith ::
+        forall s.
+        (HasCallStack) =>
+        ( Show (s ()),
+          GenValid (s ()),
+          Show (s SourceSpan),
+          GenValid (s SourceSpan)
+        ) =>
+        (Text -> Text) ->
+        String ->
+        -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
+        (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
+        (forall ann. s ann -> Text) ->
+        Spec
+      parseFormatRoundtripWith func name parser formatter = withFrozenCallStack $ do
+        describe name $ do
+          validDir <- liftIO $ parseRelDir (concat ["test_resources/syntax/", name, "/valid"])
+          scenarioDir validDir $ \fp -> do
+            af <- liftIO $ makeAbsolute (validDir </> fp)
+            when (fileExtension af == Just ".cent") $ do
+              let namedDir = parent (parent af)
+              formattedDir <- liftIO $ resolveDir namedDir "formatted"
+              let resultFile = formattedDir </> filename af
+
+              it (unwords ["can roundtrip", fromRelFile (validDir </> fp), "back to text the same way"]) $
+                goldenTextFile (fromAbsFile resultFile) $ do
+                  here <- getCurrentDir
+                  rf <- makeRelative here af
+                  contents <- func <$> T.readFile (fromAbsFile af)
+                  context (show contents) $
+                    context (T.unpack contents) $ do
+                      expected <- shouldParse parser here rf contents
+                      shouldBeValid expected
+                      context (ppShow expected) $ do
+                        let rendered = formatter (expected :: (s SourceSpan))
+                        context (unlines ["Rendered:", T.unpack rendered]) $ do
+                          actual <- shouldParse parser here rf rendered
+                          formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
+                          pure (formatter actual)
+
+          it "roundtrips valid values back to text the same way" $
+            forAllValid $ \expected -> do
+              let rendered = formatter (expected :: (s ()))
+              here <- getCurrentDir
+              context (unlines ["Rendered:", T.unpack rendered, show rendered]) $ do
+                actual <- shouldParse parser here [relfile|pure-test.cent|] rendered
+                context (ppShow actual) $ do
+                  formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
+  let parseFormatRoundtrip ::
+        forall s.
+        (HasCallStack) =>
+        ( Show (s ()),
+          GenValid (s ()),
+          Show (s SourceSpan),
+          GenValid (s SourceSpan)
+        ) =>
+        String ->
+        -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
+        (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
+        (forall ann. s ann -> Text) ->
+        Spec
+      parseFormatRoundtrip name parser formatter =
+        withFrozenCallStack $ parseFormatRoundtripWith id name parser formatter
   parseFormatRoundtrip "currency" parseCurrencyDeclaration formatCurrencyDeclaration
   parseFormatRoundtrip "account" parseAccountDeclaration formatAccountDeclaration
   parseFormatRoundtrip "tag" parseTagDeclaration formatTagDeclaration
@@ -69,88 +151,3 @@ spec = do
   centFilesDirSpec [reldir|test_resources/check-valid|]
   centFilesDirSpec [reldir|test_resources/lot|]
   centFilesDirSpec [reldir|test_resources/virtual|]
-
-centFilesDirSpec :: Path Rel Dir -> Spec
-centFilesDirSpec dir =
-  scenarioDirRecur dir $ \fp -> do
-    af <- liftIO $ makeAbsolute (dir </> fp)
-    when (fileExtension af == Just ".cent") $
-      it "can parse and format idempotently" $
-        goldenTextFile (fromRelFile (dir </> fp)) $ do
-          here <- getCurrentDir
-          rf <- makeRelative here af
-          contents <- T.readFile (fromAbsFile af)
-          context (show contents) $ do
-            expected <- shouldParse parseModule here rf contents
-            shouldBeValid expected
-            context (show expected) $ do
-              let rendered = formatModule expected
-              context (unlines ["Rendered:", T.unpack rendered]) $ do
-                actual <- shouldParse parseModule here rf rendered
-                formatModule actual `shouldBe` formatModule expected
-                pure rendered
-
-parseFormatRoundtrip ::
-  forall s.
-  (HasCallStack) =>
-  ( Show (s ()),
-    GenValid (s ()),
-    Show (s SourceSpan),
-    GenValid (s SourceSpan)
-  ) =>
-  String ->
-  -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
-  (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
-  (forall ann. s ann -> Text) ->
-  Spec
-parseFormatRoundtrip name parser formatter =
-  withFrozenCallStack $ parseFormatRoundtripWith id name parser formatter
-
-parseFormatRoundtripWith ::
-  forall s.
-  (HasCallStack) =>
-  ( Show (s ()),
-    GenValid (s ()),
-    Show (s SourceSpan),
-    GenValid (s SourceSpan)
-  ) =>
-  (Text -> Text) ->
-  String ->
-  -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
-  (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
-  (forall ann. s ann -> Text) ->
-  Spec
-parseFormatRoundtripWith func name parser formatter = withFrozenCallStack $ do
-  describe name $ do
-    validDir <- liftIO $ parseRelDir (concat ["test_resources/syntax/", name, "/valid"])
-    scenarioDir validDir $ \fp -> do
-      af <- liftIO $ makeAbsolute (validDir </> fp)
-      when (fileExtension af == Just ".cent") $ do
-        let namedDir = parent (parent af)
-        formattedDir <- liftIO $ resolveDir namedDir "formatted"
-        let resultFile = formattedDir </> filename af
-
-        it (unwords ["can roundtrip", fromRelFile (validDir </> fp), "back to text the same way"]) $
-          goldenTextFile (fromAbsFile resultFile) $ do
-            here <- getCurrentDir
-            rf <- makeRelative here af
-            contents <- func <$> T.readFile (fromAbsFile af)
-            context (show contents) $
-              context (T.unpack contents) $ do
-                expected <- shouldParse parser here rf contents
-                shouldBeValid expected
-                context (ppShow expected) $ do
-                  let rendered = formatter (expected :: (s SourceSpan))
-                  context (unlines ["Rendered:", T.unpack rendered]) $ do
-                    actual <- shouldParse parser here rf rendered
-                    formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected
-                    pure (formatter actual)
-
-    it "roundtrips valid values back to text the same way" $
-      forAllValid $ \expected -> do
-        let rendered = formatter (expected :: (s ()))
-        here <- getCurrentDir
-        context (unlines ["Rendered:", T.unpack rendered, show rendered]) $ do
-          actual <- shouldParse parser here [relfile|pure-test.cent|] rendered
-          context (ppShow actual) $ do
-            formatter (actual :: (s SourceSpan)) `shouldBe` formatter expected

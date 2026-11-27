@@ -24,6 +24,16 @@ import Text.Colour
 
 spec :: Spec
 spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
+  let assertFormatted :: Path Abs Dir -> Path Rel File -> IO ()
+      assertFormatted here rf = do
+        let af = here </> rf
+        contents <- SB.readFile (fromAbsFile af)
+        case TE.decodeUtf8' contents of
+          Left err -> expectationFailure $ show err
+          Right textContents ->
+            case parseModule here rf textContents of
+              Left err -> expectationFailure err
+              Right m -> formatModule m `shouldBe` textContents
   it "can format a given single file" $ \tdir ->
     forAllValid $ \m -> do
       let rf = [relfile|test.foobar|]
@@ -77,14 +87,3 @@ spec = modifyMaxSuccess (`div` 10) . tempDirSpec "centjes-format" $ do
     let formatSettings = FormatSettings {formatSettingFileOrDir = Just (Right tdir)}
     runStderrLoggingT (runCentjesFormat settings formatSettings) `shouldThrow` (\(_ :: ExitCode) -> True)
     T.readFile (fromAbsFile testFile2) `shouldReturn` unformatted
-
-assertFormatted :: Path Abs Dir -> Path Rel File -> IO ()
-assertFormatted here rf = do
-  let af = here </> rf
-  contents <- SB.readFile (fromAbsFile af)
-  case TE.decodeUtf8' contents of
-    Left err -> expectationFailure $ show err
-    Right textContents ->
-      case parseModule here rf textContents of
-        Left err -> expectationFailure err
-        Right m -> formatModule m `shouldBe` textContents

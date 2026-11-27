@@ -23,6 +23,136 @@ import Test.Syd
 
 spec :: Spec
 spec = do
+  let taxCsvHeader :: LB.ByteString
+      taxCsvHeader =
+        LB.concat
+          [ "\"country_code\",\"jurisdiction_level\",\"jurisdiction_name\",\"tax_rate\",",
+            "\"transaction_currency\",\"total_sales\",\"total_tax_collected\",\"total_taxable_sales\",",
+            "\"total_nontaxable_sales\",\"total_sales_refunded\",\"total_tax_refunded\"\n"
+          ]
+  let taxCsv :: [LB.ByteString] -> LB.ByteString
+      taxCsv rows = LB.concat (taxCsvHeader : rows)
+  let stripeErrorKind :: StripeError -> StripeErrorKind
+      stripeErrorKind = \case
+        StripeErrorReport {} -> KindReport
+        StripeErrorForeignTaxCollected {} -> KindForeignTaxCollected
+        StripeErrorNoVATRate {} -> KindNoVATRate
+        StripeErrorHomeNontaxable {} -> KindHomeNontaxable
+        StripeErrorDoesNotReconcile {} -> KindDoesNotReconcile
+        StripeErrorNoBalanceCategory {} -> KindNoBalanceCategory
+        StripeErrorSum {} -> KindSum
+        StripeErrorRefundsExceedSales {} -> KindRefundsExceedSales
+        StripeErrorFeeRateDisagrees {} -> KindFeeRateDisagrees
+        StripeErrorWrongCurrency {} -> KindWrongCurrency
+  let chf :: QuantisationFactor
+      chf = QuantisationFactor 100
+  -- One tax report row: country, rate, taxable, non-taxable, collected, refunded sales.
+  let taxRow ::
+        LB.ByteString ->
+        LB.ByteString ->
+        LB.ByteString ->
+        LB.ByteString ->
+        LB.ByteString ->
+        LB.ByteString ->
+        LB.ByteString
+      taxRow country rate taxable nontaxable collected refunded =
+        LB.concat
+          [ "\"",
+            country,
+            "\",\"country\",\"SOMEWHERE\",\"",
+            rate,
+            "\",\"chf\",\"0.00\",\"",
+            collected,
+            "\",\"",
+            taxable,
+            "\",\"",
+            nontaxable,
+            "\",\"",
+            refunded,
+            "\",\"0.00\"\n"
+          ]
+  -- A fee report with one taxed fee in it.
+  let feesCsv :: LB.ByteString -> LB.ByteString -> LB.ByteString
+      feesCsv amount tax =
+        LB.concat
+          [ "\"suite\",\"product\",\"feature_name\",\"amount\",\"tax\",\"currency\"\n",
+            "\"Revenue management\",\"Tax\",\"Stripe Tax - integration fee\",\"",
+            amount,
+            "\",\"",
+            tax,
+            "\",\"chf\"\n"
+          ]
+  -- A balance report closing on a given figure, opening on the one the fixtures use.
+  let balanceCsv :: LB.ByteString -> LB.ByteString
+      balanceCsv ending =
+        LB.concat
+          [ "\"category\",\"description\",\"net_amount\",\"currency\"\n",
+            "\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n",
+            "\"ending_balance\",\"Ending balance\",\"",
+            ending,
+            "\",\"chf\"\n"
+          ]
+  let settings :: AggregateSettings
+      settings =
+        AggregateSettings
+          { aggregateSettingHomeCountry = "CH",
+            aggregateSettingVATRates = swissVATRates,
+            aggregateSettingCurrency = StripeCurrency "chf",
+            aggregateSettingFeesVATRate = 0.081
+          }
+  let account :: Integer -> Account.Account
+      account i = case Account.fromMinimalQuantisations i of
+        Nothing -> error $ unwords ["Not a valid account in this test:", show i]
+        Just a -> a
+  -- The fixture reports for a month, with some of them replaced.
+  let monthReportsWith :: Month -> [(Path Rel File, LB.ByteString)] -> [Payout] -> IO MonthReports
+      monthReportsWith month overrides payouts = do
+        let parse name contents = case parseReportTable contents of
+              Left e -> expectationFailure (unwords [fromRelFile name <> ":", renderReportError e]) >> error "unreachable"
+              Right t -> pure t
+        let table name = case lookup name overrides of
+              Just contents -> parse name contents
+              Nothing -> do
+                monthDir <- parseRelDir (show month)
+                contents <- LB.readFile (fromRelFile ([reldir|test_resources/reports|] </> monthDir </> name))
+                parse name contents
+        MonthReports month
+          <$> table [relfile|tax.csv|]
+          <*> table [relfile|activity.csv|]
+          <*> table [relfile|fees.csv|]
+          <*> table [relfile|balance.csv|]
+          <*> pure payouts
+  -- The fixture reports for a month.
+  --
+  -- The CSVs under @test_resources\/reports@ have the shape of real responses from a live
+  -- account and invented amounts, because this repository is public and the real ones are
+  -- the account holder's revenue.  The shape is reproduced exactly, and these parts of it
+  -- are load-bearing rather than incidental:
+  --
+  -- \* column order as Stripe emits it, and columns this importer does not ask for, so that
+  --   reading by name is what is being tested,
+  -- \* two decimal places in the tax, activity and balance reports but /eighteen/ in the fee
+  --   report, because that is what Stripe really sends,
+  -- \* an empty @currency@ on the balance report's payout rows, which is why a row stating no
+  --   currency has to stay acceptable while every row that states one has to state the
+  --   ledger's,
+  -- \* a @tax_rate@ of @0.21@ on a Belgian row that collected nothing, because Stripe states
+  --   the jurisdiction's own rate whether or not it applied.  Only home-country rows take
+  --   their rate from that column.
+  --
+  -- The amounts reconcile exactly, which is the point: 'aggregateMonth' refuses a month whose
+  -- reports do not add up, so a fixture that did not add up would test only the refusal.
+  let monthReports :: Month -> [Payout] -> IO MonthReports
+      monthReports month = monthReportsWith month []
+  let payoutOf :: Text -> Int64 -> Integer -> PayoutStatus -> Payout
+      payoutOf identifier created minorUnits status =
+        Payout
+          { payoutId = PayoutId identifier,
+            payoutCreated = StripeTimestamp created,
+            payoutCurrency = StripeCurrency "chf",
+            payoutAmount = minorUnits,
+            payoutStatus = status
+          }
   describe "rowVATRate" $ do
     it "takes the rate the report states" $
       rowVATRate swissVATRates 0.081 (account 100_000) (account 8_100) `shouldBe` Just 0.081
@@ -334,66 +464,6 @@ spec = do
         Failure errs -> expectationFailure $ show errs
         Success month -> map stripePayoutAmount (stripeMonthPayouts month) `shouldBe` [account 10_000]
 
-taxCsvHeader :: LB.ByteString
-taxCsvHeader =
-  LB.concat
-    [ "\"country_code\",\"jurisdiction_level\",\"jurisdiction_name\",\"tax_rate\",",
-      "\"transaction_currency\",\"total_sales\",\"total_tax_collected\",\"total_taxable_sales\",",
-      "\"total_nontaxable_sales\",\"total_sales_refunded\",\"total_tax_refunded\"\n"
-    ]
-
-taxCsv :: [LB.ByteString] -> LB.ByteString
-taxCsv rows = LB.concat (taxCsvHeader : rows)
-
--- | One tax report row: country, rate, taxable, non-taxable, collected, refunded sales.
-taxRow ::
-  LB.ByteString ->
-  LB.ByteString ->
-  LB.ByteString ->
-  LB.ByteString ->
-  LB.ByteString ->
-  LB.ByteString ->
-  LB.ByteString
-taxRow country rate taxable nontaxable collected refunded =
-  LB.concat
-    [ "\"",
-      country,
-      "\",\"country\",\"SOMEWHERE\",\"",
-      rate,
-      "\",\"chf\",\"0.00\",\"",
-      collected,
-      "\",\"",
-      taxable,
-      "\",\"",
-      nontaxable,
-      "\",\"",
-      refunded,
-      "\",\"0.00\"\n"
-    ]
-
--- | A fee report with one taxed fee in it.
-feesCsv :: LB.ByteString -> LB.ByteString -> LB.ByteString
-feesCsv amount tax =
-  LB.concat
-    [ "\"suite\",\"product\",\"feature_name\",\"amount\",\"tax\",\"currency\"\n",
-      "\"Revenue management\",\"Tax\",\"Stripe Tax - integration fee\",\"",
-      amount,
-      "\",\"",
-      tax,
-      "\",\"chf\"\n"
-    ]
-
--- | A balance report closing on a given figure, opening on the one the fixtures use.
-balanceCsv :: LB.ByteString -> LB.ByteString
-balanceCsv ending =
-  LB.concat
-    [ "\"category\",\"description\",\"net_amount\",\"currency\"\n",
-      "\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n",
-      "\"ending_balance\",\"Ending balance\",\"",
-      ending,
-      "\",\"chf\"\n"
-    ]
-
 data StripeErrorKind
   = KindReport
   | KindForeignTaxCollected
@@ -406,85 +476,3 @@ data StripeErrorKind
   | KindFeeRateDisagrees
   | KindWrongCurrency
   deriving (Show, Eq)
-
-stripeErrorKind :: StripeError -> StripeErrorKind
-stripeErrorKind = \case
-  StripeErrorReport {} -> KindReport
-  StripeErrorForeignTaxCollected {} -> KindForeignTaxCollected
-  StripeErrorNoVATRate {} -> KindNoVATRate
-  StripeErrorHomeNontaxable {} -> KindHomeNontaxable
-  StripeErrorDoesNotReconcile {} -> KindDoesNotReconcile
-  StripeErrorNoBalanceCategory {} -> KindNoBalanceCategory
-  StripeErrorSum {} -> KindSum
-  StripeErrorRefundsExceedSales {} -> KindRefundsExceedSales
-  StripeErrorFeeRateDisagrees {} -> KindFeeRateDisagrees
-  StripeErrorWrongCurrency {} -> KindWrongCurrency
-
-settings :: AggregateSettings
-settings =
-  AggregateSettings
-    { aggregateSettingHomeCountry = "CH",
-      aggregateSettingVATRates = swissVATRates,
-      aggregateSettingCurrency = StripeCurrency "chf",
-      aggregateSettingFeesVATRate = 0.081
-    }
-
-chf :: QuantisationFactor
-chf = QuantisationFactor 100
-
-account :: Integer -> Account.Account
-account i = case Account.fromMinimalQuantisations i of
-  Nothing -> error $ unwords ["Not a valid account in this test:", show i]
-  Just a -> a
-
--- | The fixture reports for a month.
---
--- The CSVs under @test_resources\/reports@ have the shape of real responses from a live
--- account and invented amounts, because this repository is public and the real ones are
--- the account holder's revenue.  The shape is reproduced exactly, and these parts of it
--- are load-bearing rather than incidental:
---
--- * column order as Stripe emits it, and columns this importer does not ask for, so that
---   reading by name is what is being tested,
--- * two decimal places in the tax, activity and balance reports but /eighteen/ in the fee
---   report, because that is what Stripe really sends,
--- * an empty @currency@ on the balance report's payout rows, which is why a row stating no
---   currency has to stay acceptable while every row that states one has to state the
---   ledger's,
--- * a @tax_rate@ of @0.21@ on a Belgian row that collected nothing, because Stripe states
---   the jurisdiction's own rate whether or not it applied.  Only home-country rows take
---   their rate from that column.
---
--- The amounts reconcile exactly, which is the point: 'aggregateMonth' refuses a month whose
--- reports do not add up, so a fixture that did not add up would test only the refusal.
-monthReports :: Month -> [Payout] -> IO MonthReports
-monthReports month = monthReportsWith month []
-
--- | The fixture reports for a month, with some of them replaced.
-monthReportsWith :: Month -> [(Path Rel File, LB.ByteString)] -> [Payout] -> IO MonthReports
-monthReportsWith month overrides payouts = do
-  let parse name contents = case parseReportTable contents of
-        Left e -> expectationFailure (unwords [fromRelFile name <> ":", renderReportError e]) >> error "unreachable"
-        Right t -> pure t
-  let table name = case lookup name overrides of
-        Just contents -> parse name contents
-        Nothing -> do
-          monthDir <- parseRelDir (show month)
-          contents <- LB.readFile (fromRelFile ([reldir|test_resources/reports|] </> monthDir </> name))
-          parse name contents
-  MonthReports month
-    <$> table [relfile|tax.csv|]
-    <*> table [relfile|activity.csv|]
-    <*> table [relfile|fees.csv|]
-    <*> table [relfile|balance.csv|]
-    <*> pure payouts
-
-payoutOf :: Text -> Int64 -> Integer -> PayoutStatus -> Payout
-payoutOf identifier created minorUnits status =
-  Payout
-    { payoutId = PayoutId identifier,
-      payoutCreated = StripeTimestamp created,
-      payoutCurrency = StripeCurrency "chf",
-      payoutAmount = minorUnits,
-      payoutStatus = status
-    }

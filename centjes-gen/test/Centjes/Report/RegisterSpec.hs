@@ -41,6 +41,51 @@ import Text.Colour
 
 spec :: Spec
 spec = do
+  let withSingleCurrencyRegister ::
+        Path Abs File ->
+        Path Abs File ->
+        ([RegisterBlock 'SingleCurrency SourceSpan] -> IO ()) ->
+        IO ()
+      withSingleCurrencyRegister af configFile assertion = do
+        mConfig <- do
+          exists <- doesFileExist configFile
+          if exists
+            then Just <$> Yaml.decodeFileThrow (fromAbsFile configFile)
+            else pure Nothing
+        errOrSettings <-
+          OptEnvConf.runParserOn
+            allCapabilities
+            Nothing
+            OptEnvConf.settingsParser
+            Args.emptyArgs
+            EnvMap.empty
+            mConfig
+        let termCaps = With24BitColours
+        case errOrSettings of
+          Left errs -> expectationFailure $ T.unpack $ renderChunksText termCaps $ OptEnvConf.renderErrors errs
+          Right RegisterSettings {..} -> do
+            (ds, diag) <- runNoLoggingT $ loadModules af
+            ledger <- shouldValidate diag $ compileDeclarations ds
+            rr <-
+              shouldValidate diag $
+                produceRegister
+                  registerSettingFilter
+                  registerSettingBlockSize
+                  registerSettingCurrency
+                  registerSettingShowVirtual
+                  registerSettingBegin
+                  registerSettingEnd
+                  ledger
+            case rr of
+              AnyConverted ConvertedRegister {..} ->
+                assertion $ V.toList $ registerBlocks convertedRegister
+              AnyMultiCurrency _ ->
+                -- Multi-currency registers don't have single-currency blocks; skip
+                pure ()
+  let expectedAverage :: Money.Account -> Integer -> Money.Account
+      expectedAverage acc blockNum =
+        let (ma, _) = Account.fraction Money.RoundDown acc (1 % blockNum)
+         in fromMaybe Account.zero ma
   describe "produceBalanceReport" $ do
     xit "produces valid reports" $
       forAllValid $ \f ->
@@ -184,50 +229,3 @@ spec = do
                       ledger
 
                 pure $ renderValidationErrors diag errs
-
-withSingleCurrencyRegister ::
-  Path Abs File ->
-  Path Abs File ->
-  ([RegisterBlock 'SingleCurrency SourceSpan] -> IO ()) ->
-  IO ()
-withSingleCurrencyRegister af configFile assertion = do
-  mConfig <- do
-    exists <- doesFileExist configFile
-    if exists
-      then Just <$> Yaml.decodeFileThrow (fromAbsFile configFile)
-      else pure Nothing
-  errOrSettings <-
-    OptEnvConf.runParserOn
-      allCapabilities
-      Nothing
-      OptEnvConf.settingsParser
-      Args.emptyArgs
-      EnvMap.empty
-      mConfig
-  let termCaps = With24BitColours
-  case errOrSettings of
-    Left errs -> expectationFailure $ T.unpack $ renderChunksText termCaps $ OptEnvConf.renderErrors errs
-    Right RegisterSettings {..} -> do
-      (ds, diag) <- runNoLoggingT $ loadModules af
-      ledger <- shouldValidate diag $ compileDeclarations ds
-      rr <-
-        shouldValidate diag $
-          produceRegister
-            registerSettingFilter
-            registerSettingBlockSize
-            registerSettingCurrency
-            registerSettingShowVirtual
-            registerSettingBegin
-            registerSettingEnd
-            ledger
-      case rr of
-        AnyConverted ConvertedRegister {..} ->
-          assertion $ V.toList $ registerBlocks convertedRegister
-        AnyMultiCurrency _ ->
-          -- Multi-currency registers don't have single-currency blocks; skip
-          pure ()
-
-expectedAverage :: Money.Account -> Integer -> Money.Account
-expectedAverage acc blockNum =
-  let (ma, _) = Account.fraction Money.RoundDown acc (1 % blockNum)
-   in fromMaybe Account.zero ma

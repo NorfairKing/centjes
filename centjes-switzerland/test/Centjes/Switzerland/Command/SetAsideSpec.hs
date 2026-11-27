@@ -27,6 +27,40 @@ import Text.Read (readMaybe)
 
 spec :: Spec
 spec = sequential $ do
+  -- A new error does not compile without a kind, and a new kind fails the
+  -- tests without a scenario.
+  let setAsideErrorKind :: SetAsideError ann -> SetAsideErrorKind
+      setAsideErrorKind = \case
+        SetAsideErrorNoCHF -> KindNoCHF
+        SetAsideErrorWrongCHF _ -> KindWrongCHF
+        SetAsideErrorConvert _ -> KindConvert
+        SetAsideErrorNoOfficialRateBefore _ _ -> KindNoOfficialRateBefore
+        SetAsideErrorNoPrice _ _ -> KindNoPrice
+        SetAsideErrorUndeclaredAccount _ -> KindUndeclaredAccount
+        SetAsideErrorUntaggedWealth _ _ -> KindUntaggedWealth
+        SetAsideErrorTaggedBoth _ _ _ -> KindTaggedBoth
+        SetAsideErrorNoCantonalRates _ -> KindNoCantonalRates
+        SetAsideErrorNoMunicipalSteuerfuss _ _ -> KindNoMunicipalSteuerfuss
+        SetAsideErrorNoThirdPillarMaximum _ -> KindNoThirdPillarMaximum
+        SetAsideErrorUndeclaredThirdPillarAccount _ -> KindUndeclaredThirdPillarAccount
+        SetAsideErrorTaxes _ -> KindTaxes
+        SetAsideErrorOverflow -> KindOverflow
+  let errorScenario :: SetAsideErrorKind -> Path Rel Dir
+      errorScenario = \case
+        KindNoCHF -> [reldir|no-chf|]
+        KindWrongCHF -> [reldir|wrong-chf|]
+        KindConvert -> [reldir|convert|]
+        KindNoOfficialRateBefore -> [reldir|no-official-rate-before|]
+        KindNoPrice -> [reldir|no-price|]
+        KindUndeclaredAccount -> [reldir|undeclared-account|]
+        KindUntaggedWealth -> [reldir|untagged-wealth|]
+        KindTaggedBoth -> [reldir|tagged-both|]
+        KindNoCantonalRates -> [reldir|no-cantonal-rates|]
+        KindNoMunicipalSteuerfuss -> [reldir|no-municipal-steuerfuss|]
+        KindNoThirdPillarMaximum -> [reldir|no-third-pillar-maximum|]
+        KindUndeclaredThirdPillarAccount -> [reldir|undeclared-third-pillar-account|]
+        KindTaxes -> [reldir|taxes|]
+        KindOverflow -> [reldir|overflow|]
   describe "renderSetAsideReport" $
     dirScenarioDir [reldir|test_set_aside|] $ \rd ->
       it "renders the same report for this scenario" $
@@ -99,39 +133,3 @@ data SetAsideErrorKind
   | KindTaxes
   | KindOverflow
   deriving (Show, Eq, Enum, Bounded)
-
--- | A new error does not compile without a kind, and a new kind fails the
--- tests without a scenario.
-setAsideErrorKind :: SetAsideError ann -> SetAsideErrorKind
-setAsideErrorKind = \case
-  SetAsideErrorNoCHF -> KindNoCHF
-  SetAsideErrorWrongCHF _ -> KindWrongCHF
-  SetAsideErrorConvert _ -> KindConvert
-  SetAsideErrorNoOfficialRateBefore _ _ -> KindNoOfficialRateBefore
-  SetAsideErrorNoPrice _ _ -> KindNoPrice
-  SetAsideErrorUndeclaredAccount _ -> KindUndeclaredAccount
-  SetAsideErrorUntaggedWealth _ _ -> KindUntaggedWealth
-  SetAsideErrorTaggedBoth _ _ _ -> KindTaggedBoth
-  SetAsideErrorNoCantonalRates _ -> KindNoCantonalRates
-  SetAsideErrorNoMunicipalSteuerfuss _ _ -> KindNoMunicipalSteuerfuss
-  SetAsideErrorNoThirdPillarMaximum _ -> KindNoThirdPillarMaximum
-  SetAsideErrorUndeclaredThirdPillarAccount _ -> KindUndeclaredThirdPillarAccount
-  SetAsideErrorTaxes _ -> KindTaxes
-  SetAsideErrorOverflow -> KindOverflow
-
-errorScenario :: SetAsideErrorKind -> Path Rel Dir
-errorScenario = \case
-  KindNoCHF -> [reldir|no-chf|]
-  KindWrongCHF -> [reldir|wrong-chf|]
-  KindConvert -> [reldir|convert|]
-  KindNoOfficialRateBefore -> [reldir|no-official-rate-before|]
-  KindNoPrice -> [reldir|no-price|]
-  KindUndeclaredAccount -> [reldir|undeclared-account|]
-  KindUntaggedWealth -> [reldir|untagged-wealth|]
-  KindTaggedBoth -> [reldir|tagged-both|]
-  KindNoCantonalRates -> [reldir|no-cantonal-rates|]
-  KindNoMunicipalSteuerfuss -> [reldir|no-municipal-steuerfuss|]
-  KindNoThirdPillarMaximum -> [reldir|no-third-pillar-maximum|]
-  KindUndeclaredThirdPillarAccount -> [reldir|undeclared-third-pillar-account|]
-  KindTaxes -> [reldir|taxes|]
-  KindOverflow -> [reldir|overflow|]

@@ -15,6 +15,18 @@ import Test.Syd
 
 spec :: Spec
 spec = do
+  let withTable :: LB.ByteString -> (ReportTable -> ReportRow -> IO ()) -> IO ()
+      withTable contents func = case parseReportTable contents of
+        Left e -> expectationFailure (renderReportError e)
+        Right table -> case reportTableRows table of
+          [] -> expectationFailure "Expected a row"
+          (row : _) -> func table row
+  let chf :: QuantisationFactor
+      chf = QuantisationFactor 100
+  let account :: Integer -> Account.Account
+      account i = case Account.fromMinimalQuantisations i of
+        Nothing -> error $ unwords ["Not a valid account in this test:", show i]
+        Just a -> a
   codecSpec @ReportTypeId
   codecSpec @ReportType
 
@@ -107,18 +119,3 @@ spec = do
     it "reads a field Stripe left blank as empty" $
       withTable "\"category\",\"currency\"\n\"payouts\",\n" $ \_ row ->
         columnOrEmpty (ReportColumn "currency") row `shouldBe` ""
-
-withTable :: LB.ByteString -> (ReportTable -> ReportRow -> IO ()) -> IO ()
-withTable contents func = case parseReportTable contents of
-  Left e -> expectationFailure (renderReportError e)
-  Right table -> case reportTableRows table of
-    [] -> expectationFailure "Expected a row"
-    (row : _) -> func table row
-
-chf :: QuantisationFactor
-chf = QuantisationFactor 100
-
-account :: Integer -> Account.Account
-account i = case Account.fromMinimalQuantisations i of
-  Nothing -> error $ unwords ["Not a valid account in this test:", show i]
-  Just a -> a
