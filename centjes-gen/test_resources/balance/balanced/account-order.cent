@@ -1,0 +1,27 @@
+currency USD 0.01
+
+account assets:vault:checking
+account assets:vault:savings
+account assets:cash:wallet
+account assets-old
+account equity
+account expenses:food:apple
+account expenses:travel:apple
+account expenses:travel:zebra
+
+2024-01-01
+  | Move within assets
+  * assets:vault:checking +10 USD
+  * assets:vault:savings   +5 USD
+  * assets:cash:wallet    -15 USD
+
+2024-01-02
+  | Move within expenses
+  * expenses:food:apple   +5 USD
+  * expenses:travel:apple -2 USD
+  * expenses:travel:zebra -3 USD
+
+2024-01-03
+  | Opening old assets
+  * assets-old +7 USD
+  * equity     -7 USD

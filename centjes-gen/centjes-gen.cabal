@@ -10,6 +10,8 @@ homepage:       https://github.com/NorfairKing/centjes#readme
 bug-reports:    https://github.com/NorfairKing/centjes/issues
 build-type:     Simple
 extra-source-files:
+    test_resources/balance/balanced/account-order.cent
+    test_resources/balance/balanced/account-order.txt
     test_resources/balance/balanced/assert-virtual.cent
     test_resources/balance/balanced/assert-virtual.txt
     test_resources/balance/balanced/conversion-daily.cent
