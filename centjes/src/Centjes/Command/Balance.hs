@@ -86,7 +86,7 @@ renderBalanceReportTable se br@BalanceReport {..} =
 
 -- | A tree node representing an account and its children
 data AccountTree ann = AccountTree
-  { accountTreeName :: !Text, -- Leaf component only (e.g., "bar" for "assets:foo:bar")
+  { accountTreeName :: !Text, -- What the tree shows: the full name for a root, otherwise only the leaf component
     accountTreeFullName :: !AccountName, -- Full name for balance lookups
     accountTreeFilledBalance :: !(Money.MultiAccount (Commodity ann)),
     accountTreeChildren :: ![AccountTree ann]
@@ -101,7 +101,13 @@ buildAccountForest balances =
         Nothing -> True
         Just p -> not $ M.member p balances
       roots = filter (isRoot . fst) accounts
-   in map (buildTree balances accounts) roots
+      -- A root can have a parent that is hidden from the report, so only its
+      -- full name says where it belongs.
+      buildRoot root =
+        (buildTree balances accounts root)
+          { accountTreeName = AccountName.toText (fst root)
+          }
+   in map buildRoot roots
   where
     buildTree :: AccountBalances ann -> [(AccountName, Money.MultiAccount (Commodity ann))] -> (AccountName, Money.MultiAccount (Commodity ann)) -> AccountTree ann
     buildTree bs allAccounts (an, bal) =
