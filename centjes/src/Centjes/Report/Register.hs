@@ -112,7 +112,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Ratio
 import Data.Time
-import Data.Validity (Validity (..), declare)
+import Data.Validity (Validity (..), declare, genericValidate)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Error.Diagnose
@@ -206,24 +206,23 @@ data Register (mode :: AmountMode) ann = Register
     registerBlocks :: !(Vector (RegisterBlock mode ann)),
     registerTotal :: !(AmountOf mode ann)
   }
+  deriving (Generic)
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (Register mode ann)
 
-instance (Validity ann, Eq ann, Ord ann) => Validity (Register 'MultiCurrency ann) where
-  validate Register {..} =
+instance (Validity ann, Show ann, Ord ann) => Validity (Register 'MultiCurrency ann) where
+  validate r@Register {..} =
     mconcat
-      [ validate registerBlockSize,
-        foldMap validate registerBlocks,
+      [ genericValidate r,
         declare "The total of the register matches the sum of the blocks" $
           MultiAccount.sum (fmap registerBlockTotal registerBlocks)
             == Just registerTotal
       ]
 
 instance (Validity ann, Show ann, Ord ann) => Validity (Register 'SingleCurrency ann) where
-  validate Register {..} =
+  validate r@Register {..} =
     mconcat
-      [ validate registerBlockSize,
-        foldMap validate registerBlocks,
+      [ genericValidate r,
         declare "The total of the register matches the sum of the blocks" $
           foldl (\macc b -> macc >>= Account.add (registerBlockTotal b)) (Just Account.zero) registerBlocks
             == Just registerTotal
@@ -239,28 +238,23 @@ data RegisterBlock (mode :: AmountMode) ann = RegisterBlock
     -- Running average accross blocks
     registerBlockRunningAverage :: !(AmountOf mode ann)
   }
+  deriving (Generic)
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterBlock mode ann)
 
-instance (Validity ann, Eq ann, Ord ann) => Validity (RegisterBlock 'MultiCurrency ann) where
-  validate RegisterBlock {..} =
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'MultiCurrency ann) where
+  validate b@RegisterBlock {..} =
     mconcat
-      [ validate registerBlockTitle,
-        foldMap validate registerBlockEntries,
+      [ genericValidate b,
         declare "The total of the block matches the sum of the entries" $
           (mapM registerEntryTotalMulti registerBlockEntries >>= MultiAccount.sum)
             == Just registerBlockTotal
       ]
 
-instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'SingleCurrency ann) where
-  validate RegisterBlock {..} =
-    mconcat
-      [ validate registerBlockTitle,
-        foldMap validate registerBlockEntries
-        -- Note: We don't validate that blockTotal == sum of entries because
-        -- entries use individually-rounded amounts while blockTotal uses
-        -- bulk-converted running total differences for consistency with balance.
-      ]
+-- The block total is not checked against the sum of the entries here, because
+-- entries use individually-rounded amounts while the block total uses
+-- bulk-converted running total differences for consistency with balance.
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterBlock 'SingleCurrency ann)
 
 -- | A register entry is either a transaction or a revaluation
 -- Revaluations can only exist in SingleCurrency mode (GADT constraint)
@@ -275,12 +269,17 @@ data RegisterEntry (mode :: AmountMode) ann where
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterEntry mode ann)
 
-instance (Validity ann, Eq ann) => Validity (RegisterEntry 'MultiCurrency ann) where
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'MultiCurrency ann) where
+  -- [allow:HsValidateExtendsGeneric] A GADT whose constructors refine the mode
+  -- cannot have a Generic instance.
   validate (RegisterEntryTransaction rt) = validate rt
 
 instance (Validity ann, Show ann, Ord ann) => Validity (RegisterEntry 'SingleCurrency ann) where
-  validate (RegisterEntryTransaction rt) = validate rt
-  validate (RegisterEntryRevaluation rr) = validate rr
+  -- [allow:HsValidateExtendsGeneric] A GADT whose constructors refine the mode
+  -- cannot have a Generic instance.
+  validate = \case
+    RegisterEntryTransaction rt -> validate rt
+    RegisterEntryRevaluation rr -> validate rr
 
 -- | Get the total amount for a multi-currency register entry
 registerEntryTotalMulti ::
@@ -313,14 +312,13 @@ data RegisterTransaction (mode :: AmountMode) ann = RegisterTransaction
     registerTransactionDescription :: !(Maybe (GenLocated ann Description)),
     registerTransactionPostings :: !(Vector (RegisterPosting mode ann))
   }
+  deriving (Generic)
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterTransaction mode ann)
 
-instance (Validity ann, Eq ann) => Validity (RegisterTransaction 'MultiCurrency ann) where
-  validate RegisterTransaction {..} = foldMap validate registerTransactionPostings
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterTransaction 'MultiCurrency ann)
 
-instance (Validity ann, Eq ann) => Validity (RegisterTransaction 'SingleCurrency ann) where
-  validate RegisterTransaction {..} = foldMap validate registerTransactionPostings
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterTransaction 'SingleCurrency ann)
 
 registerTransactionTotalMulti ::
   (Ord ann) =>
@@ -345,36 +343,34 @@ data RegisterPosting (mode :: AmountMode) ann = RegisterPosting
     -- Running total within the block
     registerPostingBlockRunningTotal :: !(AmountOf mode ann)
   }
+  deriving (Generic)
 
 deriving instance (Show ann, Show (AmountOf mode ann)) => Show (RegisterPosting mode ann)
 
-instance (Validity ann, Eq ann) => Validity (RegisterPosting 'MultiCurrency ann) where
-  validate RegisterPosting {..} = validate registerPosting
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterPosting 'MultiCurrency ann)
 
-instance (Validity ann, Eq ann) => Validity (RegisterPosting 'SingleCurrency ann) where
-  validate RegisterPosting {..} = validate registerPosting
+instance (Validity ann, Show ann, Ord ann) => Validity (RegisterPosting 'SingleCurrency ann)
 
 -- | Wrapper for converted registers, includes target currency for formatting
 data ConvertedRegister ann = ConvertedRegister
   { convertedRegisterCurrency :: !(Currency ann),
     convertedRegister :: !(Register 'SingleCurrency ann)
   }
+  deriving (Generic)
 
 deriving instance (Show ann) => Show (ConvertedRegister ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (ConvertedRegister ann) where
-  validate ConvertedRegister {..} = validate convertedRegister
+instance (Validity ann, Show ann, Ord ann) => Validity (ConvertedRegister ann)
 
 -- | Sum type for unified API
 data AnyRegister ann
   = AnyMultiCurrency !(Register 'MultiCurrency ann)
   | AnyConverted !(ConvertedRegister ann)
+  deriving (Generic)
 
 deriving instance (Show ann) => Show (AnyRegister ann)
 
-instance (Validity ann, Show ann, Ord ann) => Validity (AnyRegister ann) where
-  validate (AnyMultiCurrency r) = validate r
-  validate (AnyConverted r) = validate r
+instance (Validity ann, Show ann, Ord ann) => Validity (AnyRegister ann)
 
 data RegisterError ann
   = RegisterErrorAddError

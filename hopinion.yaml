@@ -9,6 +9,5 @@ disabled-rules:
   - HsPrefixNaming
   - HsRecordFieldPerLine
   - HsStrictFields
-  - HsValidateExtendsGeneric
   - TestGenValidSpecPerGenValid
   - TestNoTestHelpers

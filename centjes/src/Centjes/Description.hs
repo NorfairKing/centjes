@@ -32,20 +32,19 @@ newtype Description = Description {unDescription :: Text}
 -- line non-empty.  Anything else cannot be written down.
 instance Validity Description where
   validate d@(Description t) =
-    -- Note: This splits rather than using 'T.lines', which is not the inverse of
-    -- the join: it drops a trailing empty line, so a trailing newline would go
-    -- unnoticed here.
-    let ls = T.splitOn "\n" t
-     in mconcat
-          [ genericValidate d,
-            declare "The description is not empty" $ not (T.null t),
-            declare "None of the lines of the description are empty" $
-              not (any T.null ls),
-            -- The lexer ends a line on a carriage return as well, but splitting
-            -- on newlines does not split on one.
-            declare "The description contains no carriage returns" $
-              not (T.any (== '\r') t)
-          ]
+    mconcat
+      [ genericValidate d,
+        declare "The description is not empty" $ not (T.null t),
+        -- This splits rather than using 'T.lines', which is not the inverse of
+        -- the join: it drops a trailing empty line, so a trailing newline would
+        -- go unnoticed here.
+        declare "None of the lines of the description are empty" $
+          not (any T.null (T.splitOn "\n" t)),
+        -- The lexer ends a line on a carriage return as well, but splitting
+        -- on newlines does not split on one.
+        declare "The description contains no carriage returns" $
+          not (T.any (== '\r') t)
+      ]
 
 instance Semigroup Description where
   (<>) (Description t1) (Description t2) = Description $ t1 <> "\n" <> t2

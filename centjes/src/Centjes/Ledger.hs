@@ -82,64 +82,71 @@ data Ledger ann = Ledger
 
 instance (Validity ann, Ord ann) => Validity (Ledger ann) where
   validate l@(Ledger {..}) =
-    let currenciesSet = S.fromList $ map (uncurry Currency) $ M.toList ledgerCurrencies
-        accountsSet = M.keysSet ledgerAccounts
-        tagsSet = M.keysSet ledgerTags
-        currencyDeclared currency =
-          declare "The currency is in the currencies map" $
-            currency `S.member` currenciesSet
-        commodityDeclared = \case
-          CommodityCurrency currency -> currencyDeclared currency
-          CommodityLot Lot {..} ->
-            mconcat
-              [ currencyDeclared lotCurrency,
-                currencyDeclared lotBasisCurrency
-              ]
-        costCurrencyValid (Located _ Cost {..}) =
-          let Cost _ _ = undefined
-           in let Located _ currency = costCurrency
-               in currencyDeclared currency
-     in mconcat
-          [ genericValidate l,
-            decorateList (V.toList ledgerPrices) $ \(Located _ Price {..}) ->
-              let Price _ _ _ = undefined
-               in mconcat
-                    [ let Located _ commodity = priceCommodity
-                       in commodityDeclared commodity,
-                      costCurrencyValid priceCost
-                    ],
-            decorateList (V.toList ledgerTransactions) $ \(Located _ Transaction {..}) ->
-              let Transaction _ _ _ _ _ _ = undefined
-               in mconcat
-                    [ decorateList (V.toList transactionPostings) $ \(Located _ p@Posting {..}) ->
-                        let Posting _ _ _ _ _ = undefined
-                         in mconcat
-                              [ declare "The posting's account name is in the accounts map" $
-                                  let Located _ accountName = postingAccountName
-                                   in accountName `S.member` accountsSet,
-                                let Located _ commodity = postingCommodity p
-                                 in commodityDeclared commodity,
-                                case postingPrice of
-                                  PostingPriceLot _ -> valid
-                                  PostingPriceCurrency _ mCost -> foldMap costCurrencyValid mCost
-                              ],
-                      decorateMap transactionTags $ \tag _ ->
-                        declare "The tag is in the tags map" $
-                          tag `S.member` tagsSet,
-                      decorateList (V.toList transactionAssertions) $ \(Located _ assertion) ->
-                        case assertion of
-                          AssertionEquals _ (Located _ accountName) _ (Located _ commodity) ->
-                            mconcat
-                              [ declare "The posting's account name is in the accounts map" $
-                                  accountName `S.member` accountsSet,
-                                commodityDeclared commodity
-                              ]
-                    ],
-            declare "the prices are sorted" $
-              partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
-            declare "the transactions are sorted" $
-              partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
-          ]
+    mconcat
+      [ genericValidate l,
+        validateLedgerDeclarationsUsed l,
+        declare "the prices are sorted" $
+          partiallyOrderedByTimestamp priceTimestamp ledgerPrices,
+        declare "the transactions are sorted" $
+          partiallyOrderedByTimestamp transactionTimestamp ledgerTransactions
+      ]
+
+-- | Every currency, account and tag that the ledger uses is declared in it.
+validateLedgerDeclarationsUsed :: (Ord ann) => Ledger ann -> Validation
+validateLedgerDeclarationsUsed Ledger {..} =
+  let currenciesSet = S.fromList $ map (uncurry Currency) $ M.toList ledgerCurrencies
+      accountsSet = M.keysSet ledgerAccounts
+      tagsSet = M.keysSet ledgerTags
+      currencyDeclared currency =
+        declare "The currency is in the currencies map" $
+          currency `S.member` currenciesSet
+      commodityDeclared = \case
+        CommodityCurrency currency -> currencyDeclared currency
+        CommodityLot Lot {..} ->
+          mconcat
+            [ currencyDeclared lotCurrency,
+              currencyDeclared lotBasisCurrency
+            ]
+      costCurrencyValid (Located _ Cost {..}) =
+        let Cost _ _ = undefined
+         in let Located _ currency = costCurrency
+             in currencyDeclared currency
+   in mconcat
+        [ decorateList (V.toList ledgerPrices) $ \(Located _ Price {..}) ->
+            let Price _ _ _ = undefined
+             in mconcat
+                  [ let Located _ commodity = priceCommodity
+                     in commodityDeclared commodity,
+                    costCurrencyValid priceCost
+                  ],
+          decorateList (V.toList ledgerTransactions) $ \(Located _ Transaction {..}) ->
+            let Transaction _ _ _ _ _ _ = undefined
+             in mconcat
+                  [ decorateList (V.toList transactionPostings) $ \(Located _ p@Posting {..}) ->
+                      let Posting _ _ _ _ _ = undefined
+                       in mconcat
+                            [ declare "The posting's account name is in the accounts map" $
+                                let Located _ accountName = postingAccountName
+                                 in accountName `S.member` accountsSet,
+                              let Located _ commodity = postingCommodity p
+                               in commodityDeclared commodity,
+                              case postingPrice of
+                                PostingPriceLot _ -> valid
+                                PostingPriceCurrency _ mCost -> foldMap costCurrencyValid mCost
+                            ],
+                    decorateMap transactionTags $ \tag _ ->
+                      declare "The tag is in the tags map" $
+                        tag `S.member` tagsSet,
+                    decorateList (V.toList transactionAssertions) $ \(Located _ assertion) ->
+                      case assertion of
+                        AssertionEquals _ (Located _ accountName) _ (Located _ commodity) ->
+                          mconcat
+                            [ declare "The posting's account name is in the accounts map" $
+                                accountName `S.member` accountsSet,
+                              commodityDeclared commodity
+                            ]
+                  ]
+        ]
 
 partiallyOrderedByTimestamp :: (a -> GenLocated ann Timestamp) -> Vector (GenLocated ann a) -> Bool
 partiallyOrderedByTimestamp getTimestamp =
