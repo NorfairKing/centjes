@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.Taxes.TypstSpec (spec) where
@@ -21,10 +22,10 @@ import Test.Syd.Aeson
 
 spec :: Spec
 spec = sequential $
-  dirScenarioDir "test_resources" $ \fp ->
+  dirScenarioDir [reldir|test_resources|] $ \rd ->
     it "Makes the same taxes-input.json for this scenario" $
-      goldenJSONFile (fp <> "taxes-input.json") $ do
-        dir <- resolveDir' fp
+      goldenJSONFile (fromRelFile (rd </> [relfile|taxes-input.json|])) $ do
+        dir <- makeAbsolute rd
         withCurrentDir dir $ withArgs [] $ do
           configFile <- resolveFile dir "switzerland.yaml"
           (Settings {..}, TaxesSettings {..}) <-

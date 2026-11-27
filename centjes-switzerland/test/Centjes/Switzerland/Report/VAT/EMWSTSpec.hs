@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.VAT.EMWSTSpec (spec) where
@@ -23,10 +24,10 @@ import Text.XML as XML
 
 spec :: Spec
 spec = sequential $
-  dirScenarioDir "test_resources" $ \fp ->
+  dirScenarioDir [reldir|test_resources|] $ \rd ->
     it "Makes the same vat.xml for this scenario" $
-      goldenTextFile (fp <> "vat.xml") $ do
-        dir <- resolveDir' fp
+      goldenTextFile (fromRelFile (rd </> [relfile|vat.xml|])) $ do
+        dir <- makeAbsolute rd
         withCurrentDir dir $ withArgs [] $ do
           configFile <- resolveFile dir "switzerland.yaml"
           (Settings {..}, VATSettings {..}) <-

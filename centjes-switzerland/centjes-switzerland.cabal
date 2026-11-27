@@ -267,7 +267,6 @@ test-suite centjes-switzerland-test
     , centjes-gen
     , centjes-switzerland
     , containers
-    , filepath
     , genvalidity
     , genvalidity-sydtest
     , genvalidity-time

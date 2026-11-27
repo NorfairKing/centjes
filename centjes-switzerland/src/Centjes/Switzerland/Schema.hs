@@ -25,6 +25,8 @@ import UnliftIO.Temporary (withSystemTempDirectory)
 -- to a directory assembled from upstream (see @nix/schemas.nix@). This avoids
 -- vendoring the schemas in the repository while keeping the executable
 -- self-contained: the runtime @xmllint@ validation needs the files on disk.
+-- [allow:HsNoFilePath] file-embed's embedDir produces FilePaths, which are
+-- parsed where the schemas are written out.
 embeddedSchemas :: [(FilePath, ByteString)]
 embeddedSchemas =
   $( do

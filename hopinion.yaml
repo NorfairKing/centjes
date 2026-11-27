@@ -3,7 +3,6 @@ disabled-rules:
   - HsGenValidWithoutExtraChecking
   - HsLambdaCase
   - HsNoCatchAllOwnSum
-  - HsNoFilePath
   - HsNoSemigroupOnText
   - HsNoStringError
   - HsOneLetPerBinding

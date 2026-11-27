@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Centjes.Switzerland.Command.SetAsideSpec (spec) where
 
@@ -27,10 +28,10 @@ import Text.Read (readMaybe)
 spec :: Spec
 spec = sequential $ do
   describe "renderSetAsideReport" $
-    dirScenarioDir "test_set_aside" $ \fp ->
+    dirScenarioDir [reldir|test_set_aside|] $ \rd ->
       it "renders the same report for this scenario" $
-        goldenTextFile (fp <> "report.txt") $ do
-          dir <- resolveDir' fp
+        goldenTextFile (fromRelFile (rd </> [relfile|report.txt|])) $ do
+          dir <- makeAbsolute rd
           withCurrentDir dir $ withArgs [] $ do
             (input, taxesInput) <-
               runParser version "centjes-switzerland set-aside-tests" $
@@ -50,14 +51,14 @@ spec = sequential $ do
     it "has a scenario for every kind of error, and no other scenarios" $ do
       errorsDir <- resolveDir' "test_set_aside_errors"
       (dirs, _) <- listDir errorsDir
-      map (toFilePath . dirname) dirs
-        `shouldMatchList` map (\kind -> errorScenario kind <> "/") [minBound .. maxBound]
+      map dirname dirs
+        `shouldMatchList` map errorScenario [minBound .. maxBound]
 
     forM_ [minBound .. maxBound] $ \kind -> do
-      let fp = "test_set_aside_errors/" <> errorScenario kind <> "/"
+      let rd = [reldir|test_set_aside_errors|] </> errorScenario kind
       it (unwords ["fails with only the", show kind, "error in its scenario"]) $
-        goldenTextFile (fp <> "error.txt") $ do
-          dir <- resolveDir' fp
+        goldenTextFile (fromRelFile (rd </> [relfile|error.txt|])) $ do
+          dir <- makeAbsolute rd
           withCurrentDir dir $ withArgs [] $ do
             (input, taxesInput) <-
               runParser version "centjes-switzerland set-aside-tests" $
@@ -118,19 +119,19 @@ setAsideErrorKind = \case
   SetAsideErrorTaxes _ -> KindTaxes
   SetAsideErrorOverflow -> KindOverflow
 
-errorScenario :: SetAsideErrorKind -> FilePath
+errorScenario :: SetAsideErrorKind -> Path Rel Dir
 errorScenario = \case
-  KindNoCHF -> "no-chf"
-  KindWrongCHF -> "wrong-chf"
-  KindConvert -> "convert"
-  KindNoOfficialRateBefore -> "no-official-rate-before"
-  KindNoPrice -> "no-price"
-  KindUndeclaredAccount -> "undeclared-account"
-  KindUntaggedWealth -> "untagged-wealth"
-  KindTaggedBoth -> "tagged-both"
-  KindNoCantonalRates -> "no-cantonal-rates"
-  KindNoMunicipalSteuerfuss -> "no-municipal-steuerfuss"
-  KindNoThirdPillarMaximum -> "no-third-pillar-maximum"
-  KindUndeclaredThirdPillarAccount -> "undeclared-third-pillar-account"
-  KindTaxes -> "taxes"
-  KindOverflow -> "overflow"
+  KindNoCHF -> [reldir|no-chf|]
+  KindWrongCHF -> [reldir|wrong-chf|]
+  KindConvert -> [reldir|convert|]
+  KindNoOfficialRateBefore -> [reldir|no-official-rate-before|]
+  KindNoPrice -> [reldir|no-price|]
+  KindUndeclaredAccount -> [reldir|undeclared-account|]
+  KindUntaggedWealth -> [reldir|untagged-wealth|]
+  KindTaggedBoth -> [reldir|tagged-both|]
+  KindNoCantonalRates -> [reldir|no-cantonal-rates|]
+  KindNoMunicipalSteuerfuss -> [reldir|no-municipal-steuerfuss|]
+  KindNoThirdPillarMaximum -> [reldir|no-third-pillar-maximum|]
+  KindUndeclaredThirdPillarAccount -> [reldir|undeclared-third-pillar-account|]
+  KindTaxes -> [reldir|taxes|]
+  KindOverflow -> [reldir|overflow|]

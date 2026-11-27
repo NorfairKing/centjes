@@ -1,6 +1,6 @@
 { mkDerivation, aeson, aeson-pretty, autodocodec, autoexporter
 , base, bytestring, centjes, centjes-gen, conduit, containers
-, diagnose, file-embed, filepath, genvalidity, genvalidity-sydtest
+, diagnose, file-embed, genvalidity, genvalidity-sydtest
 , genvalidity-time, http-client, http-client-tls, http-types, lib
 , monad-logger, mtl, opt-env-conf, opt-env-conf-test, path, path-io
 , pretty-show, QuickCheck, really-safe-money, really-safe-money-gen
@@ -28,7 +28,7 @@ mkDerivation {
   libraryToolDepends = [ autoexporter ];
   executableHaskellDepends = [ base ];
   testHaskellDepends = [
-    aeson base centjes centjes-gen containers filepath genvalidity
+    aeson base centjes centjes-gen containers genvalidity
     genvalidity-sydtest genvalidity-time monad-logger opt-env-conf
     opt-env-conf-test path path-io QuickCheck really-safe-money
     really-safe-money-gen safe-coloured-text sydtest sydtest-aeson text

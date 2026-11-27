@@ -133,11 +133,11 @@ spec = do
       map attachmentsOf (emit [july])
         `shouldBe` [ [],
                      [],
-                     [ "documents/stripe/reports/2026-07-31_stripe-tax-summary-2026-07.csv",
-                       "documents/stripe/reports/2026-07-31_stripe-activity-summary-2026-07.csv"
+                     [ [relfile|documents/stripe/reports/2026-07-31_stripe-tax-summary-2026-07.csv|],
+                       [relfile|documents/stripe/reports/2026-07-31_stripe-activity-summary-2026-07.csv|]
                      ],
-                     [ "documents/stripe/2026-07-31_tax-invoice-2026-07.pdf",
-                       "documents/stripe/reports/2026-07-31_stripe-fee-summary-2026-07.csv"
+                     [ [relfile|documents/stripe/2026-07-31_tax-invoice-2026-07.pdf|],
+                       [relfile|documents/stripe/reports/2026-07-31_stripe-fee-summary-2026-07.csv|]
                      ]
                    ]
 
@@ -147,10 +147,10 @@ spec = do
     it "says when it attaches the same report twice" $ do
       let sales = maybeToList (transactionNamed "Stripe sales 2026-08" (emit [august]))
       let refunds = maybeToList (transactionNamed "Stripe refunds 2026-08" (emit [august]))
-      let reportsDirectory = "documents/stripe/reports/"
-      let taxSummary = reportsDirectory <> "2026-08-31_stripe-tax-summary-2026-08.csv"
+      let reportsDirectory = [reldir|documents/stripe/reports|]
+      let taxSummary = reportsDirectory </> [relfile|2026-08-31_stripe-tax-summary-2026-08.csv|]
       map attachmentsOf sales
-        `shouldBe` [[taxSummary, reportsDirectory <> "2026-08-31_stripe-activity-summary-2026-08.csv"]]
+        `shouldBe` [[taxSummary, reportsDirectory </> [relfile|2026-08-31_stripe-activity-summary-2026-08.csv|]]]
       map attachmentsOf refunds `shouldBe` [[taxSummary]]
       map (elem "duplicate-attachment" . tagsOf) (sales ++ refunds) `shouldBe` [True, True]
 
@@ -227,9 +227,9 @@ assertionsOf :: Transaction () -> [ExtraAssertion ()]
 assertionsOf t =
   [locatedValue lea | Commented (Located _ (TransactionAssertion lea)) _ <- transactionExtras t]
 
-attachmentsOf :: Transaction () -> [FilePath]
+attachmentsOf :: Transaction () -> [Path Rel File]
 attachmentsOf t =
-  [ fromRelFile rf
+  [ rf
   | Commented (Located _ (TransactionAttachment (Located _ (ExtraAttachment (Located _ (Attachment (Located _ rf))))))) _ <-
       transactionExtras t
   ]

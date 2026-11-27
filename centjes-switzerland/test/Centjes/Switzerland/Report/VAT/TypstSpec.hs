@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.VAT.TypstSpec (spec) where
@@ -22,10 +23,10 @@ import Test.Syd.Aeson
 
 spec :: Spec
 spec = sequential $
-  dirScenarioDir "test_resources/vat" $ \fp ->
+  dirScenarioDir [reldir|test_resources/vat|] $ \rd ->
     it "Makes the same input.json for this scenario" $
-      goldenJSONFile (fp <> "vat-input.json") $ do
-        dir <- resolveDir' fp
+      goldenJSONFile (fromRelFile (rd </> [relfile|vat-input.json|])) $ do
+        dir <- makeAbsolute rd
         withCurrentDir dir $ withArgs [] $ do
           (Settings {..}, VATSettings {..}) <- runParser version "centjes-switzerland vat-tests" $ (,) <$> settingsParser <*> settingsParser
 

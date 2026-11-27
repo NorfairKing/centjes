@@ -1,3 +1,4 @@
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Switzerland.Report.Taxes.ETaxSpec (spec) where
@@ -22,10 +23,10 @@ import Text.XML as XML
 
 spec :: Spec
 spec = sequential $
-  dirScenarioDir "test_resources" $ \fp ->
+  dirScenarioDir [reldir|test_resources|] $ \rd ->
     it "Makes the same taxes.xml for this scenario" $
-      goldenTextFile (fp <> "taxes.xml") $ do
-        dir <- resolveDir' fp
+      goldenTextFile (fromRelFile (rd </> [relfile|taxes.xml|])) $ do
+        dir <- makeAbsolute rd
         withCurrentDir dir $ withArgs [] $ do
           configFile <- resolveFile dir "switzerland.yaml"
           (Settings {..}, TaxesSettings {..}) <-

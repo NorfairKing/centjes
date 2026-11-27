@@ -59,7 +59,7 @@ runCentjesImportRevolut = do
             <$> traverse
               ( \(rowIx, row) ->
                   mapValidationFailure
-                    (ImportError inputFp rowIx)
+                    (ImportError settingInput rowIx)
                     ( rowTransaction
                         currencies
                         settingAssetsAccountName
@@ -85,7 +85,7 @@ runCentjesImportRevolut = do
       let m = Module {moduleImports = [], moduleDeclarations = map noLoc ts}
       SB.writeFile (fromAbsFile settingOutput) (TE.encodeUtf8 (formatModule m))
 
-data ImportError = ImportError !FilePath !Int ImportError'
+data ImportError = ImportError !(Path Abs File) !Int ImportError'
 
 data ImportError'
   = ImportErrorUnknownCurrency !CurrencySymbol
@@ -118,7 +118,7 @@ instance ToReport ImportError where
                 { begin = (rowIx, 0),
                   -- There's no way to represent "end of this line".
                   end = (rowIx, 1000),
-                  file = fp
+                  file = fromAbsFile fp
                 },
               Where "While importing this row"
             )

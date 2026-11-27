@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Centjes.Stripe.AggregateSpec (spec) where
@@ -17,6 +18,7 @@ import Data.Text (Text)
 import Data.Time.Calendar.Month
 import qualified Money.Account as Account
 import Money.QuantisationFactor (QuantisationFactor (..))
+import Path
 import Test.Syd
 
 spec :: Spec
@@ -93,7 +95,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("tax.csv", "\"country_code\",\"jurisdiction_level\",\"jurisdiction_name\",\"tax_rate\",\"transaction_currency\",\"total_sales\",\"total_tax_collected\",\"total_taxable_sales\",\"total_nontaxable_sales\",\"total_sales_refunded\",\"total_tax_refunded\"\n\"DE\",\"country\",\"GERMANY\",\"0.19\",\"chf\",\"100.00\",\"19.00\",\"100.00\",\"0.00\",\"0.00\",\"0.00\"\n")
+          [ ([relfile|tax.csv|], "\"country_code\",\"jurisdiction_level\",\"jurisdiction_name\",\"tax_rate\",\"transaction_currency\",\"total_sales\",\"total_tax_collected\",\"total_taxable_sales\",\"total_nontaxable_sales\",\"total_sales_refunded\",\"total_tax_refunded\"\n\"DE\",\"country\",\"GERMANY\",\"0.19\",\"chf\",\"100.00\",\"19.00\",\"100.00\",\"0.00\",\"0.00\",\"0.00\"\n")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -106,7 +108,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("tax.csv", "\"country_code\",\"jurisdiction_level\",\"jurisdiction_name\",\"tax_rate\",\"transaction_currency\",\"total_sales\",\"total_tax_collected\",\"total_taxable_sales\",\"total_nontaxable_sales\",\"total_sales_refunded\",\"total_tax_refunded\"\n\"CH\",\"country\",\"SWITZERLAND\",\"0.081\",\"chf\",\"200.00\",\"8.10\",\"100.00\",\"100.00\",\"0.00\",\"0.00\"\n")
+          [ ([relfile|tax.csv|], "\"country_code\",\"jurisdiction_level\",\"jurisdiction_name\",\"tax_rate\",\"transaction_currency\",\"total_sales\",\"total_tax_collected\",\"total_taxable_sales\",\"total_nontaxable_sales\",\"total_sales_refunded\",\"total_tax_refunded\"\n\"CH\",\"country\",\"SWITZERLAND\",\"0.081\",\"chf\",\"200.00\",\"8.10\",\"100.00\",\"100.00\",\"0.00\",\"0.00\"\n")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -121,8 +123,8 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("tax.csv", taxCsv [taxRow "CH" "0.081" "100.00" "0.00" "0.00" "0.00"]),
-            ("balance.csv", balanceCsv "1650.19")
+          [ ([relfile|tax.csv|], taxCsv [taxRow "CH" "0.081" "100.00" "0.00" "0.00" "0.00"]),
+            ([relfile|balance.csv|], balanceCsv "1650.19")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -138,8 +140,8 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("tax.csv", taxCsv [taxRow "CH" "0.081" "0.00" "100.00" "0.00" "0.00"]),
-            ("balance.csv", balanceCsv "1650.19")
+          [ ([relfile|tax.csv|], taxCsv [taxRow "CH" "0.081" "0.00" "100.00" "0.00" "0.00"]),
+            ([relfile|balance.csv|], balanceCsv "1650.19")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -155,8 +157,8 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("tax.csv", taxCsv [taxRow "CH" "0.081" "0.00" "0.00" "0.00" "0.00"]),
-            ("balance.csv", balanceCsv "1650.19")
+          [ ([relfile|tax.csv|], taxCsv [taxRow "CH" "0.081" "0.00" "0.00" "0.00" "0.00"]),
+            ([relfile|balance.csv|], balanceCsv "1650.19")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -171,7 +173,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ( "tax.csv",
+          [ ( [relfile|tax.csv|],
               LB.concat
                 [ taxCsvHeader,
                   "\"CH\",\"country\",\"SWITZERLAND\",\"0.081\",\"eur\",\"108.10\",\"8.10\",\"100.00\",\"0.00\",\"0.00\",\"0.00\"\n"
@@ -187,13 +189,13 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ( "fees.csv",
+          [ ( [relfile|fees.csv|],
               LB.concat
                 [ "\"suite\",\"product\",\"feature_name\",\"amount\",\"tax\",\"currency\"\n",
                   "\"Payments\",\"Payment Processing\",\"Card payments - Stripe fee\",\"20.00\",\"0.00\",\"eur\"\n"
                 ]
             ),
-            ("balance.csv", balanceCsv "1661.00")
+            ([relfile|balance.csv|], balanceCsv "1661.00")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -216,7 +218,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ( "tax.csv",
+          [ ( [relfile|tax.csv|],
               taxCsv
                 [ taxRow "BE" "0.21" "0.00" "400.00" "0.00" "0.00",
                   taxRow "CH" "0.081" "1000.00" "0.00" "81.00" "0.00"
@@ -244,7 +246,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("balance.csv", "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n\"ending_balance\",\"Ending balance\",\"999.99\",\"chf\"\n")
+          [ ([relfile|balance.csv|], "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n\"ending_balance\",\"Ending balance\",\"999.99\",\"chf\"\n")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -255,7 +257,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("balance.csv", "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n")
+          [ ([relfile|balance.csv|], "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -270,8 +272,8 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("fees.csv", feesCsv "0.18" "0.01"),
-            ("balance.csv", balanceCsv "1680.81")
+          [ ([relfile|fees.csv|], feesCsv "0.18" "0.01"),
+            ([relfile|balance.csv|], balanceCsv "1680.81")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -285,8 +287,8 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("fees.csv", feesCsv "10.00" "0.26"),
-            ("balance.csv", balanceCsv "1670.74")
+          [ ([relfile|fees.csv|], feesCsv "10.00" "0.26"),
+            ([relfile|balance.csv|], balanceCsv "1670.74")
           ]
           []
       case aggregateMonth settings chf reports of
@@ -297,7 +299,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [ ("balance.csv", "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n\"ending_balance\",\"Ending balance\",\"1450.19\",\"chf\"\n")
+          [ ([relfile|balance.csv|], "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n\"ending_balance\",\"Ending balance\",\"1450.19\",\"chf\"\n")
           ]
           [ payoutOf "po_1" 1_783_000_000 10_000 PayoutStatusPaid,
             payoutOf "po_2" 1_783_100_000 10_000 PayoutStatusPaid
@@ -312,7 +314,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [("balance.csv", balanceCsv "1650.19")]
+          [([relfile|balance.csv|], balanceCsv "1650.19")]
           [ payoutOf "po_1" 1_783_000_000 10_000 PayoutStatusFailed,
             payoutOf "po_2" 1_783_100_000 10_000 PayoutStatusCanceled
           ]
@@ -326,7 +328,7 @@ spec = do
       reports <-
         monthReportsWith
           (YearMonth 2026 7)
-          [("balance.csv", "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n\"ending_balance\",\"Ending balance\",\"1550.19\",\"chf\"\n")]
+          [([relfile|balance.csv|], "\"category\",\"description\",\"net_amount\",\"currency\"\n\"starting_balance\",\"Starting balance\",\"100.00\",\"chf\"\n\"ending_balance\",\"Ending balance\",\"1550.19\",\"chf\"\n")]
           [payoutOf "po_1" 1_783_000_000 10_000 PayoutStatusInTransit]
       case aggregateMonth settings chf reports of
         Failure errs -> expectationFailure $ show errs
@@ -442,21 +444,22 @@ monthReports :: Month -> [Payout] -> IO MonthReports
 monthReports month = monthReportsWith month []
 
 -- | The fixture reports for a month, with some of them replaced.
-monthReportsWith :: Month -> [(FilePath, LB.ByteString)] -> [Payout] -> IO MonthReports
+monthReportsWith :: Month -> [(Path Rel File, LB.ByteString)] -> [Payout] -> IO MonthReports
 monthReportsWith month overrides payouts = do
   let table name = case lookup name overrides of
         Just contents -> parse name contents
         Nothing -> do
-          contents <- LB.readFile ("test_resources/reports/" <> show month <> "/" <> name)
+          monthDir <- parseRelDir (show month)
+          contents <- LB.readFile (fromRelFile ([reldir|test_resources/reports|] </> monthDir </> name))
           parse name contents
       parse name contents = case parseReportTable contents of
-        Left e -> expectationFailure (unwords [name <> ":", renderReportError e]) >> error "unreachable"
+        Left e -> expectationFailure (unwords [fromRelFile name <> ":", renderReportError e]) >> error "unreachable"
         Right t -> pure t
   MonthReports month
-    <$> table "tax.csv"
-    <*> table "activity.csv"
-    <*> table "fees.csv"
-    <*> table "balance.csv"
+    <$> table [relfile|tax.csv|]
+    <*> table [relfile|activity.csv|]
+    <*> table [relfile|fees.csv|]
+    <*> table [relfile|balance.csv|]
     <*> pure payouts
 
 payoutOf :: Text -> Int64 -> Integer -> PayoutStatus -> Payout

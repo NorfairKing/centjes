@@ -85,7 +85,7 @@ data DeclarationError
   | DeclarationErrorUnrepresentableRate !Rational
   | DeclarationErrorUnrepresentableDescription !Text !String
   | DeclarationErrorUnrepresentableComment !Text !String
-  | DeclarationErrorUnrepresentableAttachment !String !FilePath
+  | DeclarationErrorUnrepresentableAttachment !String !String
   | DeclarationErrorSum ![Money.Account]
   deriving stock (Show)
 
