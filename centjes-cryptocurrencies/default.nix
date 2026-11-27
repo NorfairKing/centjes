@@ -1,7 +1,7 @@
 { mkDerivation, aeson, base, bytestring, centjes, conduit
 , containers, http-client, http-client-tls, http-types, lib
 , monad-logger, opt-env-conf, path, path-io, really-safe-money
-, scientific, text, time
+, scientific, text, time, validity
 }:
 mkDerivation {
   pname = "centjes-cryptocurrencies";
@@ -12,7 +12,7 @@ mkDerivation {
   libraryHaskellDepends = [
     aeson base bytestring centjes conduit containers http-client
     http-client-tls http-types monad-logger opt-env-conf path path-io
-    really-safe-money scientific text time
+    really-safe-money scientific text time validity
   ];
   executableHaskellDepends = [ base ];
   homepage = "https://github.com/NorfairKing/centjes#readme";

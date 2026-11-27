@@ -7,6 +7,8 @@ module Centjes.Import.Revolut.OptParse where
 
 import qualified Centjes.AccountName as AccountName
 import Centjes.Module
+import Centjes.Validation (renderInvalid)
+import Data.Bifunctor (first)
 import OptEnvConf
 import Path
 import Path.IO
@@ -56,7 +58,7 @@ parseSettings =
       settingAssetsAccountName <-
         setting
           [ help "Assets account name",
-            reader $ eitherReader AccountName.fromStringOrError,
+            reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
             name "assets-account",
             value "assets:revolut:checking",
             metavar "ACCOUNT_NAME"
@@ -64,7 +66,7 @@ parseSettings =
       settingExpensesAccountName <-
         setting
           [ help "Expenses account name",
-            reader $ eitherReader AccountName.fromStringOrError,
+            reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
             name "expenses-account",
             value "expenses:unknown:revolut",
             metavar "ACCOUNT_NAME"
@@ -72,7 +74,7 @@ parseSettings =
       settingIncomeAccountName <-
         setting
           [ help "Income account name",
-            reader $ eitherReader AccountName.fromStringOrError,
+            reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
             name "income-account",
             value "income:unknown:revolut",
             metavar "ACCOUNT_NAME"
@@ -80,7 +82,7 @@ parseSettings =
       settingFeesAccountName <-
         setting
           [ help "Fees account name",
-            reader $ eitherReader AccountName.fromStringOrError,
+            reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
             name "fees-account",
             value "expenses:banking:revolut",
             metavar "ACCOUNT_NAME"

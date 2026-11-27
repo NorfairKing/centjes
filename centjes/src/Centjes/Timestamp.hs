@@ -20,6 +20,7 @@ module Centjes.Timestamp
   )
 where
 
+import Control.Applicative ((<|>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -79,14 +80,11 @@ toString = \case
   TimestampMinute d m -> formatTime defaultTimeLocale "%F %H:%M" (minuteToLocalTime d m)
   TimestampSecond d s -> formatTime defaultTimeLocale "%F %H:%M:%S" (secondToLocalTime d s)
 
-fromString :: String -> Either String Timestamp
+fromString :: String -> Maybe Timestamp
 fromString s =
-  (secondFromLocalTime <$> parseTimeEither defaultTimeLocale "%F %H:%M:%S" s)
-    `altEither` (minuteFromLocalTime <$> parseTimeEither defaultTimeLocale "%F %H:%M" s)
-    `altEither` (TimestampDay <$> parseTimeEither defaultTimeLocale "%F" s)
-  where
-    altEither (Right a) _ = Right a
-    altEither (Left _) e = e
+  (secondFromLocalTime <$> parseTimeM True defaultTimeLocale "%F %H:%M:%S" s)
+    <|> (minuteFromLocalTime <$> parseTimeM True defaultTimeLocale "%F %H:%M" s)
+    <|> (TimestampDay <$> parseTimeM True defaultTimeLocale "%F" s)
 
 toDay :: Timestamp -> Day
 toDay = \case
@@ -100,13 +98,8 @@ minuteFromLocalTime (LocalTime d tod) = TimestampMinute d (MinuteOfDay (floor (t
 secondFromLocalTime :: LocalTime -> Timestamp
 secondFromLocalTime (LocalTime d tod) = TimestampSecond d (SecondOfDay (floor (timeOfDayToTime tod)))
 
-fromText :: Text -> Either String Timestamp
+fromText :: Text -> Maybe Timestamp
 fromText = fromString . T.unpack
-
-parseTimeEither :: (ParseTime a) => TimeLocale -> String -> String -> Either String a
-parseTimeEither locale format string = case parseTimeM True locale format string of
-  Nothing -> Left $ "Failed to parse time value: " <> string <> " via " <> format
-  Just r -> Right r
 
 newtype MinuteOfDay = MinuteOfDay {unMinuteOfDay :: Word16}
   deriving (Show, Eq, Ord, Generic)

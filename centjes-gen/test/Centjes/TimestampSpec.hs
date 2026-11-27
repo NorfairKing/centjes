@@ -21,7 +21,7 @@ spec = do
     it "roundtrips with toText" $
       forAllValid $ \ts -> do
         let rendered = toText ts
-        context (show rendered) $ fromText rendered `shouldBe` Right ts
+        context (show rendered) $ fromText rendered `shouldBe` Just ts
 
   describe "toString" $
     it "produces valid values" $

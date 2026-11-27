@@ -17,6 +17,8 @@ import Centjes.Stripe.API (StripeKey (..))
 import Centjes.Stripe.Declarations (DeclarationSettings (..))
 import Centjes.Switzerland.Report.VAT.Types (VATRate (..), vatRatePercentageNumber)
 import qualified Centjes.Tag as Tag
+import Centjes.Validation (renderInvalid)
+import Data.Bifunctor (first)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -154,63 +156,63 @@ parseImportSettings = subConfig_ "import" $ do
   importSettingAssetsAccountName <-
     setting
       [ help "Account name of the Stripe balance",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "assets-account",
         value "assets:stripe"
       ]
   importSettingDomesticIncomeAccountName <-
     setting
       [ help "Account name of domestic income",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "domestic-income-account",
         value "income:domestic"
       ]
   importSettingVATIncomeAccountName <-
     setting
       [ help "Account name of the VAT charged to customers",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "vat-income-account",
         value "income:VAT"
       ]
   importSettingForeignIncomeAccountName <-
     setting
       [ help "Account name of foreign income",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "foreign-income-account",
         value "income:foreign"
       ]
   importSettingFeesAccountName <-
     setting
       [ help "Account name of Stripe's fees",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "fees-account",
         value "expenses:banking:stripe"
       ]
   importSettingRefundsAccountName <-
     setting
       [ help "Account name of money given back to customers",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "refunds-account",
         value "expenses:refunds"
       ]
   importSettingVATExpensesAccountName <-
     setting
       [ help "Account name of the VAT paid, which is what gets reclaimed",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "vat-expenses-account",
         value "expenses:VAT"
       ]
   importSettingPayoutAccountName <-
     setting
       [ help "Account name of the self-transfer that payouts go through",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "payout-account",
         value "assets:self-transfer:stripe-neon"
       ]
   importSettingOpeningAccountName <-
     setting
       [ help "Account name that the opening balance comes from",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "opening-account",
         value "equity:starting"
       ]
@@ -248,7 +250,7 @@ parseImportSettings = subConfig_ "import" $ do
   importSettingCurrency <-
     setting
       [ help "The currency Stripe settles in",
-        reader $ eitherReader (either Left Right . CurrencySymbol.fromText . Text.pack),
+        reader $ eitherReader (first renderInvalid . CurrencySymbol.fromText . Text.pack),
         conf "currency",
         value (CurrencySymbol.CurrencySymbol "CHF"),
         metavar "CURRENCY"

@@ -411,7 +411,7 @@ sBMLL l1 _ _ l5 = sBL l1 l5
 
 
 parseTimestamp :: Token -> Alex (Located Timestamp)
-parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> eitherParser "Timestamp" Timestamp.fromString ds
+parseTimestamp t@(Located _ (TokenTimestamp ds)) = sL1 t <$> maybeParser "Timestamp" Timestamp.fromString ds
 
 parseAnyLine :: Token -> Located Text
 parseAnyLine t@(Located _ (TokenAnyLine text)) = sL1 t text

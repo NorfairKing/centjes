@@ -24,6 +24,7 @@ import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import Data.Text.Encoding.Error (UnicodeException)
 import Money.QuantisationFactor as QuantisationFactor
 import Numeric.DecimalLiteral as DecimalLiteral
 import Path
@@ -74,11 +75,11 @@ formatDir currencies base = do
               concat
                 [ unwords ["Failed to parse", fromAbsFile (base </> fp)],
                   "\n",
-                  err
+                  renderParseFileError err
                 ]
       liftIO $ die "Could not parse all files. Not continuing to formatting them."
 
-  let checkedModules = map (\(fp, (textContents, m)) -> pen ((fp, textContents), idempotenceTest base fp m)) parsedModules
+  let checkedModules = map (\(fp, (textContents, m)) -> pen ((fp, textContents), idempotenceTest base m)) parsedModules
 
   readyToFormatModules <- case partitionEithers checkedModules of
     ([], ms) -> pure ms
@@ -90,7 +91,7 @@ formatDir currencies base = do
               concat
                 [ unwords ["Idempotence test failed for", fromAbsFile (base </> fp)],
                   "\n",
-                  err
+                  renderIdempotenceError base fp err
                 ]
       liftIO $ die "At least one file failed the idempotence test. Not continuing to formatting them."
 
@@ -109,27 +110,36 @@ formatSingleFile fp = do
       logWarnN $
         T.pack $
           unlines
-            [ "Could not format file because it does not look like Utf-8: ",
+            [ "Could not format file:",
               show fp,
-              show err
+              renderParseFileError err
             ]
     Right (textContents, m) -> formatSingleFileWith base rf textContents m
 
 formatSingleFileWith :: Path Abs Dir -> Path Rel File -> Text -> LModule -> LoggingT IO ()
 formatSingleFileWith base rf textContents m = do
-  newTextContents <- case idempotenceTest base rf m of
-    Left err -> liftIO $ die err
+  newTextContents <- case idempotenceTest base m of
+    Left err -> liftIO $ die (renderIdempotenceError base rf err)
     Right ft -> pure ft
   formatFile base rf textContents newTextContents
 
-parseFile :: Path Abs Dir -> Path Rel File -> LoggingT IO (Either String (Text, LModule))
+data ParseFileError
+  = ParseFileErrorNotUtf8 !UnicodeException
+  | ParseFileErrorUnparseable !String
+
+renderParseFileError :: ParseFileError -> String
+renderParseFileError = \case
+  ParseFileErrorNotUtf8 err -> unwords ["The file does not look like Utf-8:", show err]
+  ParseFileErrorUnparseable err -> err
+
+parseFile :: Path Abs Dir -> Path Rel File -> LoggingT IO (Either ParseFileError (Text, LModule))
 parseFile base fp = do
   contents <- liftIO $ SB.readFile (fromAbsFile (base </> fp))
   case TE.decodeUtf8' contents of
-    Left err -> pure (Left (show err))
+    Left err -> pure (Left (ParseFileErrorNotUtf8 err))
     Right textContents ->
       pure $ case parseModule base fp textContents of
-        Left err -> Left err
+        Left err -> Left (ParseFileErrorUnparseable err)
         Right m -> Right (textContents, m)
 
 formatFile :: Path Abs Dir -> Path Rel File -> Text -> Text -> LoggingT IO ()
@@ -140,30 +150,37 @@ formatFile base rf textContents newTextContents =
       liftIO $ SB.writeFile (fromAbsFile (base </> rf)) $ TE.encodeUtf8 newTextContents
       logInfoN $ T.pack $ unwords ["Formatted", fromAbsFile (base </> rf)]
 
-idempotenceTest :: Path Abs Dir -> Path Rel File -> LModule -> Either String Text
-idempotenceTest base rf m = do
+data IdempotenceError
+  = IdempotenceErrorUnparseable !String !Text
+  | IdempotenceErrorNotIdempotent !LModule !LModule
+
+renderIdempotenceError :: Path Abs Dir -> Path Rel File -> IdempotenceError -> String
+renderIdempotenceError base rf = \case
+  IdempotenceErrorUnparseable err newTextContents ->
+    unlines
+      [ "Formatted file could not be parsed, this indicates a bug:",
+        err,
+        T.unpack newTextContents
+      ]
+  IdempotenceErrorNotIdempotent before after ->
+    unlines
+      [ "Formatting was not idempotent.",
+        fromAbsFile (base </> rf),
+        "Before:",
+        show before,
+        "After:",
+        show after
+      ]
+
+idempotenceTest :: Path Abs Dir -> LModule -> Either IdempotenceError Text
+idempotenceTest base m = do
   let newTextContents = formatModule m
   case parseModule base [relfile|idempotence-test|] newTextContents of
-    Left err ->
-      Left $
-        unlines
-          [ "Formatted file could not be parsed, this indicates a bug:",
-            err,
-            T.unpack newTextContents
-          ]
+    Left err -> Left (IdempotenceErrorUnparseable err newTextContents)
     Right m' ->
       if newTextContents == formatModule m'
         then Right newTextContents
-        else
-          Left $
-            unlines
-              [ "Formatting was not idempotent.",
-                fromAbsFile (base </> rf),
-                "Before:",
-                show m,
-                "After:",
-                show m'
-              ]
+        else Left (IdempotenceErrorNotIdempotent m m')
 
 fillInDigits :: Map CurrencySymbol (GenLocated ann QuantisationFactor) -> LModule -> LModule
 fillInDigits currencies m = m {moduleDeclarations = map goLDeclaration (moduleDeclarations m)}

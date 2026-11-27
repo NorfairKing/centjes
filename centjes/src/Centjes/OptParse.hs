@@ -10,8 +10,10 @@ module Centjes.OptParse where
 import Autodocodec
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Report.Register
+import Centjes.Validation (renderInvalid)
 import Control.Applicative
 import Control.Monad.Logger
+import Data.Bifunctor (first)
 import qualified Data.Text as T
 import Data.Time
 import Data.Time.Calendar.Month
@@ -167,7 +169,7 @@ parseRegisterSettings = subConfig_ "register" $ do
   registerSettingCurrency <-
     optional $
       setting
-        [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+        [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
           help "Currency to convert to",
           option,
           long "convert",
@@ -205,7 +207,7 @@ parseBalanceSettings = subConfig_ "balance" $ do
   balanceSettingCurrency <-
     optional $
       setting
-        [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+        [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
           help "Currency to convert to",
           option,
           long "convert",
@@ -249,7 +251,7 @@ parseNetWorthSettings = subConfig_ "net-worth" $ do
   netWorthSettingCurrency <-
     optional $
       setting
-        [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+        [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
           help "Currency to convert to",
           option,
           long "convert",
@@ -285,7 +287,7 @@ parseIncomeStatementSettings = subConfig_ "income-statement" $ do
   incomeStatementSettingCurrency <-
     optional $
       setting
-        [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+        [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
           help "Currency to convert to",
           option,
           long "convert",

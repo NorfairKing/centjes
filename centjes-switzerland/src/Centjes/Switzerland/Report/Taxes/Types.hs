@@ -50,6 +50,7 @@ import Centjes.Report.Balance
 import Centjes.Report.EvaluatedLedger
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
+import Data.Bifunctor (first)
 import Data.List
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map (Map)
@@ -155,35 +156,35 @@ parseTaxesInput = do
   taxesInputTagUndeclared <-
     setting
       [ help "tag to use for undeclared asset accounts",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-undeclared",
         value "undeclared"
       ]
   taxesInputTagDeductible <-
     setting
       [ help "tag to use for deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-deductible",
         value "deductible"
       ]
   taxesInputTagNotDeductible <-
     setting
       [ help "tag to use for non-deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-not-deductible",
         value "not-deductible"
       ]
   taxesInputTagTaxDeductible <-
     setting
       [ help "tag to use for tax-deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-tax-deductible",
         value "tax-deductible"
       ]
   taxesInputTagNotTaxDeductible <-
     setting
       [ help "tag to use for non-tax-deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-not-tax-deductible",
         value "not-tax-deductible"
       ]
@@ -253,7 +254,7 @@ parseTaxesInput = do
   taxesInputVATExpensesAccount <-
     setting
       [ help "the account of the VAT paid on purchases",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "vat-expenses-account",
         value "expenses:VAT"
       ]
@@ -340,7 +341,7 @@ parseTaxesInput = do
   taxesInputMovablesDepreciationRate <-
     setting
       [ help "the depreciation rate for movables (e.g. 0.25 for 25%)",
-        reader $ eitherReader parseDepreciationRate,
+        reader $ eitherReader (first renderDepreciationRateError . parseDepreciationRate),
         confWith "movables-depreciation-rate" depreciationRateCodec,
         value (25 % 100)
       ]
@@ -364,7 +365,7 @@ parseTaxesInput = do
   taxesInputMachineryDepreciationRate <-
     setting
       [ help "the depreciation rate for machinery (e.g. 0.4 for 40%)",
-        reader $ eitherReader parseDepreciationRate,
+        reader $ eitherReader (first renderDepreciationRateError . parseDepreciationRate),
         confWith "machinery-depreciation-rate" depreciationRateCodec,
         value (40 % 100)
       ]
@@ -395,17 +396,26 @@ parsePartitionedExpenseAccounts category businessKey businessDefault privateKey 
       ]
   pure PartitionedExpenseAccounts {..}
 
-parseDepreciationRate :: String -> Either String (Ratio Natural)
+data DepreciationRateError
+  = DepreciationRateErrorNotDecimal !String
+  | DepreciationRateErrorNotRatio !String
+
+renderDepreciationRateError :: DepreciationRateError -> String
+renderDepreciationRateError = \case
+  DepreciationRateErrorNotDecimal s -> unwords ["Could not parse depreciation rate:", s]
+  DepreciationRateErrorNotRatio s -> unwords ["Could not convert depreciation rate to ratio:", s]
+
+parseDepreciationRate :: String -> Either DepreciationRateError (Ratio Natural)
 parseDepreciationRate s = case DecimalLiteral.fromString s of
-  Nothing -> Left $ "Could not parse depreciation rate: " <> s
+  Nothing -> Left (DepreciationRateErrorNotDecimal s)
   Just dl -> case DecimalLiteral.toRatio dl of
-    Nothing -> Left $ "Could not convert depreciation rate to ratio: " <> s
+    Nothing -> Left (DepreciationRateErrorNotRatio s)
     Just r -> Right r
 
 depreciationRateCodec :: JSONCodec (Ratio Natural)
 depreciationRateCodec =
   bimapCodec
-    parseDepreciationRate
+    (first renderDepreciationRateError . parseDepreciationRate)
     ( \r -> case DecimalLiteral.fromRatio r of
         Nothing -> show (numerator r) <> "/" <> show (denominator r)
         Just dl -> DecimalLiteral.toString dl

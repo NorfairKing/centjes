@@ -89,6 +89,7 @@ parseSpec ::
   (HasCallStack) =>
   (Show a, GenValid a) =>
   String ->
+  -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
   (Path Abs Dir -> Path Rel File -> Text -> Either String a) ->
   Spec
 parseSpec name parser = withFrozenCallStack $ do

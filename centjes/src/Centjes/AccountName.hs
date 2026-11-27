@@ -92,11 +92,11 @@ fromText = either (const Nothing) Just . fromTextOrError
 fromString :: String -> Maybe AccountName
 fromString = fromText . T.pack
 
-fromTextOrError :: Text -> Either String AccountName
-fromTextOrError = prettyValidate . AccountName . NE.fromList . T.splitOn ":"
+fromTextOrError :: Text -> Either [ValidationChain] AccountName
+fromTextOrError = checkValidity . AccountName . NE.fromList . T.splitOn ":"
 
 -- | Prefer 'fromTextOrErr' over 'fromStringOrErr'
-fromStringOrError :: String -> Either String AccountName
+fromStringOrError :: String -> Either [ValidationChain] AccountName
 fromStringOrError = fromTextOrError . T.pack
 
 -- | Prefer 'toText' over 'toString'.

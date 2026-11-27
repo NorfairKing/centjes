@@ -15,6 +15,8 @@ where
 
 import Autodocodec
 import qualified Centjes.Typo as Text
+import Centjes.Validation (renderInvalid)
+import Data.Bifunctor (first)
 import qualified Data.Char as Char
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -49,15 +51,15 @@ validCurrencySymbolChar = \case
     | otherwise -> False
 
 instance HasCodec CurrencySymbol where
-  codec = bimapCodec fromText currencySymbolText codec
+  codec = bimapCodec (first renderInvalid . fromText) currencySymbolText codec
 
 fromTextM :: (MonadFail m) => Text -> m CurrencySymbol
 fromTextM t = case fromText t of
-  Left e -> fail $ unlines [unwords ["Invalid currency symbol:", show t], e]
+  Left e -> fail $ unlines [unwords ["Invalid currency symbol:", show t], renderInvalid e]
   Right cs -> pure cs
 
-fromText :: Text -> Either String CurrencySymbol
-fromText = prettyValidate . CurrencySymbol
+fromText :: Text -> Either [ValidationChain] CurrencySymbol
+fromText = checkValidity . CurrencySymbol
 
 toText :: CurrencySymbol -> Text
 toText = currencySymbolText

@@ -1,5 +1,6 @@
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -13,10 +14,13 @@ where
 
 import Centjes.CurrencySymbol (CurrencySymbol)
 import qualified Centjes.CurrencySymbol as CurrencySymbol
+import Centjes.Validation (renderInvalid)
+import Data.Bifunctor (first)
 import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as T
 import Data.Time
+import Data.Validity (ValidationChain)
 import OptEnvConf hiding (Command)
 import Path
 import Path.IO
@@ -74,7 +78,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
     optional $
       setting
         [ help "Comma-separated cryptocurrency symbols to download (default: all currencies from ledger)",
-          reader $ eitherReader parseSymbolsList,
+          reader $ eitherReader (first renderSymbolsListError . parseSymbolsList),
           option,
           long "symbols",
           metavar "SYMBOLS"
@@ -82,7 +86,7 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
   downloadRatesSettingTarget <-
     setting
       [ help "Target currency symbol",
-        reader $ eitherReader (CurrencySymbol.fromText . T.pack),
+        reader $ eitherReader (first renderInvalid . CurrencySymbol.fromText . T.pack),
         option,
         long "target",
         name "target",
@@ -122,11 +126,22 @@ parseDownloadRatesSettings = subConfig_ "download-rates" $ do
         ]
   pure DownloadRatesSettings {..}
 
-parseSymbolsList :: String -> Either String (NonEmpty CurrencySymbol)
+data SymbolsListError
+  = SymbolsListErrorEmpty
+  | SymbolsListErrorEmptySymbol
+  | SymbolsListErrorInvalidSymbol ![ValidationChain]
+
+renderSymbolsListError :: SymbolsListError -> String
+renderSymbolsListError = \case
+  SymbolsListErrorEmpty -> "Symbols list cannot be empty"
+  SymbolsListErrorEmptySymbol -> "Symbols list cannot contain empty symbols"
+  SymbolsListErrorInvalidSymbol chains -> renderInvalid chains
+
+parseSymbolsList :: String -> Either SymbolsListError (NonEmpty CurrencySymbol)
 parseSymbolsList s = do
   let parts = map T.strip $ T.splitOn "," $ T.pack s
   case NE.nonEmpty parts of
-    Nothing -> Left "Symbols list cannot be empty"
+    Nothing -> Left SymbolsListErrorEmpty
     Just neParts
-      | any T.null neParts -> Left "Symbols list cannot contain empty symbols"
-      | otherwise -> traverse CurrencySymbol.fromText neParts
+      | any T.null neParts -> Left SymbolsListErrorEmptySymbol
+      | otherwise -> first SymbolsListErrorInvalidSymbol (traverse CurrencySymbol.fromText neParts)

@@ -19,6 +19,8 @@ module Centjes.Parse.Alex
   ) where
 
 import Centjes.Location
+import Centjes.Validation (renderInvalid)
+import Data.Validity (ValidationChain)
 import Data.Text (Text)
 import Money.Amount as Amount (Rounding(..))
 import Numeric.DecimalLiteral as DecimalLiteral
@@ -404,10 +406,10 @@ maybeParser name func b =
     Nothing -> alexError $ "Failed to parse " <> name <> " from " <> show b
     Just a -> pure a
 
-eitherParser :: Show b => String -> (b -> Either String a) -> b -> Alex a
+eitherParser :: Show b => String -> (b -> Either [ValidationChain] a) -> b -> Alex a
 eitherParser name func b =
   case func b of
-    Left err -> alexError $ "Failed to parse " <> name <> " from " <> show b <> ":\n" <> err
+    Left err -> alexError $ "Failed to parse " <> name <> " from " <> show b <> ":\n" <> renderInvalid err
     Right a -> pure a
 
 runAlex' :: Alex a -> Path Abs Dir -> Path Rel File -> String -> Either String a

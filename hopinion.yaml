@@ -3,7 +3,6 @@ disabled-rules:
   - HsGenValidWithoutExtraChecking
   - HsNoCatchAllOwnSum
   - HsNoSemigroupOnText
-  - HsNoStringError
   - HsOneLetPerBinding
   - HsPrefixNaming
   - HsStrictFields

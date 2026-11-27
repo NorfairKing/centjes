@@ -11,6 +11,7 @@ import Test.Syd
 
 shouldParse ::
   (HasCallStack) =>
+  -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
   (Path Abs Dir -> Path Rel File -> Text -> Either String a) ->
   Path Abs Dir ->
   Path Rel File ->

@@ -99,6 +99,7 @@ parseFormatRoundtrip ::
     GenValid (s SourceSpan)
   ) =>
   String ->
+  -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
   (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
   (forall ann. s ann -> Text) ->
   Spec
@@ -115,6 +116,7 @@ parseFormatRoundtripWith ::
   ) =>
   (Text -> Text) ->
   String ->
+  -- [allow:HsNoStringError] The parsers that Happy generates fail with a String.
   (Path Abs Dir -> Path Rel File -> Text -> Either String (s SourceSpan)) ->
   (forall ann. s ann -> Text) ->
   Spec

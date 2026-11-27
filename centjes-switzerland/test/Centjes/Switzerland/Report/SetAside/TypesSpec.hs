@@ -167,11 +167,11 @@ spec = do
 
     it "rejects an invalid account name" $
       parseOwnedShares (M.singleton "assets::a" 0.5)
-        `shouldBe` Left "Invalid account name: \"assets::a\""
+        `shouldBe` Left (OwnedSharesErrorInvalidAccountName "assets::a")
 
     it "rejects a share above 1" $
       parseOwnedShares (M.singleton "assets:a" 53)
-        `shouldBe` Left "Not between 0 and 1: 53.0"
+        `shouldBe` Left (OwnedSharesErrorShare (FractionErrorOutOfRange 53))
 
   describe "parseFraction" $ do
     it "accepts a fraction" $
@@ -181,7 +181,7 @@ spec = do
       (parseFraction 0, parseFraction 1) `shouldBe` (Right 0, Right 1)
 
     it "rejects a percentage written as a whole number" $
-      parseFraction 12 `shouldBe` Left "Not between 0 and 1: 12.0"
+      parseFraction 12 `shouldBe` Left (FractionErrorOutOfRange 12)
 
     it "rejects a negative fraction" $
-      parseFraction (-0.1) `shouldBe` Left "Not between 0 and 1: -0.1"
+      parseFraction (-0.1) `shouldBe` Left (FractionErrorOutOfRange (-0.1))

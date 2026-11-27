@@ -35,6 +35,7 @@ import Centjes.Ledger
 import Centjes.Location
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
+import Data.Bifunctor (first)
 import Data.Char (isDigit)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
@@ -85,18 +86,18 @@ instance Validity VATId where
       ]
 
 instance HasCodec VATId where
-  codec = bimapCodec parseVATId renderVATIdReference codec
+  codec = bimapCodec (first renderInvalid . parseVATId) renderVATIdReference codec
 
 -- | Parse a 'VATId' from a loosely-formatted string.
 --
 -- An optional @CHE@ prefix and any @.@, @-@ or space separators are ignored, so
 -- that @111.222.333@, @CHE-111.222.333@ and @CHE111222333@ all parse to the
 -- same identifier.
-parseVATId :: Text -> Either String VATId
+parseVATId :: Text -> Either [ValidationChain] VATId
 parseVATId raw =
   let withoutSeparators = T.filter (\c -> c /= '.' && c /= '-' && c /= ' ') raw
       digits = fromMaybe withoutSeparators (T.stripPrefix "CHE" (T.toUpper withoutSeparators))
-   in prettyValidate (VATId digits)
+   in checkValidity (VATId digits)
 
 -- | Render a 'VATId' for human reference, e.g. @111.222.333@.
 renderVATIdReference :: VATId -> Text
@@ -175,63 +176,63 @@ parseVATInput = do
   vatInputTagDeductible <-
     setting
       [ help "tag to use for deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-deductible",
         value "deductible"
       ]
   vatInputTagNotDeductible <-
     setting
       [ help "tag to use for non-deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-not-deductible",
         value "not-deductible"
       ]
   vatInputTagVATDeductible <-
     setting
       [ help "tag to use for VAT-deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-vat-deductible",
         value "vat-deductible"
       ]
   vatInputTagNotVATDeductible <-
     setting
       [ help "tag to use for non-VAT-deductible purchases",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-not-vat-deductible",
         value "not-vat-deductible"
       ]
   vatInputDomesticIncomeAccountName <-
     setting
       [ help "Account name of your domestic income",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "domestic-income-account",
         value "income:domestic"
       ]
   vatInputExportsIncomeAccountName <-
     setting
       [ help "Account name of your exports' income",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "exports-income-account",
         value "income:exports"
       ]
   vatInputForeignIncomeAccountName <-
     setting
       [ help "Account name of your foreign income",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "foreign-income-account",
         value "income:foreign"
       ]
   vatInputVATIncomeAccountName <-
     setting
       [ help "Account name of your the VAT you've charged",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "vat-income-account",
         value "income:VAT"
       ]
   vatInputVATExpensesAccountName <-
     setting
       [ help "the account of the VAT paid on purchases",
-        reader $ eitherReader AccountName.fromStringOrError,
+        reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
         conf "vat-expenses-account",
         value "expenses:VAT"
       ]

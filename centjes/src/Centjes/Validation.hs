@@ -10,8 +10,10 @@ import Control.Monad.Logger
 import Control.Monad.Trans
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Validity (Validity (..))
+import qualified Data.Validity as Validity
 import Error.Diagnose
 import GHC.Generics
 import Prettyprinter
@@ -103,11 +105,6 @@ checkValidation diag = \case
   Success a -> pure a
   Failure errs -> dieWithDiag $ renderDiagnostic diag errs
 
-checkValidationPure :: (ToReport e) => Diagnostic String -> Validation e a -> Either Text a
-checkValidationPure diag = \case
-  Success a -> Right a
-  Failure errs -> Left $ renderValidationErrors diag errs
-
 -- Keep this in sync with checkValidation
 renderValidationErrors :: (ToReport e) => Diagnostic String -> NonEmpty e -> Text
 renderValidationErrors diag errs =
@@ -129,3 +126,8 @@ renderDiagnostic diag errs = foldl' addReport diag (map toReport (NE.toList errs
 
 class ToReport e where
   toReport :: e -> Report String
+
+-- | Why a value is not valid, as Validity explains it, for a library that
+-- wants a failure as a String.
+renderInvalid :: [Validity.ValidationChain] -> String
+renderInvalid = fromMaybe "" . Validity.prettyValidation . Validity.Validation

@@ -7,6 +7,8 @@ module Centjes.Import.Cornercard.OptParse where
 
 import qualified Centjes.AccountName as AccountName
 import Centjes.Module
+import Centjes.Validation (renderInvalid)
+import Data.Bifunctor (first)
 import OptEnvConf
 import Path
 import Path.IO
@@ -55,7 +57,7 @@ parseSettings =
       settingLiabilitiesAccountName <-
         setting
           [ help "Liabilities account name",
-            reader $ eitherReader AccountName.fromStringOrError,
+            reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
             name "liabilities-account",
             value "liabilities:cornercard",
             metavar "ACCOUNT_NAME"
@@ -63,7 +65,7 @@ parseSettings =
       settingExpensesAccountName <-
         setting
           [ help "Expenses account name",
-            reader $ eitherReader AccountName.fromStringOrError,
+            reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
             name "expenses-account",
             value "expenses:unknown:cornercard",
             metavar "ACCOUNT_NAME"
@@ -71,7 +73,7 @@ parseSettings =
       settingIncomeAccountName <-
         setting
           [ help "Income account name",
-            reader $ eitherReader AccountName.fromStringOrError,
+            reader $ eitherReader (first renderInvalid . AccountName.fromStringOrError),
             name "income-account",
             value "income:unknown:cornercard",
             metavar "ACCOUNT_NAME"

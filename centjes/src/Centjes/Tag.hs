@@ -16,6 +16,8 @@ where
 
 import Autodocodec
 import qualified Centjes.Typo as Text
+import Centjes.Validation (renderInvalid)
+import Data.Bifunctor (first)
 import qualified Data.Char as Char
 import Data.String
 import Data.Text (Text)
@@ -49,18 +51,18 @@ instance Validity Tag where
       ]
 
 instance HasCodec Tag where
-  codec = bimapCodec Centjes.Tag.fromText toText codec
+  codec = bimapCodec (first renderInvalid . Centjes.Tag.fromText) toText codec
 
 instance IsString Tag where
   fromString s = case Centjes.Tag.fromString s of
-    Left err -> error err
+    Left err -> error (renderInvalid err)
     Right t -> t
 
-fromString :: String -> Either String Tag
+fromString :: String -> Either [ValidationChain] Tag
 fromString = fromText . T.pack
 
-fromText :: Text -> Either String Tag
-fromText = prettyValidate . Tag
+fromText :: Text -> Either [ValidationChain] Tag
+fromText = checkValidity . Tag
 
 toText :: Tag -> Text
 toText = tagText

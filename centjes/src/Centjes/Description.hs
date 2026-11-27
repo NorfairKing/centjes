@@ -14,6 +14,7 @@ module Centjes.Description
   )
 where
 
+import Centjes.Validation (renderInvalid)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Validity
@@ -51,11 +52,11 @@ instance Semigroup Description where
 
 fromTextM :: (MonadFail m) => Text -> m Description
 fromTextM t = case fromText t of
-  Left err -> fail $ unlines ["Invalid description:", show t, err]
+  Left err -> fail $ unlines ["Invalid description:", show t, renderInvalid err]
   Right d -> pure d
 
-fromText :: Text -> Either String Description
-fromText = prettyValidate . Description
+fromText :: Text -> Either [ValidationChain] Description
+fromText = checkValidity . Description
 
 toText :: Description -> Text
 toText = unDescription

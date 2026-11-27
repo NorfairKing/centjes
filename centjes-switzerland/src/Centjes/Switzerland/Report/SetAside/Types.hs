@@ -11,7 +11,9 @@ module Centjes.Switzerland.Report.SetAside.Types
     taxability,
     SetAsideTax (..),
     SetAsideWealth (..),
+    FractionError (..),
     parseFraction,
+    OwnedSharesError (..),
     parseOwnedShares,
     Municipality (..),
     SetAsideReport (..),
@@ -38,6 +40,9 @@ import Centjes.Location
 import Centjes.Switzerland.Report.Taxes.Types (TaxesError)
 import qualified Centjes.Tag as Tag
 import Centjes.Validation
+import Data.Bifunctor (first)
+import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NE
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Scientific (Scientific)
@@ -62,16 +67,21 @@ data SetAsideInput = SetAsideInput
   }
 
 instance HasParser SetAsideInput where
-  settingsParser = checkEither checkSetAsideInput parseSetAsideInput
+  settingsParser = checkEither (first renderSetAsideInputError . checkSetAsideInput) parseSetAsideInput
 
-checkSetAsideInput :: SetAsideInput -> Either String SetAsideInput
-checkSetAsideInput input = case duplicateSetAsideAccounts input of
-  [] -> Right input
-  duplicates ->
-    Left $
-      unwords $
-        "These accounts are in the set-aside settings more than once:"
-          : map AccountName.toString duplicates
+newtype SetAsideInputError = SetAsideInputErrorDuplicateAccounts (NonEmpty AccountName)
+
+renderSetAsideInputError :: SetAsideInputError -> String
+renderSetAsideInputError = \case
+  SetAsideInputErrorDuplicateAccounts duplicates ->
+    unwords $
+      "These accounts are in the set-aside settings more than once:"
+        : map AccountName.toString (NE.toList duplicates)
+
+checkSetAsideInput :: SetAsideInput -> Either SetAsideInputError SetAsideInput
+checkSetAsideInput input = case NE.nonEmpty (duplicateSetAsideAccounts input) of
+  Nothing -> Right input
+  Just duplicates -> Left (SetAsideInputErrorDuplicateAccounts duplicates)
 
 -- | Reserve accounts that the settings would count twice: one account in two
 -- taxes, or twice in one.
@@ -139,7 +149,7 @@ data SetAsideTax = SetAsideTax
 parseSetAsideTax :: Parser SetAsideTax
 parseSetAsideTax = do
   setAsideTaxRate <-
-    checkEither parseFraction $
+    checkEither (first renderFractionError . parseFraction) $
       setting
         [ help "the share of revenue that is set aside for this tax, between 0 and 1",
           conf "rate",
@@ -182,19 +192,19 @@ parseSetAsideWealth = do
   setAsideWealthTagTaxable <-
     setting
       [ help "tag of asset and liability accounts that count as wealth",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-taxable",
         value "taxable"
       ]
   setAsideWealthTagNotTaxable <-
     setting
       [ help "tag of asset and liability accounts that do not count as wealth, like a third pillar",
-        reader $ eitherReader Tag.fromString,
+        reader $ eitherReader (first renderInvalid . Tag.fromString),
         conf "tag-not-taxable",
         value "not-taxable"
       ]
   setAsideWealthOwnedShares <-
-    checkMapEither parseOwnedShares $
+    checkMapEither (first renderOwnedSharesError . parseOwnedShares) $
       setting
         [ help "accounts shared with someone who is taxed separately, and the share of them that is yours, between 0 and 1",
           conf "owned",
@@ -208,20 +218,37 @@ parseSetAsideWealth = do
       ]
   pure SetAsideWealth {..}
 
-parseOwnedShares :: Map Text Scientific -> Either String (Map AccountName Scientific)
+data OwnedSharesError
+  = OwnedSharesErrorInvalidAccountName !Text
+  | OwnedSharesErrorShare !FractionError
+  deriving (Show, Eq)
+
+renderOwnedSharesError :: OwnedSharesError -> String
+renderOwnedSharesError = \case
+  OwnedSharesErrorInvalidAccountName t -> unwords ["Invalid account name:", show t]
+  OwnedSharesErrorShare fe -> renderFractionError fe
+
+parseOwnedShares :: Map Text Scientific -> Either OwnedSharesError (Map AccountName Scientific)
 parseOwnedShares =
   fmap M.fromList
     . mapM
       ( \(t, share) -> case AccountName.fromText t of
-          Nothing -> Left $ unwords ["Invalid account name:", show t]
-          Just an -> (,) an <$> parseFraction share
+          Nothing -> Left (OwnedSharesErrorInvalidAccountName t)
+          Just an -> (,) an <$> first OwnedSharesErrorShare (parseFraction share)
       )
     . M.toList
 
-parseFraction :: Scientific -> Either String Scientific
+newtype FractionError = FractionErrorOutOfRange Scientific
+  deriving (Show, Eq)
+
+renderFractionError :: FractionError -> String
+renderFractionError = \case
+  FractionErrorOutOfRange fraction -> unwords ["Not between 0 and 1:", show fraction]
+
+parseFraction :: Scientific -> Either FractionError Scientific
 parseFraction fraction =
   if fraction < 0 || fraction > 1
-    then Left $ unwords ["Not between 0 and 1:", show fraction]
+    then Left (FractionErrorOutOfRange fraction)
     else Right fraction
 
 -- | A municipality in the canton of Zürich, by its number from the Swiss

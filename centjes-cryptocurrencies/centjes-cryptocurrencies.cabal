@@ -41,6 +41,7 @@ library
     , scientific
     , text
     , time
+    , validity
   default-language: Haskell2010
 
 executable centjes-cryptocurrencies

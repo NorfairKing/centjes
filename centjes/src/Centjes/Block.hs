@@ -15,6 +15,7 @@ where
 import Autodocodec
 import Centjes.Timestamp (Timestamp)
 import qualified Centjes.Timestamp as Timestamp
+import Data.Bifunctor (first)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time
@@ -41,9 +42,15 @@ data BlockSize
 instance Validity BlockSize
 
 instance HasCodec BlockSize where
-  codec = bimapCodec parseBlockSize renderBlockSize codec
+  codec = bimapCodec (first renderBlockSizeError . parseBlockSize) renderBlockSize codec
 
-parseBlockSize :: String -> Either String BlockSize
+newtype BlockSizeError = BlockSizeErrorUnknown String
+
+renderBlockSizeError :: BlockSizeError -> String
+renderBlockSizeError = \case
+  BlockSizeErrorUnknown s -> unwords ["Unknown block size:", show s]
+
+parseBlockSize :: String -> Either BlockSizeError BlockSize
 parseBlockSize = \case
   "individually" -> Right BlockSizeIndividual
   "daily" -> Right BlockSizeDay
@@ -51,7 +58,7 @@ parseBlockSize = \case
   "monthly" -> Right BlockSizeMonth
   "quarterly" -> Right BlockSizeQuarter
   "yearly" -> Right BlockSizeYear
-  s -> Left $ "Unknown block size: " <> show s
+  s -> Left (BlockSizeErrorUnknown s)
 
 renderBlockSize :: BlockSize -> String
 renderBlockSize = \case
@@ -101,7 +108,7 @@ instance HasParser BlockSize where
               option,
               long "block",
               conf "block",
-              reader $ eitherReader parseBlockSize,
+              reader $ eitherReader (first renderBlockSizeError . parseBlockSize),
               metavar "BLOCK_SIZE"
             ]
         ]

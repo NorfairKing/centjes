@@ -42,5 +42,5 @@ instance Validity Comment where
 commentLines :: Comment -> [Text]
 commentLines = T.splitOn "\n" . unComment
 
-fromText :: Text -> Either String Comment
-fromText = prettyValidate . Comment
+fromText :: Text -> Either [ValidationChain] Comment
+fromText = checkValidity . Comment

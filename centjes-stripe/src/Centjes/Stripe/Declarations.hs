@@ -33,6 +33,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Time
 import Data.Time.Calendar.Month
+import Data.Validity (ValidationChain)
 import Error.Diagnose
 import qualified Money.Account as Account
 import qualified Money.Account as Money (Account)
@@ -83,8 +84,8 @@ data DeclarationSettings = DeclarationSettings
 data DeclarationError
   = DeclarationErrorUnrepresentableAmount !QuantisationFactor !Money.Account
   | DeclarationErrorUnrepresentableRate !Rational
-  | DeclarationErrorUnrepresentableDescription !Text !String
-  | DeclarationErrorUnrepresentableComment !Text !String
+  | DeclarationErrorUnrepresentableDescription !Text ![ValidationChain]
+  | DeclarationErrorUnrepresentableComment !Text ![ValidationChain]
   | DeclarationErrorUnrepresentableAttachment !String !String
   | DeclarationErrorSum ![Money.Account]
   deriving stock (Show)
@@ -107,12 +108,12 @@ instance ToReport DeclarationError where
             stripeErr
               "SD_UNREPRESENTABLE_DESCRIPTION"
               (unwords ["Cannot write", show t, "as a description"])
-              [reason]
+              [renderInvalid reason]
           DeclarationErrorUnrepresentableComment t reason ->
             stripeErr
               "SD_UNREPRESENTABLE_COMMENT"
               (unwords ["Cannot write", show t, "as a comment"])
-              [reason, "Stripe named a fee something that cannot be written down."]
+              [renderInvalid reason, "Stripe named a fee something that cannot be written down."]
           DeclarationErrorUnrepresentableAttachment pattern_ rendered ->
             stripeErr
               "SD_UNREPRESENTABLE_ATTACHMENT"

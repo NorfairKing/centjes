@@ -15,8 +15,10 @@ where
 import Centjes.CurrencySymbol as CurrencySymbol
 import Centjes.Filter (Filter)
 import Centjes.OptParse ()
+import Centjes.Validation (renderInvalid)
 import Control.Applicative
 import Control.Monad.Logger
+import Data.Bifunctor (first)
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import OptEnvConf
@@ -101,7 +103,7 @@ parseAllSettings = subConfig_ "all" $ do
   mCurrency <-
     optional $
       setting
-        [ reader $ eitherReader $ CurrencySymbol.fromText . T.pack,
+        [ reader $ eitherReader $ first renderInvalid . CurrencySymbol.fromText . T.pack,
           help "Currency to chart in",
           option,
           long "currency",
