@@ -15,6 +15,7 @@ import Money.Amount.Gen ()
 import Test.QuickCheck
 
 -- TODO upstream this to genvalidity-time
+-- [allow:CommentBareTodo] Open work without an issue yet.
 instance GenValid Quarter
 
 instance GenValid VATInput

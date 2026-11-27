@@ -90,6 +90,7 @@ instance ToElement Header where
         ]
 
 -- TODO Attachment
+-- [allow:CommentBareTodo] Open work without an issue yet.
 data Attachment = Attachment
   deriving (Show)
 
@@ -97,6 +98,7 @@ instance ToElement Attachment where
   toElement Attachment {} = ech0119Element "attachment" []
 
 -- TODO other cantons if we support them
+-- [allow:CommentBareTodo] Open work without an issue yet.
 data CantonAbbreviation = CantonAbbreviationZuerich
   deriving (Show)
 
@@ -105,6 +107,7 @@ renderCantonAbbreviation = \case
   CantonAbbreviationZuerich -> "ZH"
 
 -- TODO Content
+-- [allow:CommentBareTodo] Open work without an issue yet.
 data Content = Content
   { contentMainForm :: !(Maybe MainForm)
   }
@@ -119,6 +122,7 @@ data Content = Content
   -- TODO diseaseAndAccidentExpenses
   -- TODO handicapExpenses
   -- TODO cantonExtension
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   deriving (Show)
 
 instance ToElement Content where
@@ -135,6 +139,7 @@ data MainForm = MainForm
     -- TODO personDataPartner2
     -- TODO childData
     -- TODO disabledPersonSupport
+    -- [allow:CommentBareTodo] Open work without an issue yet.
     mainFormRevenue :: !(Maybe Revenue)
     -- TODO deduction
     -- TODO revenueCalculation
@@ -143,6 +148,7 @@ data MainForm = MainForm
     -- TODO attachedForms
     -- TODO cantonExtension
     -- TODO lastTaxDeclaration
+    -- [allow:CommentBareTodo] Open work without an issue yet.
   }
   deriving (Show)
 
@@ -171,6 +177,7 @@ data PersonDataPartner1 = PersonDataPartner1
   -- TODO phoneNumberBusiness
   -- TODO paymentPension
   -- TODO taxMunicipality
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   }
   deriving (Show)
 
@@ -182,13 +189,16 @@ instance ToElement PersonDataPartner1 where
       ]
 
 data PartnerPersonIdentification = PartnerPersonIdentification
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   { -- TODO cantonExtension
     partnerPersonIdentificationOfficialName :: !Text,
     partnerPersonIdentificationFirstName :: !Text,
     -- TODO partnerPersonIdentificationSex
     -- TODO partnerPersonIdentificationDateOfBirth
+    -- [allow:CommentBareTodo] Open work without an issue yet.
     partnerPersonIdentificationVn :: !Text
     -- TODO partnerPersonIdentificationOtherPersonID
+    -- [allow:CommentBareTodo] Open work without an issue yet.
   }
   deriving (Show)
 
@@ -236,6 +246,7 @@ data Revenue = Revenue
   -- TODO propertyRemainingRevenue
   -- TODO propertyRevenueOtherProperty
   -- TODO totalAmountRevenue
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   }
   deriving (Show)
 
@@ -248,6 +259,7 @@ instance ToElement Revenue where
       ]
 
 data PartnerAmount = PartnerAmount
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   { -- TODO cantonExtension
     partnerAmountPartner1Amount :: !(Maybe DecimalLiteral),
     partnerAmountPartner2Amount :: !(Maybe DecimalLiteral)
@@ -266,6 +278,7 @@ instance ToNodes PartnerAmount where
 -- | Produce an 'XMLReport' from a 'TaxesReport' at the given time.
 --
 -- TODO Put this in a validation instead of a Maybe?
+-- [allow:CommentBareTodo] Open work without an issue yet.
 produceXMLReport :: UTCTime -> TaxesReport ann -> Maybe XMLReport
 produceXMLReport _ TaxesReport {..} = do
   let headerAttachments = []

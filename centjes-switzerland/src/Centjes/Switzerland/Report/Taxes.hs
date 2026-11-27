@@ -152,10 +152,11 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
 
           -- TODO assert that the balance is positive?
           -- this is checked anyway, we may use this in the type
-
+          -- [allow:CommentBareTodo] Open work without an issue yet.
           let attachments = map (locatedValue . attachmentPath . locatedValue) $ V.toList accountAttachments
 
           -- TODO This allows undeclared accounts with evidence, do we want that?
+          -- [allow:CommentBareTodo] Open work without an issue yet.
           case NE.nonEmpty attachments of
             Nothing -> validationTFailure $ TaxesErrorAssetAccountWithoutEvidence (Located al an)
             Just ne -> do

@@ -481,6 +481,7 @@ checkAttachment tl (Located _ (ExtraAttachment (Located _ a@(Attachment (Located
   exists <- liftIO $ doesFileExist af
 
   -- TODO also error when attachment exists but is not readable.
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   when (not exists) $ do
     -- Show the (up to 10) most similar looking files in the same directory
     let patt = fromRelFile (filename af)

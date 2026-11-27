@@ -141,6 +141,7 @@ data Block
 instance Validity Block
 
 -- TODO upstream these
+-- [allow:CommentBareTodo] Open work without an issue yet.
 instance Validity Month where
   validate = trivialValidation
 

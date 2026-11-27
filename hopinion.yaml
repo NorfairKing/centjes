@@ -1,5 +1,4 @@
 disabled-rules:
-  - CommentBareTodo
   - HsGenValidWithoutExtraChecking
   - HsNoSemigroupOnText
   - HsOneLetPerBinding

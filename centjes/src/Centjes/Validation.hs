@@ -24,6 +24,7 @@ import System.IO
 {-# ANN module ("DisableMutations" :: String) #-}
 
 -- TODO define Validation in terms of ValidationT so we can use polymorphic functions?
+-- [allow:CommentBareTodo] Open work without an issue yet.
 newtype ValidationT e m a = ValidationT {unValidationT :: m (Validation e a)}
   deriving (Functor)
 

@@ -224,6 +224,7 @@ data TurnoverComputation = TurnoverComputation
     -- befreite Leistungen an begünstigte Einrichtungen und Personen
     -- @
     -- TODO reconsider if I should be using this instead
+    -- [allow:CommentBareTodo] Open work without an issue yet.
     turnoverComputationSuppliesToForeignCountries :: !(Maybe DecimalLiteral),
     -- | `suppliesAbroad`
     --
@@ -478,6 +479,7 @@ instance ToElement OtherFlowOfFunds where
 -- | Produce an 'XMLReport' from a 'VATReport' at the given time.
 --
 -- TODO Put this in a validation instead of a Maybe?
+-- [allow:CommentBareTodo] Open work without an issue yet.
 produceXMLReport :: UTCTime -> VATReport ann -> Maybe XMLReport
 produceXMLReport generalInformationGenerationTime VATReport {..} = do
   -- @
@@ -496,17 +498,22 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
   turnoverComputationSuppliesAbroad <- traverse amountLiteral (unlessZero vatReportTotalForeignRevenue)
 
   -- TODO what is this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let turnoverComputationTransferNotificationProcedure = Nothing
   -- TODO what is this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let turnoverComputationSuppliesExemptFromTax = Nothing
   -- TODO what is this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let turnoverComputationReductionOfConsideration = Nothing
   -- TODO what is this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let turnoverComputationVariousDeduction = Nothing
   let xmlReportTurnoverComputation = TurnoverComputation {..}
   standard2024TurnoverLiteral <- amountLiteral vatReportDomesticRevenue2024
   let effectiveReportingMethodGrossOrNet = vatReportGrossOrNet
   -- TODO what is this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let effectiveReportingMethodOpted = Nothing
   let effectiveReportingMethodSupplies =
         [ TurnoverTaxRate
@@ -515,17 +522,21 @@ produceXMLReport generalInformationGenerationTime VATReport {..} = do
             }
         ]
   -- TODO what's this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let effectiveReportingMethodAcquisitionTax = []
   -- TODO what's this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let effectiveReportingMethodInputTaxMaterialAndServices = Nothing
   effectiveReportingMethodInputTaxInvestments <- traverse amountLiteral (unlessZero vatReportPaidVAT)
   -- TODO what's this?
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let effectiveReportingMethodSubsequentInputTaxDeduction = Nothing
   let effectiveReportingMethodInputTaxCorrections = Nothing
   let effectiveReportingMethodInputTaxReductions = Nothing
   let xmlReportEffectiveReportingMethod = EffectiveReportingMethod {..}
   xmlReportPayableTax <- accountLiteral vatReportPayable
   -- TODO gather donations and subsidies
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let xmlReportOtherFlowOfFunds = Nothing
   pure XMLReport {..}
 

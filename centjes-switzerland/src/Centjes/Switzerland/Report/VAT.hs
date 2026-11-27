@@ -93,6 +93,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
   -- We can't build the rates into the binary because there are MANY Currencies
   -- that could be relevant.
   -- So we let the user download rates with download-rates instead.
+  -- [allow:CommentBareTodo] Open work without an issue yet.
   let dailyPriceGraphs = pricesToDailyPriceGraphs ledgerPrices
 
   vatReportDomesticRevenues <- fmap concat $
@@ -127,6 +128,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
                           let domesticRevenueVATCurrency = postingCurrency p2
                           let Located _ vatAccount = postingAccount p2
                           -- TODO require that the vat currency is the same?
+                          -- [allow:CommentBareTodo] Open work without an issue yet.
                           domesticRevenueVATAmount <- requireNegative tl pl2 vatAccount
                           domesticRevenueVATCHFAmount <- convertDaily al2 dailyPriceGraphs day domesticRevenueVATCurrency vatReportCHF domesticRevenueVATAmount
 
@@ -171,6 +173,7 @@ produceVATReport vatInput@VATInput {..} ledger@Ledger {..} = do
             if dayInQuarter vatReportQuarter day
               then do
                 -- TODO assert that the rate is one of the common ones
+                -- [allow:CommentBareTodo] Open work without an issue yet.
 
                 fmap catMaybes $
                   forM (V.toList transactionPostings) $

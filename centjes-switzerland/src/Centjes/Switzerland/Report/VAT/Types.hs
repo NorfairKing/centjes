@@ -393,6 +393,7 @@ data GrossOrNet
 instance Validity GrossOrNet
 
 -- TODO check that the rate is valid for the day?
+-- [allow:CommentBareTodo] Open work without an issue yet.
 data VATRate
   = VATRate2024Standard
   | VATRate2024Reduced
