@@ -72,8 +72,8 @@ renderMultiCurrencyRegister register =
 renderMultiCurrencyRegisterTable :: Register 'MultiCurrency ann -> [[Chunk]]
 renderMultiCurrencyRegisterTable r@Register {..} =
   concat
-    [ [ case registerBlockSize of
-          BlockSizeIndividual ->
+    [ [ case blockSizeGrouping registerBlockSize of
+          BlockGroupingIndividual ->
             [ "Timestamp",
               "Description",
               "Account",
@@ -82,7 +82,7 @@ renderMultiCurrencyRegisterTable r@Register {..} =
               "Running",
               " "
             ]
-          _ ->
+          BlockGroupingGrouped ->
             [ "Block",
               "Timestamp",
               "Description",
@@ -114,9 +114,9 @@ renderMultiBlock blockSize maxAccountWidth RegisterBlock {..} =
       totalLines = multiAccountChunksWithWidth Nothing registerBlockRunningTotal
       averageLines = multiAccountChunksWithWidth Nothing registerBlockRunningAverage
       maxLines = max 1 (length blockLines)
-   in case blockSize of
-        BlockSizeIndividual -> blockLines
-        _ ->
+   in case blockSizeGrouping blockSize of
+        BlockGroupingIndividual -> blockLines
+        BlockGroupingGrouped ->
           hCatTable
             [ [[fore white $ chunk $ renderBlockTitle registerBlockTitle]],
               if V.null registerBlockEntries
@@ -198,8 +198,8 @@ renderConvertedRegister ConvertedRegister {..} =
 renderConvertedRegisterTable :: Currency ann -> Register 'SingleCurrency ann -> [[Chunk]]
 renderConvertedRegisterTable currency r@Register {..} =
   concat
-    [ [ case registerBlockSize of
-          BlockSizeIndividual ->
+    [ [ case blockSizeGrouping registerBlockSize of
+          BlockGroupingIndividual ->
             [ "Timestamp",
               "Description",
               "Account",
@@ -208,7 +208,7 @@ renderConvertedRegisterTable currency r@Register {..} =
               "Running",
               " "
             ]
-          _ ->
+          BlockGroupingGrouped ->
             [ "Block",
               "Timestamp",
               "Description",
@@ -241,9 +241,9 @@ renderSingleBlock blockSize currency maxAccountWidth RegisterBlock {..} =
       totalLines = singleAccountChunksWithWidth currency Nothing registerBlockRunningTotal
       averageLines = singleAccountChunksWithWidth currency Nothing registerBlockRunningAverage
       maxLines = max 1 (length blockLines)
-   in case blockSize of
-        BlockSizeIndividual -> blockLines
-        _ ->
+   in case blockSizeGrouping blockSize of
+        BlockGroupingIndividual -> blockLines
+        BlockGroupingGrouped ->
           hCatTable
             [ [[fore white $ chunk $ renderBlockTitle registerBlockTitle]],
               if V.null registerBlockEntries

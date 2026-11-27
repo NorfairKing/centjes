@@ -1101,9 +1101,9 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
       convertReval blockRunning r =
         let globalRunningTotal = convertedFlatRevaluationRunningTotal r
             -- For BlockSizeIndividual, use global running total (no separate "Total" column)
-            displayedBlockRunning = case blockSize of
-              BlockSizeIndividual -> globalRunningTotal
-              _ -> blockRunning
+            displayedBlockRunning = case blockSizeGrouping blockSize of
+              BlockGroupingIndividual -> globalRunningTotal
+              BlockGroupingGrouped -> blockRunning
          in RegisterRevaluation
               { registerRevaluationTimestamp = convertedFlatRevaluationTimestamp r,
                 registerRevaluationCurrencies = convertedFlatRevaluationCurrencies r,
@@ -1125,9 +1125,9 @@ groupSingleIntoBlocks blockSize mBegin mEnd ConvertedFlatRegister {..} = do
               globalRunningTotal = convertedFlatPostingRunningTotal cp
               -- For BlockSizeIndividual, use global running total (no separate "Total" column)
               -- For other block sizes, use within-block running total (separate "Total" column shows global)
-              displayedBlockRunning = case blockSize of
-                BlockSizeIndividual -> globalRunningTotal
-                _ -> newBlockRunning
+              displayedBlockRunning = case blockSizeGrouping blockSize of
+                BlockGroupingIndividual -> globalRunningTotal
+                BlockGroupingGrouped -> newBlockRunning
               regPosting =
                 RegisterPosting
                   { registerPosting = convertedFlatPosting cp,

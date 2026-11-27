@@ -233,4 +233,7 @@ filterAssetAndLiabilityAccounts accounts =
       Just (Located _ acc) -> case accountType acc of
         AccountTypeAssets -> True
         AccountTypeLiabilities -> True
-        _ -> False
+        AccountTypeEquity -> False
+        AccountTypeExpenses -> False
+        AccountTypeIncome -> False
+        AccountTypeOther -> False

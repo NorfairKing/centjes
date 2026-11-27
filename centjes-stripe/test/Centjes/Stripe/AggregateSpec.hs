@@ -99,7 +99,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isForeignTaxCollected
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindForeignTaxCollected]
         Success _ -> expectationFailure "Expected foreign tax collected to be refused"
 
     -- Exempt and zero-rated home revenue are declared differently, and this importer
@@ -112,7 +112,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isHomeNontaxable
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
         Success _ -> expectationFailure "Expected non-taxable home revenue to be refused"
 
     -- The dangerous shape, because the reconciliation cannot catch it: booking the wrong
@@ -128,7 +128,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isNoVATRate
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoVATRate]
         Success month ->
           expectationFailure $
             unwords
@@ -145,7 +145,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isHomeNontaxable
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindHomeNontaxable]
         Success month ->
           expectationFailure $
             unwords
@@ -182,7 +182,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isWrongCurrency
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
         Success _ -> expectationFailure "Expected a row in another currency to be refused"
 
     it "refuses a fee row in another currency" $ do
@@ -199,7 +199,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isWrongCurrency
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindWrongCurrency]
         Success _ -> expectationFailure "Expected a fee in another currency to be refused"
 
     -- The balance report leaves the currency off its payout lines, so an absent currency
@@ -250,7 +250,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isDoesNotReconcile
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindDoesNotReconcile]
         Success _ -> expectationFailure "Expected a month that does not reconcile to be refused"
 
     it "refuses a balance report with no ending balance" $ do
@@ -261,7 +261,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isNoBalanceCategory
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindNoBalanceCategory]
         Success _ -> expectationFailure "Expected a missing ending balance to be refused"
 
     -- A fee small enough that its tax cannot name a rate: 18 rappen of fee rounds to the
@@ -292,7 +292,7 @@ spec = do
           ]
           []
       case aggregateMonth settings chf reports of
-        Failure errs -> foldr (:) [] errs `shouldSatisfy` any isFeeRateDisagrees
+        Failure errs -> map stripeErrorKind (foldr (:) [] errs) `shouldContain` [KindFeeRateDisagrees]
         Success _ -> expectationFailure "Expected a fee at the wrong rate to be refused"
 
     it "counts each payout it was given" $ do
@@ -394,14 +394,31 @@ balanceCsv ending =
       "\",\"chf\"\n"
     ]
 
-isForeignTaxCollected, isHomeNontaxable, isDoesNotReconcile, isNoBalanceCategory, isFeeRateDisagrees, isNoVATRate, isWrongCurrency :: StripeError -> Bool
-isForeignTaxCollected = \case StripeErrorForeignTaxCollected {} -> True; _ -> False
-isHomeNontaxable = \case StripeErrorHomeNontaxable {} -> True; _ -> False
-isDoesNotReconcile = \case StripeErrorDoesNotReconcile {} -> True; _ -> False
-isNoBalanceCategory = \case StripeErrorNoBalanceCategory {} -> True; _ -> False
-isFeeRateDisagrees = \case StripeErrorFeeRateDisagrees {} -> True; _ -> False
-isNoVATRate = \case StripeErrorNoVATRate {} -> True; _ -> False
-isWrongCurrency = \case StripeErrorWrongCurrency {} -> True; _ -> False
+data StripeErrorKind
+  = KindReport
+  | KindForeignTaxCollected
+  | KindNoVATRate
+  | KindHomeNontaxable
+  | KindDoesNotReconcile
+  | KindNoBalanceCategory
+  | KindSum
+  | KindRefundsExceedSales
+  | KindFeeRateDisagrees
+  | KindWrongCurrency
+  deriving (Show, Eq)
+
+stripeErrorKind :: StripeError -> StripeErrorKind
+stripeErrorKind = \case
+  StripeErrorReport {} -> KindReport
+  StripeErrorForeignTaxCollected {} -> KindForeignTaxCollected
+  StripeErrorNoVATRate {} -> KindNoVATRate
+  StripeErrorHomeNontaxable {} -> KindHomeNontaxable
+  StripeErrorDoesNotReconcile {} -> KindDoesNotReconcile
+  StripeErrorNoBalanceCategory {} -> KindNoBalanceCategory
+  StripeErrorSum {} -> KindSum
+  StripeErrorRefundsExceedSales {} -> KindRefundsExceedSales
+  StripeErrorFeeRateDisagrees {} -> KindFeeRateDisagrees
+  StripeErrorWrongCurrency {} -> KindWrongCurrency
 
 settings :: AggregateSettings
 settings =

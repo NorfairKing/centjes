@@ -27,7 +27,11 @@ mergePriceDeclarations =
   mergeDeclarations
     ( \case
         DeclarationPrice (Located _ pd) -> Just (priceDeclarationSortKey pd)
-        _ -> Nothing
+        DeclarationComment {} -> Nothing
+        DeclarationCurrency {} -> Nothing
+        DeclarationAccount {} -> Nothing
+        DeclarationTag {} -> Nothing
+        DeclarationTransaction {} -> Nothing
     )
     (priceDeclarationSortKey . locatedValue)
     (\(Located _ pd) -> DeclarationPrice (noLoc pd))
@@ -50,7 +54,11 @@ mergeTransactionDeclarations existingModule newTransactions =
         mergeDeclarations
           ( \case
               DeclarationTransaction (Located _ t) -> Just (transactionSortKey t)
-              _ -> Nothing
+              DeclarationComment {} -> Nothing
+              DeclarationCurrency {} -> Nothing
+              DeclarationAccount {} -> Nothing
+              DeclarationTag {} -> Nothing
+              DeclarationPrice {} -> Nothing
           )
           (transactionSortKey . locatedValue)
           (\(Located _ t) -> DeclarationTransaction (noLoc t))

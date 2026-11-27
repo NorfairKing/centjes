@@ -73,9 +73,8 @@ instance Functor (Validation e) where
 
 instance Applicative (Validation e) where
   pure = Success
-  Failure e1 <*> b = Failure $ case b of
-    Failure e2 -> e1 `NE.append` e2
-    Success _ -> e1
+  Failure e1 <*> Failure e2 = Failure (e1 `NE.append` e2)
+  Failure e1 <*> Success _ = Failure e1
   Success _ <*> Failure e2 = Failure e2
   Success f <*> Success a = Success (f a)
 

@@ -69,7 +69,7 @@ spec = do
           evaluatedPriceBalancesWithVirtual p `shouldNotBe` evaluatedPriceBalancesWithoutVirtual p
           (fst <$> lastEntryState True entries) `shouldBe` Just (evaluatedPriceBalancesWithVirtual p)
           (fst <$> lastEntryState False entries) `shouldBe` Just (evaluatedPriceBalancesWithoutVirtual p)
-        _ -> expectationFailure "expected the last entry to be a price declaration"
+        EvaluatedEntryTransaction {} -> expectationFailure "expected the last entry to be a price declaration"
   describe "produceBalanceReportFromEvaluatedLedger" $ do
     it "produces valid reports" $
       forAllValid $ \f ->

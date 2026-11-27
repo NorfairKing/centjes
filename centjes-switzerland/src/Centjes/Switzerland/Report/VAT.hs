@@ -404,7 +404,12 @@ parseUnxpectedDeductibleExpenses VATInput {..} accounts (Located _ Transaction {
                       if accountName2 == vatInputExportsIncomeAccountName
                         then Nothing
                         else Just lp1
-            _ -> Nothing
+            AccountTypeAssets -> Nothing
+            AccountTypeLiabilities -> Nothing
+            AccountTypeEquity -> Nothing
+            AccountTypeExpenses -> Nothing
+            AccountTypeIncome -> Nothing
+            AccountTypeOther -> Nothing
 
 parseExpectedDeductibleExpenses ::
   (Ord ann) =>
@@ -455,7 +460,12 @@ parseExpectedDeductibleExpenses VATInput {..} accounts dailyPriceGraphs chf (Loc
                       else pure reportedVATRate -- No way to check if it's a foreign VAT rate
                   pure DeductibleExpense {..}
                 else pure Nothing
-        _ -> pure Nothing
+        AccountTypeAssets -> pure Nothing
+        AccountTypeLiabilities -> pure Nothing
+        AccountTypeEquity -> pure Nothing
+        AccountTypeExpenses -> pure Nothing
+        AccountTypeIncome -> pure Nothing
+        AccountTypeOther -> pure Nothing
 
 consequtiveTups :: [a] -> [(a, Maybe a)]
 consequtiveTups l =

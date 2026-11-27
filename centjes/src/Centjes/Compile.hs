@@ -73,7 +73,6 @@ data CompileError ann
   | CompileErrorPriceSameCurrency !ann !ann !ann
   | CompileErrorInvalidPrice !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorInvalidRatio !ann !ann !(GenLocated ann (RationalExpression ann))
-  | CompileErrorInvalidRational !ann !(GenLocated ann (RationalExpression ann))
   | CompileErrorUnparseableAmount !ann !(GenLocated ann QuantisationFactor) !(GenLocated ann DecimalLiteral)
   | CompileErrorVirtualPostingNotAllowed !ann !ann !ann !ann !(GenLocated ann AccountName)
   | CompileErrorRealPostingNotAllowed !ann !ann !ann !ann
@@ -313,14 +312,6 @@ instance ToReport (CompileError SourceSpan) where
         [ (toDiagnosePosition ll, This "This ratio is invalid"),
           (toDiagnosePosition pel, Where "While compiling this ratio"),
           (toDiagnosePosition tl, Where "While compiling this transaction")
-        ]
-        []
-    CompileErrorInvalidRational tl (Located ll _) ->
-      Err
-        (Just "CE_INVALID_RATIONAL")
-        "Invalid rational, cannot be interpreted as a fraction."
-        [ (toDiagnosePosition ll, This "This rational expression is invalid"),
-          (toDiagnosePosition tl, Blank)
         ]
         []
     CompileErrorUnparseableAmount tl (Located cl qf) (Located al dl) ->
@@ -665,17 +656,10 @@ compileConversionRate ::
   ann ->
   GenLocated ann (RationalExpression ann) ->
   Validation (CompileError ann) (GenLocated ann Money.ConversionRate)
-compileConversionRate pdl lre = do
-  Located rl r <-
-    mapValidationFailure
-      ( \case
-          CompileErrorInvalidRational _ _ -> CompileErrorInvalidPrice pdl lre
-          e -> e
-      )
-      (compileRational pdl lre)
-  case ConversionRate.fromRational r of
+compileConversionRate pdl lre =
+  case compileRational lre >>= traverse ConversionRate.fromRational of
     Nothing -> validationFailure $ CompileErrorInvalidPrice pdl lre
-    Just cr -> pure (Located rl cr)
+    Just lcr -> pure lcr
 
 compileRatioExpression ::
   ann ->
@@ -692,25 +676,20 @@ compileRatio ::
   ann ->
   GenLocated ann (RationalExpression ann) ->
   Validation (CompileError ann) (GenLocated ann Rational)
-compileRatio pl pel ldl =
-  mapValidationFailure
-    ( \case
-        CompileErrorInvalidRational _ lre -> CompileErrorInvalidRatio pl pel lre
-        e -> e
-    )
-    $ compileRational pl ldl
+compileRatio pl pel ldl = case compileRational ldl of
+  Nothing -> validationFailure $ CompileErrorInvalidRatio pl pel ldl
+  Just lr -> pure lr
 
 compileRational ::
-  ann ->
   GenLocated ann (RationalExpression ann) ->
-  Validation (CompileError ann) (GenLocated ann Rational)
-compileRational l lre@(Located rel RationalExpression {..}) = do
+  Maybe (GenLocated ann Rational)
+compileRational (Located rel RationalExpression {..}) = do
   let Located _ ndl = rationalExpressionNumerator
       n :: Rational
       n = DecimalLiteral.toRational ndl
       d :: Rational
       d = maybe 1 (DecimalLiteral.toRational . locatedValue) rationalExpressionDenominator
-  when (d == 0) $ validationFailure $ CompileErrorInvalidRational l lre
+  guard (d /= 0)
   let percentageMod = if rationalExpressionPercent then 1 / 100 else 1
   pure (Located rel (n / d * percentageMod))
 

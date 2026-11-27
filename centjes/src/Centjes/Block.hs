@@ -4,6 +4,8 @@
 
 module Centjes.Block
   ( BlockSize (..),
+    BlockGrouping (..),
+    blockSizeGrouping,
     Block (..),
     timestampBlockTitle,
     dayBlockTitle,
@@ -40,6 +42,20 @@ data BlockSize
   deriving (Show, Generic)
 
 instance Validity BlockSize
+
+-- | Whether a block size puts every entry in a block of its own.
+data BlockGrouping
+  = BlockGroupingIndividual
+  | BlockGroupingGrouped
+
+blockSizeGrouping :: BlockSize -> BlockGrouping
+blockSizeGrouping = \case
+  BlockSizeIndividual -> BlockGroupingIndividual
+  BlockSizeDay -> BlockGroupingGrouped
+  BlockSizeWeek -> BlockGroupingGrouped
+  BlockSizeMonth -> BlockGroupingGrouped
+  BlockSizeQuarter -> BlockGroupingGrouped
+  BlockSizeYear -> BlockGroupingGrouped
 
 instance HasCodec BlockSize where
   codec = bimapCodec (first renderBlockSizeError . parseBlockSize) renderBlockSize codec

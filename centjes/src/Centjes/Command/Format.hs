@@ -189,8 +189,12 @@ fillInDigits currencies m = m {moduleDeclarations = map goLDeclaration (moduleDe
     goLDeclaration = fmap goDeclaration
     goDeclaration :: Declaration ann -> Declaration ann
     goDeclaration = \case
+      DeclarationComment c -> DeclarationComment c
+      DeclarationCurrency cd -> DeclarationCurrency cd
+      DeclarationAccount ad -> DeclarationAccount ad
+      DeclarationTag td -> DeclarationTag td
+      DeclarationPrice pd -> DeclarationPrice pd
       DeclarationTransaction t -> DeclarationTransaction $ goTransaction <$> t
-      d -> d
     goTransaction :: Transaction ann -> Transaction ann
     goTransaction t = t {transactionPostings = map (fmap goPosting) (transactionPostings t)}
     goPosting :: Posting ann -> Posting ann

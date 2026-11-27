@@ -164,7 +164,11 @@ produceTaxesReport taxesInput@TaxesInput {..} ledger@Ledger {..} = do
                 includeFile fileInTarball rf
                 pure fileInTarball
               pure $ Just AssetAccount {..}
-      _ -> pure Nothing
+      AccountTypeLiabilities -> pure Nothing
+      AccountTypeEquity -> pure Nothing
+      AccountTypeExpenses -> pure Nothing
+      AccountTypeIncome -> pure Nothing
+      AccountTypeOther -> pure Nothing
 
   taxesReportTotalAssets <- requireSum $ map assetAccountConvertedBalance taxesReportAssetAccounts
 

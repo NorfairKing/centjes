@@ -231,7 +231,10 @@ buildDaySnapshots accounts = V.foldl' go M.empty
       Just (Located _ acc) -> case accountType acc of
         AccountTypeAssets -> True
         AccountTypeLiabilities -> True
-        _ -> False
+        AccountTypeEquity -> False
+        AccountTypeExpenses -> False
+        AccountTypeIncome -> False
+        AccountTypeOther -> False
 
 -- | Compute the net worth for a single day by summing all account balances and converting to the target currency.
 computeDayNetWorth ::
